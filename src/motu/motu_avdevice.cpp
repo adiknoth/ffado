@@ -301,6 +301,50 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
 };
 
+const MatrixMixBus MixerBuses_Ultralite[] = {
+    {"Mix 1", 0x4000, },
+    {"Mix 2", 0x4100, },
+    {"Mix 3", 0x4200, },
+    {"Mix 4", 0x4300, },
+};
+
+const MatrixMixChannel MixerChannels_Ultralite[] = {
+    {"Analog 1", MOTU_CTRL_STD_CHANNEL, 0x0000, },
+    {"Analog 2", MOTU_CTRL_STD_CHANNEL, 0x0004, },
+    {"Analog 3", MOTU_CTRL_STD_CHANNEL, 0x0008, },
+    {"Analog 4", MOTU_CTRL_STD_CHANNEL, 0x000c, },
+    {"Analog 5", MOTU_CTRL_STD_CHANNEL, 0x0010, },
+    {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
+    {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
+    {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
+    {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
+};
+
+const MixerCtrl MixerCtrls_Ultralite[] = {
+    {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
+    {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
+    {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
+    {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+
+    /* For mic/line input controls, the "register" is the zero-based channel number */
+    {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 0},
+    {"Control/Ana2_", "Analog 2 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 1},
+    {"Control/Ana3_", "Analog 3 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 2},
+    {"Control/Ana4_", "Analog 4 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 3},
+    {"Control/Ana5_", "Analog 5 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 4},
+    {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 5},
+    {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 6},
+    {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 7},
+
+    /* For phones source control, "register" is currently unused */
+    {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
+
+    /* For optical mode controls, the "register" is used to indicate direction */
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+};
+
 const MixerCtrl MixerCtrls_896HD[] = {
     {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
@@ -347,6 +391,9 @@ const MixerCtrl MixerCtrls_828Mk2[] = {
 const MotuMixer Mixer_Traveler = MOTUMIXER(
     MixerCtrls_Traveler, MixerBuses_Traveler, MixerChannels_Traveler);
 
+const MotuMixer Mixer_Ultralite = MOTUMIXER(
+    MixerCtrls_Ultralite, MixerBuses_Ultralite, MixerChannels_Ultralite);
+
 const MotuMixer Mixer_828Mk2 = MOTUMIXER(
     MixerCtrls_828Mk2, MixerBuses_Traveler, MixerChannels_Traveler);
 
@@ -360,7 +407,7 @@ const DevicePropertyEntry DevicesProperty[] = {
 //  { Ports_map,       N_ELEMENTS( Ports_map ),        MaxSR, MixerDescrPtr },
     { Ports_828MKII,   N_ELEMENTS( Ports_828MKII ),    96000, &Mixer_828Mk2, },
     { Ports_TRAVELER,  N_ELEMENTS( Ports_TRAVELER ),  192000, &Mixer_Traveler, },
-    { Ports_ULTRALITE, N_ELEMENTS( Ports_ULTRALITE ),  96000 },
+    { Ports_ULTRALITE, N_ELEMENTS( Ports_ULTRALITE ),  96000, &Mixer_Ultralite, },
     { Ports_8PRE,      N_ELEMENTS( Ports_8PRE ),       96000 },
     { Ports_828MKI,    N_ELEMENTS( Ports_828MKI ),     48000 },
     { Ports_896HD,     N_ELEMENTS( Ports_896HD ),     192000, &Mixer_896HD, },
