@@ -300,7 +300,7 @@ AvDevice::getSelectorFBValue(int id) {
 }
 
 bool
-AvDevice::setFeatureFBVolumeValue(int id, int channel, int v) {
+AvDevice::setFeatureFBVolumeCurrent(int id, int channel, int v) {
 
     FunctionBlockCmd fbCmd( get1394Service(),
                             FunctionBlockCmd::eFBT_Feature,
@@ -332,11 +332,12 @@ AvDevice::setFeatureFBVolumeValue(int id, int channel, int v) {
 }
 
 int
-AvDevice::getFeatureFBVolumeValue(int id, int channel) {
+AvDevice::getFeatureFBVolumeValue(int id, int channel, FunctionBlockCmd::EControlAttribute controlAttribute) 
+{
     FunctionBlockCmd fbCmd( get1394Service(),
                             FunctionBlockCmd::eFBT_Feature,
                             id,
-                            FunctionBlockCmd::eCA_Current );
+                            controlAttribute);
     fbCmd.setNodeId( getNodeId() );
     fbCmd.setSubunitId( 0x00 );
     fbCmd.setCommandType( AVCCommand::eCT_Status );
@@ -362,6 +363,24 @@ AvDevice::getFeatureFBVolumeValue(int id, int channel) {
     int16_t volume=(int16_t)(fbCmd.m_pFBFeature->m_pVolume->m_volume);
     
     return volume;
+}
+
+int 
+AvDevice::getFeatureFBVolumeMinimum(int id, int channel)
+{
+    return getFeatureFBVolumeValue(id, channel, AVC::FunctionBlockCmd::eCA_Minimum);
+}
+
+int 
+AvDevice::getFeatureFBVolumeMaximum(int id, int channel)
+{
+    return getFeatureFBVolumeValue(id, channel, AVC::FunctionBlockCmd::eCA_Maximum);
+}
+
+int 
+AvDevice::getFeatureFBVolumeCurrent(int id, int channel)
+{
+    return getFeatureFBVolumeValue(id, channel, AVC::FunctionBlockCmd::eCA_Current);   
 }
 
 void

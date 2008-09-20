@@ -226,7 +226,7 @@ MixerFBFeature::setValue(int idx, double v)
     int volume=(int)v;
     debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d to %d...\n",
         m_Slave.getId(), volume);
-    return m_Parent.getParent().setFeatureFBVolumeValue(m_Slave.getId(), idx, volume);
+    return m_Parent.getParent().setFeatureFBVolumeCurrent(m_Slave.getId(), idx, volume);
 }
 
 double
@@ -241,7 +241,25 @@ MixerFBFeature::getValue(int idx)
     debugOutput(DEBUG_LEVEL_NORMAL,"Get feature volume %d...\n",
         m_Slave.getId());
 
-    return m_Parent.getParent().getFeatureFBVolumeValue(m_Slave.getId(), idx);
+    return m_Parent.getParent().getFeatureFBVolumeCurrent(m_Slave.getId(), idx);
+}
+
+double
+MixerFBFeature::getMinimum()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature minimum volume %d...\n",
+        m_Slave.getId());
+
+    return m_Parent.getParent().getFeatureFBVolumeMinimum(m_Slave.getId(), 0);
+}
+
+double
+MixerFBFeature::getMaximum()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature maximum volume %d...\n",
+        m_Slave.getId());
+
+    return m_Parent.getParent().getFeatureFBVolumeMaximum(m_Slave.getId(), 0);
 }
 
 // --- element implementation classes

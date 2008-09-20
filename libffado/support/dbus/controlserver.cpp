@@ -458,15 +458,17 @@ Continuous::getValueIdx( const DBus::Int32 & idx )
 DBus::Double
 Continuous::getMinimum()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "getMinimum() TODO: Return a real device-value...\n" );
-    return -100.0;
+    double val = m_Slave.getMinimum();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getMinimum() => %lf\n", val );
+    return val;
 }
 
 DBus::Double
 Continuous::getMaximum()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "getMaximum() TODO: Return a real device-value...\n" );
-    return 10.0;
+    double val = m_Slave.getMaximum();
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getMaximum() => %lf\n", val );
+    return val;
 }
 
 // --- Discrete

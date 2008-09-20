@@ -78,8 +78,8 @@ public:
     virtual double getValue();
     virtual bool setValue(int idx, double v);
     virtual double getValue(int idx);
-    virtual double getMinimum() {return 0.0;};
-    virtual double getMaximum() {return 0.0;};
+    virtual double getMinimum();
+    virtual double getMaximum();
 
 private:
     Mixer&                  m_Parent;
@@ -99,8 +99,8 @@ public:
     virtual double getValue(int idx)
         {return getValue();};
 
-    virtual double getMinimum() {return 0.0;};
-    virtual double getMaximum() {return 0.0;};
+    virtual double getMinimum() {return -32768;};
+    virtual double getMaximum() {return 0;};
 
 private:
     Mixer&                      m_Parent;
