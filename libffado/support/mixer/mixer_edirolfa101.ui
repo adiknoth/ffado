@@ -25,7 +25,7 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>276</width>
+            <width>521</width>
             <height>161</height>
         </rect>
     </property>
@@ -65,10 +65,10 @@
                         </property>
                         <widget class="QLabel">
                             <property name="name">
-                                <cstring>textLabel12</cstring>
+                                <cstring>textLabel1</cstring>
                             </property>
                             <property name="text">
-                                <string>1/2</string>
+                                <string>1</string>
                             </property>
                             <property name="alignment">
                                 <set>AlignCenter</set>
@@ -76,7 +76,7 @@
                         </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput12</cstring>
+                                <cstring>sldInput1</cstring>
                             </property>
                             <property name="minValue">
                                 <number>0</number>
@@ -114,7 +114,71 @@
                     </property>
                     <property name="sizeHint">
                         <size>
-                            <width>60</width>
+                            <width>40</width>
+                            <height>20</height>
+                        </size>
+                    </property>
+                </spacer>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout6</cstring>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QLabel">
+                            <property name="name">
+                                <cstring>textLabel2</cstring>
+                            </property>
+                            <property name="text">
+                                <string>2</string>
+                            </property>
+                            <property name="alignment">
+                                <set>AlignCenter</set>
+                            </property>
+                        </widget>
+                        <widget class="QSlider">
+                            <property name="name">
+                                <cstring>sldInput2</cstring>
+                            </property>
+                            <property name="minValue">
+                                <number>0</number>
+                            </property>
+                            <property name="maxValue">
+                                <number>32767</number>
+                            </property>
+                            <property name="lineStep">
+                                <number>10000</number>
+                            </property>
+                            <property name="pageStep">
+                                <number>1000</number>
+                            </property>
+                            <property name="orientation">
+                                <enum>Vertical</enum>
+                            </property>
+                            <property name="tickmarks">
+                                <enum>Both</enum>
+                            </property>
+                            <property name="tickInterval">
+                                <number>10000</number>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <spacer>
+                    <property name="name">
+                        <cstring>spacer16_2</cstring>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                        <enum>Expanding</enum>
+                    </property>
+                    <property name="sizeHint">
+                        <size>
+                            <width>40</width>
                             <height>20</height>
                         </size>
                     </property>
@@ -129,10 +193,10 @@
                         </property>
                         <widget class="QLabel">
                             <property name="name">
-                                <cstring>textLabel34</cstring>
+                                <cstring>textLabel3</cstring>
                             </property>
                             <property name="text">
-                                <string>3/4</string>
+                                <string>3</string>
                             </property>
                             <property name="alignment">
                                 <set>AlignCenter</set>
@@ -140,7 +204,7 @@
                         </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput34</cstring>
+                                <cstring>sldInput3</cstring>
                             </property>
                             <property name="minValue">
                                 <number>0</number>
@@ -168,7 +232,7 @@
                 </widget>
                 <spacer>
                     <property name="name">
-                        <cstring>spacer17</cstring>
+                        <cstring>spacer16_3</cstring>
                     </property>
                     <property name="orientation">
                         <enum>Horizontal</enum>
@@ -178,7 +242,71 @@
                     </property>
                     <property name="sizeHint">
                         <size>
-                            <width>60</width>
+                            <width>40</width>
+                            <height>20</height>
+                        </size>
+                    </property>
+                </spacer>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout7</cstring>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QLabel">
+                            <property name="name">
+                                <cstring>textLabel4</cstring>
+                            </property>
+                            <property name="text">
+                                <string>4</string>
+                            </property>
+                            <property name="alignment">
+                                <set>AlignCenter</set>
+                            </property>
+                        </widget>
+                        <widget class="QSlider">
+                            <property name="name">
+                                <cstring>sldInput4</cstring>
+                            </property>
+                            <property name="minValue">
+                                <number>0</number>
+                            </property>
+                            <property name="maxValue">
+                                <number>32767</number>
+                            </property>
+                            <property name="lineStep">
+                                <number>10000</number>
+                            </property>
+                            <property name="pageStep">
+                                <number>1000</number>
+                            </property>
+                            <property name="orientation">
+                                <enum>Vertical</enum>
+                            </property>
+                            <property name="tickmarks">
+                                <enum>Both</enum>
+                            </property>
+                            <property name="tickInterval">
+                                <number>10000</number>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <spacer>
+                    <property name="name">
+                        <cstring>spacer16_4</cstring>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                        <enum>Expanding</enum>
+                    </property>
+                    <property name="sizeHint">
+                        <size>
+                            <width>40</width>
                             <height>20</height>
                         </size>
                     </property>
@@ -193,10 +321,10 @@
                         </property>
                         <widget class="QLabel">
                             <property name="name">
-                                <cstring>textLabel56</cstring>
+                                <cstring>textLabel5</cstring>
                             </property>
                             <property name="text">
-                                <string>5/6</string>
+                                <string>5</string>
                             </property>
                             <property name="alignment">
                                 <set>AlignCenter</set>
@@ -204,7 +332,7 @@
                         </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput56</cstring>
+                                <cstring>sldInput5</cstring>
                             </property>
                             <property name="minimumSize">
                                 <size>
@@ -238,7 +366,7 @@
                 </widget>
                 <spacer>
                     <property name="name">
-                        <cstring>spacer17_3</cstring>
+                        <cstring>spacer16_5</cstring>
                     </property>
                     <property name="orientation">
                         <enum>Horizontal</enum>
@@ -248,7 +376,71 @@
                     </property>
                     <property name="sizeHint">
                         <size>
-                            <width>60</width>
+                            <width>40</width>
+                            <height>20</height>
+                        </size>
+                    </property>
+                </spacer>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout8</cstring>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QLabel">
+                            <property name="name">
+                                <cstring>textLabel6</cstring>
+                            </property>
+                            <property name="text">
+                                <string>6</string>
+                            </property>
+                            <property name="alignment">
+                                <set>AlignCenter</set>
+                            </property>
+                        </widget>
+                        <widget class="QSlider">
+                            <property name="name">
+                                <cstring>sldInput6</cstring>
+                            </property>
+                            <property name="minValue">
+                                <number>0</number>
+                            </property>
+                            <property name="maxValue">
+                                <number>32767</number>
+                            </property>
+                            <property name="lineStep">
+                                <number>10000</number>
+                            </property>
+                            <property name="pageStep">
+                                <number>1000</number>
+                            </property>
+                            <property name="orientation">
+                                <enum>Vertical</enum>
+                            </property>
+                            <property name="tickmarks">
+                                <enum>Both</enum>
+                            </property>
+                            <property name="tickInterval">
+                                <number>10000</number>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <spacer>
+                    <property name="name">
+                        <cstring>spacer16_6</cstring>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                        <enum>Expanding</enum>
+                    </property>
+                    <property name="sizeHint">
+                        <size>
+                            <width>40</width>
                             <height>20</height>
                         </size>
                     </property>
@@ -263,10 +455,10 @@
                         </property>
                         <widget class="QLabel">
                             <property name="name">
-                                <cstring>textLabel78</cstring>
+                                <cstring>textLabel7</cstring>
                             </property>
                             <property name="text">
-                                <string>7/8</string>
+                                <string>7</string>
                             </property>
                             <property name="alignment">
                                 <set>AlignCenter</set>
@@ -274,7 +466,7 @@
                         </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput78</cstring>
+                                <cstring>sldInput7</cstring>
                             </property>
                             <property name="minimumSize">
                                 <size>
@@ -308,7 +500,7 @@
                 </widget>
                 <spacer>
                     <property name="name">
-                        <cstring>spacer17_2</cstring>
+                        <cstring>spacer16_7</cstring>
                     </property>
                     <property name="orientation">
                         <enum>Horizontal</enum>
@@ -318,7 +510,71 @@
                     </property>
                     <property name="sizeHint">
                         <size>
-                            <width>60</width>
+                            <width>40</width>
+                            <height>20</height>
+                        </size>
+                    </property>
+                </spacer>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout9</cstring>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QLabel">
+                            <property name="name">
+                                <cstring>textLabel8</cstring>
+                            </property>
+                            <property name="text">
+                                <string>8</string>
+                            </property>
+                            <property name="alignment">
+                                <set>AlignCenter</set>
+                            </property>
+                        </widget>
+                        <widget class="QSlider">
+                            <property name="name">
+                                <cstring>sldInput8</cstring>
+                            </property>
+                            <property name="minValue">
+                                <number>0</number>
+                            </property>
+                            <property name="maxValue">
+                                <number>32767</number>
+                            </property>
+                            <property name="lineStep">
+                                <number>10000</number>
+                            </property>
+                            <property name="pageStep">
+                                <number>1000</number>
+                            </property>
+                            <property name="orientation">
+                                <enum>Vertical</enum>
+                            </property>
+                            <property name="tickmarks">
+                                <enum>Both</enum>
+                            </property>
+                            <property name="tickInterval">
+                                <number>10000</number>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <spacer>
+                    <property name="name">
+                        <cstring>spacer16_8</cstring>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                        <enum>Expanding</enum>
+                    </property>
+                    <property name="sizeHint">
+                        <size>
+                            <width>40</width>
                             <height>20</height>
                         </size>
                     </property>
@@ -333,10 +589,10 @@
                         </property>
                         <widget class="QLabel">
                             <property name="name">
-                                <cstring>textLabel910</cstring>
+                                <cstring>textLabel9</cstring>
                             </property>
                             <property name="text">
-                                <string>9/10</string>
+                                <string>9</string>
                             </property>
                             <property name="alignment">
                                 <set>AlignCenter</set>
@@ -344,13 +600,77 @@
                         </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput910</cstring>
+                                <cstring>sldInput9</cstring>
                             </property>
                             <property name="minimumSize">
                                 <size>
                                     <width>0</width>
                                     <height>80</height>
                                 </size>
+                            </property>
+                            <property name="minValue">
+                                <number>0</number>
+                            </property>
+                            <property name="maxValue">
+                                <number>32767</number>
+                            </property>
+                            <property name="lineStep">
+                                <number>10000</number>
+                            </property>
+                            <property name="pageStep">
+                                <number>1000</number>
+                            </property>
+                            <property name="orientation">
+                                <enum>Vertical</enum>
+                            </property>
+                            <property name="tickmarks">
+                                <enum>Both</enum>
+                            </property>
+                            <property name="tickInterval">
+                                <number>10000</number>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <spacer>
+                    <property name="name">
+                        <cstring>spacer16_9</cstring>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                        <enum>Expanding</enum>
+                    </property>
+                    <property name="sizeHint">
+                        <size>
+                            <width>40</width>
+                            <height>20</height>
+                        </size>
+                    </property>
+                </spacer>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout10</cstring>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QLabel">
+                            <property name="name">
+                                <cstring>textLabel10</cstring>
+                            </property>
+                            <property name="text">
+                                <string>10</string>
+                            </property>
+                            <property name="alignment">
+                                <set>AlignCenter</set>
+                            </property>
+                        </widget>
+                        <widget class="QSlider">
+                            <property name="name">
+                                <cstring>sldInput10</cstring>
                             </property>
                             <property name="minValue">
                                 <number>0</number>
@@ -382,34 +702,64 @@
 </widget>
 <connections>
     <connection>
-        <sender>sldInput12</sender>
+        <sender>sldInput1</sender>
         <signal>sliderMoved(int)</signal>
         <receiver>EdirolFa101ControlUI</receiver>
-        <slot>setVolumeIn12(int)</slot>
+        <slot>setVolumeIn1(int)</slot>
     </connection>
     <connection>
-        <sender>sldInput34</sender>
+        <sender>sldInput2</sender>
         <signal>sliderMoved(int)</signal>
         <receiver>EdirolFa101ControlUI</receiver>
-        <slot>setVolumeIn34(int)</slot>
+        <slot>setVolumeIn2(int)</slot>
     </connection>
     <connection>
-        <sender>sldInput56</sender>
+        <sender>sldInput3</sender>
         <signal>sliderMoved(int)</signal>
         <receiver>EdirolFa101ControlUI</receiver>
-        <slot>setVolumeIn56(int)</slot>
+        <slot>setVolumeIn3(int)</slot>
     </connection>
     <connection>
-        <sender>sldInput78</sender>
+        <sender>sldInput4</sender>
         <signal>sliderMoved(int)</signal>
         <receiver>EdirolFa101ControlUI</receiver>
-        <slot>setVolumeIn78(int)</slot>
+        <slot>setVolumeIn4(int)</slot>
     </connection>
     <connection>
-        <sender>sldInput910</sender>
+        <sender>sldInput5</sender>
         <signal>sliderMoved(int)</signal>
         <receiver>EdirolFa101ControlUI</receiver>
-        <slot>setVolumeIn910(int)</slot>
+        <slot>setVolumeIn5(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldInput6</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setVolumeIn6(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldInput7</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setVolumeIn7(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldInput8</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setVolumeIn8(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldInput9</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setVolumeIn9(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldInput10</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setVolumeIn10(int)</slot>
     </connection>
 </connections>
 <includes>
@@ -418,11 +768,16 @@
 <slots>
     <slot>init()</slot>
     <slot>initValues()</slot>
-    <slot>setVolumeIn12( int )</slot>
-    <slot>setVolumeIn34( int )</slot>
-    <slot>setVolumeIn56( int )</slot>
-    <slot>setVolumeIn910( int )</slot>
-    <slot>setVolumeIn78( int )</slot>
+    <slot>setVolumeIn6( int )</slot>
+    <slot>setVolumeIn7( int )</slot>
+    <slot>setVolumeIn8( int )</slot>
+    <slot>setVolumeIn9( int )</slot>
+    <slot>setVolumeIn10( int )</slot>
+    <slot>setVolumeIn1(int)</slot>
+    <slot>setVolumeIn2(int)</slot>
+    <slot>setVolumeIn3(int)</slot>
+    <slot>setVolumeIn4(int)</slot>
+    <slot>setVolumeIn5(int)</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>
