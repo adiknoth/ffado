@@ -104,6 +104,14 @@ if os.environ.has_key('CC'):
 if os.environ.has_key('CXX'):
 	env['CXX'] = os.environ['CXX']
 
+# grab OS CFLAGS / CCFLAGS
+env['OS_CFLAGS']=[]
+if os.environ.has_key('CFLAGS'):
+	env['OS_CFLAGS'] = os.environ['CFLAGS']
+env['OS_CCFLAGS']=[]
+if os.environ.has_key('CCFLAGS'):
+	env['OS_CCFLAGS'] = os.environ['CCFLAGS']
+
 Help( """
 For building ffado you can set different options as listed below. You have to
 specify them only once, scons will save the last value you used and re-use
@@ -389,6 +397,8 @@ config_kernel = 2
 config_os = 3
 config = config_guess.split ("-")
 
+needs_fPIC = False
+
 # Autodetect
 if env['DIST_TARGET'] == 'auto':
     if re.search ("x86_64", config[config_cpu]) != None:
@@ -477,12 +487,19 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
         env.AppendUnique( CFLAGS=["-m64"] )
     elif env['DIST_TARGET'] == "x86_64":
         print "Doing a 64-bit x86 build"
-        env.AppendUnique( CCFLAGS=["-m64","-fPIC"] )
-        env.AppendUnique( CFLAGS=["-m64","-fPIC"] )
+        env.AppendUnique( CCFLAGS=["-m64"] )
+        env.AppendUnique( CFLAGS=["-m64"] )
+        needs_fPIC = True
     else:
         print "Doing a 32-bit build"
         env.AppendUnique( CCFLAGS=["-m32"] )
         env.AppendUnique( CFLAGS=["-m32"] )
+
+if needs_fPIC or '-fPIC' in env['OS_CFLAGS']:
+    env.AppendUnique( CFLAGS=["-fPIC"] )
+if needs_fPIC or '-fPIC' in env['OS_CCFLAGS']:
+    env.AppendUnique( CCFLAGS=["-fPIC"] )
+
 
 # end of processor-specific section
 if env['ENABLE_OPTIMIZATIONS']:
