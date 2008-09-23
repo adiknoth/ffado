@@ -500,7 +500,6 @@ if needs_fPIC or '-fPIC' in env['OS_CFLAGS']:
 if needs_fPIC or '-fPIC' in env['OS_CCFLAGS']:
     env.AppendUnique( CCFLAGS=["-fPIC"] )
 
-
 # end of processor-specific section
 if env['ENABLE_OPTIMIZATIONS']:
     opt_flags.extend (["-fomit-frame-pointer","-ffast-math","-funroll-loops"])
@@ -513,7 +512,8 @@ env['REVISION'] = os.popen('svnversion .').read()[:-1]
 # We'll just use the last bit.
 env['REVISION'] = env['REVISION'].split(':')[-1]
 
-if env['REVISION'] == 'exported':
+# try to circumvent localized versions
+if len(env['REVISION']) >= 5 and env['REVISION'][0:6] == 'export':
 	env['REVISION'] = ''
 
 env['FFADO_API_VERSION']=FFADO_API_VERSION
