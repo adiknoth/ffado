@@ -509,7 +509,7 @@ env['CONFIGDIR'] = "~/.ffado"
 env['CACHEDIR'] = "~/.ffado"
 
 env['USER_CONFIG_FILE'] = env['CONFIGDIR'] + "/configuration"
-env['SYSTEM_CONFIG_FILE'] = env['SHAREDIR'] + "/configuration"
+env['SYSTEM_CONFIG_FILE'] = env['sharedir'] + "/configuration"
 
 env['REGISTRATION_URL'] = "http://ffado.org/deviceregistration/register.php?action=register"
 
@@ -534,7 +534,7 @@ env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
 
-env.Install( env['SHAREDIR'], 'configuration' )
+env.Install( env['sharedir'], 'configuration' )
 
 subdirs=['external','src','libffado','tests','support','doc']
 if build_base:
