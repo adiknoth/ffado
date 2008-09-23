@@ -547,11 +547,11 @@ ConfigRom::updatedNodeId()
         csr1212_destroy_csr(csr);
     }
 
-    debugOutput( DEBUG_LEVEL_NORMAL,
-                 "Device with GUID 0x%08x%08x could not be found on "
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                 "Device with GUID 0x%016llX could not be found on "
                  "the bus anymore (removed?)\n",
-                 m_guid >> 32,
-                 m_guid & 0xffffffff );
+                 getGuid() );
+    m_nodeId = INVALID_NODE_ID;
     return false;
 }
 

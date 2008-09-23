@@ -55,6 +55,7 @@
 
 #include "Atomic.h"
 #include <pthread.h>
+#include <string>
 
 namespace Util
 {
@@ -93,7 +94,13 @@ class Thread
 
     public:
 
-        Thread(RunnableInterface* runnable): fRunnable(runnable)
+        Thread(RunnableInterface* runnable)
+        : fRunnable(runnable)
+        , m_id( "UNKNOWN" )
+        {}
+        Thread(RunnableInterface* runnable, std::string id)
+        : fRunnable(runnable)
+        , m_id( id )
         {}
         virtual ~Thread()
         {}
@@ -112,9 +119,13 @@ class Thread
         virtual pthread_t GetThreadID() = 0;
 
         virtual void setVerboseLevel(int l)
-            {setDebugLevel(l);};
+            {
+                setDebugLevel(l);
+                debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Setting verbose level to %d...\n", m_id.c_str(), l );
+            };
     protected:
-            DECLARE_DEBUG_MODULE;
+        std::string m_id;
+        DECLARE_DEBUG_MODULE;
 
 };
 

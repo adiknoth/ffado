@@ -21,8 +21,8 @@
  *
  */
 
-#include "config.h"
-
+// #include "config.h"
+#include "devicemanager.h"
 #include "fireworks_device.h"
 #include "efc/efc_avc_cmd.h"
 #include "efc/efc_cmd.h"
@@ -39,6 +39,10 @@
 
 #include "libutil/PosixMutex.h"
 
+#include "IntelFlashMap.h"
+
+#define ECHO_FLASH_ERASE_TIMEOUT_MILLISECS 2000
+
 #include <sstream>
 using namespace std;
 
@@ -47,9 +51,10 @@ namespace FireWorks {
 
 Device::Device(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : GenericAVC::AvDevice( d, configRom)
-    , m_poll_lock( new Util::PosixMutex() )
+    , m_poll_lock( new Util::PosixMutex("DEVPOLL") )
     , m_efc_discovery_done ( false )
     , m_MixerContainer ( NULL )
+    , m_HwInfoContainer ( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created FireWorks::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -74,7 +79,7 @@ Device::showDevice()
 }
 
 bool
-Device::probe( ConfigRom& configRom, bool generic )
+Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
         // try an EFC command
@@ -105,12 +110,8 @@ Device::probe( ConfigRom& configRom, bool generic )
     } else {
         unsigned int vendorId = configRom.getNodeVendorId();
         unsigned int modelId = configRom.getModelId();
-
-        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
-        if ( vendorModel.parse() ) {
-            return vendorModel.isPresent( vendorId, modelId );
-        }
-        return false;
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_FireWorks;
     }
 }
 
@@ -120,17 +121,16 @@ Device::discover()
     unsigned int vendorId = getConfigRom().getNodeVendorId();
     unsigned int modelId = getConfigRom().getModelId();
 
-    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_fireworks.txt" );
-    if ( vendorModel.parse() ) {
-        m_model = vendorModel.find( vendorId, modelId );
-    }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
 
-    if (!GenericAVC::VendorModel::isValid(m_model)) {
-        debugWarning("Using generic ECHO Audio FireWorks support for unsupported device '%s %s'\n",
-            getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
-    } else {
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_FireWorks) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model.vendor_name.c_str(), m_model.model_name.c_str());
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
+    } else {
+        debugWarning("Using generic ECHO Audio FireWorks support for unsupported device '%s %s'\n",
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
 
     // get the info from the EFC
@@ -140,7 +140,7 @@ Device::discover()
     }
 
     // discover AVC-wise
-    if ( !GenericAVC::AvDevice::discover() ) {
+    if ( !GenericAVC::AvDevice::discoverGeneric() ) {
         debugError( "Could not discover GenericAVC::AvDevice\n" );
         return false;
     }
@@ -259,6 +259,8 @@ Device::buildMixer()
         result &= m_MixerContainer->addElement(
             new BinaryControl(*this, eMT_PlaybackMix, eMC_Mute, ch, 0, node_name.str()+"Mute"));
         result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, eMT_PlaybackMix, eMC_Solo, ch, 0, node_name.str()+"Solo"));
+        result &= m_MixerContainer->addElement(
             new SimpleControl(*this, eMT_PlaybackMix, eMC_Gain, ch, node_name.str()+"Gain"));
     }
     
@@ -275,13 +277,53 @@ Device::buildMixer()
             new SimpleControl(*this, eMT_PhysicalOutputMix, eMC_Gain, ch, node_name.str()+"Gain"));
     }
     
+    // Physical input mix controls
+    for (unsigned int ch=0;ch<m_HwInfo.m_nb_phys_audio_in;ch++) {
+        std::ostringstream node_name;
+        node_name << "IN" << ch;
+        
+        // result &= m_MixerContainer->addElement(
+        //     new BinaryControl(*this, eMT_PhysicalInputMix, eMC_Pad, ch, 0, node_name.str()+"Pad"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, eMT_PhysicalInputMix, eMC_Nominal, ch, 1, node_name.str()+"Nominal"));
+    }
+
+    // add hardware information controls
+    m_HwInfoContainer = new Control::Container(this, "HwInfo");
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_PhysicalAudioOutCount, "PhysicalAudioOutCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_PhysicalAudioInCount, "PhysicalAudioInCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_1394PlaybackCount, "1394PlaybackCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_1394RecordCount, "1394RecordCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_GroupOutCount, "GroupOutCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_GroupInCount, "GroupInCount"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_PhantomPower, "PhantomPower"));
+
+    // add a save settings control
+    result &= this->addElement(
+        new MultiControl(*this, MultiControl::eT_SaveSession, "SaveSettings"));
+
+    // add an identify control
+    result &= this->addElement(
+        new MultiControl(*this, MultiControl::eT_Identify, "Identify"));
+
+    // spdif mode control
+    result &= this->addElement(
+        new SpdifModeControl(*this, "SpdifMode"));
+
     // check for IO config controls and add them if necessary
     if(m_HwInfo.hasMirroring()) {
-        result &= m_MixerContainer->addElement(
+        result &= this->addElement(
             new IOConfigControl(*this, eCR_Mirror, "ChannelMirror"));
     }
     if(m_HwInfo.hasSoftwarePhantom()) {
-        result &= m_MixerContainer->addElement(
+        result &= this->addElement(
             new IOConfigControl(*this, eCR_Phantom, "PhantomPower"));
     }
 
@@ -299,6 +341,18 @@ Device::buildMixer()
         return false;
     }
 
+    if (!addElement(m_HwInfoContainer)) {
+        debugWarning("Could not register hwinfo to device\n");
+        // clean up
+        destroyMixer();
+        return false;
+    }
+
+    // load the session block
+    if (!loadSession()) {
+        debugWarning("Could not load session\n");
+    }
+
     return true;
 }
 
@@ -309,25 +363,82 @@ Device::destroyMixer()
 
     if (m_MixerContainer == NULL) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "no mixer to destroy...\n");
-        return true;
+    } else {
+        if (!deleteElement(m_MixerContainer)) {
+            debugError("Mixer present but not registered to the avdevice\n");
+            return false;
+        }
+
+        // remove and delete (as in free) child control elements
+        m_MixerContainer->clearElements(true);
+        delete m_MixerContainer;
+        m_MixerContainer = NULL;
     }
 
-    if (!deleteElement(m_MixerContainer)) {
-        debugError("Mixer present but not registered to the avdevice\n");
-        return false;
-    }
+    if (m_HwInfoContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no hwinfo to destroy...\n");
+    } else {
+        if (!deleteElement(m_HwInfoContainer)) {
+            debugError("HwInfo present but not registered to the avdevice\n");
+            return false;
+        }
 
-    // remove and delete (as in free) child control elements
-    m_MixerContainer->clearElements(true);
-    delete m_MixerContainer;
+        // remove and delete (as in free) child control elements
+        m_HwInfoContainer->clearElements(true);
+        delete m_HwInfoContainer;
+        m_HwInfoContainer = NULL;
+    }
     return true;
 }
 
+bool
+Device::saveSession()
+{
+    // save the session block
+//     if ( !updateSession() ) {
+//         debugError( "Could not update session\n" );
+//     } else {
+        if ( !m_session.saveToDevice(*this) ) {
+            debugError( "Could not save session block\n" );
+        }
+//     }
+
+    return true;
+}
+
+bool
+Device::loadSession()
+{
+    if ( !m_session.loadFromDevice(*this) ) {
+        debugError( "Could not load session block\n" );
+        return false;
+    }
+    return true;
+}
 
 bool
 Device::updatePolledValues() {
     Util::MutexLockHelper lock(*m_poll_lock);
     return doEfcOverAVC(m_Polled);
+}
+
+#define ECHO_CHECK_AND_ADD_SR(v, x) \
+    { if(x >= m_HwInfo.m_min_sample_rate && x <= m_HwInfo.m_max_sample_rate) \
+      v.push_back(x); }
+std::vector<int>
+Device::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    ECHO_CHECK_AND_ADD_SR(frequencies, 22050);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 24000);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 32000);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 44100);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 48000);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 88200);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 96000);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 176400);
+    ECHO_CHECK_AND_ADD_SR(frequencies, 192000);
+    return frequencies;
 }
 
 FFADODevice::ClockSourceVector
@@ -527,6 +638,12 @@ Device::setClock(uint32_t id) {
 
 bool
 Device::lockFlash(bool lock) {
+    // some hardware doesn't need/support flash lock
+    if (m_HwInfo.hasDSP()) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "flash lock not needed\n");
+        return true;
+    }
+
     EfcFlashLockCmd cmd;
     cmd.m_lock = lock;
 
@@ -648,6 +765,77 @@ Device::eraseFlash(uint32_t addr) {
 }
 
 bool
+Device::eraseFlashBlocks(uint32_t start_address, unsigned int nb_quads)
+{
+    uint32_t blocksize_bytes;
+    uint32_t blocksize_quads;
+    unsigned int quads_left = nb_quads;
+    bool success = true;
+
+    const unsigned int max_nb_tries = 10;
+    unsigned int nb_tries = 0;
+
+    do {
+        // the erase block size is fixed by the HW, and depends
+        // on the flash section we're in
+        if (start_address < MAINBLOCKS_BASE_OFFSET_BYTES)
+                blocksize_bytes = PROGRAMBLOCK_SIZE_BYTES;
+        else
+                blocksize_bytes = MAINBLOCK_SIZE_BYTES;
+        start_address &= ~(blocksize_bytes - 1);
+        blocksize_quads = blocksize_bytes / 4;
+
+        uint32_t verify[blocksize_quads];
+
+        // corner case: requested to erase less than one block
+        if (blocksize_quads > quads_left) {
+            blocksize_quads = quads_left;
+        }
+
+        // do the actual erase
+        if (!eraseFlash(start_address)) {
+            debugWarning("Could not erase flash block at 0x%08X\n", start_address);
+            success = false;
+        } else {
+            // wait for the flash to become ready again
+            if (!waitForFlash(ECHO_FLASH_ERASE_TIMEOUT_MILLISECS)) {
+                debugError("Wait for flash timed out at address 0x%08X\n", start_address);
+                return false;
+            }
+
+            // verify that the block is empty as an extra precaution
+            if (!readFlash(start_address, blocksize_quads, verify)) {
+                debugError("Could not read flash block at 0x%08X\n", start_address);
+                return false;
+            }
+
+            // everything should be 0xFFFFFFFF if the erase was successful
+            for (unsigned int i = 0; i < blocksize_quads; i++) {
+                if (0xFFFFFFFF != verify[i]) {
+                    debugWarning("Flash erase verification failed.\n");
+                    success = false;
+                    break;
+                }
+            }
+        }
+
+        if (success) {
+            start_address += blocksize_bytes;
+            quads_left -= blocksize_quads;
+            nb_tries = 0;
+        } else {
+            nb_tries++;
+        }
+        if (nb_tries > max_nb_tries) {
+            debugError("Needed too many tries to erase flash at 0x%08X\n", start_address);
+            return false;
+        }
+    } while (quads_left > 0);
+
+    return true;
+}
+
+bool
 Device::waitForFlash(unsigned int msecs)
 {
     bool ready;
@@ -675,6 +863,17 @@ Device::waitForFlash(unsigned int msecs)
     }
 
     return ready;
+}
+
+uint32_t
+Device::getSessionBase()
+{
+    EfcFlashGetSessionBaseCmd cmd;
+    if(!doEfcOverAVC(cmd)) {
+        debugError("Could not get session base address\n");
+        return 0; // FIXME: arbitrary
+    }
+    return cmd.m_address;
 }
 
 } // FireWorks

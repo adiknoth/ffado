@@ -28,6 +28,21 @@
 
 namespace FireWorks {
 
+#define EFC_MAX_ISOC_MAP_ENTRIES    32
+typedef struct tag_efc_isoc_map
+{
+    uint32_t    samplerate;
+    uint32_t    flags;
+
+    uint32_t    num_playmap_entries;
+    uint32_t    num_phys_out;
+    int32_t     playmap[ EFC_MAX_ISOC_MAP_ENTRIES ];
+
+    uint32_t    num_recmap_entries;
+    uint32_t    num_phys_in;
+    int32_t     recmap[ EFC_MAX_ISOC_MAP_ENTRIES ];
+} IsoChannelMap;
+
 class EfcGenericIOConfigCmd : public EfcCmd
 {
 public:
@@ -45,9 +60,9 @@ public:
     enum eIOConfigRegister getRegister() {return m_reg;};
     
     virtual const char* getCmdName() const
-        { return "EfcGenericIOConfigCmd"; }
+        { return "EfcGenericIOConfigCmd"; };
 
-    uint32_t    m_value;
+    uint32_t   m_value;
 
 private:
     enum eCmdType           m_type;

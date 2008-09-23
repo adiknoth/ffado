@@ -45,7 +45,7 @@ public:
     BinaryControl(FocusriteDevice& parent, int id, int bit);
     BinaryControl(FocusriteDevice& parent, int id, int bit,
                   std::string name, std::string label, std::string descr);
-    
+
     virtual bool setValue(int v);
     virtual int getValue();
     virtual bool setValue(int idx, int v)
@@ -80,6 +80,28 @@ public:
     virtual int getMinimum() {return 0;};
     virtual int getMaximum() {return 0x07FFF;};
 
+private:
+    FocusriteDevice&        m_Parent;
+    unsigned int            m_cmd_id;
+};
+
+class MeteringControl
+    : public Control::Discrete
+{
+public:
+    MeteringControl(FocusriteDevice& parent, int id);
+    MeteringControl(FocusriteDevice& parent, int id,
+                  std::string name, std::string label, std::string descr);
+    
+    virtual bool setValue(int v) {return false;};
+    virtual int getValue();
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0x07FFF;};
 private:
     FocusriteDevice&        m_Parent;
     unsigned int            m_cmd_id;
@@ -121,6 +143,28 @@ private:
     FocusriteDevice&        m_Parent;
     unsigned int            m_cmd_id;
     unsigned int            m_bit_shift;
+};
+
+class DialPositionControl
+    : public Control::Discrete
+{
+public:
+    DialPositionControl(FocusriteDevice& parent, int id);
+    DialPositionControl(FocusriteDevice& parent, int id,
+                        std::string name, std::string label, std::string descr);
+    
+    virtual bool setValue(int v) {return false;};
+    virtual int getValue();
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0x07FFF;};
+private:
+    FocusriteDevice&        m_Parent;
+    unsigned int            m_cmd_id;
 };
 
 class FocusriteMatrixMixer : public Control::MatrixMixer

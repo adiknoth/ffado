@@ -28,6 +28,7 @@
 
 #include "Mutex.h"
 #include <pthread.h>
+#include <string>
 
 #include "debugmodule/debugmodule.h"
 
@@ -42,6 +43,7 @@ class PosixMutex : public Mutex
 {
 public:
     PosixMutex();
+    PosixMutex(std::string id);
     virtual ~PosixMutex();
 
     virtual void Lock();
@@ -58,6 +60,8 @@ protected:
 
 private:
     pthread_mutex_t m_mutex;
+
+    std::string m_id;
 
     #if DEBUG_LOCK_COLLISION_TRACING
     void *m_locked_by;

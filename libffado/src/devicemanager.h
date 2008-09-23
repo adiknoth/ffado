@@ -37,6 +37,7 @@
 
 #include "libutil/Functors.h"
 #include "libutil/Mutex.h"
+#include "libutil/Configuration.h"
 
 #include <vector>
 #include <string>
@@ -104,7 +105,14 @@ public:
 
     Streaming::StreamProcessor *getSyncSource();
 
-    void ignoreBusResets(bool b) {m_ignore_busreset = b;};
+    /**
+     * prevents the busreset handler from running. use with care!
+     */
+    void lockBusResetHandler() {m_BusResetLock->Lock();};
+    /**
+     * releases the busreset handlers
+     */
+    void unlockBusResetHandler() {m_BusResetLock->Unlock();};
     bool registerBusresetNotification(Util::Functor *f)
         {return registerNotification(m_busResetNotifiers, f);};
     bool unregisterBusresetNotification(Util::Functor *f)
@@ -119,6 +127,9 @@ public:
         {return registerNotification(m_postUpdateNotifiers, f);};
     bool unregisterPostUpdateNotification(Util::Functor *f)
         {return unregisterNotification(m_postUpdateNotifiers, f);};
+
+
+    Util::Configuration& getConfiguration() {return *m_configuration;};
 
     void showDeviceInfo();
     void showStreamingInfo();
@@ -136,7 +147,7 @@ protected:
                                      int id );
     FFADODevice* getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) );
 
-    void busresetHandler();
+    void busresetHandler(Ieee1394Service &);
 
 protected:
     // we have one service for each port
@@ -146,7 +157,7 @@ protected:
     FunctorVector           m_busreset_functors;
 
     // the lock protecting the device list
-    Util::Mutex*            m_avDevicesLock;
+    Util::Mutex*            m_DeviceListLock;
     // the lock to serialize bus reset handling
     Util::Mutex*            m_BusResetLock;
 
@@ -156,8 +167,8 @@ public: // FIXME: this should be better
 private:
     Streaming::StreamProcessorManager*  m_processorManager;
     DeviceStringParser*                 m_deviceStringParser;
+    Util::Configuration*                m_configuration;
     bool                                m_used_cache_last_time;
-    bool                                m_ignore_busreset;
 
     typedef std::vector< Util::Functor* > notif_vec_t;
     notif_vec_t                           m_busResetNotifiers;

@@ -145,8 +145,28 @@ SaffireDevice::buildMixer()
         // create control objects for the saffire
         result &= m_MixerContainer->addElement(
             new BinaryControl(*this, 
-                    FR_SAFFIRE_CMD_ID_SPDIF_SWITCH, 0,
+                    FR_SAFFIRE_CMD_ID_INPUT_SOURCE, 0,
                     "SpdifSwitch", "S/PDIF Switch", "S/PDIF Switch"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_MONO_MODE, 0,
+                    "MonoMode", "Mono Mode", "Toggle Mono Mode"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_DEVICE_MODE, 0,
+                    "DeviceMode", "Device Mode", "Toggle Device Mode"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_EXTERNAL_LOCK, 0,
+                    "ExternalLock", "External Lock", "Has external lock?"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_AUDIO_ON_STATUS, 0,
+                    "AudioOnStatus", "Audio On Status", "Audio On Status"));
+        result &= m_MixerContainer->addElement(
+            new BinaryControl(*this, 
+                    FR_SAFFIRE_CMD_ID_SAVE_SETTINGS, 0,
+                    "SaveSettings", "Save Settings", "Save Settings"));
 
         // output mute controls
         result &= m_MixerContainer->addElement(
@@ -229,6 +249,71 @@ SaffireDevice::buildMixer()
             new VolumeControlLowRes(*this, 
                     FR_SAFFIRE_CMD_ID_BITFIELD_OUT78, FR_SAFFIRE_CMD_ID_BITFIELD_BIT_DAC,
                     "Out78Level", "Out7/8 Level", "Output 7/8 Level"));
+
+        result &= m_MixerContainer->addElement(
+            new DialPositionControl(*this, 
+                    FR_SAFFIRE_CMD_ID_MONITOR_DIAL,
+                    "MonitorDial", "Monitor Dial", "Monitor Dial Value"));
+
+        // metering
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_IN1,
+                    "MeteringIn1", "Metering Input 1", "Metering on Input 1"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_IN2,
+                    "MeteringIn2", "Metering Input 2", "Metering on Input 2"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_IN3,
+                    "MeteringIn3", "Metering Input 3", "Metering on Input 3"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_IN4,
+                    "MeteringIn4", "Metering Input 4", "Metering on Input 4"));
+
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC1,
+                    "MeteringPc1", "Metering PC 1", "Metering on PC Channel 1"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC2,
+                    "MeteringPc2", "Metering PC 2", "Metering on PC Channel 2"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC3,
+                    "MeteringPc3", "Metering PC 3", "Metering on PC Channel 3"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC4,
+                    "MeteringPc4", "Metering PC 4", "Metering on PC Channel 4"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC5,
+                    "MeteringPc5", "Metering PC 5", "Metering on PC Channel 5"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC6,
+                    "MeteringPc6", "Metering PC 6", "Metering on PC Channel 6"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC7,
+                    "MeteringPc7", "Metering PC 7", "Metering on PC Channel 7"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC8,
+                    "MeteringPc8", "Metering PC 8", "Metering on PC Channel 8"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC9,
+                    "MeteringPc9", "Metering PC 9", "Metering on PC Channel 9"));
+        result &= m_MixerContainer->addElement(
+            new MeteringControl(*this, 
+                    FR_SAFFIRE_CMD_ID_METERING_PC10,
+                    "MeteringPc10", "Metering PC 10", "Metering on PC Channel 10"));
+
     }
     
     // matrix mix controls
@@ -247,13 +332,11 @@ SaffireDevice::buildMixer()
             new BinaryControl(*this, 
                     FR_SAFFIRELE_CMD_ID_SWAP_OUT4_OUT1_96K, 0,
                     "Swap41_96", "Swap41_96", "Swap41_96"));
-
     } else {
         result &= m_MixerContainer->addElement(
-            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_InputMix, "InputMix"));
-    
+            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_SaffireStereoMatrixMix, "MatrixMixerStereo"));
         result &= m_MixerContainer->addElement(
-            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_PCMix, "PCMix"));
+            new SaffireMatrixMixer(*this, SaffireMatrixMixer::eMMT_SaffireMonoMatrixMix, "MatrixMixerMono"));
     }
 
     if (!result) {
@@ -341,25 +424,77 @@ SaffireMatrixMixer::SaffireMatrixMixer(SaffireDevice& p,
 
 void SaffireMatrixMixer::init()
 {
-    if (m_type==eMMT_PCMix) {
+    if (m_type==eMMT_SaffireStereoMatrixMix) {
+        m_RowInfo.clear();
+        addSignalInfo(m_RowInfo, "PC910", "PC 9/10", "PC Channel 9/10");
         addSignalInfo(m_RowInfo, "PC12", "PC 1/2", "PC Channel 1/2");
         addSignalInfo(m_RowInfo, "PC34", "PC 3/4", "PC Channel 3/4");
         addSignalInfo(m_RowInfo, "PC56", "PC 5/6", "PC Channel 5/6");
         addSignalInfo(m_RowInfo, "PC78", "PC 7/8", "PC Channel 7/8");
-        addSignalInfo(m_RowInfo, "PC910", "PC 9/10", "PC Channel 9/10");
-        
+        addSignalInfo(m_RowInfo, "IN12", "Input 1/2", "Hardware Inputs 1/2");
+        addSignalInfo(m_RowInfo, "IN34", "Input 3/4", "Hardware Inputs 3/4 (dry / S/PDIF)");
+        addSignalInfo(m_RowInfo, "FX", "Effect return", "Effect return");
+
+        m_ColInfo.clear();
+        addSignalInfo(m_ColInfo, "OUT910", "OUT 9/10", "Output 9/10");
         addSignalInfo(m_ColInfo, "OUT12", "OUT 1/2", "Output 1/2");
         addSignalInfo(m_ColInfo, "OUT34", "OUT 3/4", "Output 3/4");
-        addSignalInfo(m_ColInfo, "OUT56", "OUT 5/6", "Output 5/6");
-        addSignalInfo(m_ColInfo, "OUT78", "OUT 7/8", "Output 7/8");
+        addSignalInfo(m_ColInfo, "OUT56", "OUT 5/6", "Output 5/6 (HP1)");
+        addSignalInfo(m_ColInfo, "OUT78", "OUT 7/8", "Output 7/8 (HP2)");
+        
+        // init the cell matrix
+        #define FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_COLS 5
+        #define FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_ROWS 8
+        #define FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_OFFSET 0
+
+        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_COLS );
+        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_ROWS, tmp_cols);
+        m_CellInfo = tmp_all;
+    
+        struct sCellInfo c;
+        c.row=-1;
+        c.col=-1;
+        c.valid=false;
+        c.address=0;
+        
+        // all cells are valid
+        for (int i=0; i < FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_ROWS; i++) {
+            for (int j=0; j < FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_COLS; j++) {
+                c.row = i;
+                c.col = j;
+                c.valid = true;
+                c.address = FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_OFFSET + c.row * FOCUSRITE_SAFFIRE_STEREO_MATRIXMIX_NB_COLS + c.col;
+                m_CellInfo.at(i).at(j) =  c;
+            }
+        }
+    } else if (m_type==eMMT_SaffireMonoMatrixMix) {
+        m_RowInfo.clear();
+        addSignalInfo(m_RowInfo, "IN1", "Input 1", "Hardware Inputs 1");
+        addSignalInfo(m_RowInfo, "IN3", "Input 3", "Hardware Inputs 3");
+        addSignalInfo(m_RowInfo, "FX1", "Effect return 1", "Effect return 1");
+        addSignalInfo(m_RowInfo, "IN2", "Input 2", "Hardware Inputs 2");
+        addSignalInfo(m_RowInfo, "IN4", "Input 4", "Hardware Inputs 4");
+        addSignalInfo(m_RowInfo, "FX2", "Effect return 2", "Effect return 2");
+        addSignalInfo(m_RowInfo, "PC910", "PC 9/10", "PC Channel 9/10");
+        addSignalInfo(m_RowInfo, "PC12", "PC 1/2", "PC Channel 1/2");
+        addSignalInfo(m_RowInfo, "PC34", "PC 3/4", "PC Channel 3/4");
+        addSignalInfo(m_RowInfo, "PC56", "PC 5/6", "PC Channel 5/6");
+        addSignalInfo(m_RowInfo, "PC78", "PC 7/8", "PC Channel 7/8");
+
+        m_ColInfo.clear();
         addSignalInfo(m_ColInfo, "OUT910", "OUT 9/10", "Output 9/10");
+        addSignalInfo(m_ColInfo, "OUT12", "OUT 1/2", "Output 1/2");
+        addSignalInfo(m_ColInfo, "OUT34", "OUT 3/4", "Output 3/4");
+        addSignalInfo(m_ColInfo, "OUT56", "OUT 5/6", "Output 5/6 (HP1)");
+        addSignalInfo(m_ColInfo, "OUT78", "OUT 7/8", "Output 7/8 (HP2)");
         
         // init the cell matrix
-        #define FOCUSRITE_SAFFIRE_PCMIX_NB_COLS 5
-        #define FOCUSRITE_SAFFIRE_PCMIX_NB_ROWS 5
-        
-        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRE_PCMIX_NB_COLS );
-        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRE_PCMIX_NB_ROWS, tmp_cols);
+        #define FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_COLS 5
+        #define FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_ROWS 11
+        #define FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_OFFSET 0
+
+        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_COLS );
+        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_ROWS, tmp_cols);
         m_CellInfo = tmp_all;
     
         struct sCellInfo c;
@@ -368,111 +503,16 @@ void SaffireMatrixMixer::init()
         c.valid=false;
         c.address=0;
         
-        for (int i=0;i<FOCUSRITE_SAFFIRE_PCMIX_NB_ROWS;i++) {
-            for (int j=0;j<FOCUSRITE_SAFFIRE_PCMIX_NB_COLS;j++) {
-                m_CellInfo.at(i).at(j) = c;
+        // all cells are valid
+        for (int i=0; i < FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_ROWS; i++) {
+            for (int j=0; j < FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_COLS; j++) {
+                c.row = i;
+                c.col = j;
+                c.valid = true;
+                c.address = FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_OFFSET + c.row * FOCUSRITE_SAFFIRE_MONO_MATRIXMIX_NB_COLS + c.col;
+                m_CellInfo.at(i).at(j) =  c;
             }
         }
-    
-        // now set the cells that are valid
-        setCellInfo(0,0,FR_SAFFIRE_CMD_ID_PC12_TO_OUT12, true);
-        setCellInfo(0,1,FR_SAFFIRE_CMD_ID_PC12_TO_OUT34, true);
-        setCellInfo(0,2,FR_SAFFIRE_CMD_ID_PC12_TO_OUT56, true);
-        setCellInfo(0,3,FR_SAFFIRE_CMD_ID_PC12_TO_OUT79, true);
-        setCellInfo(0,4,FR_SAFFIRE_CMD_ID_PC12_TO_OUT910, true);
-        setCellInfo(1,0,FR_SAFFIRE_CMD_ID_PC34_TO_OUT12, true);
-        setCellInfo(1,1,FR_SAFFIRE_CMD_ID_PC34_TO_OUT34, true);
-        setCellInfo(1,2,FR_SAFFIRE_CMD_ID_PC34_TO_OUT56, true);
-        setCellInfo(1,3,FR_SAFFIRE_CMD_ID_PC34_TO_OUT79, true);
-        setCellInfo(1,4,FR_SAFFIRE_CMD_ID_PC34_TO_OUT910, true);
-        setCellInfo(2,0,FR_SAFFIRE_CMD_ID_PC56_TO_OUT12, true);
-        setCellInfo(2,1,FR_SAFFIRE_CMD_ID_PC56_TO_OUT34, true);
-        setCellInfo(2,2,FR_SAFFIRE_CMD_ID_PC56_TO_OUT56, true);
-        setCellInfo(2,3,FR_SAFFIRE_CMD_ID_PC56_TO_OUT79, true);
-        setCellInfo(2,4,FR_SAFFIRE_CMD_ID_PC56_TO_OUT910, true);
-        setCellInfo(3,0,FR_SAFFIRE_CMD_ID_PC78_TO_OUT12, true);
-        setCellInfo(3,1,FR_SAFFIRE_CMD_ID_PC78_TO_OUT34, true);
-        setCellInfo(3,2,FR_SAFFIRE_CMD_ID_PC78_TO_OUT56, true);
-        setCellInfo(3,3,FR_SAFFIRE_CMD_ID_PC78_TO_OUT79, true);
-        setCellInfo(3,4,FR_SAFFIRE_CMD_ID_PC78_TO_OUT910, true);
-        setCellInfo(4,0,FR_SAFFIRE_CMD_ID_PC910_TO_OUT12, true);
-        setCellInfo(4,1,FR_SAFFIRE_CMD_ID_PC910_TO_OUT34, true);
-        setCellInfo(4,2,FR_SAFFIRE_CMD_ID_PC910_TO_OUT56, true);
-        setCellInfo(4,3,FR_SAFFIRE_CMD_ID_PC910_TO_OUT79, true);
-        setCellInfo(4,4,FR_SAFFIRE_CMD_ID_PC910_TO_OUT910, true);
-
-    } else if (m_type==eMMT_InputMix) {
-        addSignalInfo(m_RowInfo, "IN1", "Input 1", "Analog Input 1");
-        addSignalInfo(m_RowInfo, "IN2", "Input 2", "Analog Input 2");
-        addSignalInfo(m_RowInfo, "SPDIFL", "SPDIF L", "S/PDIF Left Input");
-        addSignalInfo(m_RowInfo, "SPDIFR", "SPDIF R", "S/PDIF Right Input");
-        addSignalInfo(m_RowInfo, "REV1", "REVERB 1", "Reverb CH1 return");
-        addSignalInfo(m_RowInfo, "REV1", "REVERB 2", "Reverb CH2 return");
-        
-        addSignalInfo(m_ColInfo, "OUT1", "OUT 1", "Output 1");
-        addSignalInfo(m_ColInfo, "OUT2", "OUT 2", "Output 2");
-        addSignalInfo(m_ColInfo, "OUT3", "OUT 3", "Output 3");
-        addSignalInfo(m_ColInfo, "OUT4", "OUT 4", "Output 4");
-        addSignalInfo(m_ColInfo, "OUT5", "OUT 5", "Output 5");
-        addSignalInfo(m_ColInfo, "OUT6", "OUT 6", "Output 6");
-        addSignalInfo(m_ColInfo, "OUT7", "OUT 7", "Output 7");
-        addSignalInfo(m_ColInfo, "OUT8", "OUT 8", "Output 8");
-        addSignalInfo(m_ColInfo, "OUT9", "OUT 9", "Output 9");
-        addSignalInfo(m_ColInfo, "OUT10", "OUT 10", "Output 10");
-        
-        // init the cell matrix
-        #define FOCUSRITE_SAFFIRE_INPUTMIX_NB_COLS 10
-        #define FOCUSRITE_SAFFIRE_INPUTMIX_NB_ROWS 6
-        
-        std::vector<struct sCellInfo> tmp_cols( FOCUSRITE_SAFFIRE_INPUTMIX_NB_COLS );
-        std::vector< std::vector<struct sCellInfo> > tmp_all(FOCUSRITE_SAFFIRE_INPUTMIX_NB_ROWS,tmp_cols);
-        m_CellInfo = tmp_all;
-    
-        struct sCellInfo c;
-        c.row=-1;
-        c.col=-1;
-        c.valid=false;
-        c.address=0;
-        
-        for (int i=0;i<FOCUSRITE_SAFFIRE_INPUTMIX_NB_ROWS;i++) {
-            for (int j=0;j<FOCUSRITE_SAFFIRE_INPUTMIX_NB_COLS;j++) {
-                m_CellInfo.at(i).at(j) = c;
-            }
-        }
-
-        // now set the cells that are valid
-        setCellInfo(0,0,FR_SAFFIRE_CMD_ID_IN1_TO_OUT1, true);
-        setCellInfo(0,2,FR_SAFFIRE_CMD_ID_IN1_TO_OUT3, true);
-        setCellInfo(0,4,FR_SAFFIRE_CMD_ID_IN1_TO_OUT5, true);
-        setCellInfo(0,6,FR_SAFFIRE_CMD_ID_IN1_TO_OUT7, true);
-        setCellInfo(0,8,FR_SAFFIRE_CMD_ID_IN1_TO_OUT9, true);
-        setCellInfo(1,1,FR_SAFFIRE_CMD_ID_IN2_TO_OUT2, true);
-        setCellInfo(1,3,FR_SAFFIRE_CMD_ID_IN2_TO_OUT4, true);
-        setCellInfo(1,5,FR_SAFFIRE_CMD_ID_IN2_TO_OUT6, true);
-        setCellInfo(1,7,FR_SAFFIRE_CMD_ID_IN2_TO_OUT8, true);
-        setCellInfo(1,9,FR_SAFFIRE_CMD_ID_IN2_TO_OUT10, true);
-        setCellInfo(2,0,FR_SAFFIRE_CMD_ID_IN3_TO_OUT1, true);
-        setCellInfo(2,2,FR_SAFFIRE_CMD_ID_IN3_TO_OUT3, true);
-        setCellInfo(2,4,FR_SAFFIRE_CMD_ID_IN3_TO_OUT5, true);
-        setCellInfo(2,6,FR_SAFFIRE_CMD_ID_IN3_TO_OUT7, true);
-        setCellInfo(2,8,FR_SAFFIRE_CMD_ID_IN3_TO_OUT9, true);
-        setCellInfo(3,1,FR_SAFFIRE_CMD_ID_IN4_TO_OUT2, true);
-        setCellInfo(3,3,FR_SAFFIRE_CMD_ID_IN4_TO_OUT4, true);
-        setCellInfo(3,5,FR_SAFFIRE_CMD_ID_IN4_TO_OUT6, true);
-        setCellInfo(3,7,FR_SAFFIRE_CMD_ID_IN4_TO_OUT8, true);
-        setCellInfo(3,9,FR_SAFFIRE_CMD_ID_IN4_TO_OUT10, true);
-
-        setCellInfo(4,0,FR_SAFFIRE_CMD_ID_REV1_TO_OUT1, true);
-        setCellInfo(5,1,FR_SAFFIRE_CMD_ID_REV2_TO_OUT2, true);
-        setCellInfo(4,2,FR_SAFFIRE_CMD_ID_REV1_TO_OUT3, true);
-        setCellInfo(5,3,FR_SAFFIRE_CMD_ID_REV2_TO_OUT4, true);
-        setCellInfo(4,4,FR_SAFFIRE_CMD_ID_REV1_TO_OUT5, true);
-        setCellInfo(5,5,FR_SAFFIRE_CMD_ID_REV2_TO_OUT6, true);
-        setCellInfo(4,6,FR_SAFFIRE_CMD_ID_REV1_TO_OUT7, true);
-        setCellInfo(5,7,FR_SAFFIRE_CMD_ID_REV2_TO_OUT8, true);
-        setCellInfo(4,8,FR_SAFFIRE_CMD_ID_REV1_TO_OUT9, true);
-        setCellInfo(5,9,FR_SAFFIRE_CMD_ID_REV2_TO_OUT10, true);
-
     } else if (m_type == eMMT_LEMix48) {
         addSignalInfo(m_RowInfo, "IN1", "Input 1", "Analog Input 1");
         addSignalInfo(m_RowInfo, "IN2", "Input 2", "Analog Input 2");

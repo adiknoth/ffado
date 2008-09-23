@@ -92,15 +92,34 @@ StreamProcessor::~StreamProcessor() {
     if (m_scratch_buffer) delete[] m_scratch_buffer;
 }
 
-void
+bool
+StreamProcessor::handleBusResetDo()
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) handling busreset\n", this);
+    m_state = ePS_Error;
+    // this will result in the SPM dying
+    m_in_xrun = true;
+    SIGNAL_ACTIVITY_ALL;
+    return true;
+}
+
+bool
 StreamProcessor::handleBusReset()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) handling busreset\n", this);
-    // for now, we try and make sure everything is cleanly shutdown
-    if(!stopRunning(-1)) {
-        debugError("Failed to stop SP\n");
-    }
-    SIGNAL_ACTIVITY_ALL;
+
+    // we are sure that we're not iterated since this is called from within the ISO manager thread
+
+    // lock the wait loop of the SPM, such that the client leaves us alone
+    m_StreamProcessorManager.lockWaitLoop();
+
+    // pass on to the implementing classes
+    bool retval = handleBusResetDo();
+
+    // resume wait loop
+    m_StreamProcessorManager.unlockWaitLoop();
+
+    return retval;
 }
 
 void StreamProcessor::handlerDied()
@@ -108,6 +127,7 @@ void StreamProcessor::handlerDied()
     debugWarning("Handler died for %p\n", this);
     m_state = ePS_Stopped;
     m_in_xrun = true;
+    SIGNAL_ACTIVITY_ALL;
 }
 
 uint64_t StreamProcessor::getTimeNow() {
@@ -286,7 +306,7 @@ enum raw1394_iso_disposition
 StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                            unsigned char channel, unsigned char tag, unsigned char sy,
                            uint32_t pkt_ctr,
-                           unsigned int dropped_cycles, unsigned int skipped) {
+                           unsigned int dropped_cycles) {
     // bypass based upon state
 #ifdef DEBUG
     if (m_state == ePS_Invalid) {
@@ -297,6 +317,11 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     // FIXME: isn't this also an error condition?
     if (m_state == ePS_Created) {
         return RAW1394_ISO_DEFER;
+    }
+
+    if (m_state == ePS_Error) {
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "skip due to error state\n");
+        return RAW1394_ISO_OK;
     }
 
     // store the previous timestamp
@@ -364,7 +389,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     if (result == eCRV_OK) {
-        #ifdef DEBUG
+//         #ifdef DEBUG
         int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
         int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
         // display message if the difference between two successive tick
@@ -375,13 +400,39 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                         "cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
                         CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
                         m_last_timestamp, diff, ticks_per_packet);
+            // !!!HACK!!! FIXME: this is the result of a failure in wrapping/unwrapping somewhere
+            // it's definitely a bug.
+            // try to fix up the timestamp
+            int64_t last_timestamp_fixed;
+            // first try to add one second
+            last_timestamp_fixed = m_last_timestamp + TICKS_PER_SECOND;
+            diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
+            if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
+                debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                             CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                             m_last_timestamp, diff, ticks_per_packet);
+                debugWarning("HACK: fixed by adding one second of ticks. This is a bug being run-time fixed.\n");
+                m_last_timestamp = last_timestamp_fixed;
+            }
+            // then try to subtract one second
+            last_timestamp_fixed = m_last_timestamp - TICKS_PER_SECOND;
+            if(last_timestamp_fixed >= 0) {
+                diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
+                if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
+                    debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                                CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                                m_last_timestamp, diff, ticks_per_packet);
+                    debugWarning("HACK: fixed by subtracing one second of ticks. This is a bug being run-time fixed.\n");
+                    m_last_timestamp = last_timestamp_fixed;
+                }
+            }
         }
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                            "%04u %011llu %011llu %d %d\n",
                            CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                            m_last_timestamp2, m_last_timestamp, 
                            diff, ticks_per_packet);
-        #endif
+//         #endif
 
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                           "RECV: CY=%04u TS=%011llu\n",
@@ -487,8 +538,13 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         *length = 0;
         return RAW1394_ISO_OK;
     }
-    uint64_t prev_timestamp;
 
+    if (m_state == ePS_Error) {
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "skip due to error state\n");
+        return RAW1394_ISO_OK;
+    }
+
+    uint64_t prev_timestamp;
     // note that we can ignore skipped cycles since
     // the protocol will take care of that
     if (dropped_cycles > 0) {
@@ -497,7 +553,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         m_in_xrun = true;
         if(m_state == ePS_Running) {
             debugShowBackLogLines(200);
-            debugOutput(DEBUG_LEVEL_NORMAL, "dropped packets xrun\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "dropped packets xrun (%u)\n", dropped_cycles);
             debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state to WaitingForStreamDisable due to dropped packets xrun\n");
             m_cycle_to_switch_state = CYCLE_TIMER_GET_CYCLES(pkt_ctr) + 1;
             m_next_state = ePS_WaitingForStreamDisable;
@@ -553,7 +609,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         if (result == eCRV_Packet) {
             debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                                "XMIT SILENT: CY=%04u TS=%011llu\n",
-                               cycle, m_last_timestamp);
+                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp);
 
             // assumed not to xrun
             generateSilentPacketData(data, length);
@@ -604,7 +660,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         if (result == eCRV_Packet || result == eCRV_Defer) {
             debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                                "XMIT: CY=%04u TS=%011llu\n",
-                               cycle, m_last_timestamp);
+                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp);
 
             // valid packet timestamp
             m_last_timestamp2 = prev_timestamp;
@@ -875,20 +931,27 @@ StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
 bool
 StreamProcessor::shiftStream(int nbframes)
 {
+    // FIXME: this is not a good idea since the ISO thread is also writing the buffer
+    // resulting in multiple writers (not supported)
     bool result;
     if(nbframes == 0) return true;
     if(nbframes > 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "(%p) dropping %d frames\n",
+                    this, nbframes);
         result = m_data_buffer->dropFrames(nbframes);
-        SIGNAL_ACTIVITY_ALL;
-        return result;
     } else {
-        result = true;
+        result = false;
+        return result;
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "(%p) adding %d frames\n",
+                    this, nbframes);
         while(nbframes++) {
             result &= m_data_buffer->writeDummyFrame();
         }
-        SIGNAL_ACTIVITY_ALL;
-        return result;
     }
+    SIGNAL_ACTIVITY_ALL;
+    return result;
 }
 
 /**
@@ -1766,6 +1829,7 @@ StreamProcessor::ePSToString(enum eProcessorState s) {
         case ePS_WaitingForStreamEnable: return "ePS_WaitingForStreamEnable";
         case ePS_Running: return "ePS_Running";
         case ePS_WaitingForStreamDisable: return "ePS_WaitingForStreamDisable";
+        case ePS_Error: return "ePS_Error";
         default: return "error: unknown state";
     }
 }
@@ -1792,7 +1856,14 @@ StreamProcessor::dumpInfo()
 {
     #ifdef DEBUG
     debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p, %s:\n", this, ePTToString(m_processor_type));
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel  : %d, %d\n", m_1394service.getPort(), m_channel);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel    : %d, %d\n", m_1394service.getPort(), m_channel);
+    IsoHandler *h = m_IsoHandlerManager.getHandlerForStream(this);
+    if (h) {
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packets, Dropped, Skipped : %d, %d, %d\n",
+                                              h->m_packets, h->m_dropped, h->m_skipped);
+    } else {
+        debugError("No handler for stream??\n");
+    }
     uint64_t now = m_1394service.getCycleTimerTicks();
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011llu (%03us %04uc %04ut)\n",
                         now,
@@ -1834,6 +1905,7 @@ StreamProcessor::setVerboseLevel(int l) {
     setDebugLevel(l);
     PortManager::setVerboseLevel(l);
     m_data_buffer->setVerboseLevel(l);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 } // end of namespace

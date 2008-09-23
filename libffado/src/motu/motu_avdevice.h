@@ -67,10 +67,21 @@
 #define MOTU_DIR_OUT         2
 #define MOTU_DIR_INOUT       (MOTU_DIR_IN | MOTU_DIR_OUT)
 
+#define MOTU_METER_PEAKHOLD_MASK     0x3800
+#define MOTU_METER_PEAKHOLD_SHIFT    11
+#define MOTU_METER_CLIPHOLD_MASK     0x0700
+#define MOTU_METER_CLIPHOLD_SHIFT    8
+#define MOTU_METER_AESEBU_SRC_MASK   0x0004
+#define MOTU_METER_AESEBU_SRC_SHIFT  2
+#define MOTU_METER_PROG_SRC_MASK     0x0003
+#define MOTU_METER_PROG_SRC_SHIFT    0
+
 /* Device registers */
 #define MOTU_REG_ISOCTRL           0x0b00
 #define MOTU_REG_OPTICAL_CTRL      0x0b10
 #define MOTU_REG_CLK_CTRL          0x0b14
+#define MOTU_REG_896HD_METER_REG   0x0b1c
+#define MOTU_REG_896HD_METER_CONF  0x0b24
 #define MOTU_REG_ROUTE_PORT_CONF   0x0c04
 #define MOTU_REG_INPUT_LEVEL       0x0c08
 #define MOTU_REG_INPUT_BOOST       0x0c14
@@ -93,6 +104,10 @@
 
 class ConfigRom;
 class Ieee1394Service;
+
+namespace Util {
+    class Configuration;
+}
 
 namespace Motu {
 
@@ -173,7 +188,7 @@ public:
     virtual bool buildMixer();
     virtual bool destroyMixer();
 
-    static bool probe( ConfigRom& configRom, bool generic = false );
+    static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     static int getConfigurationId( );
     virtual bool discover();
@@ -183,6 +198,7 @@ public:
     bool setClockCtrlRegister(signed int samplingFrequency, unsigned int clock_source);
     virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
+    virtual std::vector<int> getSupportedSamplingFrequencies();
 
     FFADODevice::ClockSource clockIdToClockSource(unsigned int id);
     virtual ClockSourceVector getSupportedClockSources();

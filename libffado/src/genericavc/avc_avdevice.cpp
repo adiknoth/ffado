@@ -22,8 +22,8 @@
  *
  */
 
-#include "config.h"
-
+//#include "config.h"
+#include "devicemanager.h"
 #include "genericavc/avc_avdevice.h"
 
 #include "libieee1394/configrom.h"
@@ -76,7 +76,7 @@ AvDevice::~AvDevice()
 }
 
 bool
-AvDevice::probe( ConfigRom& configRom, bool generic )
+AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
         // check if we have a music subunit
@@ -101,10 +101,8 @@ AvDevice::probe( ConfigRom& configRom, bool generic )
         unsigned int vendorId = configRom.getNodeVendorId();
         unsigned int modelId = configRom.getModelId();
 
-        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
-        if ( vendorModel.parse() ) {
-            return vendorModel.isPresent( vendorId, modelId );
-        }
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_GenericAVC;
         return false;
     }
 }
@@ -119,26 +117,27 @@ bool
 AvDevice::discover()
 {
     Util::MutexLockHelper lock(m_DeviceMutex);
-    // check if we already have a valid VendorModel entry
-    // e.g. because a subclass called this function
-    if (!GenericAVC::VendorModel::isValid(m_model)) {
-        unsigned int vendorId = getConfigRom().getNodeVendorId();
-        unsigned int modelId = getConfigRom().getModelId();
 
-        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_genericavc.txt" );
-        if ( vendorModel.parse() ) {
-            m_model = vendorModel.find( vendorId, modelId );
-        }
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
 
-        if (!GenericAVC::VendorModel::isValid(m_model)) {
-            debugWarning("Using generic AV/C support for unsupported device '%s %s'\n",
-                        getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
-        } else {
-            debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                    m_model.vendor_name.c_str(), m_model.model_name.c_str());
-        }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_GenericAVC) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
+    } else {
+        debugWarning("Using generic AV/C support for unsupported device '%s %s'\n",
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
+    return discoverGeneric();
+}
 
+bool
+AvDevice::discoverGeneric()
+{
     if ( !Unit::discover() ) {
         debugError( "Could not discover unit\n" );
         return false;
@@ -152,7 +151,6 @@ AvDevice::discover()
         debugError( "Unit doesn't have a Music subunit.\n");
         return false;
     }
-
     return true;
 }
 
@@ -239,6 +237,58 @@ AvDevice::setSamplingFrequency( int s )
     // not executable
     return false;
 
+}
+
+bool
+AvDevice::supportsSamplingFrequency( int s )
+{
+    Util::MutexLockHelper lock(m_DeviceMutex);
+
+    AVC::Plug* plug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
+    if ( !plug ) {
+        debugError( "Could not retrieve iso input plug 0\n" );
+        return false;
+    }
+
+    if ( !plug->supportsSampleRate( s ) )
+    {
+        debugError( "sample rate not supported by input plug\n" );
+        return false;
+    }
+
+    plug = getPlugById( m_pcrPlugs, Plug::eAPD_Output,  0 );
+    if ( !plug ) {
+        debugError( "Could not retrieve iso output plug 0\n" );
+        return false;
+    }
+
+    if ( !plug->supportsSampleRate( s ) )
+    {
+        debugError( "sample rate not supported by output plug\n" );
+        return false;
+    }
+    return true;
+}
+
+#define GENERICAVC_CHECK_AND_ADD_SR(v, x) \
+    { if(supportsSamplingFrequency(x)) \
+      v.push_back(x); }
+
+std::vector<int>
+AvDevice::getSupportedSamplingFrequencies()
+{
+    if (m_supported_frequencies_cache.size() == 0) {
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 22050);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 24000);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 32000);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 44100);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 48000);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 88200);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 96000);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 176400);
+        GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 192000);
+    }
+    return m_supported_frequencies_cache;
 }
 
 FFADODevice::ClockSourceVector

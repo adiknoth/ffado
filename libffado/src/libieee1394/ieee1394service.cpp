@@ -46,15 +46,17 @@
 #include <iostream>
 #include <iomanip>
 
+using namespace std;
+
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
     : m_handle( 0 )
-    , m_handle_lock( new Util::PosixMutex() )
+    , m_handle_lock( new Util::PosixMutex("SRCVHND") )
     , m_resetHandle( 0 )
     , m_util_handle( 0 )
     , m_port( -1 )
-    , m_RHThread_lock( new Util::PosixMutex() )
+    , m_RHThread_lock( new Util::PosixMutex("SRVCRH") )
     , m_threadRunning( false )
     , m_realtime ( false )
     , m_base_priority ( 0 )
@@ -76,11 +78,11 @@ Ieee1394Service::Ieee1394Service()
 
 Ieee1394Service::Ieee1394Service(bool rt, int prio)
     : m_handle( 0 )
-    , m_handle_lock( new Util::PosixMutex() )
+    , m_handle_lock( new Util::PosixMutex("SRCVHND") )
     , m_resetHandle( 0 )
     , m_util_handle( 0 )
     , m_port( -1 )
-    , m_RHThread_lock( new Util::PosixMutex() )
+    , m_RHThread_lock( new Util::PosixMutex("SRVCRH") )
     , m_threadRunning( false )
     , m_realtime ( rt )
     , m_base_priority ( prio )
@@ -157,6 +159,30 @@ void
 Ieee1394Service::doBusReset() {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Issue bus reset on service %p (port %d).\n", this, getPort());
     raw1394_reset_bus(m_handle);
+}
+
+/**
+ * This function waits until there are no bus resets generated in a sleep_time_ms interval
+ * @param nb_tries number of tries to take
+ * @param sleep_time_ms sleep between tries
+ * @return true if the storm passed
+ */
+bool
+Ieee1394Service::waitForBusResetStormToEnd( int nb_tries, int sleep_time_ms ) {
+    unsigned int gen_current;
+    do {
+        gen_current = getGeneration();
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Waiting... (gen: %u)\n", gen_current);
+
+        // wait for a while
+        Util::SystemTimeSource::SleepUsecRelative( sleep_time_ms * 1000);
+    } while (gen_current != getGeneration() && --nb_tries);
+
+    if (!nb_tries) {
+        debugError( "Bus reset storm did not stop on time...\n");
+        return false;
+    }
+    return true;
 }
 
 bool
@@ -414,7 +440,10 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
                        fb_quadlet_t* buffer )
 {
     Util::MutexLockHelper lock(*m_handle_lock);
-    using namespace std;
+    if (nodeId == INVALID_NODE_ID) {
+        debugWarning("operation on invalid node\n");
+        return false;
+    }
     if ( raw1394_read( m_handle, nodeId, addr, length*4, buffer ) == 0 ) {
 
         #ifdef DEBUG
@@ -459,7 +488,10 @@ Ieee1394Service::write( fb_nodeid_t nodeId,
                         fb_quadlet_t* data )
 {
     Util::MutexLockHelper lock(*m_handle_lock);
-    using namespace std;
+    if (nodeId == INVALID_NODE_ID) {
+        debugWarning("operation on invalid node\n");
+        return false;
+    }
 
     #ifdef DEBUG
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"write: node 0x%hX, addr = 0x%016llX, length = %d\n",
@@ -488,12 +520,16 @@ Ieee1394Service::write_octlet( fb_nodeid_t nodeId,
 }
 
 bool
-Ieee1394Service::lockCompareSwap64(  fb_nodeid_t nodeId,
-                        fb_nodeaddr_t addr,
-                        fb_octlet_t  compare_value,
-                        fb_octlet_t  swap_value,
-                        fb_octlet_t* result )
+Ieee1394Service::lockCompareSwap64( fb_nodeid_t nodeId,
+                                    fb_nodeaddr_t addr,
+                                    fb_octlet_t compare_value,
+                                    fb_octlet_t swap_value,
+                                    fb_octlet_t* result )
 {
+    if (nodeId == INVALID_NODE_ID) {
+        debugWarning("operation on invalid node\n");
+        return false;
+    }
     #ifdef DEBUG
     debugOutput(DEBUG_LEVEL_VERBOSE,"lockCompareSwap64: node 0x%X, addr = 0x%016llX\n",
                 nodeId, addr);
@@ -542,6 +578,10 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                    int len,
                                    unsigned int* resp_len )
 {
+    if (nodeId == INVALID_NODE_ID) {
+        debugWarning("operation on invalid node\n");
+        return false;
+    }
     // FIXME: this requires transactionBlockClose to unlock
     m_handle_lock->Lock();
     for (int i = 0; i < len; ++i) {
@@ -625,6 +665,10 @@ bool
 Ieee1394Service::resetHandler( unsigned int generation )
 {
     quadlet_t buf=0;
+
+    m_handle_lock->Lock();
+    raw1394_update_generation(m_handle, generation);
+    m_handle_lock->Unlock();
 
     // do a simple read on ourself in order to update the internal structures
     // this avoids failures after a bus reset
@@ -808,6 +852,7 @@ void
 Ieee1394Service::stopRHThread()
 {
     if ( m_threadRunning ) {
+        // wait for the thread to finish it's work
         m_RHThread_lock->Lock();
         pthread_cancel (m_thread);
         pthread_join (m_thread, 0);
@@ -822,7 +867,14 @@ Ieee1394Service::rHThread( void* arg )
     Ieee1394Service* pIeee1394Service = (Ieee1394Service*) arg;
 
     while (true) {
-        raw1394_loop_iterate (pIeee1394Service->m_resetHandle);
+        // protect ourselves from dying
+        {
+            // use a scoped lock such that it is unlocked
+            // even if we are cancelled while running
+            // FIXME: check if this is true!
+//             Util::MutexLockHelper lock(*(pIeee1394Service->m_RHThread_lock));
+            raw1394_loop_iterate (pIeee1394Service->m_resetHandle);
+        }
         pthread_testcancel ();
     }
 
@@ -934,6 +986,15 @@ signed int Ieee1394Service::allocateIsoChannelCMP(
     nodeid_t xmit_node, int xmit_plug,
     nodeid_t recv_node, int recv_plug
     ) {
+
+    if (xmit_node == INVALID_NODE_ID) {
+        debugWarning("operation on invalid node (XMIT)\n");
+        return -1;
+    }
+    if (recv_node == INVALID_NODE_ID) {
+        debugWarning("operation on invalid node (RECV)\n");
+        return -1;
+    }
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Allocating ISO channel using IEC61883 CMP...\n" );
     Util::MutexLockHelper lock(*m_handle_lock);

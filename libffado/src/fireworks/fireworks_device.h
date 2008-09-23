@@ -31,6 +31,7 @@
 
 #include "efc/efc_cmd.h"
 #include "efc/efc_cmds_hardware.h"
+#include "fireworks_session_block.h"
 
 #include <pthread.h>
 #include "libutil/Mutex.h"
@@ -41,11 +42,16 @@ class Ieee1394Service;
 namespace FireWorks {
 
 class Device : public GenericAVC::AvDevice {
+    friend class MonitorControl;
+    friend class SimpleControl;
+    friend class BinaryControl;
+    friend class IOConfigControl;
+    
 public:
     Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) );
     virtual ~Device();
     
-    static bool probe( ConfigRom& configRom, bool generic = false );
+    static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
 
@@ -53,6 +59,8 @@ public:
     
     virtual bool buildMixer();
     virtual bool destroyMixer();
+
+    virtual std::vector<int> getSupportedSamplingFrequencies();
 
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);
@@ -94,6 +102,7 @@ public:
      * @return true if successful
      */
     bool eraseFlash(uint32_t addr);
+    bool eraseFlashBlocks(uint32_t start_address, unsigned int nb_quads);
 
     /**
      * @brief wait until the device indicates the flash memory is ready
@@ -101,6 +110,23 @@ public:
      * @return true if the flash is ready, false if timeout
      */
     bool waitForFlash(unsigned int msecs);
+
+    /**
+     * @brief get the flash address of the session block
+     * @return session block base address
+     */
+    uint32_t getSessionBase();
+
+    /**
+     * load the session block from the device
+     * @return true if successful
+     */
+    bool loadSession();
+    /**
+     * save the session block to the device
+     * @return true if successful
+     */
+    bool saveSession();
 
 // Echo specific stuff
 private:
@@ -122,8 +148,11 @@ private:
 
     bool                m_efc_discovery_done;
 
+protected:
+    Session             m_session;
 private:
     Control::Container *m_MixerContainer;
+    Control::Container *m_HwInfoContainer;
 
 };
 

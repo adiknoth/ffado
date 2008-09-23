@@ -165,4 +165,125 @@ EfcPhyReconnectCmd::showEfcCmd()
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC Phy Reconnect\n");
 }
 
+// -- get flags 
+EfcGetFlagsCmd::EfcGetFlagsCmd()
+    : EfcCmd(EFC_CAT_HARDWARE_CONTROL, EFC_CMD_HWCTRL_GET_FLAGS)
+    , m_flags ( 0 )
+{
+}
+
+bool
+EfcGetFlagsCmd::serialize( Util::Cmd::IOSSerialize& se )
+{
+    bool result=true;
+
+    // the length should be specified before
+    // the header is serialized
+    m_length=EFC_HEADER_LENGTH_QUADLETS;
+
+    result &= EfcCmd::serialize ( se );
+
+    return result;
+}
+
+bool
+EfcGetFlagsCmd::deserialize( Util::Cmd::IISDeserialize& de )
+{
+    bool result=true;
+
+    result &= EfcCmd::deserialize ( de );
+
+    EFC_DESERIALIZE_AND_SWAP(de, &m_flags, result);
+
+    return result;
+}
+
+void
+EfcGetFlagsCmd::showEfcCmd()
+{
+    EfcCmd::showEfcCmd();
+    debugOutput(DEBUG_LEVEL_NORMAL, "EFC Get Flags:\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, " Flags       : %08X\n", m_flags);
+}
+
+// ----
+EfcChangeFlagsCmd::EfcChangeFlagsCmd()
+    : EfcCmd(EFC_CAT_HARDWARE_CONTROL, EFC_CMD_HWCTRL_CHANGE_FLAGS)
+    , m_setmask ( 0 )
+    , m_clearmask ( 0 )
+{
+}
+
+bool
+EfcChangeFlagsCmd::serialize( Util::Cmd::IOSSerialize& se )
+{
+    bool result=true;
+
+    // the length should be specified before
+    // the header is serialized
+    m_length=EFC_HEADER_LENGTH_QUADLETS+2;
+
+    result &= EfcCmd::serialize ( se );
+
+    result &= se.write(CondSwapToBus32(m_setmask), "SetMask" );
+    result &= se.write(CondSwapToBus32(m_clearmask), "ClearMask" );
+
+    return result;
+}
+
+bool
+EfcChangeFlagsCmd::deserialize( Util::Cmd::IISDeserialize& de )
+{
+    bool result=true;
+    result &= EfcCmd::deserialize ( de );
+    return result;
+}
+
+void
+EfcChangeFlagsCmd::showEfcCmd()
+{
+    EfcCmd::showEfcCmd();
+    debugOutput(DEBUG_LEVEL_NORMAL, "EFC Change flags:\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, " Set mask     : %08X\n", m_setmask);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Clear mask   : %08X\n", m_clearmask);
+}
+
+
+// ----
+EfcIdentifyCmd::EfcIdentifyCmd()
+    : EfcCmd(EFC_CAT_HARDWARE_CONTROL, EFC_CMD_HWCTRL_IDENTIFY)
+{
+}
+
+bool
+EfcIdentifyCmd::serialize( Util::Cmd::IOSSerialize& se )
+{
+    bool result=true;
+
+    // the length should be specified before
+    // the header is serialized
+    m_length=EFC_HEADER_LENGTH_QUADLETS;
+
+    result &= EfcCmd::serialize ( se );
+
+    return result;
+}
+
+bool
+EfcIdentifyCmd::deserialize( Util::Cmd::IISDeserialize& de )
+{
+    bool result=true;
+
+    result &= EfcCmd::deserialize ( de );
+
+    return result;
+}
+
+void
+EfcIdentifyCmd::showEfcCmd()
+{
+    EfcCmd::showEfcCmd();
+    debugOutput(DEBUG_LEVEL_NORMAL, "EFC Identify\n");
+}
+
 } // namespace FireWorks

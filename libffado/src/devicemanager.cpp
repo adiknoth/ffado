@@ -31,6 +31,7 @@
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
+#include "libieee1394/IsoHandlerManager.h"
 
 #include "libstreaming/generic/StreamProcessor.h"
 #include "libstreaming/StreamProcessorManager.h"
@@ -84,12 +85,12 @@ IMPL_DEBUG_MODULE( DeviceManager, DeviceManager, DEBUG_LEVEL_NORMAL );
 
 DeviceManager::DeviceManager()
     : Control::Container(NULL, "devicemanager") // this is the control root node
-    , m_avDevicesLock( new Util::PosixMutex() )
-    , m_BusResetLock( new Util::PosixMutex() )
-    , m_processorManager( new Streaming::StreamProcessorManager() )
+    , m_DeviceListLock( new Util::PosixMutex("DEVLST") )
+    , m_BusResetLock( new Util::PosixMutex("DEVBR") )
+    , m_processorManager( new Streaming::StreamProcessorManager( *this ) )
     , m_deviceStringParser( new DeviceStringParser() )
+    , m_configuration ( new Util::Configuration() )
     , m_used_cache_last_time( false )
-    , m_ignore_busreset( false )
     , m_thread_realtime( false )
     , m_thread_priority( 0 )
 {
@@ -99,7 +100,13 @@ DeviceManager::DeviceManager()
 
 DeviceManager::~DeviceManager()
 {
-    m_avDevicesLock->Lock(); // make sure nobody is using this
+    // save configuration
+    if(!m_configuration->save()) {
+        debugWarning("could not save configuration\n");
+    }
+
+    m_BusResetLock->Lock(); // make sure we are not handling a busreset.
+    m_DeviceListLock->Lock(); // make sure nobody is using this
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
@@ -109,19 +116,22 @@ DeviceManager::~DeviceManager()
         }
         delete *it;
     }
-    m_avDevicesLock->Unlock();
-    delete m_avDevicesLock;
+    m_DeviceListLock->Unlock();
 
     // the SP's are automatically unregistered from the SPM
     delete m_processorManager;
 
+    // the device list is empty, so wake up any waiting
+    // reset handlers
+    m_BusResetLock->Unlock();
+
+    // remove the bus-reset handlers
     for ( FunctorVectorIterator it = m_busreset_functors.begin();
           it != m_busreset_functors.end();
           ++it )
     {
         delete *it;
     }
-    delete m_BusResetLock;
 
     for ( Ieee1394ServiceVectorIterator it = m_1394Services.begin();
           it != m_1394Services.end();
@@ -130,6 +140,8 @@ DeviceManager::~DeviceManager()
         delete *it;
     }
 
+    delete m_DeviceListLock;
+    delete m_BusResetLock;
     delete m_deviceStringParser;
 }
 
@@ -159,6 +171,10 @@ DeviceManager::initialize()
     assert(m_1394Services.size() == 0);
     assert(m_busreset_functors.size() == 0);
 
+    m_configuration->openFile( "temporary", Util::Configuration::eFM_Temporary );
+    m_configuration->openFile( USER_CONFIG_FILE, Util::Configuration::eFM_ReadWrite );
+    m_configuration->openFile( SYSTEM_CONFIG_FILE, Util::Configuration::eFM_ReadOnly );
+
     int nb_detected_ports = Ieee1394Service::detectNbPorts();
     if (nb_detected_ports < 0) {
         debugFatal("Failed to detect the number of 1394 adapters. Is the IEEE1394 stack loaded (raw1394)?\n");
@@ -184,9 +200,9 @@ DeviceManager::initialize()
             return false;
         }
         // add the bus reset handler
-        Util::Functor* tmp_busreset_functor = new Util::MemberFunctor0< DeviceManager*,
-                    void (DeviceManager::*)() >
-                    ( this, &DeviceManager::busresetHandler, false );
+        Util::Functor* tmp_busreset_functor = new Util::MemberFunctor1< DeviceManager*,
+                    void (DeviceManager::*)(Ieee1394Service &), Ieee1394Service & >
+                    ( this, &DeviceManager::busresetHandler, *tmp1394Service, false );
         if ( !tmp_busreset_functor ) {
             debugFatal( "Could not create busreset handler for port %d\n", port );
             return false;
@@ -220,35 +236,45 @@ DeviceManager::isSpecStringValid(std::string s) {
 }
 
 void
-DeviceManager::busresetHandler()
+DeviceManager::busresetHandler(Ieee1394Service &service)
 {
     // serialize bus reset handling since it can be that a new one occurs while we're
     // doing stuff.
+    debugOutput( DEBUG_LEVEL_NORMAL, "Bus reset detected on service %p...\n", &service );
     Util::MutexLockHelper lock(*m_BusResetLock);
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Bus reset...\n" );
-    if(m_ignore_busreset) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, " ignoring...\n" );
-        return;
-    }
+    debugOutput( DEBUG_LEVEL_NORMAL, " handling busreset...\n" );
 
-    // FIXME: what port was the bus reset on?
-    // FIXME: what if the devices are gone?
+    // FIXME: what if the devices are gone? (device should detect this!)
     // propagate the bus reset to all avDevices
-    m_avDevicesLock->Lock(); // make sure nobody is using this
+    m_DeviceListLock->Lock(); // make sure nobody is using this
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )
     {
-        (*it)->handleBusReset();
+        if(&service == &((*it)->get1394Service())) {
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "issue busreset on device GUID %s\n",
+                        (*it)->getConfigRom().getGuidString().c_str());
+            (*it)->handleBusReset();
+        } else {
+            debugOutput(DEBUG_LEVEL_NORMAL,
+                        "skipping device GUID %s since not on service %p\n",
+                        (*it)->getConfigRom().getGuidString().c_str(), &service);
+        }
     }
-    m_avDevicesLock->Unlock();
+    m_DeviceListLock->Unlock();
+
+    // now that the devices have been updates, we can request to update the iso streams
+    if(!service.getIsoHandlerManager().handleBusReset()) {
+        debugError("IsoHandlerManager failed to handle busreset\n");
+    }
 
     // notify the streamprocessormanager of the busreset
-    if(m_processorManager) {
-        m_processorManager->handleBusReset();
-    } else {
-        debugWarning("No valid SPM\n");
-    }
+//     if(m_processorManager) {
+//         m_processorManager->handleBusReset(service);
+//     } else {
+//         debugWarning("No valid SPM\n");
+//     }
 
     // rediscover to find new devices
     // (only for the control server ATM, streaming can't dynamically add/remove devices)
@@ -260,7 +286,9 @@ DeviceManager::busresetHandler()
     signalNotifiers(m_busResetNotifiers);
 
     // display the new state
-    showDeviceInfo();
+    if(getDebugLevel() >= DEBUG_LEVEL_VERBOSE) {
+        showDeviceInfo();
+    }
 }
 
 void
@@ -316,6 +344,7 @@ DeviceManager::unregisterNotification(notif_vec_t& list, Util::Functor *handler)
 bool
 DeviceManager::discover( bool useCache, bool rediscover )
 {
+    debugOutput( DEBUG_LEVEL_NORMAL, "Starting discovery...\n" );
     useCache = useCache && ENABLE_DISCOVERY_CACHE;
     m_used_cache_last_time = useCache;
     bool slaveMode=false;
@@ -369,7 +398,7 @@ DeviceManager::discover( bool useCache, bool rediscover )
 
     // notify that we are going to manipulate the list
     signalNotifiers(m_preUpdateNotifiers);
-    m_avDevicesLock->Lock(); // make sure nobody starts using the list
+    m_DeviceListLock->Lock(); // make sure nobody starts using the list
     if(rediscover) {
 
         FFADODeviceVector discovered_devices_on_bus;
@@ -634,7 +663,7 @@ DeviceManager::discover( bool useCache, bool rediscover )
         debugOutput( DEBUG_LEVEL_NORMAL, "discovery finished...\n" );
     }
 
-    m_avDevicesLock->Unlock();
+    m_DeviceListLock->Unlock();
     // notify any clients
     signalNotifiers(m_postUpdateNotifiers);
     return true;
@@ -824,14 +853,14 @@ DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
 {
 #ifdef ENABLE_BEBOB
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying BeBoB...\n" );
-    if ( BeBoB::AvDevice::probe( *configRom, generic ) ) {
+    if ( BeBoB::AvDevice::probe( getConfiguration(), *configRom, generic ) ) {
         return BeBoB::AvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_FIREWORKS
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying ECHO Audio FireWorks...\n" );
-    if ( FireWorks::Device::probe( *configRom, generic ) ) {
+    if ( FireWorks::Device::probe( getConfiguration(), *configRom, generic ) ) {
         return FireWorks::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
@@ -839,14 +868,14 @@ DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
 // we want to try the non-generic AV/C platforms before trying the generic ones
 #ifdef ENABLE_GENERICAVC
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Generic AV/C...\n" );
-    if ( GenericAVC::AvDevice::probe( *configRom, generic ) ) {
+    if ( GenericAVC::AvDevice::probe( getConfiguration(), *configRom, generic ) ) {
         return GenericAVC::AvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_MOTU
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Motu...\n" );
-    if ( Motu::MotuDevice::probe( *configRom, generic ) ) {
+    if ( Motu::MotuDevice::probe( getConfiguration(), *configRom, generic ) ) {
         return Motu::MotuDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
@@ -1017,7 +1046,6 @@ DeviceManager::deinitialize()
     return true;
 }
 
-
 void
 DeviceManager::setVerboseLevel(int l)
 {
@@ -1025,6 +1053,7 @@ DeviceManager::setVerboseLevel(int l)
     Control::Element::setVerboseLevel(l);
     m_processorManager->setVerboseLevel(l);
     m_deviceStringParser->setVerboseLevel(l);
+    m_configuration->setVerboseLevel(l);
     for ( FFADODeviceVectorIterator it = m_avDevices.begin();
           it != m_avDevices.end();
           ++it )

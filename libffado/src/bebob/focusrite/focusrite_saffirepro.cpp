@@ -25,7 +25,7 @@
 #include "focusrite_cmd.h"
 
 #include "devicemanager.h"
-#include "libutil/Time.h"
+#include "libutil/SystemTimeSource.h"
 
 #include "libutil/ByteSwap.h"
 #include <cstring>
@@ -366,7 +366,10 @@ SaffireProDevice::destroyMixer()
 
 void
 SaffireProDevice::updateClockSources() {
+    m_active_clocksource = &m_internal_clocksource;
+
     m_internal_clocksource.type = FFADODevice::eCT_Internal;
+    m_internal_clocksource.active = false;
     m_internal_clocksource.valid = true;
     m_internal_clocksource.locked = true;
     m_internal_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL;
@@ -374,6 +377,7 @@ SaffireProDevice::updateClockSources() {
     m_internal_clocksource.description = "Internal";
 
     m_spdif_clocksource.type = FFADODevice::eCT_SPDIF;
+    m_spdif_clocksource.active = false;
     m_spdif_clocksource.valid = true;
     m_spdif_clocksource.locked = false;
     m_spdif_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_SPDIF;
@@ -381,6 +385,7 @@ SaffireProDevice::updateClockSources() {
     m_spdif_clocksource.description = "S/PDIF";
 
     m_wordclock_clocksource.type = FFADODevice::eCT_WordClock;
+    m_wordclock_clocksource.active = false;
     m_wordclock_clocksource.valid = true;
     m_wordclock_clocksource.locked = false;
     m_wordclock_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK;
@@ -389,6 +394,7 @@ SaffireProDevice::updateClockSources() {
 
     if(isPro26()) {
         m_adat1_clocksource.type = FFADODevice::eCT_ADAT;
+        m_adat1_clocksource.active = false;
         m_adat1_clocksource.valid = true;
         m_adat1_clocksource.locked = false;
         m_adat1_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1;
@@ -396,55 +402,105 @@ SaffireProDevice::updateClockSources() {
         m_adat1_clocksource.description = "ADAT 1";
 
         m_adat2_clocksource.type = FFADODevice::eCT_ADAT;
+        m_adat2_clocksource.active = false;
         m_adat2_clocksource.valid = true;
         m_adat2_clocksource.locked = false;
         m_adat2_clocksource.id = FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2;
         m_adat2_clocksource.slipping = false;
         m_adat2_clocksource.description = "ADAT 2";
     }
+
+    // figure out the active source
+    uint32_t sync;
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG, &sync ) ){
+        debugError( "getSpecificValue failed\n" );
+        m_internal_clocksource.active=true;
+        return;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, "SYNC_CONFIG field value: %08lX\n", sync );
+
+    switch(sync & 0xFF) {
+        default:
+            debugWarning( "Unexpected SYNC_CONFIG field value: %08lX\n", sync );
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
+            m_internal_clocksource.active=true;
+            m_active_clocksource = &m_internal_clocksource;
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_SPDIF:
+            m_spdif_clocksource.active=true;
+            m_active_clocksource = &m_spdif_clocksource;
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1:
+            m_wordclock_clocksource.active=true;
+            m_active_clocksource = &m_wordclock_clocksource;
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
+            m_adat1_clocksource.active=true;
+            m_active_clocksource = &m_adat1_clocksource;
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+            m_adat2_clocksource.active=true;
+            m_active_clocksource = &m_adat2_clocksource;
+            break;
+    }
+    switch((sync >> 8) & 0xFF) {
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
+            // always locked
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_SPDIF:
+            m_spdif_clocksource.locked=true;
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1:
+            m_wordclock_clocksource.locked=true;
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
+            m_adat1_clocksource.locked=true;
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+            m_adat2_clocksource.locked=true;
+            break;
+        default:
+            debugWarning( "Unexpected SYNC_CONFIG_STATE field value: %08lX\n", sync );
+    }
 }
 
 FFADODevice::ClockSource
 SaffireProDevice::getActiveClockSource()
 {
-    uint32_t sync;
-    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG, &sync ) ){
-        debugError( "getSpecificValue failed\n" );
-        return ClockSource();
-    }
-
-    updateClockSources(); // make sure the current state is reflected in the clocksources
-
-    switch(sync) {
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
-            return m_internal_clocksource;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_SPDIF:
-            return m_spdif_clocksource;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1:
-            return m_adat1_clocksource;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
-            return m_adat2_clocksource;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
-            return m_wordclock_clocksource;
-        default:
-            debugWarning( "Unexpected SYNC_CONFIG field value: %08lX\n", sync );
-            return ClockSource();
-    }
+    updateClockSources();
+    return *m_active_clocksource;
 }
 
 bool
 SaffireProDevice::setActiveClockSource(ClockSource s)
 {
+    // prevent busresets from being handled immediately
+    getDeviceManager().lockBusResetHandler();
+    unsigned int gen_before = get1394Service().getGeneration();
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "set active source to %d...\n", s.id);
     if ( !setSpecificValue(FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG, s.id ) ){
-        debugError( "detSpecificValue failed\n" );
+        debugError( "setSpecificValue failed\n" );
+        getDeviceManager().unlockBusResetHandler();
         return false;
     }
+
+    // the device can do a bus reset at this moment
+    Util::SystemTimeSource::SleepUsecRelative(1000 * 1000);
+    if(!get1394Service().waitForBusResetStormToEnd(10, 2000)) {
+        debugWarning("Device doesn't stop bus-resetting\n");
+    }
+    unsigned int gen_after = get1394Service().getGeneration();
+    debugOutput(DEBUG_LEVEL_VERBOSE, " gen: %d=>%d\n", gen_before, gen_after);
+
+    getDeviceManager().unlockBusResetHandler();
     return true;
 }
 
 FFADODevice::ClockSourceVector
 SaffireProDevice::getSupportedClockSources()
 {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "listing...\n");
     FFADODevice::ClockSourceVector r;
     r.push_back(m_internal_clocksource);
     r.push_back(m_spdif_clocksource);
@@ -570,12 +626,16 @@ SaffireProDevice::setSamplingFrequency( int s )
 
         const int max_tries = 2;
         int ntries = max_tries+1;
-        
-        // FIXME: not very clean
-        getDeviceManager().ignoreBusResets(true);
-        
+
+        // the device behaves like a pig when changing samplerate,
+        // generating a bunch of bus-resets.
+        // we don't want the busreset handler to run while we are
+        // changing the samplerate. however it has to run after the
+        // device finished, since the bus resets might have influenced
+        // other attached devices.
+        getDeviceManager().lockBusResetHandler();
         unsigned int gen_before = get1394Service().getGeneration();
-        
+
         while(--ntries) {
             if (rebootOnSamplerateChange) {
                 debugOutput( DEBUG_LEVEL_VERBOSE, "Setting samplerate with reboot\n");
@@ -586,7 +646,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                 debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for device to finish rebooting...\n");
 
                 // the device needs quite some time to reboot
-                SleepRelativeUsec(2 * 1000 * 1000);
+                Util::SystemTimeSource::SleepUsecRelative(2 * 1000 * 1000);
 
                 int timeout = 5; // multiples of 1s
                 // wait for a busreset to occur
@@ -594,14 +654,14 @@ SaffireProDevice::setSamplingFrequency( int s )
                        && --timeout)
                 {
                     // wait for a while
-                    SleepRelativeUsec(1000 * 1000);
+                    Util::SystemTimeSource::SleepUsecRelative(1000 * 1000);
                 }
                 if (!timeout) {
                     debugOutput(DEBUG_LEVEL_VERBOSE, "Device did not reset itself, forcing reboot...\n");
                     rebootDevice();
 
                     // the device needs quite some time to reboot
-                    SleepRelativeUsec(2 * 1000 * 1000);
+                    Util::SystemTimeSource::SleepUsecRelative(2 * 1000 * 1000);
 
                     // wait for the device to finish the reboot
                     timeout = 10; // multiples of 1s
@@ -609,37 +669,27 @@ SaffireProDevice::setSamplingFrequency( int s )
                            && --timeout)
                     {
                         // wait for a while
-                        SleepRelativeUsec(1000 * 1000);
+                        Util::SystemTimeSource::SleepUsecRelative(1000 * 1000);
                     }
                     if (!timeout) {
                         debugError( "Device did not reset itself after forced reboot...\n");
+                        getDeviceManager().unlockBusResetHandler();
                         return false;
                     }
                 }
 
                 // so we know the device is rebooting
                 // now wait until it stops generating busresets
-                timeout = 10;
-                unsigned int gen_current;
-                do {
-                    gen_current=get1394Service().getGeneration();
-                    debugOutput(DEBUG_LEVEL_VERBOSE, "Waiting... (gen: %u)\n", gen_current);
-
-                    // wait for a while
-                    SleepRelativeUsec(4 * 1000 * 1000);
-                } while (gen_current != get1394Service().getGeneration()
-                         && --timeout);
-
-                if (!timeout) {
-                    debugError( "Device did not recover from reboot...\n");
+                if(!get1394Service().waitForBusResetStormToEnd(20, 4000)) {
+                    debugError("The device keeps behaving like a pig...\n");
+                    getDeviceManager().unlockBusResetHandler();
                     return false;
                 }
-
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Device available (gen: %u => %u)...\n", 
                     gen_before, get1394Service().getGeneration());
 
                 // wait some more
-                SleepRelativeUsec(1 * 1000 * 1000);
+                Util::SystemTimeSource::SleepUsecRelative(1 * 1000 * 1000);
 
                 // we have to rediscover the device
                 if (discover()) break;
@@ -650,7 +700,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                 }
             }
 
-            int verify=getSamplingFrequency();
+            int verify = getSamplingFrequency();
             debugOutput( DEBUG_LEVEL_VERBOSE,
                         "setSampleRate (try %d): requested samplerate %d, device now has %d\n", 
                         max_tries-ntries, s, verify );
@@ -661,8 +711,8 @@ SaffireProDevice::setSamplingFrequency( int s )
             debugOutput( DEBUG_LEVEL_VERBOSE, "setSampleRate (try %d) failed. Try again...\n" );
         }
 
-        // FIXME: not very clean
-        getDeviceManager().ignoreBusResets(false);
+        // make the busreset handlers run
+        getDeviceManager().unlockBusResetHandler();
 
         if (ntries==0) {
             debugError("Setting samplerate failed...\n");

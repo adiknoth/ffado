@@ -52,19 +52,19 @@ public:
     
     virtual void showEfcCmd();
     
-    bool hasSoftwarePhantom()
+    bool hasSoftwarePhantom() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_PHANTOM);};
-    bool hasDSP()
+    bool hasDSP() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_DSP);};
-    bool hasFPGA()
+    bool hasFPGA() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_FPGA);};
-    bool hasSpdifCoax()
+    bool hasSpdifCoax() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_SPDIF_COAX_SUPPORTED);};
-    bool hasSpdifAESEBUXLR()
+    bool hasSpdifAESEBUXLR() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_SPDIF_AESEBUXLR_SUPPORTED);};
-    bool hasMirroring()
+    bool hasMirroring() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_MIRRORING_SUPPORTED);};
-    bool hasDynAddr()
+    bool hasDynAddr() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_DYNADDR_SUPPORTED);};
 
     uint32_t            m_flags;

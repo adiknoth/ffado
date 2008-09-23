@@ -74,6 +74,7 @@ ffado_source = env.Split( '\
 	libutil/DelayLockedLoop.cpp \
 	libutil/IpcRingBuffer.cpp \
 	libutil/PacketBuffer.cpp \
+	libutil/Configuration.cpp \
 	libutil/OptionContainer.cpp \
 	libutil/PosixMessageQueue.cpp \
 	libutil/PosixSharedMemory.cpp \
@@ -123,16 +124,13 @@ bebob_pkgdata = env.Split( '\
 	maudio/refdesign.xml \
 	maudio/fw410.xml \
 	maudio/fwap.xml \
-	bebob/ffado_driver_bebob.txt \
 ' )
 
 genericavc_source =  env.Split( '\
 	genericavc/avc_avdevice.cpp \
-	genericavc/avc_vendormodel.cpp \
 ' )
 
 genericavc_pkgdata = env.Split( '\
-        genericavc/ffado_driver_genericavc.txt \
 ' )	
 
 fireworks_source =  env.Split( '\
@@ -147,11 +145,11 @@ fireworks_source =  env.Split( '\
 	fireworks/efc/efc_cmds_mixer.cpp \
 	fireworks/efc/efc_cmds_monitor.cpp \
 	fireworks/efc/efc_cmds_ioconfig.cpp \
+	fireworks/fireworks_session_block.cpp \
 	fireworks/audiofire/audiofire_device.cpp \
 ' )
 
 fireworks_pkgdata =  env.Split( '\
-        fireworks/ffado_driver_fireworks.txt \
 ' )
 
 motu_source = env.Split( '\
@@ -231,6 +229,11 @@ if not env.GetOption( "clean" ):
 		libenv.MergeFlags( env['LIBXML26_FLAGS'] )
 	else:
 		libenv.PrependUnique( LIBS=["expat"] )
+
+# add the libconfig
+libenv.AppendUnique( CPPPATH=["#/external/libconfig"] )
+libenv.PrependUnique( LIBPATH=[env['build_base']+"external/libconfig"] )
+libenv.PrependUnique( LIBS=["libconfigpp"] )
 
 #env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
 ffadolib = libenv.SharedLibrary( "ffado", source )

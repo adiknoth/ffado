@@ -68,19 +68,19 @@ protected:
 @note this is a workaround and should be done more elegant
 */
 class SamplerateSelect
-: public Discrete
+: public Enum
 {
 public:
     SamplerateSelect(FFADODevice &);
     virtual ~SamplerateSelect() {};
 
-    virtual bool setValue(int v);
-    virtual int getValue();
-    virtual bool setValue(int idx, int v);
-    virtual int getValue(int idx);
+    virtual bool select(int idx);
+    virtual int selected();
+    virtual int count();
+    virtual std::string getEnumLabel(int idx);
 
-    virtual int getMinimum();
-    virtual int getMaximum();
+    virtual void show();
+
 protected:
     FFADODevice &m_Device;
 };

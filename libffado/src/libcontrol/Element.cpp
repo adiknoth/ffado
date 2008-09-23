@@ -49,7 +49,7 @@ Element::Element(Element *parent)
     // no parent, we are the root of an independent control tree
     // this means we have to create a lock
     if(parent == NULL) {
-        m_element_lock = new Util::PosixMutex();
+        m_element_lock = new Util::PosixMutex("CTLEL");
     }
 }
 
@@ -64,7 +64,7 @@ Element::Element(Element *parent, std::string n)
     // no parent, we are the root of an independent control tree
     // this means we have to create a lock
     if(parent == NULL) {
-        m_element_lock = new Util::PosixMutex();
+        m_element_lock = new Util::PosixMutex("CTLEL");
     }
 }
 
@@ -157,6 +157,19 @@ Element::emitSignal(int id, int value)
     return true;
 }
 
+bool
+Element::emitSignal(int id)
+{
+    for ( std::vector< SignalFunctor* >::iterator it = m_signalHandlers.begin();
+          it != m_signalHandlers.end();
+          ++it )
+    {
+        SignalFunctor *f = *it;
+        if(f && f->m_id == id) (*f)();
+    }
+    return true;
+}
+
 //// --- Container --- ////
 Container::Container(Element *p)
 : Element(p)
@@ -165,6 +178,10 @@ Container::Container(Element *p)
 
 Container::Container(Element *p, std::string n)
 : Element(p, n)
+{
+}
+
+Container::~Container()
 {
 }
 

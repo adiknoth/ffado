@@ -101,12 +101,20 @@ for var in vars_to_check:
 	else:
 		buildenv[var]=''
 
-env = Environment( tools=['default','scanreplace','pyuic','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
+env = Environment( tools=['default','scanreplace','pyuic','pyuic4','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
 if os.environ.has_key('CC'):
 	env['CC'] = os.environ['CC']
 if os.environ.has_key('CXX'):
 	env['CXX'] = os.environ['CXX']
+
+# grab OS CFLAGS / CCFLAGS
+env['OS_CFLAGS']=[]
+if os.environ.has_key('CFLAGS'):
+	env['OS_CFLAGS'] = os.environ['CFLAGS']
+env['OS_CCFLAGS']=[]
+if os.environ.has_key('CCFLAGS'):
+	env['OS_CCFLAGS'] = os.environ['CCFLAGS']
 
 Help( """
 For building ffado you can set different options as listed below. You have to
@@ -184,6 +192,7 @@ tests = {
 }
 tests.update( env['PKGCONFIG_TESTS'] )
 tests.update( env['PYUIC_TESTS'] )
+tests.update( env['PYUIC4_TESTS'] )
 
 conf = Configure( env,
 	custom_tests = tests,
@@ -282,8 +291,21 @@ results above get rechecked.
 	#
 
 	# PyQT checks
+        build_mixer = False
 	if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
 		env['PYUIC'] = True
+		build_mixer = True
+	
+		if conf.CheckForApp( "xdg-desktop-menu --help" ):
+			env['XDG_TOOLS'] = True
+		else:
+			print """
+	I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
+	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
+	"""
+	elif conf.CheckForApp( "which pyuic4" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'PyQt4' ):
+		env['PYUIC4'] = True
+		build_mixer = True
 	
 		if conf.CheckForApp( "xdg-desktop-menu --help" ):
 			env['XDG_TOOLS'] = True
@@ -293,9 +315,9 @@ results above get rechecked.
 	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
 	"""
 	
-	else:
+	if not build_mixer:
 		print """
-	I couldn't find all the prerequisites ('pyuic' and the python-modules 'dbus' and
+	I couldn't find all the prerequisites ('pyuic' / 'pyuic4' and the python-modules 'dbus' and
 	'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
 	Therefor the mixer won't get installed.
 	"""
@@ -398,6 +420,8 @@ config_kernel = 2
 config_os = 3
 config = config_guess.split ("-")
 
+needs_fPIC = False
+
 # Autodetect
 if env['DIST_TARGET'] == 'auto':
     if re.search ("x86_64", config[config_cpu]) != None:
@@ -480,14 +504,24 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
         #env['USE_SSE3'] = 1
 
     # build for 64-bit userland?
-    if env['DIST_TARGET'] == "powerpc64" or env['DIST_TARGET'] == "x86_64":
-        print "Doing a 64-bit build"
+    if env['DIST_TARGET'] == "powerpc64":
+        print "Doing a 64-bit PowerPC build"
         env.AppendUnique( CCFLAGS=["-m64"] )
         env.AppendUnique( CFLAGS=["-m64"] )
+    elif env['DIST_TARGET'] == "x86_64":
+        print "Doing a 64-bit x86 build"
+        env.AppendUnique( CCFLAGS=["-m64"] )
+        env.AppendUnique( CFLAGS=["-m64"] )
+        needs_fPIC = True
     else:
         print "Doing a 32-bit build"
 	env.AppendUnique( CCFLAGS=["-m32"] )
 	env.AppendUnique( CFLAGS=["-m32"] )
+
+if needs_fPIC or '-fPIC' in env['OS_CFLAGS']:
+    env.AppendUnique( CFLAGS=["-fPIC"] )
+if needs_fPIC or '-fPIC' in env['OS_CCFLAGS']:
+    env.AppendUnique( CCFLAGS=["-fPIC"] )
 
 # end of processor-specific section
 if env['ENABLE_OPTIMIZATIONS']:
@@ -501,7 +535,8 @@ env['REVISION'] = os.popen('svnversion .').read()[:-1]
 # We'll just use the last bit.
 env['REVISION'] = env['REVISION'].split(':')[-1]
 
-if env['REVISION'] == 'exported':
+# try to circumvent localized versions
+if len(env['REVISION']) >= 5 and env['REVISION'][0:6] == 'export':
 	env['REVISION'] = ''
 
 env['FFADO_API_VERSION']=FFADO_API_VERSION
@@ -512,6 +547,9 @@ env['LIBVERSION'] = "1.0.0"
 
 env['CONFIGDIR'] = "~/.ffado"
 env['CACHEDIR'] = "~/.ffado"
+
+env['USER_CONFIG_FILE'] = env['CONFIGDIR'] + "/configuration"
+env['SYSTEM_CONFIG_FILE'] = env['sharedir'] + "/configuration"
 
 env['REGISTRATION_URL'] = "http://ffado.org/deviceregistration/register.php?action=register"
 
@@ -539,6 +577,8 @@ env.Depends( "version.h", env.Value(env['REVISION']))
 env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
+
+env.Install( env['SYSTEM_CONFIG_FILE'], 'configuration' )
 
 subdirs=['external','src','libffado','tests','support','doc']
 if build_base:
@@ -599,5 +639,6 @@ findcommand = "find . \( -path \"*.h\" -o -path \"*.cpp\" -o -path \"*.c\" \) \!
 env.Command( "tags", "", findcommand + " |xargs ctags" )
 env.Command( "TAGS", "", findcommand + " |xargs etags" )
 env.AlwaysBuild( "tags", "TAGS" )
-env.NoCache( "tags", "TAGS" )
+if 'NoCache' in dir(env):
+    env.NoCache( "tags", "TAGS" )
 

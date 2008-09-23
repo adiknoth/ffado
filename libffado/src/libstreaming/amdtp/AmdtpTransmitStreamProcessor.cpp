@@ -194,7 +194,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         if(cycles_until_transmit < 0)
         {
             // we are too late
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+            debugOutput(DEBUG_LEVEL_VERBOSE,
                         "Too late: CY=%04u, TC=%04u, CUT=%04d, TSP=%011llu (%04u)\n",
                         CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                         transmit_at_cycle, cycles_until_transmit,
@@ -491,7 +491,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsSilence(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     for (i = 0; i < m_nb_audio_ports; i++) {
         target_event = (quadlet_t *)(data + i);
@@ -522,7 +522,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     float * client_buffers[4];
     float tmp_values[4] __attribute__ ((aligned (16)));
@@ -542,7 +542,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
 
     // this assumes that audio ports are sorted by position,
     // and that there are no gaps
-    for (i = 0; i < m_nb_audio_ports-4; i += 4) {
+    for (i = 0; i < ((int)m_nb_audio_ports)-4; i += 4) {
         struct _MBLA_port_cache *p;
 
         // get the port buffers
@@ -614,7 +614,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
 
     // do remaining ports
     // NOTE: these can be time-SSE'd
-    for (; i < m_nb_audio_ports; i++) {
+    for (; i < (int)m_nb_audio_ports; i++) {
         struct _MBLA_port_cache &p = m_audio_ports.at(i);
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
@@ -714,7 +714,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     uint32_t *client_buffers[4];
     uint32_t tmp_values[4] __attribute__ ((aligned (16)));
@@ -728,7 +728,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
 
     // this assumes that audio ports are sorted by position,
     // and that there are no gaps
-    for (i = 0; i < m_nb_audio_ports-4; i += 4) {
+    for (i = 0; i < ((int)m_nb_audio_ports)-4; i += 4) {
         struct _MBLA_port_cache *p;
 
         // get the port buffers
@@ -788,7 +788,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
 
     // do remaining ports
     // NOTE: these can be time-SSE'd
-    for (; i < m_nb_audio_ports; i++) {
+    for (; i < ((int)m_nb_audio_ports); i++) {
         struct _MBLA_port_cache &p = m_audio_ports.at(i);
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
@@ -871,7 +871,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     for (i = 0; i < m_nb_audio_ports; i++) {
         struct _MBLA_port_cache &p = m_audio_ports.at(i);
@@ -912,7 +912,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
 {
     unsigned int j;
     quadlet_t *target_event;
-    unsigned int i;
+    int i;
 
     for (i = 0; i < m_nb_audio_ports; i++) {
         struct _MBLA_port_cache &p = m_audio_ports.at(i);
@@ -961,7 +961,8 @@ AmdtpTransmitStreamProcessor::encodeMidiPortsSilence(quadlet_t *data,
                                                      unsigned int nevents)
 {
     quadlet_t *target_event;
-    unsigned int i,j;
+    int i;
+    unsigned int j;
 
     for (i = 0; i < m_nb_midi_ports; i++) {
         struct _MIDI_port_cache &p = m_midi_ports.at(i);
@@ -985,7 +986,8 @@ AmdtpTransmitStreamProcessor::encodeMidiPorts(quadlet_t *data,
                                               unsigned int nevents)
 {
     quadlet_t *target_event;
-    unsigned int i,j;
+    int i;
+    unsigned int j;
 
     for (i = 0; i < m_nb_midi_ports; i++) {
         struct _MIDI_port_cache &p = m_midi_ports.at(i);
@@ -1061,7 +1063,7 @@ AmdtpTransmitStreamProcessor::initPortCache() {
         }
     }
 
-    unsigned int idx;
+    int idx;
     for (idx = 0; idx < m_nb_audio_ports; idx++) {
         for(PortVectorIterator it = m_Ports.begin();
             it != m_Ports.end();
@@ -1071,7 +1073,7 @@ AmdtpTransmitStreamProcessor::initPortCache() {
             debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                         "idx %u: looking at port %s at position %u\n",
                         idx, (*it)->getName().c_str(), pinfo->getPosition());
-            if(pinfo->getPosition() == idx) {
+            if(pinfo->getPosition() == (unsigned int)idx) {
                 struct _MBLA_port_cache p;
                 p.port = dynamic_cast<AmdtpAudioPort *>(*it);
                 if(p.port == NULL) {
@@ -1130,7 +1132,7 @@ next_index:
 
 void
 AmdtpTransmitStreamProcessor::updatePortCache() {
-    unsigned int idx;
+    int idx;
     for (idx = 0; idx < m_nb_audio_ports; idx++) {
         struct _MBLA_port_cache& p = m_audio_ports.at(idx);
         AmdtpAudioPort *port = p.port;

@@ -28,6 +28,10 @@
 
 namespace FireWorks {
 
+#define FIREWORKS_EFC_FLAG_MIXER_ENABLED    1
+#define FIREWORKS_EFC_FLAG_SPDIF_PRO        2
+#define FIREWORKS_EFC_FLAG_SPDIF_RAW        4
+
 class EfcGetClockCmd : public EfcCmd
 {
 public:
@@ -79,6 +83,58 @@ public:
     { return "EfcPhyReconnectCmd"; }
 
     virtual void showEfcCmd();
+};
+
+
+class EfcGetFlagsCmd : public EfcCmd
+{
+public:
+    EfcGetFlagsCmd();
+    virtual ~EfcGetFlagsCmd() {};
+
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
+
+    virtual const char* getCmdName() const
+    { return "EfcGetFlagsCmd"; }
+
+    virtual void showEfcCmd();
+
+    uint32_t    m_flags;
+};
+
+class EfcChangeFlagsCmd : public EfcCmd
+{
+public:
+    EfcChangeFlagsCmd();
+    virtual ~EfcChangeFlagsCmd() {};
+
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
+
+    virtual const char* getCmdName() const
+    { return "EfcChangeFlagsCmd"; }
+
+    virtual void showEfcCmd();
+
+    uint32_t    m_setmask;
+    uint32_t    m_clearmask;
+};
+
+class EfcIdentifyCmd : public EfcCmd
+{
+public:
+    EfcIdentifyCmd();
+    virtual ~EfcIdentifyCmd() {};
+
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
+
+    virtual const char* getCmdName() const
+    { return "EfcIdentifyCmd"; }
+
+    virtual void showEfcCmd();
+
 };
 
 } // namespace FireWorks

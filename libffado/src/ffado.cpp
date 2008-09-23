@@ -98,6 +98,12 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t device_info, ffado_opt
 
     printMessage("%s built %s %s\n", ffado_get_version(), __DATE__, __TIME__);
 
+#if DEBUG_USE_MESSAGE_BUFFER
+    // ok
+#else
+    printMessage("FFADO built without realtime-safe message buffer support. This can cause xruns and is not recommended.\n");
+#endif
+
     if(!dev) {
         debugFatal( "Could not allocate streaming device\n" );
         return 0;

@@ -23,6 +23,7 @@
 
 #include "config.h"
 
+#include "devicemanager.h"
 #include "bebob/bebob_avdevice.h"
 #include "bebob/bebob_avdevice_subunit.h"
 #include "bebob/bebob_mixer.h"
@@ -37,8 +38,6 @@
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
-
-#include "genericavc/avc_vendormodel.h"
 
 #include "libavc/general/avc_plug_info.h"
 #include "libavc/general/avc_extended_plug_info.h"
@@ -81,7 +80,7 @@ AvDevice::~AvDevice()
 }
 
 bool
-AvDevice::probe( ConfigRom& configRom, bool generic )
+AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
         return false;
@@ -117,11 +116,8 @@ AvDevice::probe( ConfigRom& configRom, bool generic )
         unsigned int vendorId = configRom.getNodeVendorId();
         unsigned int modelId = configRom.getModelId();
 
-        GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
-        if ( vendorModel.parse() ) {
-            return vendorModel.isPresent( vendorId, modelId );
-        }
-        return false;
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_BeBoB;
     }
 }
 
@@ -173,23 +169,24 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     return NULL;
 }
 
+#define BEBOB_CHECK_AND_ADD_SR(v, x) \
+    { if(supportsSamplingFrequency(x)) \
+      v.push_back(x); }
 bool
 AvDevice::discover()
 {
     unsigned int vendorId = getConfigRom().getNodeVendorId();
     unsigned int modelId = getConfigRom().getModelId();
 
-    GenericAVC::VendorModel vendorModel( SHAREDIR "/ffado_driver_bebob.txt" );
-    if ( vendorModel.parse() ) {
-        m_model = vendorModel.find( vendorId, modelId );
-    }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
 
-    if (GenericAVC::VendorModel::isValid(m_model)) {
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_BeBoB) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                     m_model.vendor_name.c_str(),
-                     m_model.model_name.c_str());
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
     } else {
-        debugWarning("Using generic BeBoB support for unsupported device '%s %s'\n", 
+        debugWarning("Using generic BeBoB support for unsupported device '%s %s'\n",
                      getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
 
@@ -451,7 +448,6 @@ AvDevice::propagatePlugInfo() {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Skip plug info propagation\n");
     return true;
 }
-
 
 uint8_t
 AvDevice::getConfigurationIdSampleRate()

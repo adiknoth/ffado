@@ -41,11 +41,11 @@ using namespace std;
 const char *argp_program_version = "bridgeco-downloader 0.2";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
 const char *doc = "bridgeco-downloader -- firmware downloader application for BridgeCo devices\n\n"
-                    "OPERATION: display\n"
-                    "           setguid GUID\n"
-                    "           firmware FILE\n"
-                    "           cne FILE\n"
-                    "           bcd FILE\n";
+                    "OPERATION: GUID display\n"
+                    "           GUID setguid NEW_GUID\n"
+                    "           GUID firmware FILE\n"
+                    "           GUID cne FILE\n"
+                    "           GUID bcd FILE\n";
 static struct argp_option _options[] = {
     {"verbose",   'v', "level",     0,  "Produce verbose output" },
     {"port",      'p', "PORT",      0,  "Set port" },
@@ -87,7 +87,7 @@ main( int argc, char** argv )
     for (int i = 0; i < service.getNodeCount(); i++) {
         ConfigRom configRom(service, i);
         configRom.initialize();
-        
+
         if (configRom.getGuid() == guid)
             node_id = configRom.getNodeId();
     }
@@ -134,6 +134,7 @@ main( int argc, char** argv )
             return -1;
         } else {
             cout << "Firmware download was successful" << endl;
+            cout << "Please reboot the device by removing the power and firewire connections." << endl;
         }
     } else if ( strcmp( args->args[1], "cne" ) == 0 ) {
         if (!args->args[2] ) {
@@ -147,6 +148,7 @@ main( int argc, char** argv )
             return -1;
         } else {
             cout << "CnE download was successful" << endl;
+            cout << "Please reboot the device by removing the power and firewire connections." << endl;
         }
     } else if ( strcmp( args->args[1], "display" ) == 0 ) {
         // nothing to do

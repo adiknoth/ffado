@@ -24,11 +24,15 @@
 
 #include "downloader.h"
 
+#include "config.h"
+
 #include "src/fireworks/fireworks_device.h"
 #include "src/fireworks/fireworks_firmware.h"
+#include "src/fireworks/fireworks_session_block.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
+#include "libutil/Configuration.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -48,7 +52,7 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 ////////////////////////////////////////////////
 // arg parsing
 ////////////////////////////////////////////////
-const char *argp_program_version = "fireworks-downloader 0.2";
+const char *argp_program_version = "fireworks-downloader 0.3";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
 const char *doc = "fireworks-downloader -- firmware downloader application for ECHO Fireworks devices\n\n"
                     "OPERATIONS:\n" 
@@ -66,6 +70,14 @@ const char *doc = "fireworks-downloader -- firmware downloader application for E
                     "           verify FILE\n"
                     "              Verify that the firmware contained in the device corresponds\n"
                     "              to the one contained in FILE\n"
+                    "           session_display\n"
+                    "              show information about the session on the device\n"
+                    "           session_info FILE\n"
+                    "              show information about the session in FILE\n"
+                    "           session_download FILE\n"
+                    "              Download the session content from the device to FILE\n"
+                    "           session_upload FILE\n"
+                    "              Upload the session from FILE to the device\n"
                     ;
 
 static struct argp_option _options[] = {
@@ -147,6 +159,23 @@ main( int argc, char** argv )
         f.show();
         f.dumpData();
         return 0;
+    } else if ( strcmp( args->args[0], "session_info" ) == 0 ) {
+        if (!args->args[1] ) {
+            printMessage("FILE argument is missing\n");
+            return -1;
+        }
+        std::string str( args->args[1] );
+
+        // load the file
+        Session s = Session();
+        s.setVerboseLevel( args->verbose );
+
+        if (!s.loadFromFile(str)) {
+            printMessage("Could not load session\n");
+            return -1;
+        }
+        s.show();
+        return 0;
     } else if ( strcmp( args->args[0], "list" ) == 0 ) {
         printDeviceList();
         exit(0);
@@ -168,7 +197,6 @@ main( int argc, char** argv )
     for (int i = 0; i < service.getNodeCount(); i++) {
         ConfigRom configRom(service, i);
         configRom.initialize();
-        
         if (configRom.getGuid() == guid) {
             node_id = configRom.getNodeId();
             break;
@@ -194,13 +222,17 @@ main( int argc, char** argv )
         return -1;
     }
 
-    if ( !FireWorks::Device::probe(*configRom) ) {
+    Util::Configuration c;
+    c.openFile( USER_CONFIG_FILE, Util::Configuration::eFM_ReadOnly );
+    c.openFile( SYSTEM_CONFIG_FILE, Util::Configuration::eFM_ReadOnly );
+
+    if ( !FireWorks::Device::probe(c, *configRom) ) {
         printMessage( "Device with node id %d is not an ECHO FireWorks device.\n",
                     node_id );
         delete configRom;
         return -1;
     }
-    
+
     DeviceManager d = DeviceManager();
     Device *dev = new Device(d, std::auto_ptr<ConfigRom>(configRom) );
     if (dev == NULL) {
@@ -381,6 +413,66 @@ main( int argc, char** argv )
         } else {
             printMessage(" => Verify successful. Firmware upload successful.\n");
         }
+    } else if ( strcmp( args->args[0], "session_display" ) == 0 ) {
+        // load the session
+        Session s = Session();
+        s.setVerboseLevel( args->verbose );
+
+        if (!s.loadFromDevice(*dev)) {
+            printMessage("Could not load session\n");
+            return -1;
+        }
+        s.show();
+    } else if ( strcmp( args->args[0], "session_download" ) == 0 ) {
+        if (!args->args[1] ) {
+            printMessage("FILE argument is missing\n");
+            delete dev;
+            return -1;
+        }
+        std::string str( args->args[1] );
+
+        printMessage("Downloading session to file: %s\n", str.c_str());
+
+        printMessage(" loading session...\n");
+        // load the session
+        Session s = Session();
+        s.setVerboseLevel( args->verbose );
+
+        if (!s.loadFromDevice(*dev)) {
+            printMessage("Could not load session from device\n");
+            return -1;
+        }
+
+        printMessage(" saving session...\n");
+        if (!s.saveToFile(str)) {
+            printMessage("Could not save session to file\n");
+            return -1;
+        }
+    } else if ( strcmp( args->args[0], "session_upload" ) == 0 ) {
+        if (!args->args[1] ) {
+            printMessage("FILE argument is missing\n");
+            delete dev;
+            return -1;
+        }
+        std::string str( args->args[1] );
+
+        printMessage("Uploading session from file: %s\n", str.c_str());
+
+        printMessage(" loading session...\n");
+        // load the session
+        Session s = Session();
+        s.setVerboseLevel( args->verbose );
+        if (!s.loadFromFile(str)) {
+            printMessage("Could not load session from file\n");
+            return -1;
+        }
+
+        printMessage(" saving session...\n");
+        if (!s.saveToDevice(*dev)) {
+            printMessage("Could not save session to device\n");
+            return -1;
+        }
+
     }  else {
         printMessage("Unknown operation\n");
     }

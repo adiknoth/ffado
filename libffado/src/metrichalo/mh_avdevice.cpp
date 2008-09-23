@@ -125,6 +125,13 @@ MHAvDevice::getSamplingFrequency( ) {
     return 0;
 }
 
+std::vector<int>
+MHAvDevice::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    return frequencies;
+}
+
 FFADODevice::ClockSourceVector
 MHAvDevice::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;

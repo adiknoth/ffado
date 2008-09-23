@@ -35,6 +35,8 @@
 #include <vector>
 #include <semaphore.h>
 
+class DeviceManager;
+
 namespace Streaming {
 
 class StreamProcessor;
@@ -55,11 +57,10 @@ public:
         eADT_Float,
     };
 
-    StreamProcessorManager();
-    StreamProcessorManager(unsigned int period, unsigned int rate, unsigned int nb_buffers);
+    StreamProcessorManager(DeviceManager &parent);
+    StreamProcessorManager(DeviceManager &parent, unsigned int period,
+                           unsigned int rate, unsigned int nb_buffers);
     virtual ~StreamProcessorManager();
-
-    void handleBusReset();
 
     bool prepare(); ///< to be called after the processors are registered
 
@@ -94,8 +95,15 @@ public:
 
     void setNbBuffers(unsigned int nb_buffers)
             {m_nb_buffers = nb_buffers;};
-    int getNbBuffers() 
+    unsigned int getNbBuffers() 
             {return m_nb_buffers;};
+
+    // this is the amount of usecs we wait before an activity
+    // timeout occurs.
+    void setActivityWaitTimeoutUsec(int usec)
+            {m_activity_wait_timeout_usec = usec;};
+    int getActivityWaitTimeoutUsec() 
+            {return m_activity_wait_timeout_usec;};
 
     int getPortCount(enum Port::E_PortType, enum Port::E_Direction);
     int getPortCount(enum Port::E_Direction);
@@ -105,6 +113,11 @@ public:
     bool waitForPeriod();
     bool transfer();
     bool transfer(enum StreamProcessor::eProcessorType);
+
+    // for bus reset handling
+    void lockWaitLoop() {m_WaitLock->Lock();};
+    void unlockWaitLoop() {m_WaitLock->Unlock();};
+
 private:
     bool transferSilence();
     bool transferSilence(enum StreamProcessor::eProcessorType);
@@ -148,6 +161,9 @@ public:
         {return *m_SyncSource;};
 
 protected: // FIXME: private?
+
+    // parent device manager
+    DeviceManager &m_parent;
 
     // thread related vars
     bool m_xrun_happened;

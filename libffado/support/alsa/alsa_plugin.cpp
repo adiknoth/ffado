@@ -181,38 +181,6 @@ static int snd_pcm_ffado_hw_params(snd_pcm_ioplug_t *io, snd_pcm_hw_params_t *pa
 //     }
 // }
 
-//     if (io->state != SND_PCM_STATE_RUNNING) {
-//         if (io->stream == SND_PCM_STREAM_PLAYBACK) {
-//             for (channel = 0; channel < io->channels; channel++)
-//                 snd_pcm_area_silence(&jack->areas[channel], 0, nframes, io->format);
-//             return 0;
-//         }
-//     }
-//     
-//     areas = snd_pcm_ioplug_mmap_areas(io);
-// 
-//     while (xfer < nframes) {
-//         snd_pcm_uframes_t frames = nframes - xfer;
-//         snd_pcm_uframes_t offset = jack->hw_ptr;
-//         snd_pcm_uframes_t cont = io->buffer_size - offset;
-// 
-//         if (cont < frames)
-//             frames = cont;
-// 
-//         for (channel = 0; channel < io->channels; channel++) {
-//             if (io->stream == SND_PCM_STREAM_PLAYBACK)
-//                 snd_pcm_area_copy(&jack->areas[channel], xfer, &areas[channel], offset, frames, io->format);
-//             else
-//                 snd_pcm_area_copy(&areas[channel], offset, &jack->areas[channel], xfer, frames, io->format);
-//         }
-//         
-//         jack->hw_ptr += frames;
-//         jack->hw_ptr %= io->buffer_size;
-//         xfer += frames;
-//     }
-// 
-//     write(jack->fd, buf, 1); /* for polling */
-
 static int
 snd_pcm_ffado_pollfunction(snd_pcm_ffado_t *ffado)
 {
@@ -472,7 +440,7 @@ static int ffado_set_hw_constraint(snd_pcm_ffado_t *ffado)
     PRINT_FUNCTION_ENTRY;
     unsigned int access_list[] = {
         SND_PCM_ACCESS_MMAP_NONINTERLEAVED,
-        SND_PCM_ACCESS_RW_NONINTERLEAVED,
+//         SND_PCM_ACCESS_RW_NONINTERLEAVED,
     };
 
     unsigned int rate_list[1];

@@ -45,6 +45,10 @@ ClockSelect::select(int idx)
         debugError("index out of range\n");
         return false;
     }
+    if(idx < 0) {
+        debugError("index < 0\n");
+        return false;
+    }
     if(!m_Device.setActiveClockSource(v.at(idx))) {
         debugWarning("could not set active clocksource\n");
         return false;
@@ -83,7 +87,11 @@ ClockSelect::getEnumLabel(int idx)
     FFADODevice::ClockSourceVector v = m_Device.getSupportedClockSources();
     if(idx >= (int)v.size()) {
         debugError("index out of range\n");
-        return false;
+        return "Error";
+    }
+    if(idx < 0) {
+        debugError("index < 0\n");
+        return "Error";
     }
     return v.at(idx).description;
 }
@@ -172,7 +180,7 @@ ClockSelect::show()
 // --- samplerate selection ---
 
 SamplerateSelect::SamplerateSelect(FFADODevice &d)
-: Discrete(&d)
+: Enum(&d)
 , m_Device( d )
 {
     setName("SamplerateSelect");
@@ -181,39 +189,63 @@ SamplerateSelect::SamplerateSelect(FFADODevice &d)
 }
 
 bool
-SamplerateSelect::setValue(int v)
+SamplerateSelect::select(int idx)
 {
-    return m_Device.setSamplingFrequency(v);
+    std::vector<int> freqs = m_Device.getSupportedSamplingFrequencies();
+    if (idx >= 0 && idx < (int)freqs.size()) {
+        if(!m_Device.setSamplingFrequency(freqs.at(idx))) {
+            debugWarning("Could not select samplerate\n");
+            return false;
+        }
+        return true;
+    } else {
+        debugWarning("bad index specified\n");
+        return false;
+    }
 }
 
 int
-SamplerateSelect::getValue()
+SamplerateSelect::selected()
 {
-    return m_Device.getSamplingFrequency();
-}
-
-bool
-SamplerateSelect::setValue(int idx, int v)
-{
-    return m_Device.setSamplingFrequency(v);
-}
-
-int
-SamplerateSelect::getValue(int idx)
-{
-    return m_Device.getSamplingFrequency();
+    std::vector<int> freqs = m_Device.getSupportedSamplingFrequencies();
+    int samplerate = m_Device.getSamplingFrequency();
+    for (int i = 0; i < (int)freqs.size(); i++) {
+        if (samplerate == freqs.at(i)) {
+            return i;
+        }
+    }
+    debugError("could not find the selected samplerate\n");
+    return -1;
 }
 
 int
-SamplerateSelect::getMinimum()
+SamplerateSelect::count()
 {
-    return 32000;
+    return  m_Device.getSupportedSamplingFrequencies().size();
 }
 
-int
-SamplerateSelect::getMaximum()
+std::string
+SamplerateSelect::getEnumLabel(int idx)
 {
-    return 192000;
+    char tmp[16];
+    std::string retval = "Error";
+    std::vector<int> freqs = m_Device.getSupportedSamplingFrequencies();
+    if (idx >= 0 && idx < (int)freqs.size()) {
+        snprintf(tmp, 16, "%u", freqs.at(idx));
+        retval = tmp;
+    } else {
+        debugWarning("bad index specified\n");
+    }
+    return retval;
 }
+
+void
+SamplerateSelect::show()
+{
+    debugOutput( DEBUG_LEVEL_NORMAL, "SamplerateSelect Element %s, current: %d\n",
+        getName().c_str(), m_Device.getSamplingFrequency());
+
+}
+
 
 } // namespace Control

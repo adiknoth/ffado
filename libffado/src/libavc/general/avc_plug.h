@@ -128,6 +128,7 @@ public:
         { return m_samplingFrequency; }
     int getSampleRate() const; // 22050, 24000, 32000, ...
     bool setSampleRate( int rate );
+    bool supportsSampleRate( int rate );
 
     int getNrOfChannels() const;
     bool setNrOfChannels(int i);

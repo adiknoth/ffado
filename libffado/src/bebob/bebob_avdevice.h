@@ -63,7 +63,7 @@ public:
     AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual ~AvDevice();
 
-    static bool probe( ConfigRom& configRom, bool generic = false );
+    static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
     virtual bool loadFromCache();
     virtual bool saveCache();
     virtual bool discover();
@@ -112,6 +112,7 @@ protected:
     virtual uint8_t getConfigurationIdNumberOfChannel( AVC::PlugAddress::EPlugDirection ePlugDirection );
     virtual uint16_t getConfigurationIdSyncMode();
 
+    std::vector<int> m_supported_frequencies;
 protected:
     Mixer*             m_Mixer;
 

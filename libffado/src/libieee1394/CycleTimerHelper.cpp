@@ -72,7 +72,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_Thread ( NULL )
     , m_realtime ( false )
     , m_priority ( 0 )
-    , m_update_lock( new Util::PosixMutex() )
+    , m_update_lock( new Util::PosixMutex("CTRUPD") )
     , m_busreset_functor ( NULL)
     , m_unhandled_busreset ( false )
 {
@@ -98,7 +98,7 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_Thread ( NULL )
     , m_realtime ( rt )
     , m_priority ( prio )
-    , m_update_lock( new Util::PosixMutex() )
+    , m_update_lock( new Util::PosixMutex("CTRUPD") )
     , m_busreset_functor ( NULL)
     , m_unhandled_busreset ( false )
 {
@@ -130,7 +130,7 @@ CycleTimerHelper::Start()
         return false;
     }
 
-    m_Thread = new Util::PosixThread(this, m_realtime, m_priority, 
+    m_Thread = new Util::PosixThread(this, "CTRHLP", m_realtime, m_priority, 
                                      PTHREAD_CANCEL_DEFERRED);
     if(!m_Thread) {
         debugFatal("No thread\n");
@@ -417,6 +417,14 @@ CycleTimerHelper::Execute()
             return false;
         }
         m_first_run = false;
+    } else if (diff_ticks > 20.0*m_ticks_per_update) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "re-init dll due to too large tick diff: %f >> %f\n",
+                    diff_ticks, (float)(20.0*m_ticks_per_update));
+        if(!initDLL()) {
+            debugError("(%p) Could not init DLL\n", this);
+            return false;
+        }
     } else {
         // calculate next sleep time
         m_sleep_until += m_usecs_per_update;

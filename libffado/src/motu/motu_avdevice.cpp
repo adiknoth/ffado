@@ -37,6 +37,7 @@
 
 #include "libutil/DelayLockedLoop.h"
 #include "libutil/Time.h"
+#include "libutil/Configuration.h"
 
 #include "libcontrol/BasicElements.h"
 
@@ -301,6 +302,69 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
 };
 
+const MatrixMixBus MixerBuses_Ultralite[] = {
+    {"Mix 1", 0x4000, },
+    {"Mix 2", 0x4100, },
+    {"Mix 3", 0x4200, },
+    {"Mix 4", 0x4300, },
+};
+
+const MatrixMixChannel MixerChannels_Ultralite[] = {
+    {"Analog 1", MOTU_CTRL_STD_CHANNEL, 0x0000, },
+    {"Analog 2", MOTU_CTRL_STD_CHANNEL, 0x0004, },
+    {"Analog 3", MOTU_CTRL_STD_CHANNEL, 0x0008, },
+    {"Analog 4", MOTU_CTRL_STD_CHANNEL, 0x000c, },
+    {"Analog 5", MOTU_CTRL_STD_CHANNEL, 0x0010, },
+    {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
+    {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
+    {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
+    {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
+};
+
+const MixerCtrl MixerCtrls_Ultralite[] = {
+    {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
+    {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
+    {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
+    {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+
+    /* For mic/line input controls, the "register" is the zero-based channel number */
+    {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 0},
+    {"Control/Ana2_", "Analog 2 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 1},
+    {"Control/Ana3_", "Analog 3 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 2},
+    {"Control/Ana4_", "Analog 4 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 3},
+    {"Control/Ana5_", "Analog 5 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 4},
+    {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 5},
+    {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 6},
+    {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 7},
+
+    /* For phones source control, "register" is currently unused */
+    {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
+
+    /* For optical mode controls, the "register" is used to indicate direction */
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+};
+
+const MixerCtrl MixerCtrls_896HD[] = {
+    {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
+    {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
+    {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
+    {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+
+    /* For phones source control, "register" is currently unused */
+    {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
+
+    /* For optical mode controls, the "register" is used to indicate direction */
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+
+    /* For meter controls the "register" indicates which meter controls are available */
+    {"Control/Meter_", "Meter ", "", MOTU_CTRL_METER,
+      MOTU_CTRL_METER_PEAKHOLD | MOTU_CTRL_METER_CLIPHOLD | MOTU_CTRL_METER_AESEBU_SRC | 
+      MOTU_CTRL_METER_PROG_SRC},
+};
+
 const MixerCtrl MixerCtrls_828Mk2[] = {
     {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
@@ -328,14 +392,14 @@ const MixerCtrl MixerCtrls_828Mk2[] = {
 const MotuMixer Mixer_Traveler = MOTUMIXER(
     MixerCtrls_Traveler, MixerBuses_Traveler, MixerChannels_Traveler);
 
+const MotuMixer Mixer_Ultralite = MOTUMIXER(
+    MixerCtrls_Ultralite, MixerBuses_Ultralite, MixerChannels_Ultralite);
+
 const MotuMixer Mixer_828Mk2 = MOTUMIXER(
     MixerCtrls_828Mk2, MixerBuses_Traveler, MixerChannels_Traveler);
 
-// For convenience during initial testing, just make the 896HD use the
-// Traveler's mixer definition.  Separate definitions for these models will
-// come once the final mixer structure is in place.  For now it's in a state
-// of flux and subject to significant change.
-#define Mixer_896HD   Mixer_Traveler
+const MotuMixer Mixer_896HD = MOTUMIXER(
+    MixerCtrls_896HD, MixerBuses_Traveler, MixerChannels_Traveler);
 
 /* The order of DevicesProperty entries must match the numeric order of the
  * MOTU model enumeration (EMotuModel).
@@ -344,7 +408,7 @@ const DevicePropertyEntry DevicesProperty[] = {
 //  { Ports_map,       N_ELEMENTS( Ports_map ),        MaxSR, MixerDescrPtr },
     { Ports_828MKII,   N_ELEMENTS( Ports_828MKII ),    96000, &Mixer_828Mk2, },
     { Ports_TRAVELER,  N_ELEMENTS( Ports_TRAVELER ),  192000, &Mixer_Traveler, },
-    { Ports_ULTRALITE, N_ELEMENTS( Ports_ULTRALITE ),  96000 },
+    { Ports_ULTRALITE, N_ELEMENTS( Ports_ULTRALITE ),  96000, &Mixer_Ultralite, },
     { Ports_8PRE,      N_ELEMENTS( Ports_8PRE ),       96000 },
     { Ports_828MKI,    N_ELEMENTS( Ports_828MKI ),     48000 },
     { Ports_896HD,     N_ELEMENTS( Ports_896HD ),     192000, &Mixer_896HD, },
@@ -548,6 +612,37 @@ MotuDevice::buildMixer() {
                     ctrl->name, ctrl->label, ctrl->desc));
             type &= ~MOTU_CTRL_OPTICAL_MODE;
         }
+        if (type & MOTU_CTRL_METER) {
+            if (ctrl->dev_register & MOTU_CTRL_METER_PEAKHOLD) {
+                snprintf(name, 100, "%s%s", ctrl->name, "peakhold_time");
+                snprintf(label,100, "%s%s", ctrl->label,"peakhold time");
+                result &= m_MixerContainer->addElement(
+                    new MeterControl(*this, MOTU_METER_PEAKHOLD_MASK,
+                        MOTU_METER_PEAKHOLD_SHIFT, name, label, ctrl->desc));
+            }
+            if (ctrl->dev_register & MOTU_CTRL_METER_CLIPHOLD) {
+                snprintf(name, 100, "%s%s", ctrl->name, "cliphold_time");
+                snprintf(label,100, "%s%s", ctrl->label,"cliphold time");
+                result &= m_MixerContainer->addElement(
+                    new MeterControl(*this, MOTU_METER_CLIPHOLD_MASK,
+                        MOTU_METER_CLIPHOLD_SHIFT, name, label, ctrl->desc));
+            }
+            if (ctrl->dev_register & MOTU_CTRL_METER_AESEBU_SRC) {
+                snprintf(name, 100, "%s%s", ctrl->name, "aesebu_src");
+                snprintf(label,100, "%s%s", ctrl->label,"AESEBU source");
+                result &= m_MixerContainer->addElement(
+                    new MeterControl(*this, MOTU_METER_AESEBU_SRC_MASK,
+                        MOTU_METER_AESEBU_SRC_SHIFT, name, label, ctrl->desc));
+            }
+            if (ctrl->dev_register & MOTU_CTRL_METER_PROG_SRC) {
+                snprintf(name, 100, "%s%s", ctrl->name, "src");
+                snprintf(label,100, "%s%s", ctrl->label,"source");
+                result &= m_MixerContainer->addElement(
+                    new MeterControl(*this, MOTU_METER_PROG_SRC_MASK,
+                        MOTU_METER_PROG_SRC_SHIFT, name, label, ctrl->desc));
+            }
+            type &= ~MOTU_CTRL_METER;
+        }
 
         if (type) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown mixer control type flag bits 0x%08x\n", ctrl->type);
@@ -644,7 +739,7 @@ MotuDevice::destroyMixer() {
 }
 
 bool
-MotuDevice::probe( ConfigRom& configRom, bool generic)
+MotuDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic)
 {
     if(generic) return false;
 
@@ -882,6 +977,27 @@ MotuDevice::setSamplingFrequency( int samplingFrequency )
     return setClockCtrlRegister(samplingFrequency, MOTU_CLKSRC_UNCHANGED);
 }
 
+std::vector<int>
+MotuDevice::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    signed int max_freq = DevicesProperty[m_motu_model-1].MaxSampleRate;
+
+    /* All MOTUs support 1x rates.  All others must be conditional. */
+    frequencies.push_back(44100);
+    frequencies.push_back(48000);
+
+    if (88200 <= max_freq)
+        frequencies.push_back(88200);
+    if (96000 <= max_freq)
+        frequencies.push_back(96000);
+    if (176400 <= max_freq)
+        frequencies.push_back(176400);
+    if (192000 <= max_freq)
+        frequencies.push_back(192000);
+    return frequencies;
+}
+
 FFADODevice::ClockSource
 MotuDevice::clockIdToClockSource(unsigned int id) {
     ClockSource s;
@@ -1007,6 +1123,14 @@ MotuDevice::prepare() {
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
 
+    // Explicitly set the optical mode, primarily to ensure that the
+    // MOTU_REG_OPTICAL_CTRL register is initialised.  We need to do this to
+    // because some interfaces (the Ultralite for example) appear to power
+    // up without this set to anything sensible.  In this case, writes to
+    // MOTU_REG_ISOCTRL fail more often than not, which is bad.
+    setOpticalMode(MOTU_DIR_IN, optical_in_mode);
+    setOpticalMode(MOTU_DIR_OUT, optical_out_mode);
+
     // Allocate bandwidth if not previously done.
     // FIXME: The bandwidth allocation calculation can probably be
     // refined somewhat since this is currently based on a rudimentary
@@ -1074,7 +1198,7 @@ MotuDevice::prepare() {
     // retrieve the ID
     std::string id=std::string("dev?");
     if(!getOption("id", id)) {
-        debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
+        debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
     }
 
     // Add audio capture ports
@@ -1309,7 +1433,7 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
     if ((reg & MOTU_OPTICAL_OUT_MODE_MASK) != (MOTU_OPTICAL_MODE_ADAT<<10))
         opt_ctrl |= 0x00000040;
 
-    if (mode & MOTU_DIR_IN) {
+    if (dir & MOTU_DIR_IN) {
         reg &= ~MOTU_OPTICAL_IN_MODE_MASK;
         reg |= (mode << 8) & MOTU_OPTICAL_IN_MODE_MASK;
         if (mode != MOTU_OPTICAL_MODE_ADAT)
@@ -1317,7 +1441,7 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
         else
             opt_ctrl &= ~0x00000080;
     }
-    if (mode & MOTU_DIR_OUT) {
+    if (dir & MOTU_DIR_OUT) {
         reg &= ~MOTU_OPTICAL_OUT_MODE_MASK;
         reg |= (mode <<10) & MOTU_OPTICAL_OUT_MODE_MASK;
         if (mode != MOTU_OPTICAL_MODE_ADAT)

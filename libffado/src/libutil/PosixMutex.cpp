@@ -48,6 +48,25 @@ IMPL_DEBUG_MODULE( PosixMutex, PosixMutex, DEBUG_LEVEL_NORMAL );
 
 PosixMutex::PosixMutex()
 {
+    m_id = "?";
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    #ifdef DEBUG
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+    #else
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_DEFAULT);
+    #endif
+    pthread_mutex_init(&m_mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
+
+    #if DEBUG_LOCK_COLLISION_TRACING
+    m_locked_by = NULL;
+    #endif
+}
+
+PosixMutex::PosixMutex(std::string id)
+{
+    m_id = id;
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
     #ifdef DEBUG
@@ -72,7 +91,7 @@ void
 PosixMutex::Lock()
 {
     int err;
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) lock\n", this);
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%s, %p) lock\n", m_id.c_str(), this);
     #if DEBUG_LOCK_COLLISION_TRACING
     if(TryLock()) {
         // locking succeeded
@@ -83,8 +102,8 @@ PosixMutex::Lock()
         debugGetFunctionNameFromAddr(m_locked_by, name, DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN);
 
         debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
-                    "(%p) %s obtained lock\n",
-                    this, name);
+                    "(%s, %p) %s obtained lock\n",
+                    m_id.c_str(), this, name);
         return;
     } else {
         void *lock_try_by = debugBacktraceGet( DEBUG_LOCK_COLLISION_TRACING_INDEX );
@@ -96,28 +115,28 @@ PosixMutex::Lock()
         name2[0] = 0;
         debugGetFunctionNameFromAddr(m_locked_by, name2, DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN);
 
-        debugWarning("(%p) lock collision: %s wants lock, %s has lock\n",
-                    this, name1, name2);
+        debugWarning("(%s, %p) lock collision: %s wants lock, %s has lock\n",
+                    m_id.c_str(), this, name1, name2);
         if((err = pthread_mutex_lock(&m_mutex))) {
             if (err == EDEADLK) {
-                debugError("Resource deadlock detected\n");
+                debugError("(%s, %p) Resource deadlock detected\n", m_id.c_str(), this);
                 debugPrintBacktrace(10);
             } else {
-                debugError("Error locking the mutex: %d\n", err);
+                debugError("(%s, %p) Error locking the mutex: %d\n", m_id.c_str(), this, err);
             }
         } else {
-            debugWarning("(%p) lock collision: %s got lock (from %s?)\n",
-                        this, name1, name2);
+            debugWarning("(%s, %p) lock collision: %s got lock (from %s?)\n",
+                        m_id.c_str(), this, name1, name2);
         }
     }
     #else
     #ifdef DEBUG
     if((err = pthread_mutex_lock(&m_mutex))) {
         if (err == EDEADLK) {
-            debugError("Resource deadlock detected\n");
+            debugError("(%s, %p) Resource deadlock detected\n", m_id.c_str(), this);
             debugPrintBacktrace(10);
         } else {
-            debugError("Error locking the mutex: %d\n", err);
+            debugError("(%s, %p) Error locking the mutex: %d\n", m_id.c_str(), this, err);
         }
     }
     #else
@@ -129,21 +148,27 @@ PosixMutex::Lock()
 bool
 PosixMutex::TryLock()
 {
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) trying to lock\n", this);
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%s, %p) trying to lock\n", m_id.c_str(), this);
     return pthread_mutex_trylock(&m_mutex) == 0;
 }
 
 bool
 PosixMutex::isLocked()
 {
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) checking lock\n", this);
-    int res=pthread_mutex_trylock(&m_mutex);
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%s, %p) checking lock\n", m_id.c_str(), this);
+    int res = pthread_mutex_trylock(&m_mutex);
     if(res == 0) {
         pthread_mutex_unlock(&m_mutex);
         return false;
     } else {
-        if(res != EBUSY) {
-            debugError("Bogus error code: %d\n", res);
+        if (res == EDEADLK) {
+            // this means that the current thread already has the lock,
+            // iow it's locked.
+            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%s, %p) lock taken by current thread\n", m_id.c_str(), this);
+        } else if(res == EBUSY) {
+            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%s, %p) lock taken\n", m_id.c_str(), this);
+        } else {
+            debugError("(%s, %p) Bogus error code: %d\n", m_id.c_str(), this, res);
         }
         return true;
     }
@@ -152,7 +177,7 @@ PosixMutex::isLocked()
 void
 PosixMutex::Unlock()
 {
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) unlock\n", this);
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%s, %p) unlock\n", m_id.c_str(), this);
     #if DEBUG_LOCK_COLLISION_TRACING
     // unlocking
     m_locked_by = NULL;
@@ -161,14 +186,14 @@ PosixMutex::Unlock()
     name[0] = 0;
     debugGetFunctionNameFromAddr(unlocker, name, DEBUG_LOCK_COLLISION_TRACING_NAME_MAXLEN);
     debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
-                "(%p) %s releases lock\n",
-                this, name);
+                "(%s, %p)  %s releases lock\n",
+                m_id.c_str(), this, name);
     #endif
 
     #ifdef DEBUG
     int err;
     if((err = pthread_mutex_unlock(&m_mutex))) {
-        debugError("Error unlocking the mutex: %d\n", err);
+        debugError("(%s, %p) Error unlocking the mutex: %d\n", m_id.c_str(), this, err);
     }
     #else
     pthread_mutex_unlock(&m_mutex);
@@ -178,7 +203,7 @@ PosixMutex::Unlock()
 void
 PosixMutex::show()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "(%p) mutex (%s)\n", this, (isLocked() ? "Locked" : "Unlocked"));
+    debugOutput(DEBUG_LEVEL_NORMAL, "(%s, %p) mutex (%s)\n", m_id.c_str(), this, (isLocked() ? "Locked" : "Unlocked"));
 }
 
 

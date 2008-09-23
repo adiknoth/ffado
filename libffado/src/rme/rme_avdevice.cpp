@@ -176,6 +176,36 @@ RmeDevice::setSamplingFrequency( int samplingFrequency )
     return true;
 }
 
+#define RME_CHECK_AND_ADD_SR(v, x) \
+    { \
+    if (((x >= 32000*0.96 && x <= 32000*1.04) || \
+        (x >= 44100*0.96 && x <= 44100*1.04) || \
+        (x >= 48000*0.96 && x <= 48000*1.04) || \
+        (x >= 64000*0.96 && x <= 64000*1.04) || \
+        (x >= 88200*0.96 && x <= 88200*1.04) || \
+        (x >= 96000*0.96 && x <= 96000*1.04) || \
+        (x >= 128000*0.96 && x <= 128000*1.04) || \
+        (x >= 176000*0.96 && x <= 176000*1.04) || \
+        (x >= 192000*0.96 && x <= 192000*1.04))) { \
+        v.push_back(x); \
+    };};
+
+std::vector<int>
+RmeDevice::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    RME_CHECK_AND_ADD_SR(frequencies, 32000);
+    RME_CHECK_AND_ADD_SR(frequencies, 44100);
+    RME_CHECK_AND_ADD_SR(frequencies, 48000);
+    RME_CHECK_AND_ADD_SR(frequencies, 64000);
+    RME_CHECK_AND_ADD_SR(frequencies, 88200);
+    RME_CHECK_AND_ADD_SR(frequencies, 96000);
+    RME_CHECK_AND_ADD_SR(frequencies, 128000);
+    RME_CHECK_AND_ADD_SR(frequencies, 176400);
+    RME_CHECK_AND_ADD_SR(frequencies, 192000);
+    return frequencies;
+}
+
 FFADODevice::ClockSourceVector
 RmeDevice::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;

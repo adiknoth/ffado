@@ -41,7 +41,6 @@ class Ieee1394Service;
 
 namespace Streaming {
     class StreamProcessor;
-    class StreamProcessorManager;
 }
 
 namespace Control {
@@ -138,6 +137,12 @@ public:
      * @return the sampling frequency as integer
      */
     virtual int getSamplingFrequency( ) = 0;
+
+    /**
+     * @brief get the supported sampling frequencies
+     * @return a vector containing the supported sampling frequencies
+     */
+    virtual std::vector<int> getSupportedSamplingFrequencies( ) = 0;
 
     /**
      * @brief sync state enum

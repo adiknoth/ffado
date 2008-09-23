@@ -62,24 +62,12 @@ enum raw1394_iso_disposition
 IsoHandler::iso_receive_handler(raw1394handle_t handle, unsigned char *data,
                         unsigned int length, unsigned char channel,
                         unsigned char tag, unsigned char sy, unsigned int cycle,
-                        unsigned int dropped1) {
+                        unsigned int dropped) {
 
     IsoHandler *recvHandler = static_cast<IsoHandler *>(raw1394_get_userdata(handle));
     assert(recvHandler);
 
-    unsigned int skipped = (dropped1 & 0xFFFF0000) >> 16;
-    unsigned int dropped = dropped1 & 0xFFFF;
-
-    return recvHandler->putPacket(data, length, channel, tag, sy, cycle, dropped, skipped);
-}
-
-int IsoHandler::busreset_handler(raw1394handle_t handle, unsigned int generation)
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Busreset happened, generation %d...\n", generation);
-
-    IsoHandler *handler = static_cast<IsoHandler *>(raw1394_get_userdata(handle));
-    assert(handler);
-    return handler->handleBusReset(generation);
+    return recvHandler->putPacket(data, length, channel, tag, sy, cycle, dropped);
 }
 
 IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
@@ -91,6 +79,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_irq_interval( -1 )
    , m_last_cycle( -1 )
    , m_last_now( 0xFFFFFFFF )
+   , m_last_packet_handled_at( 0xFFFFFFFF )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
@@ -99,6 +88,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
 #ifdef DEBUG
    , m_packets ( 0 )
    , m_dropped( 0 )
+   , m_skipped( 0 )
    , m_min_ahead( 7999 )
 #endif
 {
@@ -114,6 +104,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_irq_interval( irq )
    , m_last_cycle( -1 )
    , m_last_now( 0xFFFFFFFF )
+   , m_last_packet_handled_at( 0xFFFFFFFF )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
@@ -121,6 +112,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
 #ifdef DEBUG
    , m_packets ( 0 )
    , m_dropped( 0 )
+   , m_skipped( 0 )
    , m_min_ahead( 7999 )
 #endif
 {
@@ -137,6 +129,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_irq_interval( irq )
    , m_last_cycle( -1 )
    , m_last_now( 0xFFFFFFFF )
+   , m_last_packet_handled_at( 0xFFFFFFFF )
    , m_Client( 0 )
    , m_speed( speed )
    , m_prebuffers( 0 )
@@ -144,6 +137,8 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
 #ifdef DEBUG
    , m_packets( 0 )
    , m_dropped( 0 )
+   , m_skipped( 0 )
+   , m_min_ahead( 7999 )
 #endif
 {
 }
@@ -168,13 +163,14 @@ IsoHandler::canIterateClient()
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "checking...\n");
     if(m_Client) {
         bool result;
+
         if (m_type == eHT_Receive) {
             result = m_Client->canProducePacket();
         } else {
             result = m_Client->canConsumePacket();
         }
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
-        return result;
+        return result && (m_State != E_Error);
     } else {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");
     }
@@ -233,16 +229,6 @@ IsoHandler::init()
     }
     raw1394_set_userdata(m_handle, static_cast<void *>(this));
 
-    // bus reset handling
-    if(raw1394_busreset_notify (m_handle, RAW1394_NOTIFY_ON)) {
-        debugWarning("Could not enable busreset notification.\n");
-        debugWarning(" Error message: %s\n",strerror(errno));
-        debugWarning("Continuing without bus reset support.\n");
-    } else {
-        // apparently this cannot fail
-        raw1394_set_bus_reset_handler(m_handle, busreset_handler);
-    }
-
     // update the internal state
     m_State=E_Initialized;
     return true;
@@ -260,10 +246,20 @@ bool IsoHandler::disable()
         return false;
     }
 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) wake up handle...\n", 
+                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
+
+    // wake up any waiting reads/polls
+    raw1394_wake_up(m_handle);
+
     // this is put here to try and avoid the
     // Runaway context problem
     // don't know if it will help though.
-    raw1394_iso_xmit_sync(m_handle);
+/*    if(m_State != E_Error) { // if the handler is dead, this might block forever
+        raw1394_iso_xmit_sync(m_handle);
+    }*/
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) stop...\n", 
+                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
     raw1394_iso_stop(m_handle);
     m_State = E_Prepared;
     return true;
@@ -275,10 +271,11 @@ bool IsoHandler::disable()
  * @return ?
  */
 
-int
-IsoHandler::handleBusReset(unsigned int generation)
+bool
+IsoHandler::handleBusReset()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "bus reset...\n");
+    debugOutput( DEBUG_LEVEL_NORMAL, "bus reset...\n");
+    m_last_packet_handled_at = 0xFFFFFFFF;
 
     #define CSR_CYCLE_TIME            0x200
     #define CSR_REGISTER_BASE  0xfffff0000000ULL
@@ -288,16 +285,7 @@ IsoHandler::handleBusReset(unsigned int generation)
     raw1394_read(m_handle, raw1394_get_local_id(m_handle),
                  CSR_REGISTER_BASE | CSR_CYCLE_TIME, 4, &buf);
 
-    // notify the client of the fact that we have died
-    m_Client->handlerDied();
-
-    if(!disable()) {
-        debugError("(%p) Could not disable IsoHandler\n", this);
-    }
-
-    // request the manager to update it's shadow map
-    m_manager.requestShadowMapUpdate();
-    return 0;
+    return m_Client->handleBusReset();
 }
 
 /**
@@ -307,8 +295,13 @@ IsoHandler::handleBusReset(unsigned int generation)
 void
 IsoHandler::notifyOfDeath()
 {
+    m_State = E_Error;
+
     // notify the client of the fact that we have died
     m_Client->handlerDied();
+
+    // wake ourselves up
+    raw1394_wake_up(m_handle);
 }
 
 void IsoHandler::dumpInfo()
@@ -330,8 +323,8 @@ void IsoHandler::dumpInfo()
         #endif
     }
     #ifdef DEBUG
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Last cycle, dropped.........: %4d, %4u\n",
-            m_last_cycle, m_dropped);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Last cycle, dropped.........: %4d, %4u, %4u\n",
+            m_last_cycle, m_dropped, m_skipped);
     #endif
 
 }
@@ -339,6 +332,7 @@ void IsoHandler::dumpInfo()
 void IsoHandler::setVerboseLevel(int l)
 {
     setDebugLevel(l);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 bool IsoHandler::registerStream(StreamProcessor *stream)
@@ -380,7 +374,7 @@ void IsoHandler::flush()
 enum raw1394_iso_disposition IsoHandler::putPacket(
                     unsigned char *data, unsigned int length,
                     unsigned char channel, unsigned char tag, unsigned char sy,
-                    unsigned int cycle, unsigned int dropped, unsigned int skipped) {
+                    unsigned int cycle, unsigned int dropped) {
 
     // keep track of dropped cycles
     int dropped_cycles = 0;
@@ -388,13 +382,13 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
         dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
         #ifdef DEBUG
         if (dropped_cycles < 0) {
-            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, 'skipped'=%u\n", 
-                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
+            debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d\n", 
+                         this, dropped_cycles, cycle, m_last_cycle, dropped);
         }
         if (dropped_cycles > 0) {
-            debugOutput(DEBUG_LEVEL_NORMAL,
-                        "(%p) dropped %d packets on cycle %u, 'dropped'=%u, 'skipped'=%u, cycle=%d, m_last_cycle=%d\n",
-                        this, dropped_cycles, cycle, dropped, skipped, cycle, m_last_cycle);
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "(%p) dropped %d packets on cycle %u, 'dropped'=%u, cycle=%d, m_last_cycle=%d\n",
+                        this, dropped_cycles, cycle, dropped, cycle, m_last_cycle);
             m_dropped += dropped_cycles;
         }
         #endif
@@ -447,7 +441,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
         // that now is ahead on the received packets (as we miss packets)
         && dropped_cycles == 0) 
     {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Special non-unwrapping happened\n");
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Special non-unwrapping happened\n");
     }
     #endif
     pkt_ctr |= (now_secs & 0x7F) << 25;
@@ -476,14 +470,15 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                        cycle, pkt_ctr_ref, pkt_ctr, now, m_last_now, now_secs_ref, now_secs);
     }
     #endif
+    m_last_packet_handled_at = pkt_ctr;
 
     // leave the offset field (for now?)
 
-    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                       "received packet: length=%d, channel=%d, cycle=%d\n",
-                       length, channel, cycle);
-    #ifdef DEBUG
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+                "received packet: length=%d, channel=%d, cycle=%d, at %08X\n",
+                length, channel, cycle, pkt_ctr);
     m_packets++;
+    #ifdef DEBUG
     if (length > m_max_packet_size) {
         debugWarning("(%p, %s) packet too large: len=%u max=%u\n",
                      this, getTypeString(), length, m_max_packet_size);
@@ -495,7 +490,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
 
     // iterate the client if required
     if(m_Client) {
-        enum raw1394_iso_disposition retval = m_Client->putPacket(data, length, channel, tag, sy, pkt_ctr, dropped_cycles, skipped);
+        enum raw1394_iso_disposition retval = m_Client->putPacket(data, length, channel, tag, sy, pkt_ctr, dropped_cycles);
         if (retval == RAW1394_ISO_OK) {
             if (m_dont_exit_iterate_loop) {
                 return RAW1394_ISO_OK;
@@ -526,7 +521,6 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
     } else {
         pkt_ctr = cycle << 12;
 
-#if 0 // we don't need this for xmit
         // if we assume that one iterate() loop doesn't take longer than 0.5 seconds,
         // the seconds field won't change while the iterate loop runs
         // this means that we can preset 'now' before running iterate()
@@ -559,21 +553,25 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
         }
         uint32_t pkt_ctr_ref = cycle << 12;
         pkt_ctr_ref |= (now_secs_ref & 0x7F) << 25;
-    
+
         if(pkt_ctr != pkt_ctr_ref) {
             debugWarning("reconstructed CTR counter discrepancy\n");
             pkt_ctr=pkt_ctr_ref;
         }
         #endif
-#endif
     }
+    if (m_packets < m_buf_packets) { // these are still prebuffer packets
+        m_last_packet_handled_at = 0xFFFFFFFF;
+    } else {
+        m_last_packet_handled_at = pkt_ctr;
+    }
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+                "sending packet: length=%d, cycle=%d, at %08X\n",
+                *length, cycle, pkt_ctr);
 
-    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                       "sending packet: length=%d, cycle=%d\n",
-                       *length, cycle);
+    m_packets++;
 
     #ifdef DEBUG
-    m_packets++;
     if(m_last_cycle == -1) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %d)\n", getTypeString(), this, cycle);
     }
@@ -589,16 +587,17 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
 
         #ifdef DEBUG
         if(skipped) {
-            debugOutput(DEBUG_LEVEL_NORMAL,
+            debugOutput(DEBUG_LEVEL_VERBOSE,
                         "(%p) skipped %d cycles, cycle: %d, last_cycle: %d, dropped: %d\n", 
                         this, skipped, cycle, m_last_cycle, dropped);
+            m_skipped += skipped;
         }
         if (dropped_cycles < 0) { 
             debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, skipped: %d\n", 
                          this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
         }
         if (dropped_cycles > 0) {
-            debugOutput(DEBUG_LEVEL_NORMAL,
+            debugOutput(DEBUG_LEVEL_VERBOSE,
                         "(%p) dropped %d packets on cycle %u (last_cycle=%u, dropped=%d, skipped: %d)\n",
                         this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
             m_dropped += dropped_cycles - skipped;
@@ -615,9 +614,17 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
         #endif
     }
 
+    #ifdef DEBUG
+    if (dropped > 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "(%p) OHCI issue on cycle %u (dropped_cycles=%d, last_cycle=%u, dropped=%d, skipped: %d)\n",
+                    this, cycle, dropped_cycles, m_last_cycle, dropped, skipped);
+    }
+    #endif
+
     if(m_Client) {
         enum raw1394_iso_disposition retval;
-        retval = m_Client->getPacket(data, length, tag, sy, pkt_ctr, dropped, skipped, m_max_packet_size);
+        retval = m_Client->getPacket(data, length, tag, sy, pkt_ctr, dropped_cycles, skipped, m_max_packet_size);
         #ifdef DEBUG
         if (*length > m_max_packet_size) {
             debugWarning("(%p, %s) packet too large: len=%u max=%u\n",

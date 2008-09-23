@@ -191,6 +191,23 @@ DiceAvDevice::getSamplingFrequency( ) {
     return samplingFrequency;
 }
 
+#define DICE_CHECK_AND_ADD_SR(v, x, reg) \
+    { if(maskedCheckNotZeroGlobalReg( DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, reg)) \
+       v.push_back(x); }
+std::vector<int>
+DiceAvDevice::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    DICE_CHECK_AND_ADD_SR(frequencies, 32000, DICE_CLOCKCAP_RATE_32K);
+    DICE_CHECK_AND_ADD_SR(frequencies, 44100, DICE_CLOCKCAP_RATE_44K1);
+    DICE_CHECK_AND_ADD_SR(frequencies, 48000, DICE_CLOCKCAP_RATE_48K);
+    DICE_CHECK_AND_ADD_SR(frequencies, 88200, DICE_CLOCKCAP_RATE_88K2);
+    DICE_CHECK_AND_ADD_SR(frequencies, 96000, DICE_CLOCKCAP_RATE_96K);
+    DICE_CHECK_AND_ADD_SR(frequencies, 176400, DICE_CLOCKCAP_RATE_176K4);
+    DICE_CHECK_AND_ADD_SR(frequencies, 192000, DICE_CLOCKCAP_RATE_192K);
+    return frequencies;
+}
+
 int
 DiceAvDevice::getConfigurationId()
 {

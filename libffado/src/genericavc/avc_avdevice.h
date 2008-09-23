@@ -26,7 +26,7 @@
 #define GENERICAVC_AVDEVICE_H
 
 #include "ffadodevice.h"
-#include "genericavc/avc_vendormodel.h"
+#include "libutil/Configuration.h"
 
 #include "libavc/avc_definitions.h"
 #include "libavc/general/avc_unit.h"
@@ -49,9 +49,10 @@ class AvDevice : public FFADODevice, public AVC::Unit {
 public:
     AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual ~AvDevice();
-    
-    static bool probe( ConfigRom& configRom, bool generic = false );
+
+    static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
     virtual bool discover();
+    bool discoverGeneric();
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
 
     virtual bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
@@ -61,7 +62,9 @@ public:
     virtual void showDevice();
 
     virtual bool setSamplingFrequency( int );
+    virtual bool supportsSamplingFrequency( int s );
     virtual int getSamplingFrequency( );
+    virtual std::vector<int> getSupportedSamplingFrequencies();
 
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);
@@ -90,8 +93,6 @@ protected:
                                    AVC::Plug::EPlugDirection direction,
                                    AVC::ESamplingFrequency samplingFrequency );*/
 
-    struct VendorModelEntry m_model;
-
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
     typedef std::vector< Streaming::StreamProcessor * >::iterator StreamProcessorVectorIterator;
@@ -102,6 +103,7 @@ protected:
 
 private:
     ClockSource syncInfoToClockSource(const SyncInfo& si);
+    std::vector<int> m_supported_frequencies_cache;
 };
 
 }

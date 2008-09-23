@@ -251,88 +251,87 @@ main( int argc, char **argv )
     debugOutput( DEBUG_LEVEL_NORMAL, "verbose level = %d\n", arguments.verbose);
     debugOutput( DEBUG_LEVEL_NORMAL, "Using ffado library version: %s\n\n", ffado_get_version() );
 
-        m_deviceManager = new DeviceManager();
-        if ( !m_deviceManager ) {
-            debugError("Could not allocate device manager\n" );
-            return exitfunction(-1);
-        }
-        if ( !m_deviceManager->initialize() ) {
-            debugError("Could not initialize device manager\n" );
-            delete m_deviceManager;
-            return exitfunction(-1);
-        }
-        if ( arguments.verbose ) {
-            m_deviceManager->setVerboseLevel(arguments.verbose);
-        }
-        if ( !m_deviceManager->discover(arguments.use_cache) ) {
-            debugError("Could not discover devices\n" );
-            delete m_deviceManager;
-            return exitfunction(-1);
-        }
-
-        // add pre-update handler
-        Util::Functor* preupdate_functor = new Util::CallbackFunctor0< void (*)() >
-                    ( &preUpdateHandler, false );
-        if ( !preupdate_functor ) {
-            debugFatal( "Could not create pre-update handler\n" );
-            return false;
-        }
-        if(!m_deviceManager->registerPreUpdateNotification(preupdate_functor)) {
-            debugError("could not register pre-update notifier");
-        }
-        // add post-update handler
-        Util::Functor* postupdate_functor = new Util::CallbackFunctor0< void (*)() >
-                    ( &postUpdateHandler, false );
-        if ( !postupdate_functor ) {
-            debugFatal( "Could not create post-update handler\n" );
-            return false;
-        }
-        if(!m_deviceManager->registerPostUpdateNotification(postupdate_functor)) {
-            debugError("could not register post-update notifier");
-        }
-
-        signal (SIGINT, sighandler);
-        
-        DBus::_init_threading();
-    
-        // test DBUS stuff
-        DBus::default_dispatcher = &dispatcher;
-        DBus::Connection conn = DBus::Connection::SessionBus();
-        global_conn = &conn;
-        conn.request_name("org.ffado.Control");
-
-        // lock the control tree such that it does not get modified while we build our view
-        m_deviceManager->lockControl();
-        container = new DBusControl::Container(conn, "/org/ffado/Control/DeviceManager", 
-                                               NULL, *m_deviceManager);
-        // unlock the control tree since the tree is built
-        m_deviceManager->unlockControl();
-
-        printMessage("DBUS test service running\n");
-        printMessage("press ctrl-c to stop it & exit\n");
-        
-        while(run) {
-            debugOutput( DEBUG_LEVEL_NORMAL, "dispatching...\n");
-            dispatcher.enter();
-
-            debugOutput( DEBUG_LEVEL_NORMAL, " dispatcher exited...\n");
-            sem_wait(&run_sem);
-            debugOutput( DEBUG_LEVEL_NORMAL, " activity handled...\n");
-        }
-        
-        if(!m_deviceManager->unregisterPreUpdateNotification(preupdate_functor)) {
-            debugError("could not unregister pre update notifier");
-        }
-        delete preupdate_functor;
-        if(!m_deviceManager->unregisterPostUpdateNotification(postupdate_functor)) {
-            debugError("could not unregister post update notifier");
-        }
-        delete postupdate_functor;
-        delete container;
-
-        signal (SIGINT, SIG_DFL);
-
-        printMessage("server stopped\n");
+    m_deviceManager = new DeviceManager();
+    if ( !m_deviceManager ) {
+        debugError("Could not allocate device manager\n" );
+        return exitfunction(-1);
+    }
+    if ( !m_deviceManager->initialize() ) {
+        debugError("Could not initialize device manager\n" );
         delete m_deviceManager;
-        return exitfunction(0);
+        return exitfunction(-1);
+    }
+    if ( arguments.verbose ) {
+        m_deviceManager->setVerboseLevel(arguments.verbose);
+    }
+    if ( !m_deviceManager->discover(arguments.use_cache) ) {
+        debugError("Could not discover devices\n" );
+        delete m_deviceManager;
+        return exitfunction(-1);
+    }
+
+    // add pre-update handler
+    Util::Functor* preupdate_functor = new Util::CallbackFunctor0< void (*)() >
+                ( &preUpdateHandler, false );
+    if ( !preupdate_functor ) {
+        debugFatal( "Could not create pre-update handler\n" );
+        return false;
+    }
+    if(!m_deviceManager->registerPreUpdateNotification(preupdate_functor)) {
+        debugError("could not register pre-update notifier");
+    }
+    // add post-update handler
+    Util::Functor* postupdate_functor = new Util::CallbackFunctor0< void (*)() >
+                ( &postUpdateHandler, false );
+    if ( !postupdate_functor ) {
+        debugFatal( "Could not create post-update handler\n" );
+        return false;
+    }
+    if(!m_deviceManager->registerPostUpdateNotification(postupdate_functor)) {
+        debugError("could not register post-update notifier");
+    }
+
+    signal (SIGINT, sighandler);
+    
+    DBus::_init_threading();
+
+    // test DBUS stuff
+    DBus::default_dispatcher = &dispatcher;
+    DBus::Connection conn = DBus::Connection::SessionBus();
+    global_conn = &conn;
+    conn.request_name("org.ffado.Control");
+
+    // lock the control tree such that it does not get modified while we build our view
+    m_deviceManager->lockControl();
+    container = new DBusControl::Container(conn, "/org/ffado/Control/DeviceManager", 
+                                            NULL, *m_deviceManager);
+    // unlock the control tree since the tree is built
+    m_deviceManager->unlockControl();
+
+    printMessage("DBUS test service running\n");
+    printMessage("press ctrl-c to stop it & exit\n");
+    
+    while(run) {
+        debugOutput( DEBUG_LEVEL_NORMAL, "dispatching...\n");
+        dispatcher.enter();
+        debugOutput( DEBUG_LEVEL_NORMAL, " dispatcher exited...\n");
+        sem_wait(&run_sem);
+        debugOutput( DEBUG_LEVEL_NORMAL, " activity handled...\n");
+    }
+    
+    if(!m_deviceManager->unregisterPreUpdateNotification(preupdate_functor)) {
+        debugError("could not unregister pre update notifier");
+    }
+    delete preupdate_functor;
+    if(!m_deviceManager->unregisterPostUpdateNotification(postupdate_functor)) {
+        debugError("could not unregister post update notifier");
+    }
+    delete postupdate_functor;
+    delete container;
+
+    signal (SIGINT, SIG_DFL);
+
+    printMessage("server stopped\n");
+    delete m_deviceManager;
+    return exitfunction(0);
 }

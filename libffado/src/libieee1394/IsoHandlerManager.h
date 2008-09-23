@@ -43,7 +43,6 @@ class Ieee1394Service;
 
 namespace Streaming {
     class StreamProcessor;
-    class StreamProcessorManager;
     typedef std::vector<StreamProcessor *> StreamProcessorVector;
     typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
 }
@@ -86,6 +85,11 @@ class IsoTask : public Util::RunnableInterface
          */
         enum eActivityResult waitForActivity();
 
+        /**
+         * @brief This should be called when a busreset has happened.
+         */
+        bool handleBusReset();
+
         void setVerboseLevel(int i);
     protected:
         IsoHandlerManager& m_manager;
@@ -113,6 +117,9 @@ class IsoTask : public Util::RunnableInterface
         sem_t m_activity_semaphore;
 
         enum IsoHandler::EHandlerType m_handlerType;
+        bool m_running;
+        bool m_in_busreset;
+
         // debug stuff
         DECLARE_DEBUG_MODULE;
 };
@@ -180,11 +187,16 @@ class IsoHandlerManager
         int getPacketLatencyForStream(Streaming::StreamProcessor *);
 
         void flushHandlerForStream(Streaming::StreamProcessor *stream);
+        IsoHandler * getHandlerForStream(Streaming::StreamProcessor *stream);
 
         Ieee1394Service& get1394Service() {return m_service;};
 
         void requestShadowMapUpdate();
 
+        /**
+         * This should be called when a busreset has happened.
+         */
+        bool handleBusReset();
     // the state machine
     private:
         enum eHandlerStates {

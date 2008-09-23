@@ -36,6 +36,7 @@ EfcGenericIOConfigCmd::EfcGenericIOConfigCmd(enum eIOConfigRegister r)
     , m_value ( 0 )
     , m_reg ( r )
 {
+    m_category_id = EFC_CAT_IO_CONFIG;
     m_type=eCT_Get;
     setRegister(r);
 }

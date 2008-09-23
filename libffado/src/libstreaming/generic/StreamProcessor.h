@@ -78,6 +78,7 @@ protected:
         ePS_WaitingForStreamEnable,
         ePS_Running,
         ePS_WaitingForStreamDisable,
+        ePS_Error,
     };
 
     ///> set the SP state to a specific value
@@ -112,6 +113,8 @@ public: //--- state stuff
             {return m_state == ePS_Stopped;};
     bool isWaitingForStream()
             {return m_state == ePS_WaitingForStream;};
+    bool inError()
+            {return m_state == ePS_Error;};
 
     // these schedule and wait for the state transition
     bool startDryRunning(int64_t time_to_start_at);
@@ -130,7 +133,12 @@ public: //--- state stuff
     bool init();
     bool prepare();
 
-    void handleBusReset();
+    bool handleBusReset();
+
+    // the one to be implemented by the child class
+    virtual bool handleBusResetDo();
+
+    FFADODevice& getParent() {return m_Parent;};
 
 public: // constructor/destructor
     StreamProcessor(FFADODevice &parent, enum eProcessorType type);
@@ -152,7 +160,7 @@ public: // the public receive/transmit functions
     enum raw1394_iso_disposition
         putPacket(unsigned char *data, unsigned int length,
                   unsigned char channel, unsigned char tag, unsigned char sy,
-                  uint32_t pkt_ctr, unsigned int dropped, unsigned int skipped);
+                  uint32_t pkt_ctr, unsigned int dropped);
 
     enum raw1394_iso_disposition
     getPacket(unsigned char *data, unsigned int *length,

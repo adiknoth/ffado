@@ -40,6 +40,19 @@ class GlobalMixer( GlobalMixerUi ):
 				QMessageBox.Ok )
 			self.clocksource.setCurrentItem( selected )
 
+	def samplerateChanged( self, sr ):
+		print "samplerateChanged( " + str(sr) + " )"
+		self.samplerateselect.select( sr )
+		selected = self.samplerateselect.selected()
+
+		if selected != sr:
+			srname = self.samplerateselect.getEnumLabel( sr )
+			msg = QMessageBox()
+			msg.question( msg, "Failed to select sample rate", \
+				"<qt>Could not select %s as samplerate.</qt>" % srname, \
+				QMessageBox.Ok )
+			self.samplerate.setCurrentItem( selected )
+
 	def nicknameChanged( self, name ):
 		#print "nicknameChanged( %s )" % name
 		self.nickname.setText( name.latin1() )
@@ -49,5 +62,10 @@ class GlobalMixer( GlobalMixerUi ):
 		for i in range( self.clockselect.count() ):
 			self.clocksource.insertItem( self.clockselect.getEnumLabel( i ) )
 		self.clocksource.setCurrentItem( self.clockselect.selected() )
+
+		for i in range( self.samplerateselect.count() ):
+			self.samplerate.insertItem( self.samplerateselect.getEnumLabel( i ) )
+		self.samplerate.setCurrentItem( self.samplerateselect.selected() )
+
 		self.txtNickname.setText( self.nickname.text() )
 

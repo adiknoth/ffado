@@ -6,6 +6,10 @@
 #define LIBDIR "$LIBDIR"
 #define SHAREDIR "$SHAREDIR"
 
+/* configuration file locations */
+#define USER_CONFIG_FILE    "$USER_CONFIG_FILE"
+#define SYSTEM_CONFIG_FILE  "$SYSTEM_CONFIG_FILE"
+
 /* Define indicating availability of lrint() */
 #define HAVE_LRINT $HAVE_LRINT
 
@@ -128,7 +132,7 @@
 // given by AMDTP_TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
 // packets early if we want to. (not completely according to spec)
 // (for spec compliance you need to specify a value of 0)
-#define AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY                  0
+#define AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY                  1
 
 // ensure that the AMDTP SP clips all float values to [-1.0..1.0]
 #define AMDTP_CLIP_FLOATS                                   1

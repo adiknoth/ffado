@@ -25,5 +25,5 @@ Import( 'env' )
 
 env = env.Clone()
 
-env.SConscript( dirs="dbus", exports="env" )
+env.SConscript( dirs=["dbus", "libconfig"], exports="env" )
 

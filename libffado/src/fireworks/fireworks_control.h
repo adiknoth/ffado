@@ -70,7 +70,7 @@ public:
 
 protected:
     enum eMonitorControl        m_control;
-    FireWorks::Device&          m_Parent;
+    FireWorks::Device&          m_ParentDevice;
 };
 
 
@@ -100,7 +100,7 @@ public:
 
 protected:
     EfcGenericMixerCmd*         m_Slave;
-    FireWorks::Device&          m_Parent;
+    FireWorks::Device&          m_ParentDevice;
 };
 
 // for on-off type of controls
@@ -131,8 +131,34 @@ public:
 protected:
     int                         m_bit;
     EfcGenericMixerCmd*         m_Slave;
-    FireWorks::Device&          m_Parent;
+    FireWorks::Device&          m_ParentDevice;
 };
+
+class SpdifModeControl : public Control::Discrete
+{
+
+public:
+    SpdifModeControl(FireWorks::Device& parent);
+    SpdifModeControl(FireWorks::Device& parent,
+                    std::string n);
+    virtual ~SpdifModeControl();
+
+    virtual void show();
+
+    virtual bool setValue( const int );
+    virtual int getValue( );
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0;};
+
+protected:
+    FireWorks::Device&          m_ParentDevice;
+};
+
 
 // for on-off type of controls
 
@@ -162,7 +188,76 @@ public:
 protected:
     int                         m_bit;
     EfcGenericIOConfigCmd*      m_Slave;
-    FireWorks::Device&          m_Parent;
+    FireWorks::Device&          m_ParentDevice;
+};
+
+
+class HwInfoControl : public Control::Discrete
+{
+public:
+
+    enum eHwInfoField {
+        eHIF_PhysicalAudioOutCount,
+        eHIF_PhysicalAudioInCount,
+        eHIF_1394PlaybackCount,
+        eHIF_1394RecordCount,
+        eHIF_GroupOutCount,
+        eHIF_GroupInCount,
+        eHIF_PhantomPower,
+    };
+public:
+    HwInfoControl(FireWorks::Device& parent,
+                  enum eHwInfoField);
+    HwInfoControl(FireWorks::Device& parent,
+                  enum eHwInfoField, std::string n);
+    virtual ~HwInfoControl();
+
+    virtual void show();
+
+    virtual bool setValue( const int ) {return false;};
+    virtual int getValue( );
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0;};
+
+protected:
+    FireWorks::Device&          m_ParentDevice;
+    enum eHwInfoField           m_Field;
+};
+
+class MultiControl : public Control::Discrete
+{
+public:
+
+    enum eType {
+        eT_SaveSession,
+        eT_Identify,
+    };
+public:
+    MultiControl(FireWorks::Device& parent, enum eType);
+    MultiControl(FireWorks::Device& parent, enum eType,
+                        std::string n);
+    virtual ~MultiControl();
+
+    virtual void show();
+
+    virtual bool setValue( const int );
+    virtual int getValue( ) {return 0;};
+    virtual bool setValue(int idx, int v)
+        {return setValue(v);};
+    virtual int getValue(int idx)
+        {return getValue();};
+
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0;};
+
+protected:
+    FireWorks::Device&  m_ParentDevice;
+    enum eType          m_Type;
 };
 
 } // namespace FireWorks

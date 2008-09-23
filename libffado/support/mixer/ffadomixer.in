@@ -42,7 +42,7 @@ from mixer_phase24 import *
 from mixer_saffire import *
 from mixer_saffirele import *
 from mixer_saffirepro import *
-from mixer_af2 import *
+from mixer_audiofire import *
 from mixer_bcoaudio5 import *
 from mixer_edirolfa66 import *
 from mixer_edirolfa101 import *
@@ -68,7 +68,10 @@ SupportedDevices=[
     [(0x00130e, 0x00000003),'SaffireProMixer'],
     [(0x00130e, 0x00000006),'SaffireProMixer'],
     [(0x00130e, 0x00000000),'SaffireMixer'],
-    [(0x001486, 0x00000af2),'AudioFire2Mixer'],
+    [(0x001486, 0x00000af2),'AudioFireMixer'],
+    [(0x001486, 0x00000af4),'AudioFireMixer'],
+    [(0x001486, 0x00000af8),'AudioFireMixer'],
+    [(0x001486, 0x0000af12),'AudioFireMixer'],
     [(0x0007f5, 0x00010049),'BCoAudio5Control'],
     [(0x0040AB, 0x00010049),'EdirolFa66Control'],
     [(0x0040AB, 0x00010048),'EdirolFa101Control'],
@@ -76,6 +79,8 @@ SupportedDevices=[
     [(0x000f1b, 0x00010064),'QuataFireMixer'],
     [(0x0001f2, 0x00000000),'MotuMixer'],
     ]
+
+POLL_SLEEP_TIME_MSEC = 100 # 100ms
 
 class ControlInterface:
     def __init__(self, servername, basepath):
@@ -270,6 +275,22 @@ class ClockSelectInterface:
     def getAttributeName(self, idx):
         return self.iface.getAttributeName(idx)
 
+class SamplerateSelectInterface:
+    def __init__(self, servername, devicepath):
+        self.basepath=devicepath + '/Generic/SamplerateSelect'
+        self.servername=servername
+        self.bus=dbus.SessionBus()
+        self.dev = self.bus.get_object(self.servername, self.basepath)
+        self.iface = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Enum')
+    def count(self):
+        return self.iface.count()
+    def select(self, idx):
+        return self.iface.select(idx)
+    def selected(self):
+        return self.iface.selected()
+    def getEnumLabel(self, idx):
+        return self.iface.getEnumLabel(idx)
+
 class TextInterface:
     def __init__(self, servername, basepath):
         self.basepath=basepath
@@ -290,6 +311,19 @@ class HLine( QFrame ):
         self.setFrameShape( QFrame.HLine )
         self.setLineWidth( 2 )
         self.setMinimumHeight( 10 )
+
+class PollUpdateWidgets(QObject):
+    def __init__(self, widgets):
+        QObject.__init__(self)
+        self.widgets = widgets
+
+    def updateWidgets(self):
+        for w in self.widgets:
+            if 'polledUpdate' in dir(w):
+                try:
+                    w.polledUpdate()
+                except:
+                    print "error in polled update"
 
 if __name__ == "__main__":
 
@@ -335,6 +369,8 @@ if __name__ == "__main__":
 
     mw = QTabWidget()
 
+    mixerwidgets = []
+
     for idx in range(nbDevices):
         path=devmgr.getDeviceName(idx)
         print "Found device %d: %s" % (idx, path)
@@ -371,13 +407,18 @@ if __name__ == "__main__":
 
         # create a control object
         hw = ControlInterface(server, basepath+'/DeviceManager/'+path)
+        clockselect = ClockSelectInterface( server, basepath+"/DeviceManager/"+path )
+        samplerateselect = SamplerateSelectInterface( server, basepath+"/DeviceManager/"+path )
+        nickname = TextInterface( server, basepath+"/DeviceManager/"+path+"/Generic/Nickname" )
 
         #
         # Generic elements for all mixers follow here:
         #
         tmp = GlobalMixer( w )
-        tmp.clockselect = ClockSelectInterface( server, basepath+"/DeviceManager/"+path )
-        tmp.nickname = TextInterface( server, basepath+"/DeviceManager/"+path+"/Generic/Nickname" )
+        tmp.configrom = cfgrom
+        tmp.clockselect = clockselect
+        tmp.samplerateselect = samplerateselect
+        tmp.nickname = nickname
         tmp.hw = hw
         tmp.initValues()
         l.addWidget( tmp, 1 )
@@ -408,7 +449,8 @@ if __name__ == "__main__":
                         print "Found Saffire GUID"
 
                 # different panel for different clock frequency
-                samplerate = hw.getDiscrete('/Generic/SamplerateSelect')
+                selected = samplerateselect.selected()
+                samplerate = int(samplerateselect.getEnumLabel( selected ))
 
                 # adat on PRO26 makes a difference
                 have_adat = False
@@ -454,10 +496,16 @@ if __name__ == "__main__":
         # The same for all mixers
         #
         l.addWidget( mixerwidget, 10 )
-        mixerwidget.hw = hw
         mixerwidget.configrom = cfgrom
-        mixerwidget.clockselect = ClockSelectInterface(server, basepath+'/DeviceManager/'+path)
-        mixerwidget.initValues()
+        mixerwidget.clockselect = clockselect
+        mixerwidget.samplerateselect = samplerateselect
+        mixerwidget.nickname = nickname
+        mixerwidget.hw = hw
+        if 'buildMixer' in dir(mixerwidget):
+            mixerwidget.buildMixer()
+        if 'initValues' in dir(mixerwidget):
+            mixerwidget.initValues()
+        mixerwidgets.append(mixerwidget)
         mw.addTab( w, mixerapp )
 
     #
@@ -470,9 +518,16 @@ if __name__ == "__main__":
     # Only really show the mainwindow and start the mixer when at least on mixer is shown
     #
     if mw.count() > 0:
+        puw = PollUpdateWidgets(mixerwidgets)
+        timer = QTimer(puw)
+        QObject.connect( timer, SIGNAL('timeout()'), puw.updateWidgets );
+        timer.start( POLL_SLEEP_TIME_MSEC );
+
+        # Adjust size of mixer window to the requirements of the selected device mixer(s) 
+        mw.adjustSize()
+
         mw.show()
 
         QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
 
         app.exec_loop()
-

@@ -55,7 +55,9 @@ FocusriteDevice::setVerboseLevel(int l)
 bool
 FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
 {
-    bool use_avc=false;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Writing parameter address space id 0x%08lX (%u), data: 0x%08lX\n",
+        id, id, v);
+    bool use_avc = false;
     if(!getOption("useAvcForParameters", use_avc)) {
         debugWarning("Could not retrieve useAvcForParameters parameter, defauling to false\n");
     }
@@ -69,15 +71,18 @@ FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
 bool
 FocusriteDevice::getSpecificValue(uint32_t id, uint32_t *v)
 {
-    bool use_avc=false;
+    bool retval;
+    bool use_avc = false;
     if(!getOption("useAvcForParameters", use_avc)) {
         debugWarning("Could not retrieve useAvcForParameters parameter, defauling to false\n");
     }
     if (use_avc) {
-        return getSpecificValueAvc(id, v);
+        retval = getSpecificValueAvc(id, v);
     } else {
-        return getSpecificValueARM(id, v);
+        retval = getSpecificValueARM(id, v);
     }
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Read parameter address space id 0x%08lX (%u): %08lX\n", id, id, *v);
+    return retval;
 }
 
 // The AV/C methods to set parameters
@@ -307,6 +312,37 @@ VolumeControl::getValue()
     }
 }
 
+MeteringControl::MeteringControl(FocusriteDevice& parent, int id)
+: Control::Discrete(&parent)
+, m_Parent(parent)
+, m_cmd_id ( id )
+{}
+MeteringControl::MeteringControl(FocusriteDevice& parent, int id,
+                std::string name, std::string label, std::string descr)
+: Control::Discrete(&parent)
+, m_Parent(parent)
+, m_cmd_id ( id )
+{
+    setName(name);
+    setLabel(label);
+    setDescription(descr);
+}
+
+int
+MeteringControl::getValue()
+{
+    uint32_t val=0;
+
+    if ( !m_Parent.getSpecificValue(m_cmd_id, &val) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %d = %d\n", 
+                                         m_cmd_id, val);
+        return val;
+    }
+}
+
 // reg control
 RegisterControl::RegisterControl(FocusriteDevice& parent)
 : Control::Register(&parent)
@@ -411,6 +447,38 @@ VolumeControlLowRes::getValue()
     }
 }
 
+// hardware dial control
+DialPositionControl::DialPositionControl(FocusriteDevice& parent, int id)
+: Control::Discrete(&parent)
+, m_Parent(parent)
+, m_cmd_id ( id )
+{}
+DialPositionControl::DialPositionControl(FocusriteDevice& parent, int id,
+                std::string name, std::string label, std::string descr)
+: Control::Discrete(&parent)
+, m_Parent(parent)
+, m_cmd_id ( id )
+{
+    setName(name);
+    setLabel(label);
+    setDescription(descr);
+}
+
+int
+DialPositionControl::getValue()
+{
+    uint32_t val=0;
+
+    if ( !m_Parent.getSpecificValue(m_cmd_id, &val) ) {
+        debugError( "getSpecificValue failed\n" );
+        return 0;
+    } else {
+        val = val >> 5;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %d = %d\n", 
+                                         m_cmd_id, val);
+        return val;
+    }
+}
 
 // Saffire pro matrix mixer element
 FocusriteMatrixMixer::FocusriteMatrixMixer(FocusriteDevice& p)

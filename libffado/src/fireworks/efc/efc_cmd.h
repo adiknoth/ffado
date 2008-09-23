@@ -103,13 +103,13 @@
 
 
 // specifiers for the flags field
-#define EFC_CMD_HW_DYNADDR_SUPPORTED                1
-#define EFC_CMD_HW_MIRRORING_SUPPORTED              2
-#define EFC_CMD_HW_SPDIF_COAX_SUPPORTED             3
-#define EFC_CMD_HW_SPDIF_AESEBUXLR_SUPPORTED        4
-#define EFC_CMD_HW_HAS_DSP                          5
-#define EFC_CMD_HW_HAS_FPGA                         6
-#define EFC_CMD_HW_HAS_PHANTOM                      7
+#define EFC_CMD_HW_DYNADDR_SUPPORTED                0
+#define EFC_CMD_HW_MIRRORING_SUPPORTED              1
+#define EFC_CMD_HW_SPDIF_COAX_SUPPORTED             2
+#define EFC_CMD_HW_SPDIF_AESEBUXLR_SUPPORTED        3
+#define EFC_CMD_HW_HAS_DSP                          4
+#define EFC_CMD_HW_HAS_FPGA                         5
+#define EFC_CMD_HW_HAS_PHANTOM                      6
 
 #define EFC_CMD_HW_CHECK_FLAG(__val__,__flag__) \
     (((__val__) & (1<<(__flag__))) != 0)

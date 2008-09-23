@@ -111,6 +111,9 @@ class ConfigRom
         Element::setVerboseLevel(level);
     }
 
+    bool isPresentOnBus() {
+        return m_nodeId != INVALID_NODE_ID;
+    };
  protected:
     void processUnitDirectory( struct csr1212_csr*    csr,
                                struct csr1212_keyval* ud_kv,

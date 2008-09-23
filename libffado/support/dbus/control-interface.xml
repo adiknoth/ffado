@@ -30,7 +30,10 @@
           <arg type="i" name="id" direction="in"/>
           <arg type="s" name="name" direction="out"/>
       </method>
+      <signal name="Destroyed"></signal>
       <signal name="Updated"></signal>
+      <signal name="PreUpdate"></signal>
+      <signal name="PostUpdate"></signal>
   </interface>
 
   <interface name="org.ffado.Control.Element.ConfigRomX">

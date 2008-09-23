@@ -1014,6 +1014,92 @@ Plug::setSampleRate( int rate )
 }
 
 bool
+Plug::supportsSampleRate( int rate )
+{
+    // fallback: BeBoB style
+    ESamplingFrequency samplingFrequency = parseSampleRate(rate);
+
+    ExtendedStreamFormatCmd extStreamFormatCmd(
+        m_unit->get1394Service(),
+        ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommandList );
+    UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
+                                     getPlugId() );
+
+    extStreamFormatCmd.setPlugAddress(
+        PlugAddress(
+            Plug::convertPlugDirection(getPlugDirection() ),
+            PlugAddress::ePAM_Unit,
+            unitPlugAddress ) );
+
+    extStreamFormatCmd.setNodeId( m_unit->getConfigRom().getNodeId() );
+    extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+
+    int i = 0;
+    bool cmdSuccess = false;
+    bool correctFormatFound = false;
+
+    do {
+        extStreamFormatCmd.setIndexInStreamFormat( i );
+        extStreamFormatCmd.setCommandType( AVCCommand::eCT_Status );
+        extStreamFormatCmd.setVerbose( getDebugLevel() );
+
+        cmdSuccess = extStreamFormatCmd.fire();
+
+        if ( cmdSuccess
+             && ( extStreamFormatCmd.getResponse() ==
+                  AVCCommand::eR_Implemented ) )
+        {
+            ESamplingFrequency foundFreq = eSF_DontCare;
+
+            FormatInformation* formatInfo =
+                extStreamFormatCmd.getFormatInformation();
+            FormatInformationStreamsCompound* compoundStream
+                = dynamic_cast< FormatInformationStreamsCompound* > (
+                    formatInfo->m_streams );
+            if ( compoundStream ) {
+                foundFreq =
+                    static_cast< ESamplingFrequency >(
+                        compoundStream->m_samplingFrequency );
+            }
+
+            FormatInformationStreamsSync* syncStream
+                = dynamic_cast< FormatInformationStreamsSync* > (
+                    formatInfo->m_streams );
+            if ( syncStream ) {
+                foundFreq =
+                    static_cast< ESamplingFrequency >(
+                        syncStream->m_samplingFrequency );
+            }
+
+            if ( foundFreq == samplingFrequency )
+            {
+                correctFormatFound = true;
+                break;
+            }
+        }
+
+        ++i;
+    } while ( cmdSuccess
+              && ( extStreamFormatCmd.getResponse() ==
+                   ExtendedStreamFormatCmd::eR_Implemented ) );
+
+    if ( !cmdSuccess ) {
+        debugError( "setSampleRatePlug: Failed to retrieve format info\n" );
+        return false;
+    }
+
+    if ( !correctFormatFound ) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "setSampleRatePlug: %s plug %d does not support sample rate %d\n",
+                    getName(),
+                    getPlugId(),
+                    convertESamplingFrequency( samplingFrequency ) );
+        return false;
+    }
+    return true;
+}
+
+bool
 Plug::discoverConnectionsFromSpecificData(
     EPlugDirection discoverDirection,
     PlugAddressSpecificData* plugAddress,

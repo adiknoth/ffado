@@ -40,6 +40,8 @@ class MotuDevice;
 #define MOTU_CTRL_MIX_MUTE        0x00000200
 #define MOTU_CTRL_MIX_DEST        0x00000400
 
+#define MOTU_CTRL_METER           0x00001000
+
 #define MOTU_CTRL_INPUT_TRIMGAIN  0x01000000
 #define MOTU_CTRL_INPUT_PAD       0x02000000
 #define MOTU_CTRL_INPUT_LEVEL     0x04000000
@@ -72,6 +74,11 @@ class MotuDevice;
 
 #define MOTU_CTRL_MODE_PAD                 0x00000000
 #define MOTU_CTRL_MODE_TRIMGAIN            0x00000001
+
+#define MOTU_CTRL_METER_PEAKHOLD           0x00000000
+#define MOTU_CTRL_METER_CLIPHOLD           0x00000001
+#define MOTU_CTRL_METER_AESEBU_SRC         0x00000002
+#define MOTU_CTRL_METER_PROG_SRC           0x00000004
 
 #define MOTU_INFO_MODEL                    0x00000001
 #define MOTU_INFO_IS_STREAMING             0x00000002
@@ -290,6 +297,21 @@ protected:
     void validate();
     unsigned int dev_register();
     unsigned int m_mode;
+};
+
+class MeterControl
+    : public MotuDiscreteCtrl
+{
+public:
+    MeterControl(MotuDevice &parent, unsigned int ctrl_mask, unsigned int ctrl_shift);
+    MeterControl(MotuDevice &parent, unsigned int ctrl_mask, unsigned int ctrl_shift, 
+          std::string name, std::string label, std::string descr);
+
+    virtual bool setValue(int v);
+    virtual int getValue();
+protected:
+    void validate();
+    unsigned int m_shift;
 };
 
 class InfoElement
