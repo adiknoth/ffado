@@ -471,14 +471,18 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
         #env['USE_SSE3'] = 1
 
     # build for 64-bit userland?
-    if env['DIST_TARGET'] == "powerpc64" or env['DIST_TARGET'] == "x86_64":
-        print "Doing a 64-bit build"
+    if env['DIST_TARGET'] == "powerpc64":
+        print "Doing a 64-bit PowerPC build"
         env.AppendUnique( CCFLAGS=["-m64"] )
         env.AppendUnique( CFLAGS=["-m64"] )
+    elif env['DIST_TARGET'] == "x86_64":
+        print "Doing a 64-bit x86 build"
+        env.AppendUnique( CCFLAGS=["-m64","-fPIC"] )
+        env.AppendUnique( CFLAGS=["-m64","-fPIC"] )
     else:
         print "Doing a 32-bit build"
-	env.AppendUnique( CCFLAGS=["-m32"] )
-	env.AppendUnique( CFLAGS=["-m32"] )
+        env.AppendUnique( CCFLAGS=["-m32"] )
+        env.AppendUnique( CFLAGS=["-m32"] )
 
 # end of processor-specific section
 if env['ENABLE_OPTIMIZATIONS']:
