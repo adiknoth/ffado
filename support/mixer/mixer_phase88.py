@@ -79,13 +79,13 @@ class Phase88Control(Phase88ControlUI):
             print "Init Phase88 mixer window"
 
             self.VolumeControls={
-                'master':    ['/Mixer/Feature_1', self.sldInputMaster], 
-                'line12' :   ['/Mixer/Feature_2', self.sldInput12],
-                'line34' :   ['/Mixer/Feature_3', self.sldInput34],
-                'line56' :   ['/Mixer/Feature_4', self.sldInput56],
-                'line78' :   ['/Mixer/Feature_5', self.sldInput78],
-                'spdif' :    ['/Mixer/Feature_6', self.sldInputSPDIF],
-                'waveplay' : ['/Mixer/Feature_7', self.sldInputWavePlay],
+                'master':    ['/Mixer/Feature_Volume_1', self.sldInputMaster], 
+                'line12' :   ['/Mixer/Feature_Volume_2', self.sldInput12],
+                'line34' :   ['/Mixer/Feature_Volume_3', self.sldInput34],
+                'line56' :   ['/Mixer/Feature_Volume_4', self.sldInput56],
+                'line78' :   ['/Mixer/Feature_Volume_5', self.sldInput78],
+                'spdif' :    ['/Mixer/Feature_Volume_6', self.sldInputSPDIF],
+                'waveplay' : ['/Mixer/Feature_Volume_7', self.sldInputWavePlay],
                 }
 
             self.SelectorControls={

@@ -62,7 +62,10 @@ class ContinuousWidget( QWidget ):
 	def sliderToInterFace( self, slider ):
 		return ( self.max - self.min ) * (100-slider)/100.0 + self.min
 	def interfaceToSlider( self, interface ):
-		return - ( interface - self.min ) / ( self.max - self.min ) * 100.0 + 100
+                if self.max == self.min:
+                        return 0
+                else:
+                        return - ( interface - self.min ) / ( self.max - self.min ) * 100.0 + 100
 
 	def sliderMoved( self, i ):
 		#print "ContinuousWidget::sliderMoved( %i )" % i
