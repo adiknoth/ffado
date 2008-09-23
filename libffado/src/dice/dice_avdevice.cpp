@@ -765,6 +765,16 @@ DiceAvDevice::prepare() {
             continue;
         }
 
+        /* Vendor-specific hacks */
+
+        /* Alesis io14 RX0 claims to have six audio channels. Ignore it, just 
+         * use 8 for Bus1-L+R .. Bus4-L+R.
+         */
+        if ((FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) &&
+            (0x00000001 == getConfigRom().getModelId())) {
+            nb_audio=8;
+        }
+
         // request the channel names
         diceNameVector names_audio=getRxNameString(i);
 
