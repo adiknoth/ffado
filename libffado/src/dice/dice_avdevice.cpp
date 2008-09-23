@@ -1092,7 +1092,7 @@ DiceAvDevice::startStreamByIndex(int i) {
         // allocate ISO channel
         int isochannel=allocateIsoChannel(p->getMaxPacketSize());
         if(isochannel<0) {
-            debugError("Could not allocate iso channel for SP %d (ATX %d)\n",i,n);
+            debugError("Could not allocate iso channel for SP %d (ARX %d)\n",i,n);
             return false;
         }
         p->setChannel(isochannel);
