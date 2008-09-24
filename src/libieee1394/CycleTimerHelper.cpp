@@ -653,6 +653,38 @@ CycleTimerHelper::getCycleTimer(uint64_t now)
     return result;
 }
 
+uint64_t
+CycleTimerHelper::getSystemTimeForCycleTimerTicks(uint32_t ticks)
+{
+    uint64_t retval;
+    struct compute_vars *my_vars;
+
+    // get pointer and copy the contents
+    // no locking should be needed since we have more than one
+    // of these vars available, and our use will always be finished before
+    // m_current_shadow_idx changes since this thread's priority should
+    // be higher than the one of the writer thread. Even if not, we only have to ensure
+    // that the used dataset is consistent. We can use an older dataset if it's consistent
+    // since it will also provide a fairly decent extrapolation.
+    my_vars = m_shadow_vars + m_current_shadow_idx;
+
+    // the number of ticks the request is ahead of the current CTR position
+    int64_t ticks_diff = diffTicks(ticks, my_vars->ticks);
+    // to how much time does this correspond?
+    double x_step_in_usec = ((double)ticks_diff) / my_vars->rate;
+    int64_t x_step_in_usec_int = (int64_t)x_step_in_usec;
+    retval = my_vars->usecs + x_step_in_usec_int;
+
+    return retval;
+}
+
+uint64_t
+CycleTimerHelper::getSystemTimeForCycleTimer(uint32_t ctr)
+{
+    uint32_t ticks = CYCLE_TIMER_TO_TICKS(ctr);
+    return getSystemTimeForCycleTimerTicks(ticks);
+}
+
 #else
 
 float
@@ -684,8 +716,18 @@ CycleTimerHelper::getCycleTimerTicks()
 uint32_t
 CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 {
-    debugWarning("not implemented!\n");
-    return getCycleTimerTicks();
+    debugWarning("untested code\n");
+    #warning Untested code
+    uint32_t cycle_timer;
+    uint64_t local_time;
+    readCycleTimerWithRetry(&cycle_timer, &local_time, 10);
+    int64_t ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
+
+    int delta_t = now - local_time; // how far ahead is the request?
+    ticks += delta_t * getRate(); // add ticks
+    if (ticks >= TICKS_PER_SECOND * 128) ticks -= TICKS_PER_SECOND * 128;
+    else if (ticks < 0) ticks += TICKS_PER_SECOND * 128;
+    return ticks;
 }
 
 uint32_t
@@ -700,8 +742,21 @@ CycleTimerHelper::getCycleTimer()
 uint32_t
 CycleTimerHelper::getCycleTimer(uint64_t now)
 {
+    return TICKS_TO_CYCLE_TIMER(getCycleTimerTicks(now));
+}
+
+uint64_t
+CycleTimerHelper::getSystemTimeForCycleTimerTicks(uint32_t ticks)
+{
     debugWarning("not implemented!\n");
-    return getCycleTimer();
+    return 0;
+}
+
+uint64_t
+CycleTimerHelper::getSystemTimeForCycleTimer(uint32_t ctr)
+{
+    uint32_t ticks = CYCLE_TIMER_TO_TICKS(ctr);
+    return getSystemTimeForCycleTimerTicks(ticks);
 }
 
 #endif
