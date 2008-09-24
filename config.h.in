@@ -128,6 +128,9 @@
 #define MAX_XMIT_PACKET_SIZE                         (2048-16)
 #define MAX_XMIT_NB_BUFFERS                                200
 
+// should be PAGE_SIZE (4096) for unpatched kernels
+#define RAW1394_RCV_MIN_BUF_STRIDE                        4096
+
 #define ISOHANDLER_FLUSH_BEFORE_ITERATE                      0
 
 #define ISOHANDLER_DEATH_DETECT_TIMEOUT_USECS        1000000LL

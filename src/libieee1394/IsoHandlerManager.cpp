@@ -351,7 +351,7 @@ IsoTask::Execute()
     for (i = 0; i < m_poll_nfds_shadow; i++) {
         #ifdef DEBUG
         if(m_poll_fds_shadow[i].revents) {
-            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+            debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                         "(%p, %s) received events: %08X for (%d/%d, %p, %s)\n",
                         this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"),
                         m_poll_fds_shadow[i].revents,
@@ -759,19 +759,29 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
     if (stream->getType()==StreamProcessor::ePT_Receive) {
         // setup the optimal parameters for the raw1394 ISO buffering
         unsigned int packets_per_period = stream->getPacketsPerPeriod();
-        unsigned int max_packet_size = stream->getMaxPacketSize();
-        unsigned int page_size = getpagesize() - 2; // for one reason or another this is necessary
+        unsigned int max_packet_size = stream->getMaxPacketSize() + 8; // bufferfill takes another 8 bytes for headers
+        unsigned int page_size = getpagesize();
 
         // Ensure we don't request a packet size bigger than the
         // kernel-enforced maximum which is currently 1 page.
+        // NOTE: PP: this is not really true AFAICT
         if (max_packet_size > page_size) {
             debugError("max packet size (%u) > page size (%u)\n", max_packet_size, page_size);
             return false;
         }
 
-        unsigned int irq_interval = packets_per_period / MINIMUM_INTERRUPTS_PER_PERIOD;
-        if(irq_interval <= 0) irq_interval=1;
-        
+        // the interrupt/wakeup interval prediction of raw1394 is a mess...
+        int wanted_irq_interval = (packets_per_period-1) / MINIMUM_INTERRUPTS_PER_PERIOD;
+        if(wanted_irq_interval <= 0) wanted_irq_interval=1;
+
+        // mimic kernel initialization
+        unsigned int kern_buff_stride = RAW1394_RCV_MIN_BUF_STRIDE;
+        for (; kern_buff_stride < max_packet_size; kern_buff_stride *= 2);
+        if (kern_buff_stride > page_size) kern_buff_stride = page_size;
+        // kern_buff_stride is the minimal granularity of interrupts
+        // therefore the following will result in on-average correct interrupt timing
+        int irq_interval = (wanted_irq_interval * max_packet_size) / kern_buff_stride;
+
         // the receive buffer size doesn't matter for the latency,
         // but it has a minimal value in order for libraw to operate correctly (300)
         int buffers=400;
