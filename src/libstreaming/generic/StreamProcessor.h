@@ -378,6 +378,7 @@ protected:
          * @return the sync delay (in ticks)
          */
         unsigned int getSyncDelay() {return m_sync_delay;};
+        unsigned int getSyncDelayFrames();
         /**
          * sets the sync delay
          * @param d sync delay

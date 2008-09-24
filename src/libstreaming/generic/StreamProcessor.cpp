@@ -219,7 +219,13 @@ StreamProcessor::setSyncDelay(unsigned int d) {
     unsigned int frames = (unsigned int)((float)d / getTicksPerFrame());
     debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %u ticks, %u frames\n", this, d, frames);
     #endif
-    m_sync_delay = d; // FIXME: sync delay not necessary anymore
+    m_sync_delay = d;
+}
+
+unsigned int
+StreamProcessor::getSyncDelayFrames() {
+    unsigned int frames = (unsigned int)((float)m_sync_delay / getTicksPerFrame());
+    return frames;
 }
 
 uint64_t
@@ -1510,6 +1516,11 @@ StreamProcessor::doWaitForStreamEnable()
             }
             if (getType() == ePT_Transmit) {
                 ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
+
+                // add sync delay
+                int syncdelay_in_frames = m_StreamProcessorManager.getSyncSource().getSyncDelayFrames();
+                ringbuffer_size_frames += syncdelay_in_frames;
+
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Prefill transmit SP %p with %u frames\n", this, ringbuffer_size_frames);
                 // prefill the buffer
                 if(!transferSilence(ringbuffer_size_frames)) {

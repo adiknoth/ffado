@@ -460,12 +460,14 @@ bool StreamProcessorManager::syncStartAll() {
     // time to a later time instant also causes the xmit buffer fill to be
     // lower on average.
     max_of_min_delay += STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS;
-    debugOutput( DEBUG_LEVEL_VERBOSE, " sync delay = %d ticks (%03us %04uc %04ut)...\n", 
-        max_of_min_delay,
-        (unsigned int)TICKS_TO_SECS(max_of_min_delay),
-        (unsigned int)TICKS_TO_CYCLES(max_of_min_delay),
-        (unsigned int)TICKS_TO_OFFSET(max_of_min_delay));
+
     m_SyncSource->setSyncDelay(max_of_min_delay);
+    unsigned int syncdelay = m_SyncSource->getSyncDelay();
+    debugOutput( DEBUG_LEVEL_VERBOSE, " sync delay = %d => %d ticks (%03us %04uc %04ut)...\n", 
+        max_of_min_delay, syncdelay,
+        (unsigned int)TICKS_TO_SECS(syncdelay),
+        (unsigned int)TICKS_TO_CYCLES(syncdelay),
+        (unsigned int)TICKS_TO_OFFSET(syncdelay));
 
     //STEP X: when we implement such a function, we can wait for a signal from the devices that they
     //        have aquired lock
@@ -598,6 +600,8 @@ bool StreamProcessorManager::syncStartAll() {
     // and a (still very rough) approximation of the rate
     float rate = m_SyncSource->getTicksPerFrame();
     int64_t delay_in_ticks=(int64_t)(((float)((m_nb_buffers-1) * m_period)) * rate);
+    // also add the sync delay
+    delay_in_ticks += m_SyncSource->getSyncDelay();
     debugOutput( DEBUG_LEVEL_VERBOSE, "  initial time of transfer %010lld, rate %f...\n",
                 m_time_of_transfer, rate);
 
@@ -1173,7 +1177,11 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
 
         // the data we are putting into the buffer is intended to be transmitted
         // one ringbuffer size after it has been received
-        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+
+        // we also add one syncdelay as a safety margin, since that's the amount of time we can get
+        // postponed.
+        int syncdelay = m_SyncSource->getSyncDelay();
+        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks + syncdelay);
 
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
                 it != m_TransmitProcessors.end();
@@ -1249,7 +1257,10 @@ bool StreamProcessorManager::transferSilence(enum StreamProcessor::eProcessorTyp
 
         // the data we are putting into the buffer is intended to be transmitted
         // one ringbuffer size after it has been received
-        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+        // we also add one syncdelay as a safety margin, since that's the amount of time we can get
+        // postponed.
+        int syncdelay = m_SyncSource->getSyncDelay();
+        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks + syncdelay);
 
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
                 it != m_TransmitProcessors.end();
