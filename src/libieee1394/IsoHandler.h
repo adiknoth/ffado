@@ -118,7 +118,7 @@ public:
     // no setter functions, because those would require a re-init
     unsigned int getMaxPacketSize() { return m_max_packet_size;};
     unsigned int getNbBuffers() { return m_buf_packets;};
-    int getPacketLatency() { return m_irq_interval;};
+    int getIrqInterval() { return m_irq_interval;};
 
     unsigned int getPreBuffers() {return m_prebuffers;};
     void setPreBuffers(unsigned int n) {m_prebuffers=n;};

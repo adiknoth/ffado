@@ -985,7 +985,20 @@ IsoHandlerManager::getPacketLatencyForStream(Streaming::StreamProcessor *stream)
       ++it )
     {
         if((*it)->isStreamRegistered(stream)) {
-            return (*it)->getPacketLatency();
+            unsigned int page_size = getpagesize();
+            unsigned int max_packet_size = stream->getMaxPacketSize() + 8;
+            int average_packet_size_bytes = stream->getAveragePacketSize();
+            int irq_interval = (*it)->getIrqInterval();
+
+            // mimic kernel initialization
+            unsigned int kern_buff_stride = RAW1394_RCV_MIN_BUF_STRIDE;
+            for (; kern_buff_stride < max_packet_size; kern_buff_stride *= 2);
+            if (kern_buff_stride > page_size) kern_buff_stride = page_size;
+            
+            // we can only have one interrupt every kern_buff_stride bytes
+            int packets_per_block = kern_buff_stride / average_packet_size_bytes;
+            int blocks_per_interrupt = irq_interval / packets_per_block + 1;
+            return blocks_per_interrupt * packets_per_block;
         }
     }
     debugError("Stream %p has no attached handler\n", stream);
