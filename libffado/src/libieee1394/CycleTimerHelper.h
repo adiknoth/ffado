@@ -97,6 +97,18 @@ public:
      */
     uint32_t getCycleTimer(uint64_t now);
 
+    /**
+     * @brief get the system time for a specific cycle timer value (in ticks)
+     * @note thread safe
+     */
+    uint64_t getSystemTimeForCycleTimerTicks(uint32_t ticks);
+
+    /**
+     * @brief get the system time for a specific cycle timer value (in CTR format)
+     * @note thread safe
+     */
+    uint64_t getSystemTimeForCycleTimer(uint32_t ctr);
+
     float getRate();
     float getNominalRate();
 

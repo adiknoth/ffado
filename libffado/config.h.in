@@ -63,6 +63,9 @@
 #define MAX_XMIT_PACKET_SIZE                         (2048-16)
 #define MAX_XMIT_NB_BUFFERS                                200
 
+// should be PAGE_SIZE (4096) for unpatched kernels
+#define RAW1394_RCV_MIN_BUF_STRIDE                        4096
+
 #define ISOHANDLER_FLUSH_BEFORE_ITERATE                      0
 
 #define ISOHANDLER_DEATH_DETECT_TIMEOUT_USECS        1000000LL
@@ -93,7 +96,16 @@
 // more robust. It should be noted though that shifting the transfer
 // time to a later time instant also causes the xmit buffer fill to be
 // lower on average.
-#define STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS           (3072*6)
+#define STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS           (3072*0)
+
+// causes the waitForPeriod() call to wait until sufficient
+// data is present in the buffer such that a transfer() will
+// succeed. Normally we wait for the period of time that theoretically
+// would mean that his is true. However sometimes the kernel hasn't
+// flushed everything to userspace (or the card hasn't IRQ'd).
+// the side-effect of this is some jitter in the return timing
+// whenever this occurs.
+#define STREAMPROCESSORMANAGER_ALLOW_DELAYED_PERIOD_SIGNAL         1
 
 // startup control
 #define STREAMPROCESSORMANAGER_CYCLES_FOR_DRYRUN            40000

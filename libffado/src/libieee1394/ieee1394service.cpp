@@ -400,6 +400,16 @@ Ieee1394Service::getCycleTimer(uint64_t t) {
     return m_pCTRHelper->getCycleTimer(t);
 }
 
+uint64_t
+Ieee1394Service::getSystemTimeForCycleTimerTicks(uint32_t ticks) {
+    return m_pCTRHelper->getSystemTimeForCycleTimerTicks(ticks);
+}
+
+uint64_t
+Ieee1394Service::getSystemTimeForCycleTimer(uint32_t ctr) {
+    return m_pCTRHelper->getSystemTimeForCycleTimer(ctr);
+}
+
 bool
 Ieee1394Service::readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time)
 {

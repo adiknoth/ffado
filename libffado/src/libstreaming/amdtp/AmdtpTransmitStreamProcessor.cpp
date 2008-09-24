@@ -405,6 +405,17 @@ AmdtpTransmitStreamProcessor::getSytInterval() {
             return 0;
     }
 }
+
+unsigned int
+AmdtpTransmitStreamProcessor::getAveragePacketSize()
+{
+    // in one second we have 8000 packets
+    // containing FRAMERATE frames of m_dimension quadlets
+    // so 8000 packet headers + FRAMERATE*m_dimension quadlets
+    unsigned int one_second = 8000 * 2 * sizeof(quadlet_t) + m_StreamProcessorManager.getNominalRate() * m_dimension * sizeof(quadlet_t);
+    return one_second / 8000;
+}
+
 unsigned int
 AmdtpTransmitStreamProcessor::getFDF() {
     switch (m_StreamProcessorManager.getNominalRate()) {

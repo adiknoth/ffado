@@ -135,6 +135,18 @@ public:
     uint32_t getCycleTimer(uint64_t t);
 
     /**
+     * @brief get the system time for a specific cycle timer value (in ticks)
+     * @note thread safe
+     */
+    uint64_t getSystemTimeForCycleTimerTicks(uint32_t ticks);
+
+    /**
+     * @brief get the system time for a specific cycle timer value (in CTR format)
+     * @note thread safe
+     */
+    uint64_t getSystemTimeForCycleTimer(uint32_t ctr);
+
+    /**
      * @brief read the cycle timer value from the controller (in CTR format)
      *
      * @note Uses a direct method to read the value from the controller

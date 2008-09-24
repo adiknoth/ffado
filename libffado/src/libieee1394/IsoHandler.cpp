@@ -474,7 +474,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
 
     // leave the offset field (for now?)
 
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                 "received packet: length=%d, channel=%d, cycle=%d, at %08X\n",
                 length, channel, cycle, pkt_ctr);
     m_packets++;
@@ -565,7 +565,7 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
     } else {
         m_last_packet_handled_at = pkt_ctr;
     }
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+    debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                 "sending packet: length=%d, cycle=%d, at %08X\n",
                 *length, cycle, pkt_ctr);
 
@@ -669,31 +669,16 @@ bool IsoHandler::prepare()
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso handler (%p, client=%p)\n", this, m_Client);
     dumpInfo();
     if (getType() == eHT_Receive) {
-        if(m_irq_interval > 1) {
-            if(raw1394_iso_recv_init(m_handle,
-                                    iso_receive_handler,
-                                    m_buf_packets,
-                                    m_max_packet_size,
-                                    m_Client->getChannel(),
-                                    RAW1394_DMA_BUFFERFILL,
-//                                     RAW1394_DMA_PACKET_PER_BUFFER,
-                                    m_irq_interval)) {
-                debugFatal("Could not do receive initialisation (DMA_BUFFERFILL)!\n" );
-                debugFatal("  %s\n",strerror(errno));
-                return false;
-            }
-        } else {
-            if(raw1394_iso_recv_init(m_handle,
-                                    iso_receive_handler,
-                                    m_buf_packets,
-                                    m_max_packet_size,
-                                    m_Client->getChannel(),
-                                    RAW1394_DMA_PACKET_PER_BUFFER,
-                                    m_irq_interval)) {
-                debugFatal("Could not do receive initialisation (PACKET_PER_BUFFER)!\n" );
-                debugFatal("  %s\n",strerror(errno));
-                return false;
-            }
+        if(raw1394_iso_recv_init(m_handle,
+                                iso_receive_handler,
+                                m_buf_packets,
+                                m_max_packet_size,
+                                m_Client->getChannel(),
+                                RAW1394_DMA_PACKET_PER_BUFFER,
+                                m_irq_interval)) {
+            debugFatal("Could not do receive initialisation (DMA_BUFFERFILL)!\n" );
+            debugFatal("  %s\n",strerror(errno));
+            return false;
         }
         return true;
     } else {

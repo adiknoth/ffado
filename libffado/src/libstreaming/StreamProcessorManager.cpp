@@ -461,12 +461,14 @@ bool StreamProcessorManager::syncStartAll() {
     // time to a later time instant also causes the xmit buffer fill to be
     // lower on average.
     max_of_min_delay += STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS;
-    debugOutput( DEBUG_LEVEL_VERBOSE, " sync delay = %d ticks (%03us %04uc %04ut)...\n", 
-        max_of_min_delay,
-        (unsigned int)TICKS_TO_SECS(max_of_min_delay),
-        (unsigned int)TICKS_TO_CYCLES(max_of_min_delay),
-        (unsigned int)TICKS_TO_OFFSET(max_of_min_delay));
+
     m_SyncSource->setSyncDelay(max_of_min_delay);
+    unsigned int syncdelay = m_SyncSource->getSyncDelay();
+    debugOutput( DEBUG_LEVEL_VERBOSE, " sync delay = %d => %d ticks (%03us %04uc %04ut)...\n", 
+        max_of_min_delay, syncdelay,
+        (unsigned int)TICKS_TO_SECS(syncdelay),
+        (unsigned int)TICKS_TO_CYCLES(syncdelay),
+        (unsigned int)TICKS_TO_OFFSET(syncdelay));
 
     //STEP X: when we implement such a function, we can wait for a signal from the devices that they
     //        have aquired lock
@@ -476,7 +478,7 @@ bool StreamProcessorManager::syncStartAll() {
     // make sure that we are dry-running long enough for the
     // DLL to have a decent sync (FIXME: does the DLL get updated when dry-running)?
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for sync...\n");
-    
+
     unsigned int nb_sync_runs = (STREAMPROCESSORMANAGER_SYNC_WAIT_TIME_MSEC * getNominalRate());
     nb_sync_runs /= 1000;
     nb_sync_runs /= getPeriodSize();
@@ -599,6 +601,8 @@ bool StreamProcessorManager::syncStartAll() {
     // and a (still very rough) approximation of the rate
     float rate = m_SyncSource->getTicksPerFrame();
     int64_t delay_in_ticks=(int64_t)(((float)((m_nb_buffers-1) * m_period)) * rate);
+    // also add the sync delay
+    delay_in_ticks += m_SyncSource->getSyncDelay();
     debugOutput( DEBUG_LEVEL_VERBOSE, "  initial time of transfer %010lld, rate %f...\n",
                 m_time_of_transfer, rate);
 
@@ -929,39 +933,38 @@ bool StreamProcessorManager::waitForPeriod() {
     if(m_shutdown_needed) return false;
     bool xrun_occurred = false;
     bool in_error = false;
-    bool period_not_ready = true;
 
     // grab the wait lock
     // this ensures that bus reset handling doesn't interfere
     Util::MutexLockHelper lock(*m_WaitLock);
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
+                        "waiting for period (%d frames in buffer)...\n",
+                        m_SyncSource->getBufferFill());
+    uint64_t ticks_at_period = m_SyncSource->getTimeAtPeriod();
+    uint64_t ticks_at_period_margin = ticks_at_period + m_SyncSource->getSyncDelay();
+    uint64_t pred_system_time_at_xfer = m_SyncSource->getParent().get1394Service().getSystemTimeForCycleTimerTicks(ticks_at_period_margin);
 
+    #ifdef DEBUG
+    int64_t now = Util::SystemTimeSource::getCurrentTime();
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "pred: %lld, now: %lld, wait: %lld\n", pred_system_time_at_xfer, now, pred_system_time_at_xfer-now );
+    #endif
+
+    // wait until it's time to transfer
+    Util::SystemTimeSource::SleepUsecAbsolute(pred_system_time_at_xfer);
+
+    #ifdef DEBUG
+    now = Util::SystemTimeSource::getCurrentTime();
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "pred: %lld now: %lld, excess: %lld\n", pred_system_time_at_xfer, now, now-pred_system_time_at_xfer );
+    #endif
+
+    // the period should be ready now
+
+    #if STREAMPROCESSORMANAGER_ALLOW_DELAYED_PERIOD_SIGNAL
+    // HACK: we force wait until every SP is ready. this is needed
+    // since the raw1394 interface provides no control over interrupts
+    // resulting in very bad predictability on when the data is present.
+    bool period_not_ready = true;
     while(period_not_ready) {
-        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, 
-                           "waiting for period (%d frames in buffer)...\n",
-                           m_SyncSource->getBufferFill());
-
-        // wait for something to happen
-        switch(waitForActivity()) {
-            case eAR_Error:
-                debugError("Error while waiting for activity\n");
-                m_shutdown_needed = true;
-                return false;
-            case eAR_Interrupted:
-                // FIXME: what to do here?
-                debugWarning("Interrupted while waiting for activity\n");
-                break;
-            case eAR_Timeout:
-                debugWarning("Timeout while waiting for activity\n");
-                // ignore this since it can also be due to some other hardware
-                // or high-prio software that preempts us. hence only an xrun should
-                // be generated (if necessary)
-            case eAR_Activity:
-                // do nothing
-                break;
-        }
-        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "got activity...\n");
-
-        // HACK: this should be solved more elegantly
         period_not_ready = false;
         for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
             it != m_ReceiveProcessors.end();
@@ -979,7 +982,11 @@ bool StreamProcessorManager::waitForPeriod() {
                 period_not_ready = true;
             }
         }
-        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, " period not ready? %d...\n", period_not_ready);
+
+        if (period_not_ready) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " wait extended since period not ready...\n");
+            Util::SystemTimeSource::SleepUsecRelative(125); // one cycle
+        }
 
         // check for underruns/errors on the ISO side,
         // those should make us bail out of the wait loop
@@ -999,6 +1006,32 @@ bool StreamProcessorManager::waitForPeriod() {
         }
         if(xrun_occurred | in_error | m_shutdown_needed) break;
     }
+    #else
+    // check for underruns/errors on the ISO side,
+    // those should make us bail out of the wait loop
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+        it != m_ReceiveProcessors.end();
+        ++it ) {
+        // xrun on data buffer side
+        if (!(*it)->canConsumePeriod()) {
+            xrun_occurred = true;
+        }
+        // a xrun has occurred on the Iso side
+        xrun_occurred |= (*it)->xrunOccurred();
+        in_error |= (*it)->inError();
+    }
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) {
+        // xrun on data buffer side
+        if (!(*it)->canProducePeriod()) {
+            xrun_occurred = true;
+        }
+        // a xrun has occurred on the Iso side
+        xrun_occurred |= (*it)->xrunOccurred();
+        in_error |= (*it)->inError();
+    }
+    #endif
 
     if(xrun_occurred) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "exit due to xrun...\n");
@@ -1031,13 +1064,13 @@ bool StreamProcessorManager::waitForPeriod() {
     m_time_of_transfer2 = m_time_of_transfer;
     #endif
 
-    debugOutputExtreme( DEBUG_LEVEL_VERBOSE,
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                         "transfer period %d at %llu ticks...\n",
                         m_nbperiods, m_time_of_transfer);
 
     // this is to notify the client of the delay that we introduced by waiting
     m_delayed_usecs = - m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
-    debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE,
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                         "delayed for %d usecs...\n",
                         m_delayed_usecs);
 
@@ -1145,7 +1178,11 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
 
         // the data we are putting into the buffer is intended to be transmitted
         // one ringbuffer size after it has been received
-        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+
+        // we also add one syncdelay as a safety margin, since that's the amount of time we can get
+        // postponed.
+        int syncdelay = m_SyncSource->getSyncDelay();
+        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks + syncdelay);
 
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
                 it != m_TransmitProcessors.end();
@@ -1221,7 +1258,10 @@ bool StreamProcessorManager::transferSilence(enum StreamProcessor::eProcessorTyp
 
         // the data we are putting into the buffer is intended to be transmitted
         // one ringbuffer size after it has been received
-        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+        // we also add one syncdelay as a safety margin, since that's the amount of time we can get
+        // postponed.
+        int syncdelay = m_SyncSource->getSyncDelay();
+        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks + syncdelay);
 
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
                 it != m_TransmitProcessors.end();

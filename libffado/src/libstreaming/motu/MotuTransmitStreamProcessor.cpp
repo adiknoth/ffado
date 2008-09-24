@@ -90,6 +90,17 @@ MotuTransmitStreamProcessor::getMaxPacketSize() {
 }
 
 unsigned int
+MotuTransmitStreamProcessor::getAveragePacketSize()
+{
+    // in one second we have 8000 packets
+    // containing FRAMERATE frames
+    // so on average bytes/packet: (8000 packet headers + FRAMERATE * frame_size) / 8000
+    #warning FIXME
+    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
+    return framerate<=48000?616:(framerate<=96000?1032:1160);
+}
+
+unsigned int
 MotuTransmitStreamProcessor::getNominalFramesPerPacket() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     return framerate<=48000?8:(framerate<=96000?16:32);

@@ -145,11 +145,12 @@ int StreamProcessor::getMaxFrameLatency() {
 unsigned int
 StreamProcessor::getNominalPacketsNeeded(unsigned int nframes)
 {
-    unsigned int nominal_frames_per_second 
+    unsigned int nominal_frames_per_second
                     = m_StreamProcessorManager.getNominalRate();
     uint64_t nominal_ticks_per_frame = TICKS_PER_SECOND / nominal_frames_per_second;
     uint64_t nominal_ticks = nominal_ticks_per_frame * nframes;
-    uint64_t nominal_packets = nominal_ticks / TICKS_PER_CYCLE;
+    // ensure proper ceiling
+    uint64_t nominal_packets = (nominal_ticks+TICKS_PER_CYCLE-1) / TICKS_PER_CYCLE;
     return nominal_packets;
 }
 
@@ -218,7 +219,13 @@ StreamProcessor::setSyncDelay(unsigned int d) {
     unsigned int frames = (unsigned int)((float)d / getTicksPerFrame());
     debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %u ticks, %u frames\n", this, d, frames);
     #endif
-    m_sync_delay = d; // FIXME: sync delay not necessary anymore
+    m_sync_delay = d;
+}
+
+unsigned int
+StreamProcessor::getSyncDelayFrames() {
+    unsigned int frames = (unsigned int)((float)m_sync_delay / getTicksPerFrame());
+    return frames;
 }
 
 uint64_t
@@ -507,9 +514,10 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             unsigned int periodsize = m_StreamProcessorManager.getPeriodSize();
             unsigned int bufferfill = m_data_buffer->getBufferFill();
             if(bufferfill >= periodsize) {
-                debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "signal activity, %d>%d\n", bufferfill, periodsize);
-                SIGNAL_ACTIVITY_SPM;
-                return RAW1394_ISO_DEFER;
+                debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "signal activity, %d>%d\n", 
+                                                        bufferfill, periodsize);
+                //SIGNAL_ACTIVITY_SPM;
+                return RAW1394_ISO_DEFER; // FIXME: might not be needed
             }
             return RAW1394_ISO_OK;
         } else {
@@ -1508,6 +1516,11 @@ StreamProcessor::doWaitForStreamEnable()
             }
             if (getType() == ePT_Transmit) {
                 ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
+
+                // add sync delay
+                int syncdelay_in_frames = m_StreamProcessorManager.getSyncSource().getSyncDelayFrames();
+                ringbuffer_size_frames += syncdelay_in_frames;
+
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Prefill transmit SP %p with %u frames\n", this, ringbuffer_size_frames);
                 // prefill the buffer
                 if(!transferSilence(ringbuffer_size_frames)) {
