@@ -27,6 +27,7 @@
 /**
  * This class implements IEC61883-6 / AM824 / AMDTP based streaming
  */
+#include "config.h"
 
 #include "debugmodule/debugmodule.h"
 

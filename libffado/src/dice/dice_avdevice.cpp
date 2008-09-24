@@ -21,6 +21,8 @@
  *
  */
 
+#include "config.h"
+
 #include "dice/dice_avdevice.h"
 #include "dice/dice_defines.h"
 
