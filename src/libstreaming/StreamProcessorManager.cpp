@@ -954,6 +954,7 @@ bool StreamProcessorManager::waitForPeriod() {
 
     // the period should be ready now
 
+    #if STREAMPROCESSORMANAGER_ALLOW_DELAYED_PERIOD_SIGNAL
     // HACK: we force wait until every SP is ready. this is needed
     // since the raw1394 interface provides no control over interrupts
     // resulting in very bad predictability on when the data is present.
@@ -1000,6 +1001,32 @@ bool StreamProcessorManager::waitForPeriod() {
         }
         if(xrun_occurred | in_error | m_shutdown_needed) break;
     }
+    #else
+    // check for underruns/errors on the ISO side,
+    // those should make us bail out of the wait loop
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+        it != m_ReceiveProcessors.end();
+        ++it ) {
+        // xrun on data buffer side
+        if (!(*it)->canConsumePeriod()) {
+            xrun_occurred = true;
+        }
+        // a xrun has occurred on the Iso side
+        xrun_occurred |= (*it)->xrunOccurred();
+        in_error |= (*it)->inError();
+    }
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) {
+        // xrun on data buffer side
+        if (!(*it)->canProducePeriod()) {
+            xrun_occurred = true;
+        }
+        // a xrun has occurred on the Iso side
+        xrun_occurred |= (*it)->xrunOccurred();
+        in_error |= (*it)->inError();
+    }
+    #endif
 
     if(xrun_occurred) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "exit due to xrun...\n");

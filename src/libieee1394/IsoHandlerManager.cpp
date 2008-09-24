@@ -771,16 +771,8 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         }
 
         // the interrupt/wakeup interval prediction of raw1394 is a mess...
-        int wanted_irq_interval = (packets_per_period-1) / MINIMUM_INTERRUPTS_PER_PERIOD;
-        if(wanted_irq_interval <= 0) wanted_irq_interval=1;
-
-        // mimic kernel initialization
-        unsigned int kern_buff_stride = RAW1394_RCV_MIN_BUF_STRIDE;
-        for (; kern_buff_stride < max_packet_size; kern_buff_stride *= 2);
-        if (kern_buff_stride > page_size) kern_buff_stride = page_size;
-        // kern_buff_stride is the minimal granularity of interrupts
-        // therefore the following will result in on-average correct interrupt timing
-        int irq_interval = (wanted_irq_interval * max_packet_size) / kern_buff_stride;
+        int irq_interval = (packets_per_period-1) / MINIMUM_INTERRUPTS_PER_PERIOD;
+        if(irq_interval <= 0) irq_interval=1;
 
         // the receive buffer size doesn't matter for the latency,
         // but it has a minimal value in order for libraw to operate correctly (300)
@@ -985,20 +977,7 @@ IsoHandlerManager::getPacketLatencyForStream(Streaming::StreamProcessor *stream)
       ++it )
     {
         if((*it)->isStreamRegistered(stream)) {
-            unsigned int page_size = getpagesize();
-            unsigned int max_packet_size = stream->getMaxPacketSize() + 8;
-            int average_packet_size_bytes = stream->getAveragePacketSize();
-            int irq_interval = (*it)->getIrqInterval();
-
-            // mimic kernel initialization
-            unsigned int kern_buff_stride = RAW1394_RCV_MIN_BUF_STRIDE;
-            for (; kern_buff_stride < max_packet_size; kern_buff_stride *= 2);
-            if (kern_buff_stride > page_size) kern_buff_stride = page_size;
-            
-            // we can only have one interrupt every kern_buff_stride bytes
-            int packets_per_block = kern_buff_stride / average_packet_size_bytes;
-            int blocks_per_interrupt = irq_interval / packets_per_block + 1;
-            return blocks_per_interrupt * packets_per_block;
+            return (*it)->getIrqInterval();
         }
     }
     debugError("Stream %p has no attached handler\n", stream);
