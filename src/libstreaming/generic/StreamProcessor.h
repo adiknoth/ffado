@@ -288,6 +288,7 @@ public:
     virtual unsigned int getNbPacketsIsoXmitBuffer();
     virtual unsigned int getPacketsPerPeriod();
     virtual unsigned int getMaxPacketSize() = 0;
+    virtual unsigned int getAveragePacketSize() = 0;
 private:
     int m_channel;
 
@@ -374,7 +375,7 @@ protected:
         /**
          * Returns the sync delay. This is the time a syncsource
          * delays a period signal, e.g. to cope with buffering.
-         * @return the sync delay
+         * @return the sync delay (in ticks)
          */
         unsigned int getSyncDelay() {return m_sync_delay;};
         /**

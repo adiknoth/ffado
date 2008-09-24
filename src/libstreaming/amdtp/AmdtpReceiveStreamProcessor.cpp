@@ -33,6 +33,7 @@
 
 #include "libutil/ByteSwap.h"
 #include <assert.h>
+#include "libutil/SystemTimeSource.h"
 
 namespace Streaming {
 
@@ -63,6 +64,16 @@ AmdtpReceiveStreamProcessor::getSytInterval() {
             debugError("Unsupported rate: %d\n", m_StreamProcessorManager.getNominalRate());
             return 0;
     }
+}
+
+unsigned int
+AmdtpReceiveStreamProcessor::getAveragePacketSize()
+{
+    // in one second we have 8000 packets
+    // containing FRAMERATE frames of m_dimension quadlets
+    // so 8000 packet headers + FRAMERATE*m_dimension quadlets
+    unsigned int one_second = 8000 * 2 * sizeof(quadlet_t) + m_StreamProcessorManager.getNominalRate() * m_dimension * sizeof(quadlet_t);
+    return one_second / 8000;
 }
 
 bool AmdtpReceiveStreamProcessor::prepareChild() {
@@ -143,11 +154,17 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     // this packet x*syt_interval*ticks_per_frame
     // later than expected (the real receive time)
     #ifdef DEBUG
+    static int64_t last_t = Util::SystemTimeSource::getCurrentTime();
+    int64_t now_t = Util::SystemTimeSource::getCurrentTime();
     if(isRunning()) {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                            "STMP: %lluticks | syt_interval=%d, tpf=%f\n",
                            m_last_timestamp, m_syt_interval, getTicksPerFrame());
+/*        debugOutput(DEBUG_LEVEL_NORMAL,
+                           "STMP: %12llu ticks | delta_t: %5lld | bufferfill: %5d\n",
+                           m_last_timestamp, now_t-last_t, m_data_buffer->getBufferFill());*/
     }
+    last_t = now_t;
 
     // check whether nevents is a multiple of 8.
     if (nevents & 0x7) {
