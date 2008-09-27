@@ -184,16 +184,16 @@ MixerFBFeatureVolume::MixerFBFeatureVolume(Mixer& parent, FunctionBlockFeature& 
 , m_Slave(s)
 {
     std::ostringstream ostrm;
-    ostrm << s.getName() << "_Volume_" << (int)(s.getId());
+    ostrm << "Volume_" << (int)(s.getId());
     
     Control::Continuous::setName(ostrm.str());
     
     ostrm.str("");
-    ostrm << "Label for " << s.getName() << "_Volume " << (int)(s.getId());
+    ostrm << "Label for " << "Volume " << (int)(s.getId());
     setLabel(ostrm.str());
     
     ostrm.str("");
-    ostrm << "Description for " << s.getName() << "_Volume " << (int)(s.getId());
+    ostrm << "Description for " << "Volume " << (int)(s.getId());
     setDescription(ostrm.str());
 }
 
@@ -257,16 +257,16 @@ MixerFBFeatureLRBalance::MixerFBFeatureLRBalance(Mixer& parent, FunctionBlockFea
 , m_Slave(s)
 {
     std::ostringstream ostrm;
-    ostrm << s.getName() << "_LRBalance_" << (int)(s.getId());
+    ostrm << "LRBalance_" << (int)(s.getId());
     
     Control::Continuous::setName(ostrm.str());
     
     ostrm.str("");
-    ostrm << "Label for " << s.getName() << "_LRBalance " << (int)(s.getId());
+    ostrm << "Label for " << "LRBalance " << (int)(s.getId());
     setLabel(ostrm.str());
     
     ostrm.str("");
-    ostrm << "Description for " << s.getName() << "_LRBalance " << (int)(s.getId());
+    ostrm << "Description for " << "LRBalance " << (int)(s.getId());
     setDescription(ostrm.str());
 }
 

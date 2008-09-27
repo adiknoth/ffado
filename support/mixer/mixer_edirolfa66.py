@@ -74,19 +74,19 @@ class EdirolFa66Control(EdirolFa66ControlUI):
 
         self.VolumeControls = {
             #          feature name, channel, qt slider
-            'vol1'  :   ['/Mixer/Feature_Volume_1', 1, self.sldInput1],
-            'vol2'  :   ['/Mixer/Feature_Volume_1', 2, self.sldInput2],
-            'vol3'  :   ['/Mixer/Feature_Volume_2', 1, self.sldInput3],
-            'vol4'  :   ['/Mixer/Feature_Volume_2', 2, self.sldInput4],
-            'vol5'  :   ['/Mixer/Feature_Volume_3', 1, self.sldInput5],
-            'vol6'  :   ['/Mixer/Feature_Volume_3', 2, self.sldInput6],
+            'vol1'  :   ['/Mixer/Volume_1', 1, self.sldInput1],
+            'vol2'  :   ['/Mixer/Volume_1', 2, self.sldInput2],
+            'vol3'  :   ['/Mixer/Volume_2', 1, self.sldInput3],
+            'vol4'  :   ['/Mixer/Volume_2', 2, self.sldInput4],
+            'vol5'  :   ['/Mixer/Volume_3', 1, self.sldInput5],
+            'vol6'  :   ['/Mixer/Volume_3', 2, self.sldInput6],
 
-            'bal1'  :   ['/Mixer/Feature_LRBalance_1', 1, self.sldBal1],
-            'bal2'  :   ['/Mixer/Feature_LRBalance_1', 2, self.sldBal2],
-            'bal3'  :   ['/Mixer/Feature_LRBalance_2', 1, self.sldBal3],
-            'bal4'  :   ['/Mixer/Feature_LRBalance_2', 2, self.sldBal4],
-            'bal5'  :   ['/Mixer/Feature_LRBalance_3', 1, self.sldBal5],
-            'bal6'  :   ['/Mixer/Feature_LRBalance_3', 2, self.sldBal6],
+            'bal1'  :   ['/Mixer/LRBalance_1', 1, self.sldBal1],
+            'bal2'  :   ['/Mixer/LRBalance_1', 2, self.sldBal2],
+            'bal3'  :   ['/Mixer/LRBalance_2', 1, self.sldBal3],
+            'bal4'  :   ['/Mixer/LRBalance_2', 2, self.sldBal4],
+            'bal5'  :   ['/Mixer/LRBalance_3', 1, self.sldBal5],
+            'bal6'  :   ['/Mixer/LRBalance_3', 2, self.sldBal6],
             }
 
     def initValues(self):

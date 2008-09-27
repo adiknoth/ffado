@@ -44,6 +44,9 @@ static_env = env.Clone()
 #
 apps = {
 	"test-ffado" : "test-ffado.cpp",
+	"test-volume" : "test-volume.cpp",
+	"test-pan" : "test-pan.cpp",
+	"test-enhanced-mixer" : "test-enhanced-mixer.cpp",
 }
 
 for app in apps.keys():

@@ -80,7 +80,7 @@ class EdirolFa101Control(EdirolFa101ControlUI):
             
     def setBalanceIn8(self, bal):
         self.setValue('bal8', bal)
-        
+       
     def setBalanceIn9(self, bal):
         self.setValue('bal9', bal)
 
@@ -98,27 +98,27 @@ class EdirolFa101Control(EdirolFa101ControlUI):
 
         self.VolumeControls = {
             #          feature name, channel, qt slider
-            'vol1'  :   ['/Mixer/Feature_Volume_5', 1, self.sldInput1],
-            'vol2'  :   ['/Mixer/Feature_Volume_5', 2, self.sldInput2],
-            'vol3'  :   ['/Mixer/Feature_Volume_1', 1, self.sldInput3],
-            'vol4'  :   ['/Mixer/Feature_Volume_1', 2, self.sldInput4],
-            'vol5'  :   ['/Mixer/Feature_Volume_2', 1, self.sldInput5],
-            'vol6'  :   ['/Mixer/Feature_Volume_2', 2, self.sldInput6],
-            'vol7'  :   ['/Mixer/Feature_Volume_3', 1, self.sldInput7],
-            'vol8'  :   ['/Mixer/Feature_Volume_3', 2, self.sldInput8],
-            'vol9'  :   ['/Mixer/Feature_Volume_4', 1, self.sldInput9],
-            'vol10' :   ['/Mixer/Feature_Volume_4', 2, self.sldInput10],
+            'vol1'  :   ['/Mixer/Volume_5', 1, self.sldInput1],
+            'vol2'  :   ['/Mixer/Volume_5', 2, self.sldInput2],
+            'vol3'  :   ['/Mixer/Volume_1', 1, self.sldInput3],
+            'vol4'  :   ['/Mixer/Volume_1', 2, self.sldInput4],
+            'vol5'  :   ['/Mixer/Volume_2', 1, self.sldInput5],
+            'vol6'  :   ['/Mixer/Volume_2', 2, self.sldInput6],
+            'vol7'  :   ['/Mixer/Volume_3', 1, self.sldInput7],
+            'vol8'  :   ['/Mixer/Volume_3', 2, self.sldInput8],
+            'vol9'  :   ['/Mixer/Volume_4', 1, self.sldInput9],
+            'vol10' :   ['/Mixer/Volume_4', 2, self.sldInput10],
 
-            'bal1'  :   ['/Mixer/Feature_LRBalance_5', 1, self.sldBal1],
-            'bal2'  :   ['/Mixer/Feature_LRBalance_5', 2, self.sldBal2],
-            'bal3'  :   ['/Mixer/Feature_LRBalance_1', 1, self.sldBal3],
-            'bal4'  :   ['/Mixer/Feature_LRBalance_1', 2, self.sldBal4],
-            'bal5'  :   ['/Mixer/Feature_LRBalance_2', 1, self.sldBal5],
-            'bal6'  :   ['/Mixer/Feature_LRBalance_2', 2, self.sldBal6],
-            'bal7'  :   ['/Mixer/Feature_LRBalance_3', 1, self.sldBal7],
-            'bal8'  :   ['/Mixer/Feature_LRBalance_3', 2, self.sldBal8],
-            'bal9'  :   ['/Mixer/Feature_LRBalance_4', 1, self.sldBal9],
-            'bal10' :   ['/Mixer/Feature_LRBalance_4', 2, self.sldBal10],
+            'bal1'  :   ['/Mixer/LRBalance_5', 1, self.sldBal1],
+            'bal2'  :   ['/Mixer/LRBalance_5', 2, self.sldBal2],
+            'bal3'  :   ['/Mixer/LRBalance_1', 1, self.sldBal3],
+            'bal4'  :   ['/Mixer/LRBalance_1', 2, self.sldBal4],
+            'bal5'  :   ['/Mixer/LRBalance_2', 1, self.sldBal5],
+            'bal6'  :   ['/Mixer/LRBalance_2', 2, self.sldBal6],
+            'bal7'  :   ['/Mixer/LRBalance_3', 1, self.sldBal7],
+            'bal8'  :   ['/Mixer/LRBalance_3', 2, self.sldBal8],
+            'bal9'  :   ['/Mixer/LRBalance_4', 1, self.sldBal9],
+            'bal10' :   ['/Mixer/LRBalance_4', 2, self.sldBal10],
             }
 
     def initValues(self):

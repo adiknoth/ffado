@@ -38,7 +38,7 @@ class FunctionBlockFeature;
 class FunctionBlockSelector;
 class FunctionBlockEnhancedMixer;
 
-class Mixer 
+class Mixer
     : public Control::Container
 {
 public:
@@ -46,21 +46,21 @@ public:
     virtual ~Mixer();
 
     virtual std::string getName()
-        { return "Mixer"; };
+        { return "Mixer"; }
     virtual bool setName( std::string n )
-        { return false; };
+        { return false; }
 
     template<typename FBType, typename MixerType> bool addElementForFunctionBlock(FBType& b);
     bool addElementForAllFunctionBlocks();
 
     // manipulation of the contained elements
     bool addElement(Control::Element *)
-        {debugWarning("not allowed"); return false;};
+        { debugWarning("not allowed"); return false; }
     bool deleteElement(Control::Element *);
     bool clearElements();
 
     AvDevice& getParent()
-        {return m_device;};
+        { return m_device; }
 
 protected:
     AvDevice&            m_device;
@@ -116,12 +116,14 @@ public:
     virtual bool setValue(double v);
     virtual double getValue();
     virtual bool setValue(int idx, double v)
-        {return setValue(v);};
+        { return setValue(v); }
     virtual double getValue(int idx)
-        {return getValue();};
+        { return getValue(); }
 
-    virtual double getMinimum() {return -32768;};
-    virtual double getMaximum() {return 0;};
+    virtual double getMinimum()
+        { return -32768; }
+    virtual double getMaximum()
+        { return 0; }
 
 private:
     Mixer&                      m_Parent;
@@ -138,12 +140,14 @@ public:
     virtual bool setValue(int v);
     virtual int getValue();
     virtual bool setValue(int idx, int v)
-        {return setValue(v);};
+        { return setValue(v); }
     virtual int getValue(int idx)
-        {return getValue();};
+        { return getValue(); }
 
-    virtual int getMinimum() {return 0;};
-    virtual int getMaximum() {return 0;};
+    virtual int getMinimum()
+        { return 0; }
+    virtual int getMaximum()
+        { return 0; }
 
 private:
     Mixer&                  m_Parent;
@@ -153,5 +157,3 @@ private:
 } // end of namespace BeBoB
 
 #endif /* __FFAD0_BEBOB_MIXER__ */
-
-

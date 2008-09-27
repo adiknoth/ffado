@@ -51,8 +51,8 @@ class MackieGenericControl(MackieGenericControlUI):
             print "Init Mackie Generic mixer window"
 
             self.VolumeControls={
-                'FB1':    ['/Mixer/Feature_1', self.sldFB1], 
-                'FB2' :   ['/Mixer/Feature_2', self.sldFB2],
+                'FB1':    ['/Mixer/Volume_1', self.sldFB1], 
+                'FB2' :   ['/Mixer/Volume_2', self.sldFB2],
                 }
 
             self.SelectorControls={

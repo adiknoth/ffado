@@ -57,7 +57,7 @@ class Phase24Control(Phase24ControlUI):
     # public slot
     def setLineLevel(self,a0):
         print "setting line level to %d" % (a0 * -768)
-        self.hw.setContignuous('/Mixer/Feature_2', a0 * -768)
+        self.hw.setContignuous('/Mixer/Volume_2', a0 * -768)
 
     # public slot
     def setFrontLevel(self,a0):
@@ -65,10 +65,10 @@ class Phase24Control(Phase24ControlUI):
             return
         if(a0 == 0):
             print "setting front level to %d" % (0)
-            self.hw.setContignuous('/Mixer/Feature_8', 0)
+            self.hw.setContignuous('/Mixer/Volume_8', 0)
         else:
             print "setting front level to %d" % (1536)
-            self.hw.setContignuous('/Mixer/Feature_8', 1536)
+            self.hw.setContignuous('/Mixer/Volume_8', 1536)
 
     # public slot
     def setOutSource12(self,a0):
@@ -103,11 +103,11 @@ class Phase24Control(Phase24ControlUI):
             print "Init PhaseX24 mixer window"
 
             self.VolumeControls={
-                'analogin' :      ['/Mixer/Feature_Volume_6', self.sldLineIn],
-                'spdifin' :       ['/Mixer/Feature_Volume_7', self.sldSPDIFIn],
-                'out12' :         ['/Mixer/Feature_Volume_3', self.sldInput12],
-                'out34' :         ['/Mixer/Feature_Volume_4', self.sldInput34],
-                'outspdif' :      ['/Mixer/Feature_Volume_5', self.sldSPDIFOut],
+                'analogin' :      ['/Mixer/Volume_6', self.sldLineIn],
+                'spdifin' :       ['/Mixer/Volume_7', self.sldSPDIFIn],
+                'out12' :         ['/Mixer/Volume_3', self.sldInput12],
+                'out34' :         ['/Mixer/Volume_4', self.sldInput34],
+                'outspdif' :      ['/Mixer/Volume_5', self.sldSPDIFOut],
                 }
 
             self.SelectorControls={
@@ -131,11 +131,11 @@ class Phase24Control(Phase24ControlUI):
             else:
                 self.setCaption("Terratec Phase 24 Control")
 
-                self.VolumeControls['master'] = ['/Mixer/Feature_1', self.sldMaster]
+                self.VolumeControls['master'] = ['/Mixer/Volume_1', self.sldMaster]
                 self.sldMaster.setEnabled(True)
 
                 self.cmbFrontLevel.setEnabled(True)
-                val=self.hw.getContignuous('/Mixer/Feature_8')
+                val=self.hw.getContignuous('/Mixer/Volume_8')
                 if val>0:
                     self.cmbFrontLevel.setCurrentItem(1)
                 else:
@@ -151,7 +151,7 @@ class Phase24Control(Phase24ControlUI):
                 print "%s state is %d" % (name , state)
                 ctrl[1].setCurrentItem(state)    
 
-            val=self.hw.getContignuous('/Mixer/Feature_2')/-768
+            val=self.hw.getContignuous('/Mixer/Volume_2')/-768
             if val>4:
                 self.cmbLineLevel.setCurrentItem(4)
             else:
