@@ -85,6 +85,59 @@ FunctionBlockFeatureVolume::clone() const
 
 /////////////////////////////////
 
+FunctionBlockFeatureLRBalance::FunctionBlockFeatureLRBalance()
+    : IBusData()
+    , m_controlDataLength( 2 )
+    , m_lrBalance( 0 )
+{
+}
+
+FunctionBlockFeatureLRBalance::FunctionBlockFeatureLRBalance( const FunctionBlockFeatureLRBalance& rhs )
+    : m_controlDataLength( rhs.m_controlDataLength )
+    , m_lrBalance( rhs.m_lrBalance )
+{
+}
+
+FunctionBlockFeatureLRBalance::~FunctionBlockFeatureLRBalance()
+{
+}
+
+bool
+FunctionBlockFeatureLRBalance::serialize( Util::Cmd::IOSSerialize& se )
+{
+    bool bStatus;
+    byte_t val;
+    bStatus = se.write( m_controlDataLength,  "FunctionBlockFeatureLRBalance controlDataLength" );
+    val = (byte_t)(m_lrBalance >> 8);
+    bStatus &= se.write( val,                 "FunctionBlockFeatureLRBalance LR Balance high" );
+    val = m_lrBalance & 0xff;
+    bStatus &= se.write( val,                 "FunctionBlockFeatureLRBalance LR Balance low" );
+
+    return bStatus;
+}
+
+bool
+FunctionBlockFeatureLRBalance::deserialize( Util::Cmd::IISDeserialize& de )
+{
+    bool bStatus;
+    byte_t val;
+    bStatus = de.read( &m_controlDataLength );
+    bStatus &= de.read( &val );
+    m_lrBalance = val << 8;
+    bStatus &= de.read( &val );
+    m_lrBalance |= val;
+
+    return bStatus;
+}
+
+FunctionBlockFeatureLRBalance*
+FunctionBlockFeatureLRBalance::clone() const
+{
+    return new FunctionBlockFeatureLRBalance( *this );
+}
+
+/////////////////////////////////
+
 FunctionBlockProcessingMixer::FunctionBlockProcessingMixer()
     : IBusData()
     , m_controlSelector( FunctionBlockProcessing::eCSE_Processing_Mixer )
@@ -209,7 +262,7 @@ bool
 FunctionBlockProcessingEnhancedMixer::deserialize( Util::Cmd::IISDeserialize& de )
 {
     int todo;
-    bool bStatus=true;
+    bool bStatus;
     bStatus  = de.read( &m_controlSelector );
 
     // NOTE: the returned value is currently bogus, so overwrite it
@@ -218,8 +271,8 @@ FunctionBlockProcessingEnhancedMixer::deserialize( Util::Cmd::IISDeserialize& de
     bStatus &= de.read( &m_statusSelector );
 
     // same here
-    //m_statusSelector = eSS_Level; 
-    m_statusSelector = eSS_ProgramableState; 
+    m_statusSelector = eSS_Level; 
+    //m_statusSelector = eSS_ProgramableState; 
 
     byte_t data_length_hi;
     byte_t data_length_lo;
@@ -227,6 +280,7 @@ FunctionBlockProcessingEnhancedMixer::deserialize( Util::Cmd::IISDeserialize& de
     bStatus &= de.read( &data_length_lo );
 
     m_controlDataLength = (data_length_hi << 8) + data_length_lo;
+    printf("m_controlDataLength = %d\n", m_controlDataLength);
     switch (m_statusSelector) {
         case eSS_ProgramableState:
             m_ProgramableStateData.clear();
@@ -255,11 +309,15 @@ FunctionBlockProcessingEnhancedMixer::deserialize( Util::Cmd::IISDeserialize& de
             break;
         case eSS_Level:
             m_LevelData.clear();
-            for (int i=0;i<m_controlDataLength/2;i++) {
-                byte_t mixer_value_hi=0, mixer_value_lo=0;
+            for (int i = 0; i < m_controlDataLength/2; i++) {
+                byte_t mixer_value_hi = 0;
+                byte_t mixer_value_lo = 0;
                 bStatus &= de.read( &mixer_value_hi);
                 bStatus &= de.read( &mixer_value_lo);
+
                 mixer_level_t value = (mixer_value_hi << 8) + mixer_value_lo;
+
+                printf("value = %x\n", value);
                 m_LevelData.push_back(value);
             }
             break;
@@ -333,7 +391,8 @@ FunctionBlockFeature::FunctionBlockFeature()
     , m_selectorLength( 0x02 )
     , m_audioChannelNumber( 0x00 )
     , m_controlSelector( eCSE_Feature_Unknown )
-    , m_pVolume( new FunctionBlockFeatureVolume )
+    , m_pVolume( 0 )
+    , m_pLRBalance( 0 )
 {
 }
 
@@ -345,13 +404,17 @@ FunctionBlockFeature::FunctionBlockFeature( const FunctionBlockFeature& rhs )
 {
     if ( rhs.m_pVolume ) {
         m_pVolume = new FunctionBlockFeatureVolume( *rhs.m_pVolume );
+    } else if ( rhs.m_pLRBalance ) {
+        m_pLRBalance = new FunctionBlockFeatureLRBalance( *rhs.m_pLRBalance );
     }
 }
 
 FunctionBlockFeature::~FunctionBlockFeature()
 {
     delete m_pVolume;
-    m_pVolume = NULL;
+    m_pVolume = 0;
+    delete m_pLRBalance;
+    m_pLRBalance = 0;
 }
 
 bool
@@ -362,9 +425,24 @@ FunctionBlockFeature::serialize( Util::Cmd::IOSSerialize& se )
     bStatus &= se.write( m_audioChannelNumber, "FunctionBlockFeature audioChannelNumber" );
     bStatus &= se.write( m_controlSelector,    "FunctionBlockFeature controlSelector" );
 
-    if ( m_controlSelector == eCSE_Feature_Volume ) {
+    switch( m_controlSelector ) {
+    case eCSE_Feature_Volume:
         bStatus &= m_pVolume->serialize( se );
-    } else {
+        break;
+    case eCSE_Feature_LRBalance:
+        bStatus &= m_pLRBalance->serialize( se );
+        break;
+    case eCSE_Feature_Mute:
+    case eCSE_Feature_FRBalance:
+    case eCSE_Feature_Bass:
+    case eCSE_Feature_Mid:
+    case eCSE_Feature_Treble:
+    case eCSE_Feature_GEQ:
+    case eCSE_Feature_AGC:
+    case eCSE_Feature_Delay:
+    case eCSE_Feature_BassBoost:
+    case eCSE_Feature_Loudness:
+    default:
         bStatus = false;
     }
 
@@ -383,8 +461,10 @@ FunctionBlockFeature::deserialize( Util::Cmd::IISDeserialize& de )
     case eCSE_Feature_Volume:
         bStatus &= m_pVolume->deserialize( de );
         break;
-    case eCSE_Feature_Mute:
     case eCSE_Feature_LRBalance:
+        bStatus &= m_pLRBalance->deserialize( de );
+        break;
+    case eCSE_Feature_Mute:
     case eCSE_Feature_FRBalance:
     case eCSE_Feature_Bass:
     case eCSE_Feature_Mid:

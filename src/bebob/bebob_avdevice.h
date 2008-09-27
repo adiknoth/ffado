@@ -84,10 +84,16 @@ public:
 
     virtual int getSelectorFBValue(int id);
     virtual bool setSelectorFBValue(int id, int v);
+
     virtual int getFeatureFBVolumeMinimum(int id, int channel);
     virtual int getFeatureFBVolumeMaximum(int id, int channel);
     virtual int getFeatureFBVolumeCurrent(int id, int channel);
     virtual bool setFeatureFBVolumeCurrent(int id, int channel, int v);
+
+    virtual int getFeatureFBLRBalanceMinimum(int id, int channel);
+    virtual int getFeatureFBLRBalanceMaximum(int id, int channel);
+    virtual int getFeatureFBLRBalanceCurrent(int id, int channel);
+    virtual bool setFeatureFBLRBalanceCurrent(int id, int channel, int v);
 
     virtual void showDevice();
     virtual void setVerboseLevel(int l);
@@ -98,6 +104,7 @@ protected:
     virtual bool destroyMixer();
 
     virtual int getFeatureFBVolumeValue(int id, int channel, AVC::FunctionBlockCmd::EControlAttribute controlAttribute);
+    virtual int getFeatureFBLRBalanceValue(int id, int channel, AVC::FunctionBlockCmd::EControlAttribute controlAttribute);
 
 public:
     virtual bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
