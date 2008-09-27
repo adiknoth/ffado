@@ -47,7 +47,7 @@ apps = {
 	"test-fw410" : "test-fw410.cpp",
 	"test-avccmd" : "test-avccmd.cpp",
 	#"test-extplugcmd" : "test-extplugcmd.cpp",
- 	#"test-volume" : "test-volume.cpp",
+ 	"test-volume" : "test-volume.cpp",
 	#"test-mixer" : "test-mixer.cpp",
  	"test-enhanced-mixer" : "test-enhanced-mixer.cpp",
 	"test-timestampedbuffer" : "test-timestampedbuffer.cpp",
