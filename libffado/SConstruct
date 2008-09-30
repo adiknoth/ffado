@@ -578,7 +578,7 @@ env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
 env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
 
-env.Install( env['SYSTEM_CONFIG_FILE'], 'configuration' )
+env.Install( env['sharedir'], 'configuration' )
 
 subdirs=['external','src','libffado','tests','support','doc']
 if build_base:
