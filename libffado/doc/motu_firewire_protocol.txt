@@ -2,7 +2,7 @@ Notes on the firewire protocol used by MOTU audio devices
 =========================================================
 
 Author: Jonathan Woithe
-Document version: 20080818-1
+Document version: 20081001-1
 
 
 Audio/MIDI data
@@ -59,6 +59,17 @@ while at 4x rates it decreases again to 0x09.  Similarly the iso data length
 differs according to the sampling rate: 0x268 at 1x rates (giving 8 blocks
 per iso data packet), 0x408 at 2x rates (giving 16 blocks per iso data
 packet) and 0x488 at 4x rates (giving 32 blocks per iso data packet).
+
+DBS/FDF behaves a little differently with the Ultralite interface.  At both
+1x and 2x rates DBS is 19 (0x13) while FDF is still 0x22.  Based on
+behaviour of earlier interfaces this would give a block size of 19*4 = 76
+bytes.  However, in reality it is only 52 bytes: 4 bytes SPH, 6 bytes
+MIDI/control data, 8x3 bytes analog data, 2x3 bytes SPDIF, 2x3 bytes Mix1
+and 2x3 bytes padding (probably used as headphone send in transmit stream). 
+It's not clear how the given DBS/FDF values relate to this block size. 
+There are still 8 blocks per iso data packet at 1x rates, and 16 at 2x
+rates, giving total packet sizes (including the 8 byte CIP) of 424 bytes at
+1x rates and 840 at 2x rates.
 
 The Traveler usually becomes the IRM on the firewire bus it is plugged into;
 when functioning as the IRM it also broadcasts "cycle start" packets on a
