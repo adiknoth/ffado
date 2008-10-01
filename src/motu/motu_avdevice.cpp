@@ -192,8 +192,10 @@ const PortEntry Ports_TRAVELER[] =
 
 const PortEntry Ports_ULTRALITE[] =
 {
-    {"Main-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
-    {"Main-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
+    {"Main-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 46},
+    {"Main-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 49},
+    {"Padding1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 46},
+    {"Padding2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 49},
     {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
     {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
     {"Mic1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
@@ -208,8 +210,8 @@ const PortEntry Ports_ULTRALITE[] =
     {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
     {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
     {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
-    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 46},
-    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 49},
+    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
+    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
 };
 
 const PortEntry Ports_8PRE[] =
@@ -1516,6 +1518,8 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     else
         flags |= MOTU_PA_RATE_1x;
 
+    // Don't test for padding port flag here since we need to include such
+    // pseudo-ports when calculating the event size.
     for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
         if (( DevicesProperty[m_motu_model-1].port_entry[i].port_dir & dir ) &&
 	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_RATE_MASK & flags ) &&
@@ -1590,7 +1594,8 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
         if (( DevicesProperty[m_motu_model-1].port_entry[i].port_dir & dir ) &&
 	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_RATE_MASK & flags ) &&
-	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_OPTICAL_MASK & flags )) {
+	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
+	   !( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_PADDING )) {
 	    asprintf(&buff,"%s_%s_%s" , id.c_str(), mode_str,
               DevicesProperty[m_motu_model-1].port_entry[i].port_name);
             if (!addPort(s_processor, buff, direction, DevicesProperty[m_motu_model-1].port_entry[i].port_offset, 0))
