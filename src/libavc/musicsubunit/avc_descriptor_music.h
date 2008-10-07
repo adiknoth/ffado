@@ -46,10 +46,6 @@ class Ieee1394Service;
 
 namespace AVC {
 
-
-class Util::Cmd::IOSSerialize;
-class Util::Cmd::IISDeserialize;
-
 /**
  * The info blocks
  */
