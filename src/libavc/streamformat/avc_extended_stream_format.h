@@ -105,9 +105,6 @@ namespace AVC {
 #define AVC1394_EXTENDED_STREAM_FORMAT_INFO_STATUS_NO_STREAM_FORMAT 0x02
 #define AVC1394_EXTENDED_STREAM_FORMAT_INFO_STATUS_NOT_USED         0xff
 
-class Util::Cmd::IOSSerialize;
-class Util::Cmd::IISDeserialize;
-
 enum ERateControl {
     eRC_Supported = 0x00,
     eRC_DontCare  = 0x01,
