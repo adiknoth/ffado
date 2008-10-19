@@ -39,6 +39,10 @@ EdirolFa66Device::EdirolFa66Device( DeviceManager& d,
     m_fixed_clocksource.id = 0;
     m_fixed_clocksource.slipping = false;
     m_fixed_clocksource.description = "Device Controlled";
+
+    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 1500) {
+        AVC::AVCCommand::setSleepAfterAVCCommand( 1500 );
+    }
 }
 
 EdirolFa66Device::~EdirolFa66Device()
