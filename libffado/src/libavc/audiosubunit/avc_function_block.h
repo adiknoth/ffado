@@ -51,6 +51,23 @@ public:
 
 ///////////////////////////////////////////
 
+class FunctionBlockFeatureLRBalance: public IBusData
+{
+public:
+    FunctionBlockFeatureLRBalance();
+    FunctionBlockFeatureLRBalance( const FunctionBlockFeatureLRBalance& rhs );
+    virtual ~FunctionBlockFeatureLRBalance();
+
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
+    virtual FunctionBlockFeatureLRBalance* clone() const;
+
+    control_data_length_t  m_controlDataLength;
+    u_int16_t              m_lrBalance;
+};
+
+///////////////////////////////////////////
+
 class FunctionBlockProcessingMixer: public IBusData
 {
 public:
@@ -158,6 +175,7 @@ public:
     control_selector_t          m_controlSelector;
 
     FunctionBlockFeatureVolume*     m_pVolume;
+    FunctionBlockFeatureLRBalance*  m_pLRBalance;
 };
 
 ///////////////////////////////////////////

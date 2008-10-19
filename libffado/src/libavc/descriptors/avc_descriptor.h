@@ -50,8 +50,6 @@ namespace AVC {
 class Unit;
 class Subunit;
 
-class Util::Cmd::IOSSerialize;
-class Util::Cmd::IISDeserialize;
 /**
  * The specifier used to indicate the target descriptor
  */

@@ -25,14 +25,14 @@
         <rect>
             <x>0</x>
             <y>0</y>
-            <width>521</width>
-            <height>161</height>
+            <width>681</width>
+            <height>193</height>
         </rect>
     </property>
     <property name="caption">
         <string>Edirol FA-101</string>
     </property>
-    <vbox>
+    <hbox>
         <property name="name">
             <cstring>unnamed</cstring>
         </property>
@@ -57,7 +57,7 @@
                 </property>
                 <widget class="QLayoutWidget">
                     <property name="name">
-                        <cstring>layout42</cstring>
+                        <cstring>layout33</cstring>
                     </property>
                     <vbox>
                         <property name="name">
@@ -74,94 +74,96 @@
                                 <set>AlignCenter</set>
                             </property>
                         </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout32</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_11</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput1</cstring>
+                                    </property>
+                                    <property name="sizePolicy">
+                                        <sizepolicy>
+                                            <hsizetype>0</hsizetype>
+                                            <vsizetype>7</vsizetype>
+                                            <horstretch>0</horstretch>
+                                            <verstretch>0</verstretch>
+                                        </sizepolicy>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_10</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>16</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput1</cstring>
+                                <cstring>sldBal1</cstring>
                             </property>
                             <property name="minValue">
-                                <number>0</number>
+                                <number>-32767</number>
                             </property>
                             <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
+                                <number>32512</number>
                             </property>
                             <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
-                            </property>
-                        </widget>
-                    </vbox>
-                </widget>
-                <spacer>
-                    <property name="name">
-                        <cstring>spacer16</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>40</width>
-                            <height>20</height>
-                        </size>
-                    </property>
-                </spacer>
-                <widget class="QLayoutWidget">
-                    <property name="name">
-                        <cstring>layout6</cstring>
-                    </property>
-                    <vbox>
-                        <property name="name">
-                            <cstring>unnamed</cstring>
-                        </property>
-                        <widget class="QLabel">
-                            <property name="name">
-                                <cstring>textLabel2</cstring>
-                            </property>
-                            <property name="text">
-                                <string>2</string>
-                            </property>
-                            <property name="alignment">
-                                <set>AlignCenter</set>
-                            </property>
-                        </widget>
-                        <widget class="QSlider">
-                            <property name="name">
-                                <cstring>sldInput2</cstring>
-                            </property>
-                            <property name="minValue">
-                                <number>0</number>
-                            </property>
-                            <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
-                            </property>
-                            <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
+                                <enum>Horizontal</enum>
                             </property>
                         </widget>
                     </vbox>
@@ -185,7 +187,129 @@
                 </spacer>
                 <widget class="QLayoutWidget">
                     <property name="name">
-                        <cstring>layout41</cstring>
+                        <cstring>layout36</cstring>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QLabel">
+                            <property name="name">
+                                <cstring>textLabel2</cstring>
+                            </property>
+                            <property name="text">
+                                <string>2</string>
+                            </property>
+                            <property name="alignment">
+                                <set>AlignCenter</set>
+                            </property>
+                        </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout34</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_12</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput2</cstring>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
+                        <widget class="QSlider">
+                            <property name="name">
+                                <cstring>sldBal2</cstring>
+                            </property>
+                            <property name="minValue">
+                                <number>-32767</number>
+                            </property>
+                            <property name="maxValue">
+                                <number>32512</number>
+                            </property>
+                            <property name="orientation">
+                                <enum>Horizontal</enum>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <spacer>
+                    <property name="name">
+                        <cstring>spacer16_2_2</cstring>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                        <enum>Expanding</enum>
+                    </property>
+                    <property name="sizeHint">
+                        <size>
+                            <width>40</width>
+                            <height>20</height>
+                        </size>
+                    </property>
+                </spacer>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout38</cstring>
                     </property>
                     <vbox>
                         <property name="name">
@@ -202,30 +326,88 @@
                                 <set>AlignCenter</set>
                             </property>
                         </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout37</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_2_3</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput3</cstring>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_2_3_3</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput3</cstring>
+                                <cstring>sldBal3</cstring>
                             </property>
                             <property name="minValue">
-                                <number>0</number>
+                                <number>-32767</number>
                             </property>
                             <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
+                                <number>32512</number>
                             </property>
                             <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
+                                <enum>Horizontal</enum>
                             </property>
                         </widget>
                     </vbox>
@@ -249,7 +431,7 @@
                 </spacer>
                 <widget class="QLayoutWidget">
                     <property name="name">
-                        <cstring>layout7</cstring>
+                        <cstring>layout40</cstring>
                     </property>
                     <vbox>
                         <property name="name">
@@ -266,37 +448,95 @@
                                 <set>AlignCenter</set>
                             </property>
                         </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout39</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_3_2</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput4</cstring>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_3_3</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput4</cstring>
+                                <cstring>sldBal4</cstring>
                             </property>
                             <property name="minValue">
-                                <number>0</number>
+                                <number>-32767</number>
                             </property>
                             <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
+                                <number>32512</number>
                             </property>
                             <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
+                                <enum>Horizontal</enum>
                             </property>
                         </widget>
                     </vbox>
                 </widget>
                 <spacer>
                     <property name="name">
-                        <cstring>spacer16_4</cstring>
+                        <cstring>spacer16_5_4</cstring>
                     </property>
                     <property name="orientation">
                         <enum>Horizontal</enum>
@@ -313,7 +553,7 @@
                 </spacer>
                 <widget class="QLayoutWidget">
                     <property name="name">
-                        <cstring>layout43</cstring>
+                        <cstring>layout42</cstring>
                     </property>
                     <vbox>
                         <property name="name">
@@ -330,36 +570,94 @@
                                 <set>AlignCenter</set>
                             </property>
                         </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout41</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_4</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput5</cstring>
+                                    </property>
+                                    <property name="minimumSize">
+                                        <size>
+                                            <width>0</width>
+                                            <height>80</height>
+                                        </size>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_4_3</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput5</cstring>
-                            </property>
-                            <property name="minimumSize">
-                                <size>
-                                    <width>0</width>
-                                    <height>80</height>
-                                </size>
+                                <cstring>sldBal5</cstring>
                             </property>
                             <property name="minValue">
-                                <number>0</number>
+                                <number>-32767</number>
                             </property>
                             <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
+                                <number>32512</number>
                             </property>
                             <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
+                                <enum>Horizontal</enum>
                             </property>
                         </widget>
                     </vbox>
@@ -367,70 +665,6 @@
                 <spacer>
                     <property name="name">
                         <cstring>spacer16_5</cstring>
-                    </property>
-                    <property name="orientation">
-                        <enum>Horizontal</enum>
-                    </property>
-                    <property name="sizeType">
-                        <enum>Expanding</enum>
-                    </property>
-                    <property name="sizeHint">
-                        <size>
-                            <width>40</width>
-                            <height>20</height>
-                        </size>
-                    </property>
-                </spacer>
-                <widget class="QLayoutWidget">
-                    <property name="name">
-                        <cstring>layout8</cstring>
-                    </property>
-                    <vbox>
-                        <property name="name">
-                            <cstring>unnamed</cstring>
-                        </property>
-                        <widget class="QLabel">
-                            <property name="name">
-                                <cstring>textLabel6</cstring>
-                            </property>
-                            <property name="text">
-                                <string>6</string>
-                            </property>
-                            <property name="alignment">
-                                <set>AlignCenter</set>
-                            </property>
-                        </widget>
-                        <widget class="QSlider">
-                            <property name="name">
-                                <cstring>sldInput6</cstring>
-                            </property>
-                            <property name="minValue">
-                                <number>0</number>
-                            </property>
-                            <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
-                            </property>
-                            <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
-                            </property>
-                        </widget>
-                    </vbox>
-                </widget>
-                <spacer>
-                    <property name="name">
-                        <cstring>spacer16_6</cstring>
                     </property>
                     <property name="orientation">
                         <enum>Horizontal</enum>
@@ -455,52 +689,104 @@
                         </property>
                         <widget class="QLabel">
                             <property name="name">
-                                <cstring>textLabel7</cstring>
+                                <cstring>textLabel6</cstring>
                             </property>
                             <property name="text">
-                                <string>7</string>
+                                <string>6</string>
                             </property>
                             <property name="alignment">
                                 <set>AlignCenter</set>
                             </property>
                         </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout43</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_5_2</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput6</cstring>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_5_3</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput7</cstring>
-                            </property>
-                            <property name="minimumSize">
-                                <size>
-                                    <width>0</width>
-                                    <height>80</height>
-                                </size>
+                                <cstring>sldBal6</cstring>
                             </property>
                             <property name="minValue">
-                                <number>0</number>
+                                <number>-32767</number>
                             </property>
                             <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
+                                <number>32512</number>
                             </property>
                             <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
+                                <enum>Horizontal</enum>
                             </property>
                         </widget>
                     </vbox>
                 </widget>
                 <spacer>
                     <property name="name">
-                        <cstring>spacer16_7</cstring>
+                        <cstring>spacer16_8_2_2</cstring>
                     </property>
                     <property name="orientation">
                         <enum>Horizontal</enum>
@@ -517,7 +803,135 @@
                 </spacer>
                 <widget class="QLayoutWidget">
                     <property name="name">
-                        <cstring>layout9</cstring>
+                        <cstring>layout46</cstring>
+                    </property>
+                    <vbox>
+                        <property name="name">
+                            <cstring>unnamed</cstring>
+                        </property>
+                        <widget class="QLabel">
+                            <property name="name">
+                                <cstring>textLabel7</cstring>
+                            </property>
+                            <property name="text">
+                                <string>7</string>
+                            </property>
+                            <property name="alignment">
+                                <set>AlignCenter</set>
+                            </property>
+                        </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout45</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_6</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput7</cstring>
+                                    </property>
+                                    <property name="minimumSize">
+                                        <size>
+                                            <width>0</width>
+                                            <height>80</height>
+                                        </size>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_6_3</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
+                        <widget class="QSlider">
+                            <property name="name">
+                                <cstring>sldBal7</cstring>
+                            </property>
+                            <property name="minValue">
+                                <number>-32767</number>
+                            </property>
+                            <property name="maxValue">
+                                <number>32512</number>
+                            </property>
+                            <property name="orientation">
+                                <enum>Horizontal</enum>
+                            </property>
+                        </widget>
+                    </vbox>
+                </widget>
+                <spacer>
+                    <property name="name">
+                        <cstring>spacer16_8_2</cstring>
+                    </property>
+                    <property name="orientation">
+                        <enum>Horizontal</enum>
+                    </property>
+                    <property name="sizeType">
+                        <enum>Expanding</enum>
+                    </property>
+                    <property name="sizeHint">
+                        <size>
+                            <width>40</width>
+                            <height>20</height>
+                        </size>
+                    </property>
+                </spacer>
+                <widget class="QLayoutWidget">
+                    <property name="name">
+                        <cstring>layout48</cstring>
                     </property>
                     <vbox>
                         <property name="name">
@@ -534,30 +948,88 @@
                                 <set>AlignCenter</set>
                             </property>
                         </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout47</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_7</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput8</cstring>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_7_5</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput8</cstring>
+                                <cstring>sldBal8</cstring>
                             </property>
                             <property name="minValue">
-                                <number>0</number>
+                                <number>-32767</number>
                             </property>
                             <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
+                                <number>32512</number>
                             </property>
                             <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
+                                <enum>Horizontal</enum>
                             </property>
                         </widget>
                     </vbox>
@@ -581,7 +1053,7 @@
                 </spacer>
                 <widget class="QLayoutWidget">
                     <property name="name">
-                        <cstring>layout45</cstring>
+                        <cstring>layout50</cstring>
                     </property>
                     <vbox>
                         <property name="name">
@@ -598,36 +1070,94 @@
                                 <set>AlignCenter</set>
                             </property>
                         </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout49</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_8_3</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput9</cstring>
+                                    </property>
+                                    <property name="minimumSize">
+                                        <size>
+                                            <width>0</width>
+                                            <height>80</height>
+                                        </size>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_8_4</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput9</cstring>
-                            </property>
-                            <property name="minimumSize">
-                                <size>
-                                    <width>0</width>
-                                    <height>80</height>
-                                </size>
+                                <cstring>sldBal9</cstring>
                             </property>
                             <property name="minValue">
-                                <number>0</number>
+                                <number>-32767</number>
                             </property>
                             <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
+                                <number>32512</number>
                             </property>
                             <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
+                                <enum>Horizontal</enum>
                             </property>
                         </widget>
                     </vbox>
@@ -651,7 +1181,7 @@
                 </spacer>
                 <widget class="QLayoutWidget">
                     <property name="name">
-                        <cstring>layout10</cstring>
+                        <cstring>layout52</cstring>
                     </property>
                     <vbox>
                         <property name="name">
@@ -668,37 +1198,95 @@
                                 <set>AlignCenter</set>
                             </property>
                         </widget>
+                        <widget class="QLayoutWidget">
+                            <property name="name">
+                                <cstring>layout51</cstring>
+                            </property>
+                            <hbox>
+                                <property name="name">
+                                    <cstring>unnamed</cstring>
+                                </property>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_9_5</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                                <widget class="QSlider">
+                                    <property name="name">
+                                        <cstring>sldInput10</cstring>
+                                    </property>
+                                    <property name="minValue">
+                                        <number>0</number>
+                                    </property>
+                                    <property name="maxValue">
+                                        <number>32767</number>
+                                    </property>
+                                    <property name="lineStep">
+                                        <number>10000</number>
+                                    </property>
+                                    <property name="pageStep">
+                                        <number>1000</number>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Vertical</enum>
+                                    </property>
+                                    <property name="tickmarks">
+                                        <enum>Both</enum>
+                                    </property>
+                                    <property name="tickInterval">
+                                        <number>10000</number>
+                                    </property>
+                                </widget>
+                                <spacer>
+                                    <property name="name">
+                                        <cstring>spacer16_9_6</cstring>
+                                    </property>
+                                    <property name="orientation">
+                                        <enum>Horizontal</enum>
+                                    </property>
+                                    <property name="sizeType">
+                                        <enum>Expanding</enum>
+                                    </property>
+                                    <property name="sizeHint">
+                                        <size>
+                                            <width>20</width>
+                                            <height>20</height>
+                                        </size>
+                                    </property>
+                                </spacer>
+                            </hbox>
+                        </widget>
                         <widget class="QSlider">
                             <property name="name">
-                                <cstring>sldInput10</cstring>
+                                <cstring>sldBal10</cstring>
                             </property>
                             <property name="minValue">
-                                <number>0</number>
+                                <number>-32768</number>
                             </property>
                             <property name="maxValue">
-                                <number>32767</number>
-                            </property>
-                            <property name="lineStep">
-                                <number>10000</number>
-                            </property>
-                            <property name="pageStep">
-                                <number>1000</number>
+                                <number>32512</number>
                             </property>
                             <property name="orientation">
-                                <enum>Vertical</enum>
-                            </property>
-                            <property name="tickmarks">
-                                <enum>Both</enum>
-                            </property>
-                            <property name="tickInterval">
-                                <number>10000</number>
+                                <enum>Horizontal</enum>
                             </property>
                         </widget>
                     </vbox>
                 </widget>
             </hbox>
         </widget>
-    </vbox>
+    </hbox>
 </widget>
 <connections>
     <connection>
@@ -761,23 +1349,89 @@
         <receiver>EdirolFa101ControlUI</receiver>
         <slot>setVolumeIn10(int)</slot>
     </connection>
+    <connection>
+        <sender>sldBal1</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setBalanceIn1(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldBal2</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setBalanceIn2(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldBal3</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setBalanceIn3(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldBal4</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setBalanceIn4(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldBal5</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setBalanceIn5(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldBal6</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setBalanceIn6(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldBal7</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setBalanceIn7(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldBal8</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setBalanceIn8(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldBal9</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setBalanceIn9(int)</slot>
+    </connection>
+    <connection>
+        <sender>sldBal10</sender>
+        <signal>sliderMoved(int)</signal>
+        <receiver>EdirolFa101ControlUI</receiver>
+        <slot>setVolumeIn10(int)</slot>
+    </connection>
 </connections>
-<includes>
-    <include location="local" impldecl="in implementation">mixer_edirolfa101.ui.h</include>
-</includes>
 <slots>
     <slot>init()</slot>
     <slot>initValues()</slot>
-    <slot>setVolumeIn6( int )</slot>
-    <slot>setVolumeIn7( int )</slot>
-    <slot>setVolumeIn8( int )</slot>
-    <slot>setVolumeIn9( int )</slot>
-    <slot>setVolumeIn10( int )</slot>
     <slot>setVolumeIn1(int)</slot>
     <slot>setVolumeIn2(int)</slot>
     <slot>setVolumeIn3(int)</slot>
     <slot>setVolumeIn4(int)</slot>
     <slot>setVolumeIn5(int)</slot>
+    <slot>setVolumeIn6(int)</slot>
+    <slot>setVolumeIn7(int)</slot>
+    <slot>setVolumeIn8(int)</slot>
+    <slot>setVolumeIn9(int)</slot>
+    <slot>setVolumeIn10(int)</slot>
+    <slot>setBalanceIn1(int)</slot>
+    <slot>setBalanceIn2(int)</slot>
+    <slot>setBalanceIn3(int)</slot>
+    <slot>setBalanceIn4(int)</slot>
+    <slot>setBalanceIn5(int)</slot>
+    <slot>setBalanceIn6(int)</slot>
+    <slot>setBalanceIn7(int)</slot>
+    <slot>setBalanceIn8(int)</slot>
+    <slot>setBalanceIn9(int)</slot>
 </slots>
 <layoutdefaults spacing="6" margin="11"/>
 </UI>

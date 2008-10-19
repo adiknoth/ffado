@@ -146,23 +146,24 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
         unsigned int dbs = get_bits(CondSwapFromBus32(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
         unsigned int fdf_size = get_bits(CondSwapFromBus32(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
 
-        // Don't even attempt to process a packet if it isn't what
-        // we expect from a MOTU.  Yes, an FDF value of 32 bears
-        // little relationship to the actual data (24 bit integer)
-        // sent by the MOTU - it's one of those areas where MOTU
-        // have taken a curious detour around the standards.
-        if (tag!=1 || fdf_size!=32) {
+        // Don't even attempt to process a packet if it isn't what we expect
+        // from a MOTU.  Yes, an FDF value of 32 bears little relationship
+        // to the actual data (24 bit integer) sent by the MOTU - it's one
+        // of those areas where MOTU have taken a curious detour around the
+        // standards.  Do this check early on because for invalid packets
+        // dbs may not be what we expect, potentially causing issues later
+        // on.
+        if (tag!=1 || fdf_size!=32 || dbs==0) {
             return eCRV_Invalid;
         }
 
-        // put this after the check because event_length can become 0 on invalid packets
-        unsigned int event_length = (fdf_size * dbs) / 8;       // Event size in bytes
-        unsigned int n_events = (length-8) / event_length;
+        // m_event_size is the event size in bytes
+        unsigned int n_events = (length-8) / m_event_size;
 
         // Acquire the timestamp of the last frame in the packet just
         // received.  Since every frame from the MOTU has its own timestamp
         // we can just pick it straight from the packet.
-        uint32_t last_sph = CondSwapFromBus32(*(quadlet_t *)(data+8+(n_events-1)*event_length));
+        uint32_t last_sph = CondSwapFromBus32(*(quadlet_t *)(data+8+(n_events-1)*m_event_size));
         m_last_timestamp = sphRecvToFullTicks(last_sph, m_Parent.get1394Service().getCycleTimer());
 
         return eCRV_OK;
@@ -184,14 +185,8 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
  */
 enum StreamProcessor::eChildReturnValue
 MotuReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int length) {
-    quadlet_t* quadlet = (quadlet_t*) data;
-
-    unsigned int dbs = get_bits(CondSwapFromBus32(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
-    unsigned int fdf_size = get_bits(CondSwapFromBus32(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
-    // this is only called for packets that return eCRV_OK on processPacketHeader
-    // so event_length won't become 0
-    unsigned int event_length = (fdf_size * dbs) / 8;       // Event size in bytes
-    unsigned int n_events = (length-8) / event_length;
+    // m_event_size should never be zero
+    unsigned int n_events = (length-8) / m_event_size;
 
     // we have to keep in mind that there are also
     // some packets buffered by the ISO layer,

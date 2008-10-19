@@ -31,25 +31,25 @@ class QuataFireMixer(QuataFireMixerUI):
             print "Init Quatafire mixer window"
 
             self.VolumeControls={
-                    self.sldCh1: ['/Mixer/Feature_1', 1],
-                    self.sldCh2: ['/Mixer/Feature_1', 2],
-                    self.sldCh34: ['/Mixer/Feature_2', 0],
-                    self.sldCh56: ['/Mixer/Feature_3', 0],
-                    self.sldDawAll: ['/Mixer/Feature_4', 0],
-                    self.sldDawCH1: ['/Mixer/Feature_4', 1],
-                    self.sldDawCH2: ['/Mixer/Feature_4', 2],
-                    self.sldDawCH3: ['/Mixer/Feature_4', 3],
-                    self.sldDawCH4: ['/Mixer/Feature_4', 4],
-                    self.sldDawCH5: ['/Mixer/Feature_4', 5],
-                    self.sldDawCH6: ['/Mixer/Feature_4', 6],
-                    self.sldDawCH7: ['/Mixer/Feature_4', 7],
-                    self.sldDawCH8: ['/Mixer/Feature_4', 8],
+                    self.sldCh1: ['/Mixer/Feature_Volume_1', 1],
+                    self.sldCh2: ['/Mixer/Feature_Volume_1', 2],
+                    self.sldCh34: ['/Mixer/Feature_Volume_2', 0],
+                    self.sldCh56: ['/Mixer/Feature_Volume_3', 0],
+                    self.sldDawAll: ['/Mixer/Feature_Volume_4', 0],
+                    self.sldDawCH1: ['/Mixer/Feature_Volume_4', 1],
+                    self.sldDawCH2: ['/Mixer/Feature_Volume_4', 2],
+                    self.sldDawCH3: ['/Mixer/Feature_Volume_4', 3],
+                    self.sldDawCH4: ['/Mixer/Feature_Volume_4', 4],
+                    self.sldDawCH5: ['/Mixer/Feature_Volume_4', 5],
+                    self.sldDawCH6: ['/Mixer/Feature_Volume_4', 6],
+                    self.sldDawCH7: ['/Mixer/Feature_Volume_4', 7],
+                    self.sldDawCH8: ['/Mixer/Feature_Volume_4', 8],
                     }
             self.PanControls={
-                    #self.dialCh1: ['/Mixer/Feature_1'],
-                    #self.dialCh2: ['/Mixer/Feature_1'],
-                    self.dialCh34: ['/Mixer/Feature_2'],
-                    self.dialCh56: ['/Mixer/Feature_3'],
+                    #self.dialCh1: ['/Mixer/Feature_Volume_1'],
+                    #self.dialCh2: ['/Mixer/Feature_Volume_1'],
+                    self.dialCh34: ['/Mixer/Feature_Volume_2'],
+                    self.dialCh56: ['/Mixer/Feature_Volume_3'],
                     }
 
     def updateVolume(self,a0):

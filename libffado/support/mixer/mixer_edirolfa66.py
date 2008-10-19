@@ -24,51 +24,84 @@ from qt import *
 from mixer_edirolfa66ui import *
 
 class EdirolFa66Control(EdirolFa66ControlUI):
-    def __init__(self,parent = None,name = None,fl = 0):
+    def __init__(self, parent = None, name = None, fl = 0):
         EdirolFa66ControlUI.__init__(self, parent, name, fl)
 
-    def setComboMixSource(self, a0):
-            self.setSelector('line34source', a0)
-
     def setVolumeIn1(self, vol):
-            self.setVolume('in1', vol)
+        self.setValue('vol1', vol)
 
     def setVolumeIn2(self, vol):
-            self.setVolume('in2', vol)
+        self.setValue('vol2', vol)
 
     def setVolumeIn3(self, vol):
-            self.setVolume('in3', vol)
+        self.setValue('vol3', vol)
 
     def setVolumeIn4(self, vol):
-            self.setVolume('in4', vol)
+        self.setValue('vol4', vol)
 
     def setVolumeIn5(self, vol):
-            self.setVolume('in5', vol)
+        self.setValue('vol5', vol)
 
     def setVolumeIn6(self, vol):
-            self.setVolume('in6', vol)
+        self.setValue('vol6', vol)
 
-    def setVolume(self, name, vol):
-            vol = -vol
-            ctrl = self.VolumeControls[name]
-            print "setting %s volume to %d" % (name, vol)
-            self.hw.setContignuous(ctrl[0], vol, idx = ctrl[1])
+    def setBalanceIn1(self, bal):
+        self.setValue('bal1', bal)
+
+    def setBalanceIn2(self, bal):
+        self.setValue('bal2', bal)
+
+    def setBalanceIn3(self, bal):
+        self.setValue('bal3', bal)
+
+    def setBalanceIn4(self, bal):
+        self.setValue('bal4', bal)
+
+    def setBalanceIn5(self, bal):
+        self.setValue('bal5', bal)
+
+    def setBalanceIn6(self, bal):
+        self.setValue('bal6', bal)
+
+    def setValue(self, name, val):
+        val = -val
+        ctrl = self.VolumeControls[name]
+        print "setting %s to %d" % (name, val)
+        self.hw.setContignuous(ctrl[0], val, idx = ctrl[1])
 
     def init(self):
-            print "Init Edirol FA-66 window"
+        print "Init Edirol FA-66 window"
 
-            self.VolumeControls = {
-                #          feature name, channel, qt slider
-                'in1'  :   ['/Mixer/Feature_1', 1, self.sldInput1],
-                'in2'  :   ['/Mixer/Feature_1', 2, self.sldInput2],
-                'in3'  :   ['/Mixer/Feature_2', 1, self.sldInput3],
-                'in4'  :   ['/Mixer/Feature_2', 2, self.sldInput4],
-                'in5'  :   ['/Mixer/Feature_3', 1, self.sldInput5],
-                'in6'  :   ['/Mixer/Feature_3', 2, self.sldInput6],
-                }
+        self.VolumeControls = {
+            #          feature name, channel, qt slider
+            'vol1'  :   ['/Mixer/Feature_Volume_1', 1, self.sldInput1],
+            'vol2'  :   ['/Mixer/Feature_Volume_1', 2, self.sldInput2],
+            'vol3'  :   ['/Mixer/Feature_Volume_2', 1, self.sldInput3],
+            'vol4'  :   ['/Mixer/Feature_Volume_2', 2, self.sldInput4],
+            'vol5'  :   ['/Mixer/Feature_Volume_3', 1, self.sldInput5],
+            'vol6'  :   ['/Mixer/Feature_Volume_3', 2, self.sldInput6],
+
+            'bal1'  :   ['/Mixer/Feature_LRBalance_1', 1, self.sldBal1],
+            'bal2'  :   ['/Mixer/Feature_LRBalance_1', 2, self.sldBal2],
+            'bal3'  :   ['/Mixer/Feature_LRBalance_2', 1, self.sldBal3],
+            'bal4'  :   ['/Mixer/Feature_LRBalance_2', 2, self.sldBal4],
+            'bal5'  :   ['/Mixer/Feature_LRBalance_3', 1, self.sldBal5],
+            'bal6'  :   ['/Mixer/Feature_LRBalance_3', 2, self.sldBal6],
+            }
 
     def initValues(self):
-            for name, ctrl in self.VolumeControls.iteritems():
-                vol = self.hw.getContignuous(ctrl[0], idx = ctrl[1])
-                print "%s volume is %d" % (name , vol)
-                ctrl[2].setValue(-vol)
+        for name, ctrl in self.VolumeControls.iteritems():
+            val = self.hw.getContignuous(ctrl[0], idx = ctrl[1])
+            print "%s value is %d" % (name , val)
+
+            # Workaround: The current value is not properly initialized
+            # on the device and returns after bootup always 0.
+            # Though we happen to know what the correct value should
+            # be therefore we overwrite the 0 
+            if name[0:3] == 'bal' and val == 0:
+                if ctrl[1] == 1:
+                    val = 32512
+                else:
+                    val = -32768
+                    
+            ctrl[2].setValue(-val)

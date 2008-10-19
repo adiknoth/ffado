@@ -87,13 +87,13 @@ class BCoAudio5Control(BCoAudio5ControlUI):
             print "Init BridgeCo Audio 5 window"
 
             self.VolumeControls={
-                'in_line12'  :   ['/Mixer/Feature_1', self.sldInput12],
-                'in_line34'  :   ['/Mixer/Feature_2', self.sldInput34],
-                'in_spdif'   :   ['/Mixer/Feature_3', self.sldInputSPDIF],
-                'out_line12' :   ['/Mixer/Feature_6', self.sldOutput12],
-                'out_line34' :   ['/Mixer/Feature_7', self.sldOutput34],
-                'cross_a'    :   ['/Mixer/Feature_4', self.sldCrossA],
-                'cross_b'    :   ['/Mixer/Feature_5', self.sldCrossB],
+                'in_line12'  :   ['/Mixer/Feature_Volume_1', self.sldInput12],
+                'in_line34'  :   ['/Mixer/Feature_Volume_2', self.sldInput34],
+                'in_spdif'   :   ['/Mixer/Feature_Volume_3', self.sldInputSPDIF],
+                'out_line12' :   ['/Mixer/Feature_Volume_6', self.sldOutput12],
+                'out_line34' :   ['/Mixer/Feature_Volume_7', self.sldOutput34],
+                'cross_a'    :   ['/Mixer/Feature_Volume_4', self.sldCrossA],
+                'cross_b'    :   ['/Mixer/Feature_Volume_5', self.sldCrossB],
                 }
 
             self.SelectorControls={

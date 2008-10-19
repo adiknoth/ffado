@@ -50,7 +50,7 @@ public:
     virtual bool setName( std::string n )
         { return false; };
 
-    bool addElementForFunctionBlock(FunctionBlock& b);
+    template<typename FBType, typename MixerType> bool addElementForFunctionBlock(FBType& b);
     bool addElementForAllFunctionBlocks();
 
     // manipulation of the contained elements
@@ -68,11 +68,31 @@ protected:
     DECLARE_DEBUG_MODULE;
 };
 
-class MixerFBFeature
+class MixerFBFeatureVolume
     : public Control::Continuous
 {
 public:
-    MixerFBFeature(Mixer& parent, FunctionBlockFeature&);
+    MixerFBFeatureVolume(Mixer& parent, FunctionBlockFeature&);
+    virtual ~MixerFBFeatureVolume();
+
+    virtual bool setValue(double v);
+    virtual double getValue();
+    virtual bool setValue(int idx, double v);
+    virtual double getValue(int idx);
+    virtual double getMinimum();
+    virtual double getMaximum();
+
+private:
+    Mixer&                  m_Parent;
+    FunctionBlockFeature&   m_Slave;
+};
+
+class MixerFBFeatureLRBalance
+    : public Control::Continuous
+{
+public:
+    MixerFBFeatureLRBalance(Mixer& parent, FunctionBlockFeature&);
+    virtual ~MixerFBFeatureLRBalance();
 
     virtual bool setValue(double v);
     virtual double getValue();
@@ -91,6 +111,7 @@ class EnhancedMixerFBFeature
 {
 public:
     EnhancedMixerFBFeature(Mixer& parent, FunctionBlockEnhancedMixer&);
+    virtual ~EnhancedMixerFBFeature();
 
     virtual bool setValue(double v);
     virtual double getValue();
@@ -112,6 +133,7 @@ class MixerFBSelector
 {
 public:
     MixerFBSelector(Mixer& parent, FunctionBlockSelector&);
+    virtual ~MixerFBSelector();
 
     virtual bool setValue(int v);
     virtual int getValue();

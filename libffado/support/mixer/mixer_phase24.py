@@ -103,11 +103,11 @@ class Phase24Control(Phase24ControlUI):
             print "Init PhaseX24 mixer window"
 
             self.VolumeControls={
-                'analogin' :      ['/Mixer/Feature_6', self.sldLineIn],
-                'spdifin' :       ['/Mixer/Feature_7', self.sldSPDIFIn],
-                'out12' :         ['/Mixer/Feature_3', self.sldInput12],
-                'out34' :         ['/Mixer/Feature_4', self.sldInput34],
-                'outspdif' :      ['/Mixer/Feature_5', self.sldSPDIFOut],
+                'analogin' :      ['/Mixer/Feature_Volume_6', self.sldLineIn],
+                'spdifin' :       ['/Mixer/Feature_Volume_7', self.sldSPDIFIn],
+                'out12' :         ['/Mixer/Feature_Volume_3', self.sldInput12],
+                'out34' :         ['/Mixer/Feature_Volume_4', self.sldInput34],
+                'outspdif' :      ['/Mixer/Feature_Volume_5', self.sldSPDIFOut],
                 }
 
             self.SelectorControls={

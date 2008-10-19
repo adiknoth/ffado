@@ -107,67 +107,25 @@ Mixer::clearElements() {
     return true;
 }
 
+template<typename FBType, typename MixerType> 
 bool
-Mixer::addElementForFunctionBlock(FunctionBlock& b) {
-    bool retval=true;
-    
-    std::ostringstream ostrm;
-    ostrm << b.getName() << "_" << (int)(b.getId());
-    
-    debugOutput(DEBUG_LEVEL_NORMAL,"Adding element for functionblock %s...\n",
-        ostrm.str().c_str());
-
-    Control::Element *e=NULL;
-    
-    if (dynamic_cast<FunctionBlockSelector *>(&b) != NULL) {
-        FunctionBlockSelector *bf=dynamic_cast<FunctionBlockSelector *>(&b);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "FB is a SelectorFunctionBlock\n");
-        e=new MixerFBSelector(*this, *bf);
-        if (e) {
-            e->setVerboseLevel(getDebugLevel());
-            retval &= Control::Container::addElement(e);
-        } else {
-            debugError("Control element creation failed\n");
-            retval &= false;
-        }
-    }
-    if (dynamic_cast<FunctionBlockFeature *>(&b) != NULL) {
-        FunctionBlockFeature *bf=dynamic_cast<FunctionBlockFeature *>(&b);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "FB is a FeatureFunctionBlock\n");
-        e=new MixerFBFeature(*this, *bf);
-        if (e) {
-            e->setVerboseLevel(getDebugLevel());
-            retval &= Control::Container::addElement(e);
-        } else {
-            debugError("Control element creation failed\n");
-            retval &= false;
-        }
-    }
-
-    if (dynamic_cast<FunctionBlockEnhancedMixer *>(&b) != NULL) {
-        FunctionBlockEnhancedMixer *bf=dynamic_cast<FunctionBlockEnhancedMixer *>(&b);
-        debugOutput( DEBUG_LEVEL_VERBOSE, "FB is a FunctionBlockEnhancedMixer\n");
-        e=new EnhancedMixerFBFeature(*this, *bf);
-        if (e) {
-            e->setVerboseLevel(getDebugLevel());
-            retval &= Control::Container::addElement(e);
-        } else {
-            debugError("Control element creation failed\n");
-            retval &= false;
-        }
-    }
-    
+Mixer::addElementForFunctionBlock(FBType& b)
+{
+    Control::Element *e = new MixerType(*this, b);
     if (!e) {
-        debugError("No control element created\n");
+        debugError("Control element creation failed\n");
         return false;
     }
 
-    return retval;
+    e->setVerboseLevel(getDebugLevel());
+    return Control::Container::addElement(e);
 }
 
 bool
 Mixer::addElementForAllFunctionBlocks() {
     debugOutput(DEBUG_LEVEL_NORMAL,"Adding elements for functionblocks...\n");
+
+    bool retval = true;
 
     BeBoB::SubunitAudio *asu =
         dynamic_cast<BeBoB::SubunitAudio *>(m_device.getAudioSubunit(0));
@@ -182,7 +140,32 @@ Mixer::addElementForAllFunctionBlocks() {
           it != functions.end();
           ++it )
     {
-        if (!addElementForFunctionBlock(*(*it))) {
+        FunctionBlock *pfb = *it;
+        FunctionBlockSelector *ps;
+        FunctionBlockFeature *pf;
+        FunctionBlockEnhancedMixer *pm;
+
+        if ((ps = dynamic_cast<FunctionBlockSelector *>(pfb))) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "FB is a SelectorFunctionBlock\n");
+            retval = addElementForFunctionBlock<FunctionBlockSelector, MixerFBSelector>(*ps);
+        } else if ((pf = dynamic_cast<FunctionBlockFeature *>(pfb))) {
+            // We might should check if really both feature function
+            // blocks exists and only then announce them. The FA-101,
+            // FA-66 and the Ref BCO Audio5 do have both.
+            debugOutput( DEBUG_LEVEL_VERBOSE, "FB is a FeatureFunctionBlock\n");
+            retval  = addElementForFunctionBlock<FunctionBlockFeature, MixerFBFeatureVolume>(*pf);
+            retval &= addElementForFunctionBlock<FunctionBlockFeature, MixerFBFeatureLRBalance>(*pf);
+        } else if ((pm = dynamic_cast<FunctionBlockEnhancedMixer *>(pfb))) {
+            // All BeBoB devices lock the mixer feature function
+            // block. The AV/C model for this mixer is just to
+            // complex and the BridgeCo guys decided to use the above
+            // function feature blocks (level and balance) to achive
+            // the same.
+            debugOutput( DEBUG_LEVEL_VERBOSE, "FB is a FunctionBlockEnhancedMixer\n");
+            retval = addElementForFunctionBlock<FunctionBlockEnhancedMixer, EnhancedMixerFBFeature>(*pm);
+        }
+
+        if (!retval) {
             std::ostringstream ostrm;
             ostrm << (*it)->getName() << " " << (int)((*it)->getId());
             
@@ -190,38 +173,42 @@ Mixer::addElementForAllFunctionBlocks() {
                 ostrm.str().c_str());
         };
     }
-    return true;
+    return retval;
 }
 
 // --- element implementation classes
 
-MixerFBFeature::MixerFBFeature(Mixer& parent, FunctionBlockFeature& s)
+MixerFBFeatureVolume::MixerFBFeatureVolume(Mixer& parent, FunctionBlockFeature& s)
 : Control::Continuous(&parent)
 , m_Parent(parent) 
 , m_Slave(s)
 {
     std::ostringstream ostrm;
-    ostrm << s.getName() << "_" << (int)(s.getId());
+    ostrm << s.getName() << "_Volume_" << (int)(s.getId());
     
     Control::Continuous::setName(ostrm.str());
     
     ostrm.str("");
-    ostrm << "Label for " << s.getName() << " " << (int)(s.getId());
+    ostrm << "Label for " << s.getName() << "_Volume " << (int)(s.getId());
     setLabel(ostrm.str());
     
     ostrm.str("");
-    ostrm << "Description for " << s.getName() << " " << (int)(s.getId());
+    ostrm << "Description for " << s.getName() << "_Volume " << (int)(s.getId());
     setDescription(ostrm.str());
 }
 
+MixerFBFeatureVolume::~MixerFBFeatureVolume()
+{
+}
+
 bool
-MixerFBFeature::setValue(double v)
+MixerFBFeatureVolume::setValue(double v)
 {
     return setValue(0, v);
 }
 
 bool
-MixerFBFeature::setValue(int idx, double v)
+MixerFBFeatureVolume::setValue(int idx, double v)
 {
     int volume=(int)v;
     debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d to %d...\n",
@@ -230,13 +217,13 @@ MixerFBFeature::setValue(int idx, double v)
 }
 
 double
-MixerFBFeature::getValue()
+MixerFBFeatureVolume::getValue()
 {
     return getValue(0);
 }
 
 double
-MixerFBFeature::getValue(int idx)
+MixerFBFeatureVolume::getValue(int idx)
 {
     debugOutput(DEBUG_LEVEL_NORMAL,"Get feature volume %d...\n",
         m_Slave.getId());
@@ -245,7 +232,7 @@ MixerFBFeature::getValue(int idx)
 }
 
 double
-MixerFBFeature::getMinimum()
+MixerFBFeatureVolume::getMinimum()
 {
     debugOutput(DEBUG_LEVEL_NORMAL,"Get feature minimum volume %d...\n",
         m_Slave.getId());
@@ -254,12 +241,85 @@ MixerFBFeature::getMinimum()
 }
 
 double
-MixerFBFeature::getMaximum()
+MixerFBFeatureVolume::getMaximum()
 {
     debugOutput(DEBUG_LEVEL_NORMAL,"Get feature maximum volume %d...\n",
         m_Slave.getId());
 
     return m_Parent.getParent().getFeatureFBVolumeMaximum(m_Slave.getId(), 0);
+}
+
+// --- element implementation classes
+
+MixerFBFeatureLRBalance::MixerFBFeatureLRBalance(Mixer& parent, FunctionBlockFeature& s)
+: Control::Continuous(&parent)
+, m_Parent(parent) 
+, m_Slave(s)
+{
+    std::ostringstream ostrm;
+    ostrm << s.getName() << "_LRBalance_" << (int)(s.getId());
+    
+    Control::Continuous::setName(ostrm.str());
+    
+    ostrm.str("");
+    ostrm << "Label for " << s.getName() << "_LRBalance " << (int)(s.getId());
+    setLabel(ostrm.str());
+    
+    ostrm.str("");
+    ostrm << "Description for " << s.getName() << "_LRBalance " << (int)(s.getId());
+    setDescription(ostrm.str());
+}
+
+MixerFBFeatureLRBalance::~MixerFBFeatureLRBalance()
+{
+}
+
+bool
+MixerFBFeatureLRBalance::setValue(double v)
+{
+    return setValue(0, v);
+}
+
+bool
+MixerFBFeatureLRBalance::setValue(int idx, double v)
+{
+    int volume=(int)v;
+    debugOutput(DEBUG_LEVEL_NORMAL,"Set feature balance %d to %d...\n",
+        m_Slave.getId(), volume);
+    return m_Parent.getParent().setFeatureFBLRBalanceCurrent(m_Slave.getId(), idx, volume);
+}
+
+double
+MixerFBFeatureLRBalance::getValue()
+{
+    return getValue(0);
+}
+
+double
+MixerFBFeatureLRBalance::getValue(int idx)
+{
+    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature balance %d...\n",
+        m_Slave.getId());
+
+    return m_Parent.getParent().getFeatureFBLRBalanceCurrent(m_Slave.getId(), idx);
+}
+
+double
+MixerFBFeatureLRBalance::getMinimum()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature balance volume %d...\n",
+        m_Slave.getId());
+
+    return m_Parent.getParent().getFeatureFBLRBalanceMinimum(m_Slave.getId(), 0);
+}
+
+double
+MixerFBFeatureLRBalance::getMaximum()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature maximum balance %d...\n",
+        m_Slave.getId());
+
+    return m_Parent.getParent().getFeatureFBLRBalanceMaximum(m_Slave.getId(), 0);
 }
 
 // --- element implementation classes
@@ -281,6 +341,10 @@ EnhancedMixerFBFeature::EnhancedMixerFBFeature(Mixer& parent, FunctionBlockEnhan
     ostrm.str("");
     ostrm << "Description for " << s.getName() << " " << (int)(s.getId());
     setDescription(ostrm.str());
+}
+
+EnhancedMixerFBFeature::~EnhancedMixerFBFeature()
+{
 }
 
 bool
@@ -320,6 +384,10 @@ MixerFBSelector::MixerFBSelector(Mixer& parent, FunctionBlockSelector& s)
     ostrm.str("");
     ostrm << "Description for " << s.getName() << " " << (int)(s.getId());
     setDescription(ostrm.str());
+}
+
+MixerFBSelector::~MixerFBSelector()
+{
 }
 
 bool
