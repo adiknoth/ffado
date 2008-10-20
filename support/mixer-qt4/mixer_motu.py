@@ -639,6 +639,13 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.mix4_dest.setItemText(7, "AES/EBU")
             self.phones_src.setItemText(7, "AES/EBU")
 
+        # The Ultralite doesn't have ADAT channels
+        if (self.model == MOTU_MODEL_ULTRALITE):
+            self.mix1_tab.setTabEnabled(3, False)  # ADAT page
+            self.mix2_tab.setTabEnabled(3, False)  # ADAT page
+            self.mix3_tab.setTabEnabled(3, False)  # ADAT page
+            self.mix4_tab.setTabEnabled(3, False)  # ADAT page
+
         # Some devices don't have the option of selecting an optical SPDIF
         # mode.
         if (not(self.has_optical_spdif)):
