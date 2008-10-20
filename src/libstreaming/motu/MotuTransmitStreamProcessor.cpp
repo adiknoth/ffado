@@ -439,10 +439,11 @@ unsigned int MotuTransmitStreamProcessor::fillDataPacketHeader (
     uint32_t ts )
 {
     quadlet_t *quadlet = (quadlet_t *)data;
-    // Size of a single data frame in quadlets.  For data sent by the
+    // Size of a single data frame in quadlets.  For data sent TO the
     // Ultralite this is not strictly true (with m_event_size 52, dbs is set
-    // to 19).  Even so, we'll run with the assumption that a different dbs
-    // will be fine unless proven otherwise.
+    // to 13, even though data sent by the Ultralite uses 19 as one would
+    // expect from a 52-byte event).  Even so, we'll run with the assumption
+    // that a different dbs will be fine unless proven otherwise.
     unsigned dbs = m_event_size / 4;
 
     // The number of events per packet expected by the MOTU is solely
