@@ -22,9 +22,9 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from mixer_dummyui import *
+from mixer_mackie_onyxmixerui import *
 
-class DummyMixer(QWidget, Ui_DummyMixerUI):
+class MackieOnyxMixer(QWidget, Ui_MackieOnyxMixerUI):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
         self.setupUi(self)

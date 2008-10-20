@@ -288,8 +288,8 @@ results above get rechecked.
 
 	# PyQT checks
         build_mixer = False
-	if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
-		env['PYUIC'] = True
+	if conf.CheckForApp( "which pyuic4" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'PyQt4' ):
+		env['PYUIC4'] = True
 		build_mixer = True
 	
 		if conf.CheckForApp( "xdg-desktop-menu --help" ):
@@ -299,8 +299,8 @@ results above get rechecked.
 	I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
 	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
 	"""
-	elif conf.CheckForApp( "which pyuic4" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'PyQt4' ):
-		env['PYUIC4'] = True
+	elif conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
+		env['PYUIC'] = True
 		build_mixer = True
 	
 		if conf.CheckForApp( "xdg-desktop-menu --help" ):

@@ -31,16 +31,17 @@ from ffado_panelmanagerstatusui import Ui_PanelManagerStatusUI
 from ffado_dbus_util import *
 from ffado_registration import *
 
-#from mixer_phase88 import *
-#from mixer_phase24 import *
+from mixer_phase88 import *
+from mixer_phase24 import *
 from mixer_saffire import SaffireMixer
 from mixer_saffirepro import SaffireProMixer
 from mixer_audiofire import AudioFireMixer
-#from mixer_bcoaudio5 import *
-#from mixer_edirolfa66 import *
-#from mixer_mackie_generic import *
-#from mixer_quatafire import *
-#from mixer_motu import *
+from mixer_bcoaudio5 import *
+from mixer_edirolfa66 import *
+from mixer_edirolfa101 import *
+from mixer_mackie_onyxmixer import *
+from mixer_quatafire import *
+from mixer_motu import *
 from mixer_dummy import *
 from mixer_global import GlobalMixer
 
@@ -54,9 +55,9 @@ else:
     use_generic = True
 
 SupportedDevices=[
-    #[(0x000aac, 0x00000003),'Phase88Control'],
-    #[(0x000aac, 0x00000004),'Phase24Control'],
-    #[(0x000aac, 0x00000007),'Phase24Control'],
+    [(0x000aac, 0x00000003),'Phase88Control'],
+    [(0x000aac, 0x00000004),'Phase24Control'],
+    [(0x000aac, 0x00000007),'Phase24Control'],
     [(0x00130e, 0x00000003),'SaffireProMixer'],
     [(0x00130e, 0x00000006),'SaffireProMixer'],
     [(0x00130e, 0x00000000),'SaffireMixer'],
@@ -64,11 +65,12 @@ SupportedDevices=[
     [(0x001486, 0x00000af4),'AudioFireMixer'],
     [(0x001486, 0x00000af8),'AudioFireMixer'],
     [(0x001486, 0x0000af12),'AudioFireMixer'],
-    #[(0x0007f5, 0x00010049),'BCoAudio5Control'],
-    #[(0x0040AB, 0x00010049),'EdirolFa66Control'],
-    #[(0x00000f, 0x00010067),'MackieGenericControl'],
-    #[(0x000f1b, 0x00010064),'QuataFireMixer'],
-    #[(0x0001f2, 0x00000000),'MotuMixer'],
+    [(0x0007f5, 0x00010049),'BCoAudio5Control'],
+    [(0x0040AB, 0x00010049),'EdirolFa66Control'],
+    [(0x0040AB, 0x00010048),'EdirolFa101Control'],
+    [(0x00000f, 0x00010067),'MackieOnyxMixer'],
+    [(0x000f1b, 0x00010064),'QuataFireMixer'],
+    [(0x0001f2, 0x00000000),'MotuMixer'],
     ]
 
 # pseudo-guid

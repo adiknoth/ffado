@@ -1,0 +1,674 @@
+<ui version="4.0" >
+ <comment>Copyright (C) 2005-2008 by Pieter Palmers
+	
+	This file is part of FFADO
+	FFADO = Free Firewire (pro-)audio drivers for linux
+	
+	FFADO is based upon FreeBoB.
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 2 of the License, or
+	(at your option) version 3 of the License.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+</comment>
+ <class>QuataFireMixerUI</class>
+ <widget class="QWidget" name="QuataFireMixerUI" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>702</width>
+    <height>360</height>
+   </rect>
+  </property>
+  <property name="sizePolicy" >
+   <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle" >
+   <string>ESI QuataFire610 Mixer</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="0" column="0" >
+    <widget class="QGroupBox" name="groupBox2" >
+     <property name="title" >
+      <string>Input Mix</string>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <layout class="QVBoxLayout" >
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QSlider" name="sldCh1" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="textLabel1" >
+          <property name="text" >
+           <string>MIC1</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="1" >
+       <layout class="QVBoxLayout" >
+        <item>
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QSlider" name="sldCh2" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="textLabel1_2" >
+          <property name="text" >
+           <string>MIC2</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="2" >
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="QDial" name="dialCh34" >
+          <property name="minimum" >
+           <number>-32768</number>
+          </property>
+          <property name="maximum" >
+           <number>32768</number>
+          </property>
+          <property name="singleStep" >
+           <number>1000</number>
+          </property>
+          <property name="pageStep" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSlider" name="sldCh34" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="textLabel1_3" >
+          <property name="text" >
+           <string>IN3/4</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="3" >
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="QDial" name="dialCh56" >
+          <property name="minimum" >
+           <number>-32768</number>
+          </property>
+          <property name="maximum" >
+           <number>32768</number>
+          </property>
+          <property name="singleStep" >
+           <number>1000</number>
+          </property>
+          <property name="pageStep" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSlider" name="sldCh56" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="textLabel1_3_2" >
+          <property name="text" >
+           <string>IN5/6</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="1" >
+    <widget class="QGroupBox" name="groupBox4" >
+     <property name="title" >
+      <string>Channel Volume Control</string>
+     </property>
+     <layout class="QVBoxLayout" >
+      <item>
+       <layout class="QGridLayout" >
+        <item row="0" column="0" >
+         <widget class="QSlider" name="sldDawAll" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" >
+         <widget class="QSlider" name="sldDawCH1" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2" >
+         <widget class="QSlider" name="sldDawCH2" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3" >
+         <widget class="QSlider" name="sldDawCH3" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="4" >
+         <widget class="QSlider" name="sldDawCH4" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="5" >
+         <widget class="QSlider" name="sldDawCH5" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="6" >
+         <widget class="QSlider" name="sldDawCH6" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="7" >
+         <widget class="QSlider" name="sldDawCH7" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="8" >
+         <widget class="QSlider" name="sldDawCH8" >
+          <property name="sizePolicy" >
+           <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimum" >
+           <number>0</number>
+          </property>
+          <property name="maximum" >
+           <number>32767</number>
+          </property>
+          <property name="singleStep" >
+           <number>10000</number>
+          </property>
+          <property name="pageStep" >
+           <number>1000</number>
+          </property>
+          <property name="orientation" >
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="tickInterval" >
+           <number>10000</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" >
+         <widget class="QLabel" name="textLabel1_4" >
+          <property name="text" >
+           <string>ALL</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1" >
+         <widget class="QLabel" name="textLabel1_4_2" >
+          <property name="text" >
+           <string>CH1</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2" >
+         <widget class="QLabel" name="textLabel1_4_3" >
+          <property name="text" >
+           <string>CH2</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="3" >
+         <widget class="QLabel" name="textLabel1_4_2_2" >
+          <property name="text" >
+           <string>CH3</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="4" >
+         <widget class="QLabel" name="textLabel1_4_4" >
+          <property name="text" >
+           <string>CH4</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="5" >
+         <widget class="QLabel" name="textLabel1_4_2_3" >
+          <property name="text" >
+           <string>CH5</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="6" >
+         <widget class="QLabel" name="textLabel1_4_3_2" >
+          <property name="text" >
+           <string>CH6</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="7" >
+         <widget class="QLabel" name="textLabel1_4_2_2_2" >
+          <property name="text" >
+           <string>CH7</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="8" >
+         <widget class="QLabel" name="textLabel1_4_2_2_2_2" >
+          <property name="text" >
+           <string>CH8</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11" />
+ <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+ <resources/>
+ <connections/>
+</ui>
