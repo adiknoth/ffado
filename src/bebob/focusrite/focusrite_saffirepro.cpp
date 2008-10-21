@@ -43,6 +43,7 @@ SaffireProDevice::SaffireProDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( 
                  getConfigRom().getNodeId() );
 
     addOption(Util::OptionContainer::Option("rebootOnSamplerateChange", true));
+
     // the saffire pro doesn't seem to like it if the commands are too fast
     if (AVC::AVCCommand::getSleepAfterAVCCommand() < 1000) {
         AVC::AVCCommand::setSleepAfterAVCCommand( 1000 );
@@ -61,9 +62,9 @@ SaffireProDevice::buildMixer()
 {
     bool result=true;
     debugOutput(DEBUG_LEVEL_VERBOSE, "Building a Focusrite SaffirePro mixer...\n");
-    
+
     destroyMixer();
-    
+
     // create the mixer object container
     m_MixerContainer = new Control::Container(this, "Mixer");
 
@@ -143,6 +144,12 @@ SaffireProDevice::buildMixer()
         new BinaryControl(*this, 
                 FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_BITFIELD_BIT_DIM,
                 "Out78Dim", "Out7/8 Dim", "Output 7/8 Level Dim"));
+
+    // front panel dial position
+    result &= m_MixerContainer->addElement(
+        new DialPositionControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_MONITOR_DIAL, 0,
+                "MonitorDial", "Monitor Dial", "Monitor Dial Value"));
 
     // direct monitoring controls
     result &= m_MixerContainer->addElement(

@@ -252,7 +252,7 @@ SaffireDevice::buildMixer()
 
         result &= m_MixerContainer->addElement(
             new DialPositionControl(*this, 
-                    FR_SAFFIRE_CMD_ID_MONITOR_DIAL,
+                    FR_SAFFIRE_CMD_ID_MONITOR_DIAL, 0,
                     "MonitorDial", "Monitor Dial", "Monitor Dial Value"));
 
         // metering

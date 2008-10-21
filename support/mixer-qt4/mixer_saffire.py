@@ -261,7 +261,7 @@ class SaffireMixerStereo(QWidget, Ui_SaffireMixerStereoUI, SaffireMixerBase):
     def polledUpdateHwCtrl(self, selector, volctrl):
         state = selector.isChecked()
         if state:
-            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl)
+            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl, 64)
             volctrl.setEnabled(False)
         else:
             volctrl.setEnabled(True)
@@ -405,7 +405,7 @@ class SaffireMixerMono(QWidget, Ui_SaffireMixerMonoUI, SaffireMixerBase):
     def polledUpdateHwCtrl(self, selector, volctrl):
         state = selector.isChecked()
         if state:
-            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl)
+            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl, 4)
             volctrl.setEnabled(False)
         else:
             volctrl.setEnabled(True)

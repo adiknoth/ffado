@@ -100,8 +100,10 @@ class SaffireProMixer(QWidget):
         self.selectCorrectMode()
 
     def polledUpdate(self):
-        # fixme: todo
-        pass
+        if self.samplerate <= 96000:
+            self.large.polledUpdate()
+        else:
+            self.small.polledUpdate()
 
 class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase):
     def __init__(self,parent = None):
@@ -214,19 +216,19 @@ class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase)
             self.chkMidiEnable: ['/Control/MIDIEnable'],
             self.chkAdatDisable: ['/Control/ADATDisable'],
             # Mixer switches
-            self.chkMute12: ['/Mixer/Out12Mute'],
+            self.chkMute12: ['/Mixer/Out12Mute', [self.chkHwCtrl12]],
             self.chkHwCtrl12: ['/Mixer/Out12HwCtrl'],
             self.chkPad12: ['/Mixer/Out12Pad'],
             self.chkDim12: ['/Mixer/Out12Dim'],
-            self.chkMute34: ['/Mixer/Out34Mute'],
+            self.chkMute34: ['/Mixer/Out34Mute', [self.chkHwCtrl34]],
             self.chkHwCtrl34: ['/Mixer/Out34HwCtrl'],
             self.chkPad34: ['/Mixer/Out34Pad'],
             self.chkDim34: ['/Mixer/Out34Dim'],
-            self.chkMute56: ['/Mixer/Out56Mute'],
+            self.chkMute56: ['/Mixer/Out56Mute', [self.chkHwCtrl56]],
             self.chkHwCtrl56: ['/Mixer/Out56HwCtrl'],
             self.chkPad56: ['/Mixer/Out56Pad'],
             self.chkDim56: ['/Mixer/Out56Dim'],
-            self.chkMute78: ['/Mixer/Out78Mute'],
+            self.chkMute78: ['/Mixer/Out78Mute', [self.chkHwCtrl78]],
             self.chkHwCtrl78: ['/Mixer/Out78HwCtrl'],
             self.chkPad78: ['/Mixer/Out78Pad'],
             self.chkDim78: ['/Mixer/Out78Dim'],
@@ -294,6 +296,21 @@ class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase)
 
         self.tabInputMix.setCurrentWidget(self.tabInputMix.widget(0))
         SaffireMixerBase.updateValues(self)
+
+    def polledUpdate(self):
+        #log.debug("polled update (large)")
+        self.polledUpdateHwCtrl(self.chkHwCtrl12, self.sldOut12Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl34, self.sldOut34Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl56, self.sldOut56Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl78, self.sldOut78Level)
+
+    def polledUpdateHwCtrl(self, selector, volctrl):
+        state = selector.isChecked()
+        if state:
+            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl, 2)
+            volctrl.setEnabled(False)
+        else:
+            volctrl.setEnabled(True)
 
 class SaffireProMixerSmall(QWidget, Ui_SaffireProMixerSmallUI, SaffireMixerBase):
     def __init__(self,parent = None):
@@ -420,3 +437,18 @@ class SaffireProMixerSmall(QWidget, Ui_SaffireProMixerSmallUI, SaffireMixerBase)
 
     def updateValues(self):
         SaffireMixerBase.updateValues(self)
+
+    def polledUpdate(self):
+        #log.debug("polled update (small)")
+        self.polledUpdateHwCtrl(self.chkHwCtrl12, self.sldOut12Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl34, self.sldOut34Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl56, self.sldOut56Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl78, self.sldOut78Level)
+
+    def polledUpdateHwCtrl(self, selector, volctrl):
+        state = selector.isChecked()
+        if state:
+            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl, 2)
+            volctrl.setEnabled(False)
+        else:
+            volctrl.setEnabled(True)

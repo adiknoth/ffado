@@ -149,8 +149,8 @@ class DialPositionControl
     : public Control::Discrete
 {
 public:
-    DialPositionControl(FocusriteDevice& parent, int id);
-    DialPositionControl(FocusriteDevice& parent, int id,
+    DialPositionControl(FocusriteDevice& parent, int id, int shift);
+    DialPositionControl(FocusriteDevice& parent, int id, int shift,
                         std::string name, std::string label, std::string descr);
     
     virtual bool setValue(int v) {return false;};
@@ -165,6 +165,7 @@ public:
 private:
     FocusriteDevice&        m_Parent;
     unsigned int            m_cmd_id;
+    int                     m_shift;
 };
 
 class FocusriteMatrixMixer : public Control::MatrixMixer

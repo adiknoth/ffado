@@ -131,11 +131,14 @@ class PanelManager(QWidget):
         if self.tabs.isEnabled():
             for guid in self.panels.keys():
                 w = self.panels[guid]
-                if 'polledUpdate' in dir(w):
-                    try:
-                        w.polledUpdate()
-                    except:
-                        log.error("error in polled update")
+                for child in w.children():
+                    #log.debug("poll child %s,%s" % (guid,child))
+                    if 'polledUpdate' in dir(child):
+                        try:
+                            child.polledUpdate()
+                        except:
+                            log.error("error in polled update")
+                            raise
 
     def devlistPreUpdate(self):
         log.debug("devlistPreUpdate")
