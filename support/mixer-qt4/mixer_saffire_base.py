@@ -32,7 +32,6 @@ class SaffireMixerBase:
 
     def updateMatrixVolume(self,a0):
         sender = self.sender()
-        #vol = 0x7FFF-a0
         vol = a0
         log.debug("set %s %d %d to %d" % (
                     self.VolumeControls[sender][0],
@@ -45,7 +44,7 @@ class SaffireMixerBase:
                                     vol)
     def updateLowResVolume(self,a0):
         sender = self.sender()
-        vol = 0xFF - a0
+        vol = 127 - a0
         log.debug("set %s to %d" % (
                     self.VolumeControlsLowRes[sender][0],
                     vol))
@@ -104,13 +103,13 @@ class SaffireMixerBase:
             vol = self.hw.getMatrixMixerValue(self.VolumeControls[ctrl][0],
                                               self.VolumeControls[ctrl][1],
                                               self.VolumeControls[ctrl][2])
-            log.debug("%s volume is %d" % (ctrl.objectName() , 0x7FFF-vol))
+            log.debug("%s volume is %d" % (ctrl.objectName() , vol))
             ctrl.setValue(vol)
         for ctrl, info in self.VolumeControlsLowRes.iteritems():
             vol = self.hw.getDiscrete(self.VolumeControlsLowRes[ctrl][0])
 
-            log.debug("%s volume is %d" % (ctrl.objectName() , 0xFF-vol))
-            ctrl.setValue(0xFF - vol)
+            log.debug("%s volume is %d" % (ctrl.objectName() , 127-vol))
+            ctrl.setValue(127 - vol)
 
         for ctrl, info in self.SelectorControls.iteritems():
             state = self.hw.getDiscrete(self.SelectorControls[ctrl][0])
