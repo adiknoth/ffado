@@ -372,6 +372,7 @@ protected:
     void rebootDevice();
     void flashLed();
     bool isAudioOn();
+    bool isMidiEnabled();
     bool isExtClockLocked();
     uint32_t getCount32();
     void exitStandalone();
@@ -408,6 +409,7 @@ public:
 
 protected:
     virtual uint16_t getConfigurationIdSyncMode();
+    virtual uint64_t getConfigurationId();
 
 private:
     virtual bool setSamplingFrequencyDo( uint32_t );

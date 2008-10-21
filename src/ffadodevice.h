@@ -104,6 +104,16 @@ public:
     virtual bool saveCache();
 
     /**
+     * @brief Called by DeviceManager to check whether a device requires rediscovery
+     *
+     * This function is called to figure out if the device has to be rediscovered
+     * e.g. after a bus reset where the device internal structure changed.
+     *
+     * @returns true if device requires rediscovery
+     */
+    virtual bool needsRediscovery();
+
+    /**
      * @brief This is called by the DeviceManager to create an instance of the device
      *
      * This function enables the FFADODevice to return a subclass of itself should that

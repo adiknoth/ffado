@@ -523,6 +523,33 @@ SaffireProDevice::getConfigurationIdSyncMode()
     return sync & 0xFFFF;
 }
 
+uint64_t
+SaffireProDevice::getConfigurationId()
+{
+    // have the generic mechanism create a unique configuration id.
+    uint64_t id = BeBoB::AvDevice::getConfigurationId();
+
+    // there are some parts that can be enabled/disabled and
+    // that have influence on the AV/C model and channel config
+    // so add them to the config id
+    #if 0
+    // FIXME: doesn't seem to be working, but the channel count
+    //        makes that it's not that important
+    if(getEnableDigitalChannel(eDC_SPDIF)) {
+        id |= 1ULL << 40;
+    }
+    if(isPro26()) {
+        if(getEnableDigitalChannel(eDC_ADAT1)) {
+            id |= 1ULL << 41;
+        }
+        if(getEnableDigitalChannel(eDC_ADAT2)) {
+            id |= 1ULL << 42;
+        }
+    }
+    #endif
+    return id;
+}
+
 bool
 SaffireProDevice::setNickname( std::string name)
 {
@@ -862,6 +889,19 @@ SaffireProDevice::getPllLockRange() {
     debugOutput( DEBUG_LEVEL_VERBOSE,
                      "PLL lock range: %d\n", retval );
     return retval;
+}
+
+bool
+SaffireProDevice::isMidiEnabled() {
+    uint32_t ready;
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_AVC_MODEL_MIDI, &ready ) ) {
+        debugError( "getSpecificValue failed\n" );
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "isMidiEnabled: %d\n", ready != 0 );
+    return ready != 0;
 }
 
 unsigned int

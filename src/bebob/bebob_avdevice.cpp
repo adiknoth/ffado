@@ -61,6 +61,7 @@ namespace BeBoB {
 
 AvDevice::AvDevice( DeviceManager& d, std::auto_ptr< ConfigRom >( configRom ) )
     : GenericAVC::AvDevice( d, configRom )
+    , m_last_discovery_config_id ( 0xFFFFFFFFFFFFFFFFLLU )
     , m_Mixer ( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
@@ -207,6 +208,10 @@ AvDevice::discover()
     if(!buildMixer()) {
         debugWarning("Could not build mixer\n");
     }
+
+    // keep track of the config id of this discovery
+    m_last_discovery_config_id = getConfigurationId();
+
     return true;
 }
 
@@ -653,6 +658,14 @@ AvDevice::getConfigurationIdSyncMode()
 
     debugError( "Could not retrieve sync mode\n" );
     return 0;
+}
+
+bool
+AvDevice::needsRediscovery()
+{
+    // require rediscovery if the config id differs from the one saved
+    // in the previous discovery
+    return getConfigurationId() != m_last_discovery_config_id;
 }
 
 uint64_t

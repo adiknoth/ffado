@@ -143,6 +143,13 @@ FFADODevice::saveCache()
     return false;
 }
 
+bool
+FFADODevice::needsRediscovery()
+{
+    // require rediscovery by default
+    return true;
+}
+
 enum FFADODevice::eSyncState
 FFADODevice::getSyncState( ) {
     return eSS_Unknown;
