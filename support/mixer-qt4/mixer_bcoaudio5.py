@@ -23,6 +23,8 @@
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
 from mixer_bcoaudio5ui import *
+import logging
+log = logging.getLogger('bridgeco')
 
 class BCoAudio5Control(QWidget, Ui_BCoAudio5ControlUI):
     def __init__(self,parent = None):
@@ -70,13 +72,13 @@ class BCoAudio5Control(QWidget, Ui_BCoAudio5ControlUI):
     def setVolume(self,a0,a1):
         name = a0
         vol = -a1
-        print "setting %s volume to %d" % (name, vol)
+        log.debug("setting %s volume to %d" % (name, vol))
         self.hw.setContignuous(self.VolumeControls[name][0], vol)
 
     def setSelector(self,a0,a1):
         name = a0
         state = a1
-        print "setting %s state to %d" % (name, state)
+        log.debug("setting %s state to %d" % (name, state))
         self.hw.setDiscrete(self.ComboControls[name][0], state)
         # verify
         state = self.hw.getDiscrete(self.ComboControls[name][0])
@@ -85,11 +87,11 @@ class BCoAudio5Control(QWidget, Ui_BCoAudio5ControlUI):
     def initValues(self):
         for name, ctrl in self.VolumeControls.iteritems():
             vol = self.hw.getContignuous(ctrl[0])
-            print "%s volume is %d" % (name , vol)
+            log.debug("%s volume is %d" % (name , vol))
             ctrl[1].setValue(-vol)
 
         for name, ctrl in self.ComboControls.iteritems():
             state = self.hw.getDiscrete(ctrl[0])
-            print "%s state is %d" % (name , state)
+            log.debug("%s state is %d" % (name , state))
             ctrl[1].setCurrentIndex( state )
 

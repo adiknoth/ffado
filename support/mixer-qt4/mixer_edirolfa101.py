@@ -24,6 +24,9 @@ from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
 from mixer_edirolfa101ui import *
 
+import logging
+log = logging.getLogger('edirolfa101')
+
 class EdirolFa101Control(QWidget, Ui_EdirolFa101ControlUI):
     def __init__(self, parent = None):
         QWidget.__init__(self, parent)
@@ -74,10 +77,10 @@ class EdirolFa101Control(QWidget, Ui_EdirolFa101ControlUI):
 
     def setVolumeIn7(self, vol):
         self.setValue('vol7', vol)
-            
+
     def setVolumeIn8(self, vol):
         self.setValue('vol8', vol)
-        
+
     def setVolumeIn9(self, vol):
         self.setValue('vol9', vol)
 
@@ -104,10 +107,10 @@ class EdirolFa101Control(QWidget, Ui_EdirolFa101ControlUI):
 
     def setBalanceIn7(self, bal):
         self.setValue('bal7', bal)
-            
+
     def setBalanceIn8(self, bal):
         self.setValue('bal8', bal)
-        
+
     def setBalanceIn9(self, bal):
         self.setValue('bal9', bal)
 
@@ -117,13 +120,13 @@ class EdirolFa101Control(QWidget, Ui_EdirolFa101ControlUI):
     def setValue(self, name, val):
         val = -val
         ctrl = self.VolumeControls[name]
-        print "setting %s to %d" % (name, val)
+        log.debug("setting %s to %d" % (name, val))
         self.hw.setContignuous(ctrl[0], val, idx = ctrl[1])
 
     def initValues(self):
         for name, ctrl in self.VolumeControls.iteritems():
             val = self.hw.getContignuous(ctrl[0], idx = ctrl[1])
-            print "%s value is %d" % (name , val)
+            log.debug("%s value is %d" % (name , val))
 
             # Workaround: The current value is not properly initialized
             # on the device and returns after bootup always 0.
@@ -134,5 +137,5 @@ class EdirolFa101Control(QWidget, Ui_EdirolFa101ControlUI):
                     val = 32512
                 else:
                     val = -32768
-                    
+
             ctrl[2].setValue(-val)

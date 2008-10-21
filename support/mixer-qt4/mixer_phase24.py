@@ -24,6 +24,9 @@ from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
 from mixer_phase24ui import *
 
+import logging
+log = logging.getLogger('phase24')
+
 class Phase24Control(QWidget, Ui_Phase24ControlUI):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
@@ -72,7 +75,7 @@ class Phase24Control(QWidget, Ui_Phase24ControlUI):
 
     # public slot
     def setLineLevel(self,a0):
-        print "setting line level to %d" % (a0 * -768)
+        log.debug("setting line level to %d" % (a0 * -768))
         self.hw.setContignuous('/Mixer/Feature_2', a0 * -768)
 
     # public slot
@@ -80,10 +83,10 @@ class Phase24Control(QWidget, Ui_Phase24ControlUI):
         if self.isPhaseX24:
             return
         if(a0 == 0):
-            print "setting front level to %d" % (0)
+            log.debug("setting front level to %d" % (0))
             self.hw.setContignuous('/Mixer/Feature_8', 0)
         else:
-            print "setting front level to %d" % (1536)
+            log.debug("setting front level to %d" % (1536))
             self.hw.setContignuous('/Mixer/Feature_8', 1536)
 
     # public slot
@@ -105,13 +108,13 @@ class Phase24Control(QWidget, Ui_Phase24ControlUI):
     def setVolume(self,a0,a1):
             name=a0
             vol = -a1
-            print "setting %s volume to %d" % (name, vol)
+            log.debug("setting %s volume to %d" % (name, vol))
             self.hw.setContignuous(self.VolumeControls[name][0], vol)
 
     def setSelector(self,a0,a1):
             name=a0
             state = a1
-            print "setting %s state to %d" % (name, state)
+            log.debug("setting %s state to %d" % (name, state))
             self.hw.setDiscrete(self.SelectorControls[name][0], state)
 
     def initValues(self):
@@ -140,13 +143,13 @@ class Phase24Control(QWidget, Ui_Phase24ControlUI):
 
             for name, ctrl in self.VolumeControls.iteritems():
                 vol = self.hw.getContignuous(ctrl[0])
-                print "%s volume is %d" % (name , vol)
+                log.debug("%s volume is %d" % (name , vol))
                 ctrl[1].setValue(-vol)
 
             for name, ctrl in self.SelectorControls.iteritems():
                 state = self.hw.getDiscrete(ctrl[0])
-                print "%s state is %d" % (name , state)
-                ctrl[1].setCurrentIndex(state)    
+                log.debug("%s state is %d" % (name , state))
+                ctrl[1].setCurrentIndex(state)
 
             val = self.hw.getContignuous('/Mixer/Feature_2')/-768
             if val > 4:

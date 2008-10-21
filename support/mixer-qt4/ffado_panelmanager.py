@@ -45,10 +45,13 @@ from mixer_motu import *
 from mixer_dummy import *
 from mixer_global import GlobalMixer
 
+import logging
+log = logging.getLogger('panelmanager')
+
 use_generic = False
 try:
     from mixer_generic import *
-    print "The generic mixer is found, seems to be a developer using ffadomixer..."
+    log.info("The generic mixer is found, seems to be a developer using ffadomixer...")
 except ImportError:
     pass
 else:
@@ -132,24 +135,24 @@ class PanelManager(QWidget):
                     try:
                         w.polledUpdate()
                     except:
-                        print "error in polled update"
+                        log.error("error in polled update")
 
     def devlistPreUpdate(self):
-        print "devlistPreUpdate"
+        log.debug("devlistPreUpdate")
         self.tabs.setEnabled(False)
         self.tabs.hide()
         self.status.lblMessage.setText("Bus reconfiguration in progress, please wait...")
         self.status.show()
 
     def devlistPostUpdate(self):
-        print "devlistPostUpdate"
+        log.debug("devlistPostUpdate")
         self.updatePanels()
 
     def devlistUpdate(self):
-        print "devlistUpdate"
+        log.debug("devlistUpdate")
 
     def devmgrDestroyed(self):
-        print "devmgrDestroyed"
+        log.debug("devmgrDestroyed")
         self.alivetimer.stop()
         self.tabs.setEnabled(False)
         self.tabs.hide()
@@ -160,7 +163,7 @@ class PanelManager(QWidget):
         try:
             nbDevices = self.devmgr.getNbDevices()
         except:
-            print "comms lost"
+            log.debug("comms lost")
             self.tabs.setEnabled(False)
             self.tabs.hide()
             self.status.lblMessage.setText("Failed to communicate with DBUS server. Please restart it and restart ffadomixer...")
@@ -191,16 +194,16 @@ class PanelManager(QWidget):
         for guid in guids_with_tabs:
             if not guid in guids_present:
                 to_remove.append(guid)
-                print "going to remove %s" % str(guid)
+                log.debug("going to remove %s" % str(guid))
             else:
-                print "going to keep %s" % str(guid)
+                log.debug("going to keep %s" % str(guid))
 
         # figure out what to add
         to_add = []
         for guid in guids_present:
             if not guid in guids_with_tabs:
                 to_add.append(guid)
-                print "going to add %s" % str(guid)
+                log.debug("going to add %s" % str(guid))
 
         # update the widget
         for guid in to_remove:
@@ -214,7 +217,7 @@ class PanelManager(QWidget):
             # retrieve the device manager index
             idx = guid_indexes[guid]
             path = self.devmgr.getDeviceName(idx)
-            print "Adding device %d: %s" % (idx, path)
+            log.debug("Adding device %d: %s" % (idx, path))
 
             cfgrom = ConfigRomInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+'/DeviceManager/'+path)
             vendorId = cfgrom.getVendorId()
@@ -223,7 +226,7 @@ class PanelManager(QWidget):
             guid = cfgrom.getGUID()
             vendorName = cfgrom.getVendorName()
             modelName = cfgrom.getModelName()
-            print " Found (%s, %X, %X) %s %s" % (str(guid), vendorId, modelId, vendorName, modelName)
+            log.debug(" Found (%s, %X, %X) %s %s" % (str(guid), vendorId, modelId, vendorName, modelName))
 
             # check whether this has already been registered at ffado.org
             reg = ffado_registration(FFADO_VERSION, int(guid, 16),

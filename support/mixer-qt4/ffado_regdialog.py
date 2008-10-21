@@ -24,6 +24,9 @@ from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QDialog
 from ffado_regdialogui import Ui_ffadoRegDialogUI
 
+import logging
+log = logging.getLogger('registration')
+
 REGISTRATION_MESSAGE = """
 <html><head><meta name="qrichtext" content="1" />
 <style type="text/css">\np, li { white-space: pre-wrap; }\n</style></head>
@@ -65,13 +68,13 @@ class ffadoRegDialog(QDialog, Ui_ffadoRegDialogUI):
     def buttonPressed(self):
         sender = self.sender()
         if sender == self.btnSend:
-            print "user chose to send"
+            log.debug("user chose to send")
             self.choice = "send"
         elif sender ==  self.btnNoSend:
-            print "user chose not to send"
+            log.debug("user chose not to send")
             self.choice = "nosend"
         elif sender ==  self.btnNeverSend:
-            print "user chose to never send"
+            log.debug("user chose to never send")
             self.choice = "neversend"
         self.close()
 

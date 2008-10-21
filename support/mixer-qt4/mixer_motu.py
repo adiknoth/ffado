@@ -25,6 +25,9 @@ from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
 from mixer_motuui import *
 
+import logging
+log = logging.getLogger('motu')
+
 # Model defines.  These must agree with what is used in motu_avdevice.h.
 MOTU_MODEL_NONE     = 0x0000
 MOTU_MODEL_828mkII  = 0x0001
@@ -513,8 +516,8 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
     def updateChannelFader(self, a0):
         sender = self.sender()
         vol = 128-a0
-        print "setting %s for mix %d channel %d to %d" % (self.ChannelFaders[sender][0], 
-            self.ChannelFaders[sender][1], self.ChannelFaders[sender][2], vol)
+        log.debug("setting %s for mix %d channel %d to %d" % (self.ChannelFaders[sender][0], 
+            self.ChannelFaders[sender][1], self.ChannelFaders[sender][2], vol))
         self.hw.setMatrixMixerValue(self.ChannelFaders[sender][0],
             self.ChannelFaders[sender][1], self.ChannelFaders[sender][2], vol)
 
@@ -522,8 +525,8 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
     def updateChannelControl(self, a0):
         sender = self.sender()
         val = a0
-        print "setting %s for mix %d channel %d to %d" % (self.ChannelControls[sender][0], 
-            self.ChannelControls[sender][1], self.ChannelControls[sender][2], val)
+        log.debug("setting %s for mix %d channel %d to %d" % (self.ChannelControls[sender][0], 
+            self.ChannelControls[sender][1], self.ChannelControls[sender][2], val))
         self.hw.setMatrixMixerValue(self.ChannelControls[sender][0], 
             self.ChannelControls[sender][1], self.ChannelControls[sender][2], val)
 
@@ -531,15 +534,15 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
     def updateControl(self, a0):
         sender = self.sender()
         val = a0
-        print "setting %s control to %d" % (self.Controls[sender][0], val)
+        log.debug("setting %s control to %d" % (self.Controls[sender][0], val))
         self.hw.setDiscrete(self.Controls[sender][0], val)
 
     # public slot: a binary switch within a matrix mixer
     def updateChannelBinarySwitch(self, a0):
         sender = self.sender()
         val=a0
-        print "setting %s for mix %d channel %d switch to %d" % (self.ChannelBinarySwitches[sender][0], 
-            self.ChannelBinarySwitches[sender][1], self.ChannelBinarySwitches[sender][2], val)
+        log.debug("setting %s for mix %d channel %d switch to %d" % (self.ChannelBinarySwitches[sender][0], 
+            self.ChannelBinarySwitches[sender][1], self.ChannelBinarySwitches[sender][2], val))
         self.hw.setMatrixMixerValue(self.ChannelBinarySwitches[sender][0], 
             self.ChannelBinarySwitches[sender][1], self.ChannelBinarySwitches[sender][2], val)
 
@@ -547,21 +550,21 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
     def updateBinarySwitch(self, a0):
         sender = self.sender()
         val=a0
-        print "setting %s switch to %d" % (self.BinarySwitches[sender][0], val)
+        log.debug("setting %s switch to %d" % (self.BinarySwitches[sender][0], val))
         self.hw.setDiscrete(self.BinarySwitches[sender][0], val)
 
     # public slot: a faders (not in a matrix mixer)
     def updateFader(self, a0):
         sender = self.sender()
         vol = 128-a0
-        print "setting %s mix fader to %d" % (self.Faders[sender][0], vol)
+        log.debug("setting %s mix fader to %d" % (self.Faders[sender][0], vol))
         self.hw.setDiscrete(self.Faders[sender][0], vol)
 
     # public slot: mix destination control
     def updateMixDest(self, a0):
         sender = self.sender()
         dest=a0
-        print "setting %s mix destination to %d" % (self.MixDests[sender][0], dest)
+        log.debug("setting %s mix destination to %d" % (self.MixDests[sender][0], dest))
         self.hw.setDiscrete(self.MixDests[sender][0], dest)
 
     # public slots: mix output controls
@@ -571,7 +574,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
     def setSelector(self,a0,a1):
         name=a0
         state = a1
-        print "setting %s state to %d" % (name, state)
+        log.debug("setting %s state to %d" % (name, state))
         self.hw.setDiscrete(self.SelectorControls[name][0], state)
 
     # Hide and disable a control
@@ -582,21 +585,21 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
     def initValues(self):
         # Is the device streaming?
         self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
-        print "device streaming flag: %d" % (self.is_streaming)
+        log.debug("device streaming flag: %d" % (self.is_streaming))
 
         # Retrieve other device settings as needed
         self.model = self.hw.getDiscrete('/Mixer/Info/Model')
-        print "device model identifier: %d" % (self.model)
+        log.debug("device model identifier: %d" % (self.model))
         self.sample_rate = self.hw.getDiscrete('/Mixer/Info/SampleRate')
-        print "device sample rate: %d" % (self.sample_rate)
+        log.debug("device sample rate: %d" % (self.sample_rate))
         self.has_mic_inputs = self.hw.getDiscrete('/Mixer/Info/HasMicInputs')
-        print "device has mic inputs: %d" % (self.has_mic_inputs)
+        log.debug("device has mic inputs: %d" % (self.has_mic_inputs))
         self.has_aesebu_inputs = self.hw.getDiscrete('/Mixer/Info/HasAESEBUInputs')
-        print "device has AES/EBU inputs: %d" % (self.has_aesebu_inputs)
+        log.debug("device has AES/EBU inputs: %d" % (self.has_aesebu_inputs))
         self.has_spdif_inputs = self.hw.getDiscrete('/Mixer/Info/HasSPDIFInputs')
-        print "device has SPDIF inputs: %d" % (self.has_spdif_inputs)
+        log.debug("device has SPDIF inputs: %d" % (self.has_spdif_inputs))
         self.has_optical_spdif = self.hw.getDiscrete('/Mixer/Info/HasOpticalSPDIF')
-        print "device has optical SPDIF: %d" % (self.has_optical_spdif)
+        log.debug("device has optical SPDIF: %d" % (self.has_optical_spdif))
 
         # Customise the UI based on device options retrieved
         if (self.has_mic_inputs):
@@ -661,13 +664,13 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
 
         # Some controls must be disabled if the device is streaming
         if (self.is_streaming):
-            print "Disabling controls which require inactive streaming"
+            log.debug("Disabling controls which require inactive streaming")
             self.optical_in_mode.setEnabled(False)
             self.optical_out_mode.setEnabled(False)
 
         # Some channels aren't available at higher sampling rates
         if (self.sample_rate > 96000):
-            print "Disabling controls not present above 96 kHz"
+            log.debug("Disabling controls not present above 96 kHz")
             self.mix1_tab.setTabEnabled(3, False)  # ADAT
             self.mix1_tab.setTabEnabled(2, False)  # SPDIF
             self.mix1_tab.setTabEnabled(1, False)  # AES/EBU
@@ -681,7 +684,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.mix4_tab.setTabEnabled(2, False)  # SPDIF
             self.mix4_tab.setTabEnabled(1, False)  # AES/EBU
         if (self.sample_rate > 48000):
-            print "Disabling controls not present above 48 kHz"
+            log.debug("Disabling controls not present above 48 kHz")
             self.mix1_adat5.setEnabled(False)
             self.mix1_adat6.setEnabled(False)
             self.mix1_adat7.setEnabled(False)
@@ -753,7 +756,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             if (not(ctrl.isEnabled())):
                 continue
             vol = 128-self.hw.getMatrixMixerValue(info[0], info[1], info[2])
-            print "%s for mix %d channel %d is %d" % (info[0], info[1], info[2], vol)
+            log.debug("%s for mix %d channel %d is %d" % (info[0], info[1], info[2], vol))
             ctrl.setValue(vol)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateChannelFader)
 
@@ -761,7 +764,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             if (not(ctrl.isEnabled())):
                 continue
             vol = 128-self.hw.getDiscrete(info[0])
-            print "%s mix fader is %d" % (info[0] , vol)
+            log.debug("%s mix fader is %d" % (info[0] , vol))
             ctrl.setValue(vol)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateFader)
 
@@ -769,7 +772,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             if (not(ctrl.isEnabled())):
                 continue
             pan = self.hw.getMatrixMixerValue(info[0], info[1], info[2])
-            print "%s for mix %d channel %d is %d" % (info[0], info[1], info[2], pan)
+            log.debug("%s for mix %d channel %d is %d" % (info[0], info[1], info[2], pan))
             ctrl.setValue(pan)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateChannelControl)
 
@@ -777,20 +780,20 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             if (not(ctrl.isEnabled())):
                 continue
             pan = self.hw.getDiscrete(info[0])
-            print "%s control is %d" % (info[0] , pan)
+            log.debug("%s control is %d" % (info[0] , pan))
             ctrl.setValue(pan)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateControl)
 
         # Disable the channel pair controls since they aren't yet implemented
         for ctrl, info in self.PairSwitches.iteritems():
-            print "%s control is not implemented yet: disabling" % (info[0])
+            log.debug("%s control is not implemented yet: disabling" % (info[0]))
             ctrl.setEnabled(False)
 
         for ctrl, info in self.ChannelBinarySwitches.iteritems():
             if (not(ctrl.isEnabled())):
                 continue
             val = self.hw.getMatrixMixerValue(info[0], info[1], info[2])
-            print "%s for mix %d channel %d is %d" % (info[0] , info[1], info[2], val)
+            log.debug("%s for mix %d channel %d is %d" % (info[0] , info[1], info[2], val))
             if val:
                 ctrl.setChecked(True)
             else:
@@ -801,7 +804,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             if (not(ctrl.isEnabled())):
                 continue
             val = self.hw.getDiscrete(info[0])
-            print "%s switch is %d" % (info[0] , val)
+            log.debug("%s switch is %d" % (info[0] , val))
             if val:
                 ctrl.setChecked(True)
             else:
@@ -812,14 +815,14 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             if (not(ctrl.isEnabled())):
                 continue
             dest = self.hw.getDiscrete(info[0])
-            print "%s mix destination is %d" % (info[0] , dest)
+            log.debug("%s mix destination is %d" % (info[0] , dest))
             ctrl.setCurrentIndex(dest)
             QObject.connect(ctrl, SIGNAL('activated(int)'), self.updateMixDest)
 
         for name, ctrl in self.SelectorControls.iteritems():
             state = self.hw.getDiscrete(ctrl[0])
-            print "%s state is %d" % (name , state)
-            ctrl[1].setCurrentIndex(state)    
+            log.debug("%s state is %d" % (name , state))
+            ctrl[1].setCurrentIndex(state)
 
         # FIXME: If optical mode is not ADAT, disable ADAT controls here. 
         # It can't be done earlier because we need the current values of the

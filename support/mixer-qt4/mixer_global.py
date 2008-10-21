@@ -23,6 +23,9 @@
 from PyQt4.QtGui import QWidget, QMessageBox
 from mixer_globalui import Ui_GlobalMixerUi
 
+import logging
+log = logging.getLogger('global')
+
 class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
     def __init__( self, parent ):
         QWidget.__init__( self, parent )
@@ -42,7 +45,7 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
             self.clocksource.setCurrentIndex( selected )
 
     def samplerateChanged( self, sr ):
-        print "samplerateChanged( " + str(sr) + " )"
+        log.debug("samplerateChanged( " + str(sr) + " )")
         self.samplerateselect.select( sr )
         selected = self.samplerateselect.selected()
 

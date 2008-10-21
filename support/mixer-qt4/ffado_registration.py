@@ -7,6 +7,9 @@ from PyQt4.QtCore import QByteArray
 
 from ffado_regdialog import *
 
+import logging
+log = logging.getLogger('registration')
+
 class ffado_registration:
     def __init__(self, ffado_version,
                        guid,
@@ -52,7 +55,7 @@ class ffado_registration:
             response = urllib.urlopen(REGISTER_URL,
                                       urllib.urlencode(post_vals))
         except:
-            print "failed, network error"
+            log.error("failed, network error")
             return (-1, "Network Error")
     
         lines = response.readlines()
@@ -67,8 +70,7 @@ class ffado_registration:
                 if len(lines)>i+1:
                     errline = lines[i+1]
         if not ok:
-            print "registration failed" 
-            print " " + errline
+            log.info("registration failed %s" % errline)
             return (-2, errline)
         else:
             return (0, "")
@@ -105,12 +107,12 @@ class ffado_registration:
     def check_for_registration(self):
 
         if self.check_for_ignore():
-            print "user requested to ignore registration"
+            log.debug("user requested to ignore registration")
         else:
             if self.check_if_already_registered():
-                print "version/GUID combo already registered"
+                log.debug("version/GUID combo already registered")
             else:
-                print "show dialog..."
+                log.debug("show dialog...")
 
                 dlg = ffadoRegDialog(self.vendor_string, "0x%X" % self.vendor_id,
                                      self.model_string, "0x%X" % self.model_id,
@@ -128,7 +130,7 @@ class ffado_registration:
                     retval = self.register_ffado_usage()
                     msg = QMessageBox()
                     if retval[0] == 0:
-                        print "registration successful"
+                        log.debug("registration successful")
                         devinfomsg = "<p>Device: %s %s<br> Vendor/Model Id: %X/%X<br>Device GUID: %016X<br>FFADO Version: %s<br>E-Mail: %s</p>" % \
                             (self.vendor_string, self.model_string, self.vendor_id, self.model_id, self.guid, self.ffado_version, self.email)
                         tmp = msg.question( msg, "Registration Successful",
@@ -139,7 +141,7 @@ class ffado_registration:
                                             QMessageBox.Ok )
                         self.mark_version_registered()
                     else:
-                        print "error: " + retval[1]
+                        log.error("error: " + retval[1])
                         tmp = msg.question( msg, "Registration Failed", 
                                             "<qt><b>The registration at ffado.org failed.</b>" +
                                             "<p>Error message:</p><p>" + retval[1] +

@@ -25,6 +25,9 @@ from mixer_saffire_base import SaffireMixerBase
 from mixer_saffirepro_largeui import Ui_SaffireProMixerLargeUI
 from mixer_saffirepro_smallui import Ui_SaffireProMixerSmallUI
 
+import logging
+log = logging.getLogger('saffirepro')
+
 class SaffireProMixer(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self, parent)
@@ -52,12 +55,12 @@ class SaffireProMixer(QWidget):
 
     def selectCorrectMode(self):
         if self.samplerate <= 96000:
-            print "large"
+            log.debug("large")
             self.small.hide()
             self.large.initValues()
             self.large.show()
         else:
-            print "small"
+            log.debug("small")
             self.large.hide()
             self.small.initValues()
             self.small.show()
@@ -65,7 +68,7 @@ class SaffireProMixer(QWidget):
     def initValues(self):
         selected = self.samplerateselect.selected()
         self.samplerate = int(self.samplerateselect.getEnumLabel( selected ))
-        print "detected samplerate %d" % self.samplerate
+        log.debug("detected samplerate %d" % self.samplerate)
 
         # adat on PRO26 makes a difference
         modelId = self.configrom.getModelId()
@@ -74,10 +77,10 @@ class SaffireProMixer(QWidget):
             state = self.hw.getDiscrete('/Control/ADATDisable')
             if state:
                 self.have_adat = False
-                print "detected PRO26, ADAT disabled"
+                log.debug("detected PRO26, ADAT disabled")
             else:
                 self.have_adat = True
-                print "detected PRO26, ADAT enabled"
+                log.debug("detected PRO26, ADAT enabled")
         elif modelId == 0x00000006: # PRO10
             self.is_pro10 = True
             self.have_adat = False
@@ -107,7 +110,7 @@ class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase)
         SaffireMixerBase.__init__(self)
         self.setupUi(self)
         self.have_adat = False
-        print "Init large Saffire Pro mixer window"
+        log.debug("Init large Saffire Pro mixer window")
 
         self.VolumeControls={
             self.sldIMixAnalog1L: ['/Mixer/InputMix', 0, 0], 
@@ -298,7 +301,7 @@ class SaffireProMixerSmall(QWidget, Ui_SaffireProMixerSmallUI, SaffireMixerBase)
         QWidget.__init__(self,parent)
         SaffireMixerBase.__init__(self)
         self.setupUi(self)
-        print "Init small Saffire Pro mixer window"
+        log.debug("Init small Saffire Pro mixer window")
 
         self.VolumeControls={
 

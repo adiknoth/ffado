@@ -24,6 +24,9 @@ from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
 from mixer_quatafireui import *
 
+import logging
+log = logging.getLogger('quatafire')
+
 class QuataFireMixer(QWidget, Ui_QuataFireMixerUI):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
@@ -54,7 +57,7 @@ class QuataFireMixer(QWidget, Ui_QuataFireMixerUI):
     def updateVolume(self,a0):
         sender = self.sender()
         vol = -a0
-        print "setting %s volume to %d" % (self.VolumeControls[sender][0], vol)
+        log.debug("setting %s volume to %d" % (self.VolumeControls[sender][0], vol))
         self.hw.setContignuous(self.VolumeControls[sender][0], vol, self.VolumeControls[sender][1])
 
     def updatePan(self,a0):
@@ -67,16 +70,16 @@ class QuataFireMixer(QWidget, Ui_QuataFireMixerUI):
         if pan_right < 0:
             pan_right = 0
 
-        print "setting %s pan left to %d" % (self.PanControls[sender][0], -pan_left)
+        log.debug("setting %s pan left to %d" % (self.PanControls[sender][0], -pan_left))
         self.hw.setContignuous(self.PanControls[sender][0], -pan_left, 1)
-        print "setting %s pan right to %d" % (self.PanControls[sender][0], -pan_right)
+        log.debug("setting %s pan right to %d" % (self.PanControls[sender][0], -pan_right))
         self.hw.setContignuous(self.PanControls[sender][0], -pan_right, 2)
 
     def initValues(self):
         for ctrl, info in self.VolumeControls.iteritems():
             vol = self.hw.getContignuous(self.VolumeControls[ctrl][0], self.VolumeControls[ctrl][1])
             val = -vol
-            print "%s volume is %d, set to %d" % (ctrl.objectName(), vol, val)
+            log.debug("%s volume is %d, set to %d" % (ctrl.objectName(), vol, val))
             ctrl.setValue(val)
 
             # connect the UI element
@@ -86,14 +89,14 @@ class QuataFireMixer(QWidget, Ui_QuataFireMixerUI):
             pan_left = self.hw.getContignuous(self.PanControls[ctrl][0], 1)
             pan_right = self.hw.getContignuous(self.PanControls[ctrl][0], 2)
 
-            print "%s pan left is %d" % (ctrl.objectName() , pan_left)
-            print "%s pan right is %d" % (ctrl.objectName() , pan_right)
+            log.debug("%s pan left is %d" % (ctrl.objectName() , pan_left))
+            log.debug("%s pan right is %d" % (ctrl.objectName() , pan_right))
 
             if pan_left == 0:
                 val = pan_right
             else:
                 val = -pan_left
-            
+
             ctrl.setValue(val)
             # connect the UI element
             QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updatePan)
