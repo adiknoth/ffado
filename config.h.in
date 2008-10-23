@@ -132,7 +132,8 @@
 // These are the result of a lot of trial and error
 // due to weirdness in the kernel layer
 #define MAX_XMIT_PACKET_SIZE                         (2048-16)
-#define MAX_XMIT_NB_BUFFERS                                200
+#define MAX_XMIT_NB_BUFFERS                                128
+#define MAX_RECV_NB_BUFFERS                                128
 
 // should be PAGE_SIZE (4096) for unpatched kernels
 #define RAW1394_RCV_MIN_BUF_STRIDE                        4096

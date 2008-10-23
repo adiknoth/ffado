@@ -196,6 +196,14 @@ class IsoHandlerManager
          * This should be called when a busreset has happened.
          */
         bool handleBusReset();
+
+        /**
+         * @brief set iso receive mode. doesn't have any effect if the stream is running
+         * @param m receive mode
+         */
+        void setReceiveMode(enum raw1394_iso_dma_recv_mode m)
+            {m_receive_mode = m;}
+
     // the state machine
     private:
         enum eHandlerStates {
@@ -235,6 +243,7 @@ class IsoHandlerManager
         IsoTask *       m_IsoTaskTransmit;
         Util::Thread *  m_IsoThreadReceive;
         IsoTask *       m_IsoTaskReceive;
+        enum raw1394_iso_dma_recv_mode m_receive_mode;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

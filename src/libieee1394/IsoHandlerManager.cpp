@@ -458,6 +458,7 @@ IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service)
    , m_IsoTaskTransmit ( NULL )
    , m_IsoThreadReceive ( NULL )
    , m_IsoTaskReceive ( NULL )
+   , m_receive_mode( RAW1394_DMA_PACKET_PER_BUFFER )
 {
 }
 
@@ -469,6 +470,7 @@ IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service, bool run_rt, int 
    , m_IsoTaskTransmit ( NULL )
    , m_IsoThreadReceive ( NULL )
    , m_IsoTaskReceive ( NULL )
+   , m_receive_mode( RAW1394_DMA_PACKET_PER_BUFFER )
 {
 }
 
@@ -776,31 +778,32 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
 
         // the receive buffer size doesn't matter for the latency,
         // but it has a minimal value in order for libraw to operate correctly (300)
-        int buffers=400;
+        int buffers=1;
+        while(buffers < (int)packets_per_period && buffers < MAX_RECV_NB_BUFFERS) {
+            buffers *= 2;
+        }
+
+        // ensure at least 2 hardware interrupts per ISO buffer wraparound
+        if(irq_interval > buffers/2) {
+            irq_interval = buffers/2;
+        }
 
         // create the actual handler
+        debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoRecvHandler\n");
         h = new IsoHandler(*this, IsoHandler::eHT_Receive,
                            buffers, max_packet_size, irq_interval);
-
-        debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoRecvHandler\n");
 
         if(!h) {
             debugFatal("Could not create IsoRecvHandler\n");
             return false;
         }
 
+        h->setReceiveMode(m_receive_mode);
+
     } else if (stream->getType()==StreamProcessor::ePT_Transmit) {
         // setup the optimal parameters for the raw1394 ISO buffering
-//        unsigned int packets_per_period = stream->getPacketsPerPeriod();
         unsigned int max_packet_size = stream->getMaxPacketSize();
-//         unsigned int page_size = getpagesize();
 
-        // Ensure we don't request a packet size bigger than the
-        // kernel-enforced maximum which is currently 1 page.
-//         if (max_packet_size > page_size) {
-//             debugError("max packet size (%u) > page size (%u)\n", max_packet_size, page_size);
-//             return false;
-//         }
         if (max_packet_size > MAX_XMIT_PACKET_SIZE) {
             debugError("max packet size (%u) > MAX_XMIT_PACKET_SIZE (%u)\n",
                        max_packet_size, MAX_XMIT_PACKET_SIZE);
@@ -808,15 +811,16 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         }
 
         // the SP specifies how many packets to ISO-buffer
-        int buffers = stream->getNbPacketsIsoXmitBuffer();
-        if (buffers > MAX_XMIT_NB_BUFFERS) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "nb buffers (%u) > MAX_XMIT_NB_BUFFERS (%u)\n",
-                        buffers, MAX_XMIT_NB_BUFFERS);
-            buffers = MAX_XMIT_NB_BUFFERS;
+        int req_buffers = stream->getNbPacketsIsoXmitBuffer();
+        int buffers=1; 
+        while(buffers < (int)req_buffers && buffers < MAX_RECV_NB_BUFFERS) {
+            buffers *= 2;
         }
-        unsigned int irq_interval = buffers / MINIMUM_INTERRUPTS_PER_PERIOD;
-        if(irq_interval <= 0) irq_interval=1;
+
+        int irq_interval = req_buffers / MINIMUM_INTERRUPTS_PER_PERIOD;
+        if(irq_interval <= 0) irq_interval = 1;
+        // ensure at least 2 hardware interrupts per ISO buffer wraparound
+        if(irq_interval > buffers/2) irq_interval = buffers/2;
 
         debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoXmitHandler\n");
 

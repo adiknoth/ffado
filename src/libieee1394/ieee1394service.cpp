@@ -291,8 +291,8 @@ Ieee1394Service::initialize( int port )
             debugWarning("Set SPLIT_TIMEOUT to min requested did not succeed\n");
         }
     }
-    
-    // check state
+
+    // init helpers
     if(!m_pCTRHelper) {
         debugFatal("No CycleTimerHelper available, bad!\n");
         return false;
@@ -308,6 +308,9 @@ Ieee1394Service::initialize( int port )
         return false;
     }
     m_pIsoManager->setVerboseLevel(getDebugLevel());
+
+    m_pIsoManager->setReceiveMode(RAW1394_DMA_PACKET_PER_BUFFER);
+
     if(!m_pIsoManager->init()) {
         debugFatal("Could not initialize IsoHandlerManager\n");
         return false;

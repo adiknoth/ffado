@@ -80,6 +80,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_last_cycle( -1 )
    , m_last_now( 0xFFFFFFFF )
    , m_last_packet_handled_at( 0xFFFFFFFF )
+   , m_receive_mode ( RAW1394_DMA_PACKET_PER_BUFFER )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
@@ -105,6 +106,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_last_cycle( -1 )
    , m_last_now( 0xFFFFFFFF )
    , m_last_packet_handled_at( 0xFFFFFFFF )
+   , m_receive_mode ( RAW1394_DMA_PACKET_PER_BUFFER )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
@@ -130,6 +132,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_last_cycle( -1 )
    , m_last_now( 0xFFFFFFFF )
    , m_last_packet_handled_at( 0xFFFFFFFF )
+   , m_receive_mode ( RAW1394_DMA_PACKET_PER_BUFFER )
    , m_Client( 0 )
    , m_speed( speed )
    , m_prebuffers( 0 )
@@ -674,9 +677,9 @@ bool IsoHandler::prepare()
                                 m_buf_packets,
                                 m_max_packet_size,
                                 m_Client->getChannel(),
-                                RAW1394_DMA_PACKET_PER_BUFFER,
+                                m_receive_mode,
                                 m_irq_interval)) {
-            debugFatal("Could not do receive initialisation (DMA_BUFFERFILL)!\n" );
+            debugFatal("Could not do receive initialisation!\n" );
             debugFatal("  %s\n",strerror(errno));
             return false;
         }
