@@ -235,7 +235,6 @@ if not env.GetOption('clean'):
 
 	pkgs = {
 		'libraw1394' : '1.3.0',
-		'libavc1394' : '0.5.3',
 		'libiec61883' : '1.1.0',
 		'dbus-1' : '1.0',
 		}

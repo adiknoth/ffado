@@ -27,7 +27,6 @@
 #include "../general/avc_extended_cmd_generic.h"
 #include "../general/avc_generic.h"
 
-#include <libavc1394/avc1394.h>
 #include <vector>
 using namespace std;
 

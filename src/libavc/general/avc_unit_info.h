@@ -26,7 +26,7 @@
 
 #include "avc_generic.h"
 
-#include <libavc1394/avc1394.h>
+#define AVC1394_CMD_UNIT_INFO 0x30
 
 namespace AVC {
 
@@ -34,26 +34,6 @@ namespace AVC {
 class UnitInfoCmd: public AVCCommand
 {
 public:
-
-    enum EUnitType {
-        eUT_Monitor       = AVC1394_SUBUNIT_VIDEO_MONITOR,
-        eUT_Audio         = AVC1394_SUBUNIT_AUDIO,
-        eUT_Printer       = AVC1394_SUBUNIT_PRINTER,
-        eUT_Disc          = AVC1394_SUBUNIT_DISC_RECORDER,
-        eUT_VCR           = AVC1394_SUBUNIT_VCR,
-        eUT_Tuner         = AVC1394_SUBUNIT_TUNER,
-        eUT_CA            = AVC1394_SUBUNIT_CA,
-        eUT_Camera        = AVC1394_SUBUNIT_VIDEO_CAMERA,
-        eUT_Panel         = AVC1394_SUBUNIT_PANEL,
-        eUT_BulltinBoard  = AVC1394_SUBUNIT_BULLETIN_BOARD,
-        eUT_CameraStorage = AVC1394_SUBUNIT_CAMERA_STORAGE,
-        eUT_Music         = AVC1394_SUBUNIT_MUSIC,
-        eUT_VendorUnique  = AVC1394_SUBUNIT_VENDOR_UNIQUE,
-        eUT_Reserved      = AVC1394_SUBUNIT_RESERVED,
-        eUT_Extended      = AVC1394_SUBUNIT_EXTENDED,
-        eUT_Unit          = AVC1394_SUBUNIT_UNIT,
-    };
-
     UnitInfoCmd( Ieee1394Service& ieee1349service );
     virtual ~UnitInfoCmd();
 

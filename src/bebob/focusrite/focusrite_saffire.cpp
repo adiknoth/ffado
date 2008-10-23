@@ -34,11 +34,6 @@ SaffireDevice::SaffireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( config
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 
-    // the saffire doesn't seem to like it if the commands are too fast
-    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 4000) {
-        AVC::AVCCommand::setSleepAfterAVCCommand( 4000 );
-    }
-
     if(getConfigRom().getGuid() < 0x130e0100040000LL) {
         m_isSaffireLE = false;
     } else {

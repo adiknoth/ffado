@@ -27,10 +27,10 @@
 #include "avc_extended_cmd_generic.h"
 #include "avc_generic.h"
 
-#include <libavc1394/avc1394.h>
-
 #include <string>
 #include <vector>
+
+#define AVC1394_CMD_PLUG_INFO 0x02
 
 namespace AVC {
 

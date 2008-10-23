@@ -24,11 +24,10 @@
 #ifndef AVCDEFINITIONS_H
 #define AVCDEFINITIONS_H
 
-#include <libavc1394/avc1394.h>
 #include <cstring>
 #include <cstdlib>
 #include <ostream>
-
+#include <libraw1394/raw1394.h>
 
 namespace AVC {
 
@@ -87,35 +86,26 @@ typedef byte_t status_selector_t;
 
 typedef quadlet_t company_id_t;
 
-#define AVC1394_SUBUNIT_AUDIO 1
-#define AVC1394_SUBUNIT_PRINTER 2
-#define AVC1394_SUBUNIT_CA 6
-#define AVC1394_SUBUNIT_PANEL 9
-#define AVC1394_SUBUNIT_BULLETIN_BOARD 0xA
-#define AVC1394_SUBUNIT_CAMERA_STORAGE 0xB
-#define AVC1394_SUBUNIT_MUSIC 0xC
-#define AVC1394_SUBUNIT_RESERVED 0x1D
+enum ESubunitType {
+    eST_Monitor       = 0x00,
+    eST_Audio         = 0x01,
+    eST_Printer       = 0x02,
+    eST_Disc          = 0x03,
+    eST_VCR           = 0x04,
+    eST_Tuner         = 0x05,
+    eST_CA            = 0x06,
+    eST_Camera        = 0x07,
+    eST_Panel         = 0x09,
+    eST_BulltinBoard  = 0x0A,
+    eST_CameraStorage = 0x0B,
+    eST_Music         = 0x0C,
+    eST_VendorUnique  = 0x1C,
+    eST_Reserved      = 0x1D,
+    eST_Extended      = 0x1E,
+    eST_Unit          = 0x1F,
+};
 
 #define AVC1394_SUBUNIT_ID_RESERVED 0x06
-
-enum ESubunitType {
-    eST_Monitor       = AVC1394_SUBUNIT_VIDEO_MONITOR,
-    eST_Audio         = AVC1394_SUBUNIT_AUDIO,
-    eST_Printer       = AVC1394_SUBUNIT_PRINTER,
-    eST_Disc          = AVC1394_SUBUNIT_DISC_RECORDER,
-    eST_VCR           = AVC1394_SUBUNIT_VCR,
-    eST_Tuner         = AVC1394_SUBUNIT_TUNER,
-    eST_CA            = AVC1394_SUBUNIT_CA,
-    eST_Camera        = AVC1394_SUBUNIT_VIDEO_CAMERA,
-    eST_Panel         = AVC1394_SUBUNIT_PANEL,
-    eST_BulltinBoard  = AVC1394_SUBUNIT_BULLETIN_BOARD,
-    eST_CameraStorage = AVC1394_SUBUNIT_CAMERA_STORAGE,
-    eST_Music         = AVC1394_SUBUNIT_MUSIC,
-    eST_VendorUnique  = AVC1394_SUBUNIT_VENDOR_UNIQUE,
-    eST_Reserved      = AVC1394_SUBUNIT_RESERVED,
-    eST_Extended      = AVC1394_SUBUNIT_EXTENDED,
-    eST_Unit          = AVC1394_SUBUNIT_UNIT,
-};
 
 enum ESubunitType byteToSubunitType(byte_t s);
 

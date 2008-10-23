@@ -97,10 +97,10 @@ public:
 
     SubunitAudio* getAudioSubunit( subunit_id_t subunitId )
         { return dynamic_cast<SubunitAudio*>(
-                   getSubunit( AVC1394_SUBUNIT_AUDIO , subunitId ));};
+                   getSubunit( eST_Audio , subunitId ));};
     SubunitMusic* getMusicSubunit( subunit_id_t subunitId )
         { return dynamic_cast<SubunitMusic*>(
-                   getSubunit( AVC1394_SUBUNIT_MUSIC , subunitId ));};
+                   getSubunit( eST_Music , subunitId ));};
     Subunit* getSubunit( subunit_type_t subunitType,
                          subunit_id_t subunitId ) const;
 

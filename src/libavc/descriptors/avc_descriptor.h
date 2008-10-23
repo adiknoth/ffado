@@ -40,7 +40,6 @@
 #include "../general/avc_generic.h"
 #include "debugmodule/debugmodule.h"
 
-#include <libavc1394/avc1394.h>
 #include <string>
 
 class Ieee1394Service;

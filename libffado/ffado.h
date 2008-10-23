@@ -55,11 +55,6 @@ ffado_get_api_version();
 
 /* various function */
 
-/* workaround: wait usec after each AVC command.
-   will disapear as soon bug is fixed */    
-void ffado_sleep_after_avc_command( int time );
-
-
 /* The basic operation of the API is as follows:
  * 
  * ffado_streaming_init()

@@ -28,6 +28,9 @@
 #include "libutil/ByteSwap.h"
 #include <iostream>
 
+#define AVC1394_CMD_INPUT_PLUG_SIGNAL_FORMAT 0x19
+#define AVC1394_CMD_OUTPUT_PLUG_SIGNAL_FORMAT 0x18
+
 using namespace std;
 
 namespace AVC {

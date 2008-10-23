@@ -75,13 +75,6 @@ ffado_get_api_version() {
     return FFADO_API_VERSION;
 }
 
-// FIXME: this should be cleaned up
-#include "libavc/general/avc_generic.h"
-void ffado_sleep_after_avc_command( int time )
-{
-    AVC::AVCCommand::setSleepAfterAVCCommand( time );
-}
-
 struct _ffado_device
 {
     DeviceManager * m_deviceManager;

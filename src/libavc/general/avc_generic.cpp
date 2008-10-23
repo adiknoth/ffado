@@ -42,8 +42,6 @@ namespace AVC {
 IMPL_DEBUG_MODULE( AVCCommand, AVCCommand, DEBUG_LEVEL_NORMAL );
 IMPL_DEBUG_MODULE( IBusData, IBusData, DEBUG_LEVEL_VERBOSE );
 
-int AVCCommand::m_time = 0;
-
 AVCCommand::AVCCommand( Ieee1394Service& ieee1394service,
                         opcode_t opcode )
     : m_p1394Service( &ieee1394service )
@@ -268,7 +266,6 @@ AVCCommand::fire()
         } else {
             debugOutput( DEBUG_LEVEL_VERBOSE, "no response (ntries: %d)\n", ntries );
             m_p1394Service->transactionBlockClose();
-            SleepRelativeUsec( m_time * 10 );
         }
     }
 
@@ -276,15 +273,7 @@ AVCCommand::fire()
         debugWarning( "transaction failed\n" );
     }
 
-    SleepRelativeUsec( m_time );
-
     return result;
-}
-
-void
-AVCCommand::setSleepAfterAVCCommand( int time )
-{
-    m_time = time;
 }
 
 const char* subunitTypeStrings[] =

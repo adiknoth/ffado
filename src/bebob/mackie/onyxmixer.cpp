@@ -40,11 +40,6 @@ OnyxMixerDevice::OnyxMixerDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( co
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Mackie::OnyxMixerDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
-
-    // needs a lot of time
-    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 1000) {
-        AVC::AVCCommand::setSleepAfterAVCCommand( 1000 );
-    }
 }
 
 OnyxMixerDevice::~OnyxMixerDevice()

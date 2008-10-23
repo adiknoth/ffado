@@ -108,6 +108,7 @@
 #define IEEE1394SERVICE_USE_CYCLETIMER_DLL                         1
 #define IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC   200000
 #define IEEE1394SERVICE_MAX_FIREWIRE_PORTS                         4
+#define IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS              1000000
 
 #define IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME       1
 #define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE    -10
@@ -115,6 +116,11 @@
 // config rom read wait interval
 #define IEEE1394SERVICE_CONFIGROM_READ_WAIT_USECS         1000
 
+// FCP defines
+#define IEEE1394SERVICE_FCP_MAX_TRIES                       20
+#define IEEE1394SERVICE_FCP_SLEEP_BETWEEN_FAILURES_USECS  1000
+#define IEEE1394SERVICE_FCP_POLL_TIMEOUT_MSEC              200
+#define IEEE1394SERVICE_FCP_RESPONSE_TIMEOUT_USEC      2000000
 
 // The current version of libiec61883 doesn't seem to calculate
 // the bandwidth correctly. Defining this to non-zero skips

@@ -28,7 +28,6 @@
 #include "IsoHandlerManager.h"
 #include "CycleTimerHelper.h"
 
-#include <libavc1394/avc1394.h>
 #include <libraw1394/csr.h>
 #include <libiec61883/iec61883.h>
 
@@ -273,12 +272,27 @@ Ieee1394Service::initialize( int port )
         m_portName = "Unknown";
     }
 
+    // set userdata
     raw1394_set_userdata( m_handle, this );
     raw1394_set_userdata( m_resetHandle, this );
     raw1394_set_userdata( m_util_handle, this );
     raw1394_set_bus_reset_handler( m_resetHandle,
                                    this->resetHandlerLowLevel );
 
+    // set SPLIT_TIMEOUT to one second to cope with DM1x00 devices that
+    // send responses regardless of the timeout
+    int timeout = getSplitTimeoutUsecs(getLocalNodeId());
+    if (timeout < IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS) {
+        if(!setSplitTimeoutUsecs(getLocalNodeId(), IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS+124)) {
+            debugWarning("Could not set SPLIT_TIMEOUT to min requested\n");
+        }
+        timeout = getSplitTimeoutUsecs(getLocalNodeId());
+        if (timeout < IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS) {
+            debugWarning("Set SPLIT_TIMEOUT to min requested did not succeed\n");
+        }
+    }
+    
+    // check state
     if(!m_pCTRHelper) {
         debugFatal("No CycleTimerHelper available, bad!\n");
         return false;
@@ -434,6 +448,15 @@ Ieee1394Service::read( fb_nodeid_t nodeId,
                        fb_quadlet_t* buffer )
 {
     Util::MutexLockHelper lock(*m_handle_lock);
+    return readNoLock(nodeId, addr, length, buffer);
+}
+
+bool
+Ieee1394Service::readNoLock( fb_nodeid_t nodeId,
+                             fb_nodeaddr_t addr,
+                             size_t length,
+                             fb_quadlet_t* buffer )
+{
     if (nodeId == INVALID_NODE_ID) {
         debugWarning("operation on invalid node\n");
         return false;
@@ -482,6 +505,15 @@ Ieee1394Service::write( fb_nodeid_t nodeId,
                         fb_quadlet_t* data )
 {
     Util::MutexLockHelper lock(*m_handle_lock);
+    return writeNoLock(nodeId, addr, length, data);
+}
+
+bool
+Ieee1394Service::writeNoLock( fb_nodeid_t nodeId,
+                              fb_nodeaddr_t addr,
+                              size_t length,
+                              fb_quadlet_t* data )
+{
     if (nodeId == INVALID_NODE_ID) {
         debugWarning("operation on invalid node\n");
         return false;
@@ -572,38 +604,279 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
                                    int len,
                                    unsigned int* resp_len )
 {
+    // FIXME: simplify semantics
     if (nodeId == INVALID_NODE_ID) {
         debugWarning("operation on invalid node\n");
         return false;
     }
-    // FIXME: this requires transactionBlockClose to unlock
+    // NOTE: this expects a call to transactionBlockClose to unlock
     m_handle_lock->Lock();
-    for (int i = 0; i < len; ++i) {
-        buf[i] = CondSwapFromBus32( buf[i] );
+
+    // clear the request & response memory
+    memset(&m_fcp_block, 0, sizeof(m_fcp_block));
+
+    // make a local copy of the request
+    if(len < MAX_FCP_BLOCK_SIZE_QUADS) {
+        memcpy(m_fcp_block.request, buf, len*sizeof(quadlet_t));
+        m_fcp_block.request_length = len;
+    } else {
+        debugWarning("Truncating FCP request\n");
+        memcpy(m_fcp_block.request, buf, MAX_FCP_BLOCK_SIZE_BYTES);
+        m_fcp_block.request_length = MAX_FCP_BLOCK_SIZE_QUADS;
     }
+    m_fcp_block.target_nodeid = 0xffc0 | nodeId;
 
-    fb_quadlet_t* result =
-        avc1394_transaction_block2( m_handle,
-                                    nodeId,
-                                    buf,
-                                    len,
-                                    resp_len,
-                                    1 );
-
-    for ( unsigned int i = 0; i < *resp_len; ++i ) {
-        result[i] = CondSwapToBus32( result[i] );
+    bool success = doFcpTransaction();
+    if(success) {
+        *resp_len = m_fcp_block.response_length;
+        return m_fcp_block.response;
+    } else {
+        debugWarning("FCP transaction failed\n");
+        *resp_len = 0;
+        return NULL;
     }
-
-    return result;
 }
-
 
 bool
 Ieee1394Service::transactionBlockClose()
 {
-    avc1394_transaction_block_close( m_handle );
     m_handle_lock->Unlock();
     return true;
+}
+
+// FCP code
+bool
+Ieee1394Service::doFcpTransaction()
+{
+    for(int i=0; i < IEEE1394SERVICE_FCP_MAX_TRIES; i++) {
+        if(doFcpTransactionTry()) {
+            return true;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "FCP transaction try %d failed\n", i);
+            Util::SystemTimeSource::SleepUsecRelative( IEEE1394SERVICE_FCP_SLEEP_BETWEEN_FAILURES_USECS);
+        }
+    }
+    debugError("FCP transaction didn't succeed in %d tries\n", IEEE1394SERVICE_FCP_MAX_TRIES);
+    return false;
+}
+
+#define FCP_COMMAND_ADDR   0xFFFFF0000B00ULL
+#define FCP_RESPONSE_ADDR  0xFFFFF0000D00ULL
+
+/* AV/C FCP response codes */
+#define FCP_RESPONSE_NOT_IMPLEMENTED 0x08000000
+#define FCP_RESPONSE_ACCEPTED 0x09000000
+#define FCP_RESPONSE_REJECTED 0x0A000000
+#define FCP_RESPONSE_IN_TRANSITION 0x0B000000
+#define FCP_RESPONSE_IMPLEMENTED 0x0C000000
+#define FCP_RESPONSE_STABLE 0x0C000000
+#define FCP_RESPONSE_CHANGED 0x0D000000
+#define FCP_RESPONSE_INTERIM 0x0F000000
+
+/* AV/C FCP mask macros */
+#define FCP_MASK_START(x) ((x) & 0xF0000000)
+#define FCP_MASK_CTYPE(x) ((x) & 0x0F000000)
+#define FCP_MASK_RESPONSE(x) ((x) & 0x0F000000)
+#define FCP_MASK_SUBUNIT(x) ((x) & 0x00FF0000)
+#define FCP_MASK_SUBUNIT_TYPE(x) ((x) & 0x00F80000)
+#define FCP_MASK_SUBUNIT_ID(x) ((x) & 0x00070000)
+#define FCP_MASK_OPCODE(x) ((x) & 0x0000FF00)
+#define FCP_MASK_SUBUNIT_AND_OPCODE(x) ((x) & 0x00FFFF00)
+#define FCP_MASK_OPERAND0(x) ((x) & 0x000000FF)
+#define FCP_MASK_OPERAND(x, n) ((x) & (0xFF000000 >> ((((n)-1)%4)*8)))
+#define FCP_MASK_RESPONSE_OPERAND(x, n) ((x) & (0xFF000000 >> (((n)%4)*8)))
+
+bool
+Ieee1394Service::doFcpTransactionTry()
+{
+    // NOTE that access to this is protected by the m_handle lock
+    int err;
+    bool retval = true;
+    uint64_t timeout;
+
+    // prepare an fcp response handler
+    raw1394_set_fcp_handler(m_handle, _avc_fcp_handler);
+
+    // start listening for FCP requests
+    // this fails if some other program is listening for a FCP response
+    err = raw1394_start_fcp_listen(m_handle);
+    if(err) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "could not start FCP listen (err=%d, errno=%d)\n", err, errno);
+        retval = false;
+        goto out;
+    }
+
+    m_fcp_block.status = eFS_Waiting;
+
+    #ifdef DEBUG
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"fcp request: node 0x%hX, length = %d bytes\n",
+                m_fcp_block.target_nodeid, m_fcp_block.request_length*4);
+    printBuffer(DEBUG_LEVEL_VERY_VERBOSE, m_fcp_block.request_length, m_fcp_block.request );
+    #endif
+
+    // write the FCP request
+    if(!writeNoLock( m_fcp_block.target_nodeid, FCP_COMMAND_ADDR,
+                     m_fcp_block.request_length, m_fcp_block.request)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "write of FCP request failed\n");
+        retval = false;
+        goto out;
+    }
+
+    // wait for the response to arrive
+    struct pollfd raw1394_poll;
+    raw1394_poll.fd = raw1394_get_fd(m_handle);
+    raw1394_poll.events = POLLIN;
+
+    timeout = Util::SystemTimeSource::getCurrentTimeAsUsecs() +
+              IEEE1394SERVICE_FCP_RESPONSE_TIMEOUT_USEC;
+
+    while(m_fcp_block.status == eFS_Waiting 
+          && Util::SystemTimeSource::getCurrentTimeAsUsecs() < timeout) {
+        if(poll( &raw1394_poll, 1, IEEE1394SERVICE_FCP_POLL_TIMEOUT_MSEC) > 0) {
+            if (raw1394_poll.revents & POLLIN) {
+                raw1394_loop_iterate(m_handle);
+            }
+        }
+    }
+
+    // stop listening for FCP responses
+    err = raw1394_stop_fcp_listen(m_handle);
+    if(err) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "could not stop FCP listen (err=%d, errno=%d)\n", err, errno);
+        retval = false;
+        goto out;
+    }
+
+    // check the request and figure out what happened
+    if(m_fcp_block.status == eFS_Waiting) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response timed out\n");
+        retval = false;
+        goto out;
+    }
+    if(m_fcp_block.status == eFS_Error) {
+        debugError("FCP request/response error\n");
+        retval = false;
+        goto out;
+    }
+
+out:
+    m_fcp_block.status = eFS_Empty;
+    return retval;
+}
+
+int
+Ieee1394Service::_avc_fcp_handler(raw1394handle_t handle, nodeid_t nodeid, 
+                                  int response, size_t length,
+                                  unsigned char *data)
+{
+    Ieee1394Service *service = static_cast<Ieee1394Service *>(raw1394_get_userdata(handle));
+    if(service) {
+        return service->handleFcpResponse(nodeid, response, length, data);
+    } else return -1;
+}
+
+int
+Ieee1394Service::handleFcpResponse(nodeid_t nodeid,
+                                   int response, size_t length,
+                                   unsigned char *data)
+{
+    fb_quadlet_t *data_quads = (fb_quadlet_t *)data;
+    #ifdef DEBUG
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"fcp response: node 0x%hX, response = %d, length = %d bytes\n",
+                nodeid, response, length);
+    printBuffer(DEBUG_LEVEL_VERY_VERBOSE, (length+3)/4, data_quads );
+    #endif
+
+    if (response && length > 3) {
+        if(length > MAX_FCP_BLOCK_SIZE_BYTES) {
+            length = MAX_FCP_BLOCK_SIZE_BYTES;
+            debugWarning("Truncated FCP response\n");
+        }
+
+        // is it an actual response or is it INTERIM?
+        quadlet_t first_quadlet = CondSwapFromBus32(data_quads[0]);
+        if(FCP_MASK_RESPONSE(first_quadlet) == FCP_RESPONSE_INTERIM) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "INTERIM\n");
+        } else {
+            // it's an actual response, check if it matches our request
+            if(nodeid != m_fcp_block.target_nodeid) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response node id's don't match! (%x, %x)\n",
+                                                 m_fcp_block.target_nodeid, nodeid);
+            } else if (first_quadlet == 0) {
+                debugWarning("Bogus FCP response\n");
+                printBuffer(DEBUG_LEVEL_WARNING, (length+3)/4, data_quads );
+#ifdef DEBUG
+            } else if(FCP_MASK_RESPONSE(first_quadlet) < 0x08000000) {
+                debugWarning("Bogus AV/C FCP response code\n");
+                printBuffer(DEBUG_LEVEL_WARNING, (length+3)/4, data_quads );
+#endif
+            } else if(FCP_MASK_SUBUNIT_AND_OPCODE(first_quadlet) 
+                      != FCP_MASK_SUBUNIT_AND_OPCODE(CondSwapFromBus32(m_fcp_block.request[0]))) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response not for this request: %08lX != %08lX\n",
+                             FCP_MASK_SUBUNIT_AND_OPCODE(first_quadlet),
+                             FCP_MASK_SUBUNIT_AND_OPCODE(CondSwapFromBus32(m_fcp_block.request[0])));
+            } else {
+                m_fcp_block.response_length = (length + sizeof(quadlet_t) - 1) / sizeof(quadlet_t);
+                memcpy(m_fcp_block.response, data, length);
+                m_fcp_block.status = eFS_Responded;
+            }
+       }
+    }
+    return 0;
+}
+
+bool
+Ieee1394Service::setSplitTimeoutUsecs(fb_nodeid_t nodeId, unsigned int timeout)
+{
+    Util::MutexLockHelper lock(*m_handle_lock);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setting SPLIT_TIMEOUT on node 0x%X to %uusecs...\n", nodeId, timeout);
+    unsigned int secs = timeout / 1000000;
+    unsigned int usecs = timeout % 1000000;
+
+    quadlet_t split_timeout_hi = CondSwapToBus32(secs & 7);
+    quadlet_t split_timeout_low = CondSwapToBus32(((usecs / 125) & 0x1FFF) << 19);
+
+    // write the CSR registers
+    if(!writeNoLock( 0xffc0 | nodeId, CSR_REGISTER_BASE + CSR_SPLIT_TIMEOUT_HI, 1,
+                  &split_timeout_hi)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "write of CSR_SPLIT_TIMEOUT_HI failed\n");
+        return false;
+    }
+    if(!writeNoLock( 0xffc0 | nodeId, CSR_REGISTER_BASE + CSR_SPLIT_TIMEOUT_LO, 1,
+                  &split_timeout_low)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "write of CSR_SPLIT_TIMEOUT_LO failed\n");
+        return false;
+    }
+    return true;
+}
+
+int
+Ieee1394Service::getSplitTimeoutUsecs(fb_nodeid_t nodeId)
+{
+    Util::MutexLockHelper lock(*m_handle_lock);
+    quadlet_t split_timeout_hi;
+    quadlet_t split_timeout_low;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "reading SPLIT_TIMEOUT on node 0x%X...\n", nodeId);
+
+    if(!readNoLock( 0xffc0 | nodeId, CSR_REGISTER_BASE + CSR_SPLIT_TIMEOUT_HI, 1,
+                  &split_timeout_hi)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "read of CSR_SPLIT_TIMEOUT_HI failed\n");
+        return 0;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, " READ HI: 0x%08lX\n", split_timeout_hi);
+
+    if(!readNoLock( 0xffc0 | nodeId, CSR_REGISTER_BASE + CSR_SPLIT_TIMEOUT_LO, 1,
+                  &split_timeout_low)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "read of CSR_SPLIT_TIMEOUT_LO failed\n");
+        return 0;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, " READ LO: 0x%08lX\n", split_timeout_low);
+
+    split_timeout_hi = CondSwapFromBus32(split_timeout_hi);
+    split_timeout_low = CondSwapFromBus32(split_timeout_low);
+
+    return (split_timeout_hi & 7) * 1000000 + (split_timeout_low >> 19) * 125;
 }
 
 int

@@ -66,6 +66,8 @@ static char doc[] = "FFADO -- a driver for Firewire Audio devices (test applicat
                     "           SetClockSource [id]\n"
                     "           BusReset\n"
                     "           ListDevices\n"
+                    "           SetSplitTimeout timeout_usec\n"
+                    "           GetSplitTimeout\n"
                     ;
 
 // A description of the arguments we accept.
@@ -412,6 +414,61 @@ main( int argc, char **argv )
             fprintf( stderr, "please specify a node\n" );
         }
         delete m_deviceManager;
+        return exitfunction(0);
+    } else if ( strcmp( arguments.args[0], "SetSplitTimeout" ) == 0 ) {
+        char* tail;
+        int usecs = strtol( arguments.args[1], &tail, 0 );
+        if ( errno ) {
+            fprintf( stderr,  "Could not parse timeout argument\n" );
+            return exitfunction(-1);
+        }
+
+        Ieee1394Service service;
+        // switch off all messages since they mess up the list
+        service.setVerboseLevel(arguments.verbose);
+        if ( !service.initialize( arguments.port ) ) {
+            printf("Could not initialize IEEE 1394 service on port %ld\n", arguments.port);
+            return exitfunction(-1);
+        }
+
+        nodeid_t nodeid;
+        if(arguments.node_id_set) {
+            nodeid = arguments.node_id;
+        } else {
+            nodeid = service.getLocalNodeId();
+        }
+        
+        if (!service.setSplitTimeoutUsecs(nodeid, usecs)) {
+            printf("Failed to set SPLIT_TIMEOUT to %u for node %X on port %ld\n",
+                   usecs, nodeid, arguments.port);
+            return exitfunction(-1);
+        }
+
+        return exitfunction(0);
+    } else if ( strcmp( arguments.args[0], "GetSplitTimeout" ) == 0 ) {
+        Ieee1394Service service;
+        // switch off all messages since they mess up the list
+        service.setVerboseLevel(arguments.verbose);
+        if ( !service.initialize( arguments.port ) ) {
+            printf("Could not initialize IEEE 1394 service on port %ld\n", arguments.port);
+            return exitfunction(-1);
+        }
+
+        nodeid_t nodeid;
+        if(arguments.node_id_set) {
+            nodeid = arguments.node_id;
+        } else {
+            nodeid = service.getLocalNodeId();
+        }
+        int usecs = service.getSplitTimeoutUsecs(nodeid);
+        if (usecs < 0) {
+            printf("Failed to get SPLIT_TIMEOUT for node %X on port %ld\n",
+                   nodeid, arguments.port);
+            return exitfunction(-1);
+        }
+        printf("SPLIT_TIMEOUT for node %X on port %ld is %u\n",
+               nodeid, arguments.port, usecs);
+
         return exitfunction(0);
     } else if ( strcmp( arguments.args[0], "SytCalcTest" ) == 0 ) {
         if (arguments.nargs < 4) {
