@@ -101,9 +101,9 @@ public:
     // this is the amount of usecs we wait before an activity
     // timeout occurs.
     void setActivityWaitTimeoutUsec(int usec)
-            {m_activity_wait_timeout_usec = usec;};
+            {m_activity_wait_timeout_nsec = usec*1000LL;};
     int getActivityWaitTimeoutUsec() 
-            {return m_activity_wait_timeout_usec;};
+            {return m_activity_wait_timeout_nsec/1000;};
 
     int getPortCount(enum Port::E_PortType, enum Port::E_Direction);
     int getPortCount(enum Port::E_Direction);
@@ -167,7 +167,7 @@ protected: // FIXME: private?
 
     // thread related vars
     bool m_xrun_happened;
-    int m_activity_wait_timeout_usec;
+    int64_t m_activity_wait_timeout_nsec;
     bool m_thread_realtime;
     int m_thread_priority;
 

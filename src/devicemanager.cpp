@@ -175,6 +175,10 @@ DeviceManager::initialize()
         tmp1394Service->setVerboseLevel( getDebugLevel() );
         m_1394Services.push_back(tmp1394Service);
 
+        if(!tmp1394Service->useConfiguration(m_configuration)) {
+            debugWarning("Could not load config to 1394service\n");
+        }
+
         tmp1394Service->setThreadParameters(m_thread_realtime, m_thread_priority);
         if ( !tmp1394Service->initialize( port ) ) {
             debugFatal( "Could not initialize Ieee1349Service object for port %d\n", port );

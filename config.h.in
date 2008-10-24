@@ -133,10 +133,21 @@
 // due to weirdness in the kernel layer
 #define MAX_XMIT_PACKET_SIZE                         (2048-16)
 #define MAX_XMIT_NB_BUFFERS                                128
-#define MAX_RECV_NB_BUFFERS                                128
+#define MAX_RECV_NB_BUFFERS                                 64
 
-// should be PAGE_SIZE (4096) for unpatched kernels
-#define RAW1394_RCV_MIN_BUF_STRIDE                        4096
+// the default ISO receive mode. 
+// 0 = auto, 1 = packet-per-buffer, 2 = bufferfill. 
+// 'auto' will automatically choose the mode that is expected 
+// to perform best for the given situation. For large periods 
+// this is 'bufferfill' mode, for small periods this is 
+// 'packet-per-buffer' mode. The 'BUFFERFILL_MODE_THRESHOLD' 
+// defines what a 'large period' is.
+#define DEFAULT_ISO_RECEIVE_MODE                             0
+
+// the number of packets required to fill one period from which
+// the bufferfill mode is to be used
+#define BUFFERFILL_MODE_THRESHOLD                           64
+
 
 #define ISOHANDLER_FLUSH_BEFORE_ITERATE                      0
 
@@ -186,8 +197,8 @@
 #define STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_RECV     0
 #define STREAMPROCESSORMANAGER_SYNCSTART_TRIES              10
 #define STREAMPROCESSORMANAGER_SYNC_WAIT_TIME_MSEC          200
-#define STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC      400
 #define STREAMPROCESSORMANAGER_NB_ALIGN_TRIES               40
+#define STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC      400
 
 #define STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY           0
 

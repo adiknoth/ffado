@@ -56,6 +56,7 @@ class IsoHandlerManager;
 // channel and one for all
 class IsoTask : public Util::RunnableInterface
 {
+    friend class IsoHandlerManager;
     public:
         IsoTask(IsoHandlerManager& manager, enum IsoHandler::EHandlerType);
         virtual ~IsoTask();
@@ -112,12 +113,13 @@ class IsoTask : public Util::RunnableInterface
         int m_successive_short_loops;
 #endif
 
-        // activity signaling
-        sem_t m_activity_semaphore;
-
         enum IsoHandler::EHandlerType m_handlerType;
         bool m_running;
         bool m_in_busreset;
+
+        // activity signaling
+        sem_t m_activity_semaphore;
+        long long int m_activity_wait_timeout_nsec;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;
@@ -197,13 +199,6 @@ class IsoHandlerManager
          */
         bool handleBusReset();
 
-        /**
-         * @brief set iso receive mode. doesn't have any effect if the stream is running
-         * @param m receive mode
-         */
-        void setReceiveMode(enum raw1394_iso_dma_recv_mode m)
-            {m_receive_mode = m;}
-
     // the state machine
     private:
         enum eHandlerStates {
@@ -243,7 +238,6 @@ class IsoHandlerManager
         IsoTask *       m_IsoTaskTransmit;
         Util::Thread *  m_IsoThreadReceive;
         IsoTask *       m_IsoTaskReceive;
-        enum raw1394_iso_dma_recv_mode m_receive_mode;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

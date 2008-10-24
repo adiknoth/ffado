@@ -34,6 +34,7 @@
 #include "libutil/SystemTimeSource.h"
 #include "libutil/Watchdog.h"
 #include "libutil/PosixMutex.h"
+#include "libutil/Configuration.h"
 
 #include <errno.h>
 #include "libutil/ByteSwap.h"
@@ -48,7 +49,8 @@ using namespace std;
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
-    : m_handle( 0 )
+    : m_configuration( NULL )
+    , m_handle( 0 )
     , m_handle_lock( new Util::PosixMutex("SRCVHND") )
     , m_resetHandle( 0 )
     , m_util_handle( 0 )
@@ -71,10 +73,12 @@ Ieee1394Service::Ieee1394Service()
         m_channels[i].recv_node=0xFFFF;
         m_channels[i].recv_plug=-1;
     }
+
 }
 
 Ieee1394Service::Ieee1394Service(bool rt, int prio)
-    : m_handle( 0 )
+    : m_configuration( NULL )
+    , m_handle( 0 )
     , m_handle_lock( new Util::PosixMutex("SRCVHND") )
     , m_resetHandle( 0 )
     , m_util_handle( 0 )
@@ -120,6 +124,22 @@ Ieee1394Service::~Ieee1394Service()
     if ( m_util_handle ) {
         raw1394_destroy_handle( m_util_handle );
     }
+}
+
+bool
+Ieee1394Service:: useConfiguration(Util::Configuration *c)
+{
+    m_configuration = c;
+    return configurationUpdated();
+}
+
+bool
+Ieee1394Service:: configurationUpdated()
+{
+    if(m_configuration) {
+        
+    }
+    return true;
 }
 
 int
@@ -251,7 +271,7 @@ Ieee1394Service::initialize( int port )
     // obtain port name
     raw1394handle_t tmp_handle = raw1394_new_handle();
     if ( tmp_handle == NULL ) {
-        debugError("Could not get temporaty libraw1394 handle.\n");
+        debugError("Could not get temporary libraw1394 handle.\n");
         return false;
     }
     struct raw1394_portinfo pinf[IEEE1394SERVICE_MAX_FIREWIRE_PORTS];
@@ -279,16 +299,22 @@ Ieee1394Service::initialize( int port )
     raw1394_set_bus_reset_handler( m_resetHandle,
                                    this->resetHandlerLowLevel );
 
+    int split_timeout = IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS;
+    if(m_configuration) {
+        m_configuration->getValueForSetting("ieee1394.min_split_timeout_usecs", split_timeout);
+    }
+
     // set SPLIT_TIMEOUT to one second to cope with DM1x00 devices that
     // send responses regardless of the timeout
     int timeout = getSplitTimeoutUsecs(getLocalNodeId());
-    if (timeout < IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS) {
-        if(!setSplitTimeoutUsecs(getLocalNodeId(), IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS+124)) {
-            debugWarning("Could not set SPLIT_TIMEOUT to min requested\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Minimum SPLIT_TIMEOUT: %d. Current: %d\n", split_timeout, timeout);
+    if (timeout < split_timeout) {
+        if(!setSplitTimeoutUsecs(getLocalNodeId(), split_timeout+124)) {
+            debugWarning("Could not set SPLIT_TIMEOUT to min requested (%d)\n", split_timeout);
         }
         timeout = getSplitTimeoutUsecs(getLocalNodeId());
-        if (timeout < IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS) {
-            debugWarning("Set SPLIT_TIMEOUT to min requested did not succeed\n");
+        if (timeout < split_timeout) {
+            debugWarning("Set SPLIT_TIMEOUT to min requested (%d) did not succeed\n", split_timeout);
         }
     }
 
@@ -308,8 +334,6 @@ Ieee1394Service::initialize( int port )
         return false;
     }
     m_pIsoManager->setVerboseLevel(getDebugLevel());
-
-    m_pIsoManager->setReceiveMode(RAW1394_DMA_PACKET_PER_BUFFER);
 
     if(!m_pIsoManager->init()) {
         debugFatal("Could not initialize IsoHandlerManager\n");

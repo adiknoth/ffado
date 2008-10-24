@@ -112,10 +112,26 @@ public:
     bool isDeviceVMEPresent( unsigned int vendor_id,  unsigned model_id );
     static bool isValid( const VendorModelEntry& vme );
 
+    // access functions
+    /**
+     * @brief retrieves a setting for a given path
+     * 
+     * the value in the ref parameter is not changed if
+     * the function returns false.
+     * 
+     * @param path path to the setting
+     * @param ref reference to the integer that will hold the value.
+     * @return true if successful, false if not
+     */
+    bool getValueForSetting(std::string path, int32_t &ref);
+    bool getValueForSetting(std::string path, int64_t &ref);
+
     virtual void setVerboseLevel(int l) {setDebugLevel(l);};
     virtual void show();
 
 private:
+    libconfig::Setting *getSetting( std::string path );
+
     int findFileName(std::string s);
 
     // important: keep 1-1 mapping for these two!

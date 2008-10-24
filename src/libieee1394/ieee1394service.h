@@ -47,6 +47,7 @@ class CycleTimerHelper;
 
 namespace Util {
     class Watchdog;
+    class Configuration;
 }
 
 class Ieee1394Service : public IEC61883 {
@@ -298,6 +299,19 @@ public:
      */
     int getSplitTimeoutUsecs(fb_nodeid_t nodeId);
 
+    /**
+     * @brief use the provided configuration for this service
+     *
+     * only update the config once, before init. not thread safe,
+     * and no effect when things are already running.
+     *
+     * @param c configuration to use
+     * @return bool if this config is ok.
+     */
+    bool useConfiguration(Util::Configuration *c);
+
+    Util::Configuration *getConfiguration() {return m_configuration;};
+
 // ISO channel stuff
 public:
     signed int getAvailableBandwidth();
@@ -334,7 +348,12 @@ public:
 // FIXME: should be private, but is used to do the PCR control in GenericAVC::AvDevice
     raw1394handle_t getHandle() {return m_handle;};
 
+protected:
+    Util::Configuration     *m_configuration;
+
 private:
+    bool configurationUpdated();
+
     bool startRHThread();
     void stopRHThread();
     static void* rHThread( void* arg );
