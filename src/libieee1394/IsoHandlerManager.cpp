@@ -838,11 +838,9 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         if(irq_interval <= 0) irq_interval=1;
 
         // the receive buffer size doesn't matter for the latency,
-        // but it has a minimal value in order for libraw to operate correctly (300)
-        int buffers=1;
-        while(buffers < (int)packets_per_period && buffers < max_nb_buffers_recv) {
-            buffers *= 2;
-        }
+        // it does seem to be confined to a certain region for correct
+        // operation. However it is not clear how many.
+        int buffers = max_nb_buffers_recv;
 
         // ensure at least 2 hardware interrupts per ISO buffer wraparound
         if(irq_interval > buffers/2) {
@@ -882,17 +880,15 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
             return false;
         }
 
-        // the SP specifies how many packets to ISO-buffer
-        int req_buffers = stream->getNbPacketsIsoXmitBuffer();
-        int buffers=1; 
-        while(buffers < (int)req_buffers && buffers < max_nb_buffers_xmit) {
-            buffers *= 2;
-        }
+        int buffers = max_nb_buffers_xmit;
+        unsigned int packets_per_period = stream->getPacketsPerPeriod();
 
-        int irq_interval = req_buffers / min_interrupts_per_period;
-        if(irq_interval <= 0) irq_interval = 1;
+        int irq_interval = (packets_per_period-1) / min_interrupts_per_period;
+        if(irq_interval <= 0) irq_interval=1;
         // ensure at least 2 hardware interrupts per ISO buffer wraparound
-        if(irq_interval > buffers/2) irq_interval = buffers/2;
+        if(irq_interval > buffers/2) {
+            irq_interval = buffers/2;
+        }
 
         debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoXmitHandler\n");
 
