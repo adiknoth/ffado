@@ -38,6 +38,9 @@
 #include <assert.h>
 #include <cstring>
 
+#define likely(x)   __builtin_expect((x),1)
+#define unlikely(x) __builtin_expect((x),0)
+
 #define AMDTP_FLOAT_MULTIPLIER (1.0f * ((1<<23) - 1))
 namespace Streaming
 {
@@ -557,7 +560,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
         // get the port buffers
         for (j=0; j<4; j++) {
             p = &(m_audio_ports.at(i+j));
-            if(p->buffer && p->enabled) {
+            if(likely(p->buffer && p->enabled)) {
                 client_buffers[j] = (float *) p->buffer;
                 client_buffers[j] += offset;
             } else {
@@ -626,7 +629,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
-        if(p.buffer && p.enabled) {
+        if(likely(p.buffer && p.enabled)) {
             float *buffer = (float *)(p.buffer);
             buffer += offset;
     
@@ -685,9 +688,9 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
                 float *in = (float *)buffer;
 #if AMDTP_CLIP_FLOATS
                 // clip directly to the value of a maxed event
-                if(*in > 1.0) {
+                if(unlikely(*in > 1.0)) {
                     *target_event = CONDSWAPTOBUS32_CONST(0x407FFFFF);
-                } else if(*in < -1.0) {
+                } else if(unlikely(*in < -1.0)) {
                     *target_event = CONDSWAPTOBUS32_CONST(0x40800001);
                 } else {
                     float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
@@ -750,7 +753,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
         // get the port buffers
         for (j=0; j<4; j++) {
             p = &(m_audio_ports.at(i+j));
-            if(p->buffer && p->enabled) {
+            if(likely(p->buffer && p->enabled)) {
                 client_buffers[j] = (uint32_t *) p->buffer;
                 client_buffers[j] += offset;
             } else {
@@ -809,7 +812,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
-        if(p.buffer && p.enabled) {
+        if(likely(p.buffer && p.enabled)) {
             uint32_t *buffer = (uint32_t *)(p.buffer);
             buffer += offset;
     
@@ -894,7 +897,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
-        if(p.buffer && p.enabled) {
+        if(likely(p.buffer && p.enabled)) {
             quadlet_t *buffer = (quadlet_t *)(p.buffer);
             buffer += offset;
     
@@ -935,7 +938,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
-        if(p.buffer && p.enabled) {
+        if(likely(p.buffer && p.enabled)) {
             quadlet_t *buffer = (quadlet_t *)(p.buffer);
             buffer += offset;
     
@@ -944,9 +947,9 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
                 float *in = (float *)buffer;
 #if AMDTP_CLIP_FLOATS
                 // clip directly to the value of a maxed event
-                if(*in > 1.0) {
+                if(unlikely(*in > 1.0)) {
                     *target_event = CONDSWAPTOBUS32_CONST(0x407FFFFF);
-                } else if(*in < -1.0) {
+                } else if(unlikely(*in < -1.0)) {
                     *target_event = CONDSWAPTOBUS32_CONST(0x40800001);
                 } else {
                     float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
