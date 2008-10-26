@@ -90,6 +90,11 @@ class MotuDevice;
 
 #define MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL  3
 
+/* A "register" value used to signify that a particular control in a matrix
+ * mixer is not available on the current interface.
+ */
+#define MOTU_CTRL_NONE                     0xffffffff
+
 class MotuDiscreteCtrl
     : public Control::Discrete
 {

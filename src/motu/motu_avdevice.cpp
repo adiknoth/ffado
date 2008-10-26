@@ -319,6 +319,8 @@ const MatrixMixChannel MixerChannels_Ultralite[] = {
     {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
     {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
     {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    {"AES/EBU 1", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"AES/EBU 2", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
     {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
     {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
 };
