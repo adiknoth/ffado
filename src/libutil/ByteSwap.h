@@ -154,11 +154,8 @@ CondSwapFromBus16(uint16_t d)
 
 #ifdef __SSE2__
 #include <emmintrin.h>
-#warning SSE2 build
 
-static
-//inline void
-void
+static inline void
 byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
@@ -206,9 +203,7 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
     }
 }
 
-static
-//inline void
-void
+static inline void
 byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
     // Work input until data reaches 16 byte alignment
