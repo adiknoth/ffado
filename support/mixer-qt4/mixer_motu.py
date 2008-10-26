@@ -515,7 +515,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
     # public slot: channel faders within a matrix mixer
     def updateChannelFader(self, a0):
         sender = self.sender()
-        vol = 128-a0
+        vol = a0
         log.debug("setting %s for mix %d channel %d to %d" % (self.ChannelFaders[sender][0], 
             self.ChannelFaders[sender][1], self.ChannelFaders[sender][2], vol))
         self.hw.setMatrixMixerValue(self.ChannelFaders[sender][0],
@@ -556,7 +556,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
     # public slot: a faders (not in a matrix mixer)
     def updateFader(self, a0):
         sender = self.sender()
-        vol = 128-a0
+        vol = a0
         log.debug("setting %s mix fader to %d" % (self.Faders[sender][0], vol))
         self.hw.setDiscrete(self.Faders[sender][0], vol)
 
@@ -755,7 +755,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
         for ctrl, info in self.ChannelFaders.iteritems():
             if (not(ctrl.isEnabled())):
                 continue
-            vol = 128-self.hw.getMatrixMixerValue(info[0], info[1], info[2])
+            vol = self.hw.getMatrixMixerValue(info[0], info[1], info[2])
             log.debug("%s for mix %d channel %d is %d" % (info[0], info[1], info[2], vol))
             ctrl.setValue(vol)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateChannelFader)
@@ -763,7 +763,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
         for ctrl, info in self.Faders.iteritems():
             if (not(ctrl.isEnabled())):
                 continue
-            vol = 128-self.hw.getDiscrete(info[0])
+            vol = self.hw.getDiscrete(info[0])
             log.debug("%s mix fader is %d" % (info[0] , vol))
             ctrl.setValue(vol)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateFader)
