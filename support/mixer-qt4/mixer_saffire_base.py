@@ -65,7 +65,7 @@ class SaffireMixerBase:
         if len(self.SelectorControls[sender]) >= 2:
             linked = self.SelectorControls[sender][1]
             for ctl in linked:
-                if ctl.state():
+                if ctl.isChecked():
                     state = 1
                 else:
                     state = 0
