@@ -45,6 +45,8 @@ from mixer_motu import *
 from mixer_dummy import *
 from mixer_global import GlobalMixer
 
+import time
+
 import logging
 log = logging.getLogger('panelmanager')
 
@@ -149,7 +151,30 @@ class PanelManager(QWidget):
 
     def devlistPostUpdate(self):
         log.debug("devlistPostUpdate")
-        self.updatePanels()
+        # this can fail if multiple busresets happen in fast succession
+        ntries = 10
+        while ntries > 0:
+            try:
+                self.updatePanels()
+                return
+            except:
+                log.debug("devlistPostUpdate failed (%d)" % ntries)
+                for guid in self.panels.keys():
+                    w = self.panels[guid]
+                    del self.panels[guid] # remove from the list
+                    idx = self.tabs.indexOf(w)
+                    self.tabs.removeTab(idx)
+                    del w # GC might also take care of that
+
+                ntries = ntries - 1
+                time.sleep(2) # sleep a few seconds
+
+        log.debug("devlistPostUpdate failed completely")
+        self.tabs.setEnabled(False)
+        self.tabs.hide()
+        self.status.lblMessage.setText("Error while reconfiguring. Please restart ffadomixer.")
+        self.status.show()
+
 
     def devlistUpdate(self):
         log.debug("devlistUpdate")
@@ -249,7 +274,7 @@ class PanelManager(QWidget):
                 if d[0] == thisdev:
                     dev = d
 
-            w = QWidget( self.tabs )
+            w = QWidget( )
             l = QVBoxLayout( w )
 
             # create a control object
