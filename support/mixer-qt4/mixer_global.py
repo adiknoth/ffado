@@ -54,9 +54,8 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
 
     def samplerateChanged( self, sr ):
         log.debug("samplerateChanged( " + str(sr) + " )")
-        self.samplerateselect.select( sr )
         if self.samplerateselect.canChangeValue():
-            self.samplerateselect.select( st )
+            self.samplerateselect.select( sr )
         else:
             msg = QMessageBox()
             msg.question( msg, "Error", \
