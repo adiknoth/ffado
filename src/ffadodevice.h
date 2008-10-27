@@ -260,6 +260,22 @@ public:
     virtual ClockSource getActiveClockSource() = 0;
 
     /**
+     * @brief stream states
+     */
+    enum eStreamingState {
+        eSS_Idle,        ///> not streaming
+        eSS_Sending,     ///> the device is sending a stream
+        eSS_Receiving,   ///> the device is receiving a stream
+        eSS_Both,        ///> the device is sending and receiving a stream
+    };
+
+    /**
+     * @brief gets the devices current synchronization state
+     * @return the device's sync state
+     */
+    virtual enum eStreamingState getStreamingState();
+
+    /**
      * @brief This is called by the device manager to give the device a unique ID.
      *
      * The purpose of this is to allow for unique port naming

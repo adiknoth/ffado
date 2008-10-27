@@ -102,6 +102,12 @@ Element::getLock()
     }
 }
 
+bool
+Element::canChangeValue()
+{
+    return true;
+}
+
 void
 Element::show()
 {

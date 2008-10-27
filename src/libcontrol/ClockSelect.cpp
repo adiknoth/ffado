@@ -170,6 +170,12 @@ ClockSelect::getAttributeName(int attridx)
     }
 }
 
+bool
+ClockSelect::canChangeValue()
+{
+    return m_Device.getStreamingState() == FFADODevice::eSS_Idle;
+}
+
 void
 ClockSelect::show()
 {
@@ -237,6 +243,12 @@ SamplerateSelect::getEnumLabel(int idx)
         debugWarning("bad index specified\n");
     }
     return retval;
+}
+
+bool
+SamplerateSelect::canChangeValue()
+{
+    return m_Device.getStreamingState() == FFADODevice::eSS_Idle;
 }
 
 void

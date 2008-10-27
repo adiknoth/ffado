@@ -294,6 +294,7 @@ class ClockSelectInterface:
         self.bus=dbus.SessionBus()
         self.dev = self.bus.get_object(self.servername, self.basepath)
         self.iface = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.AttributeEnum')
+        self.iface_element = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Element')
     def count(self):
         return self.iface.count()
     def select(self, idx):
@@ -308,6 +309,8 @@ class ClockSelectInterface:
         return self.iface.getAttributeValue(idx)
     def getAttributeName(self, idx):
         return self.iface.getAttributeName(idx)
+    def canChangeValue(self):
+        return self.iface_element.canChangeValue()
 
 class SamplerateSelectInterface:
     def __init__(self, servername, devicepath):
@@ -316,6 +319,7 @@ class SamplerateSelectInterface:
         self.bus=dbus.SessionBus()
         self.dev = self.bus.get_object(self.servername, self.basepath)
         self.iface = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Enum')
+        self.iface_element = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Element')
     def count(self):
         return self.iface.count()
     def select(self, idx):
@@ -324,6 +328,8 @@ class SamplerateSelectInterface:
         return self.iface.selected()
     def getEnumLabel(self, idx):
         return self.iface.getEnumLabel(idx)
+    def canChangeValue(self):
+        return self.iface_element.canChangeValue()
 
 class TextInterface:
     def __init__(self, servername, basepath):

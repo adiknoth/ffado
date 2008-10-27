@@ -113,6 +113,8 @@ public:
     DBus::String getLabel( );
     DBus::String getDescription( );
 
+    DBus::Bool canChangeValue( );
+
     void setVerboseLevel( const DBus::Int32 &);
     DBus::Int32 getVerboseLevel();
 

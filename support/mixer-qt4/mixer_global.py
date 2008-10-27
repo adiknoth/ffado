@@ -33,9 +33,17 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
 
     def clockChanged( self, clock ):
         #print "updateClockSource( " + str(clock) + " )"
-        self.clockselect.select( clock )
-        selected = self.clockselect.selected()
+        if self.clockselect.canChangeValue():
+            self.clockselect.select( clock )
+        else:
+            msg = QMessageBox()
+            msg.question( msg, "Error", \
+                "<qt>Clock source change not permitted. Is streaming active?</qt>", \
+                QMessageBox.Ok )
+            self.clocksource.setEnabled(False)
+            return
 
+        selected = self.clockselect.selected()
         if selected != clock:
             clockname = self.clockselect.getEnumLabel( clock )
             msg = QMessageBox()
@@ -47,8 +55,17 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
     def samplerateChanged( self, sr ):
         log.debug("samplerateChanged( " + str(sr) + " )")
         self.samplerateselect.select( sr )
-        selected = self.samplerateselect.selected()
+        if self.samplerateselect.canChangeValue():
+            self.samplerateselect.select( st )
+        else:
+            msg = QMessageBox()
+            msg.question( msg, "Error", \
+                "<qt>Sample rate change not permitted. Is streaming active?</qt>", \
+                QMessageBox.Ok )
+            self.samplerate.setEnabled(False)
+            return
 
+        selected = self.samplerateselect.selected()
         if selected != sr:
             srname = self.samplerateselect.getEnumLabel( sr )
             msg = QMessageBox()
@@ -76,3 +93,6 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
 
         self.txtNickname.setText( self.nickname.text() )
 
+    def polledUpdate(self):
+        self.samplerate.setEnabled(self.samplerateselect.canChangeValue())
+        self.clocksource.setEnabled(self.clockselect.canChangeValue())

@@ -57,6 +57,8 @@ public:
     ///> get the name of the attribute with a certain index
     virtual std::string getAttributeName(int attridx);
 
+    virtual bool canChangeValue();
+
     virtual void show();
 
 protected:
@@ -78,6 +80,8 @@ public:
     virtual int selected();
     virtual int count();
     virtual std::string getEnumLabel(int idx);
+
+    virtual bool canChangeValue();
 
     virtual void show();
 

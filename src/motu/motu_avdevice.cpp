@@ -848,6 +848,26 @@ MotuDevice::discover()
     return true;
 }
 
+enum FFADODevice::eStreamingState
+MotuDevice::getStreamingState()
+{
+    unsigned int val = ReadRegister(MOTU_REG_ISOCTRL);
+    /* Streaming is active if either bit 22 (Motu->PC streaming
+     * enable) or bit 30 (PC->Motu streaming enable) is set.
+     */
+    debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU_REG_ISOCTRL: %08x\n", val);
+
+    if((val & 0x40400000) != 0) {
+        return eSS_Both;
+    } else if ((val & 0x40000000) != 0) {
+        return eSS_Receiving;
+    } else if ((val & 0x00400000) != 0) {
+        return eSS_Sending;
+    } else {
+        return eSS_Idle;
+    }
+}
+
 int
 MotuDevice::getSamplingFrequency( ) {
 /*

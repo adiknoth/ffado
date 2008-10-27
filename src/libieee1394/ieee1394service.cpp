@@ -73,7 +73,6 @@ Ieee1394Service::Ieee1394Service()
         m_channels[i].recv_node=0xFFFF;
         m_channels[i].recv_plug=-1;
     }
-
 }
 
 Ieee1394Service::Ieee1394Service(bool rt, int prio)
@@ -127,14 +126,14 @@ Ieee1394Service::~Ieee1394Service()
 }
 
 bool
-Ieee1394Service:: useConfiguration(Util::Configuration *c)
+Ieee1394Service::useConfiguration(Util::Configuration *c)
 {
     m_configuration = c;
     return configurationUpdated();
 }
 
 bool
-Ieee1394Service:: configurationUpdated()
+Ieee1394Service::configurationUpdated()
 {
     if(m_configuration) {
         

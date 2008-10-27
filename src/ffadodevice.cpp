@@ -155,6 +155,12 @@ FFADODevice::getSyncState( ) {
     return eSS_Unknown;
 }
 
+enum FFADODevice::eStreamingState
+FFADODevice::getStreamingState()
+{
+    return eSS_Idle;
+}
+
 bool
 FFADODevice::setId( unsigned int id)
 {

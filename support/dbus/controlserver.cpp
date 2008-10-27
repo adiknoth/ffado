@@ -63,6 +63,12 @@ DBus::Int32 Element::getVerboseLevel()
     return getDebugLevel();
 }
 
+DBus::Bool
+Element::canChangeValue()
+{
+    return m_Slave.canChangeValue();
+}
+
 void
 Element::Lock()
 {
