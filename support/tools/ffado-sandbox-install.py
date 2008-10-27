@@ -24,64 +24,93 @@
 import os
 
 FFADOSBI_VERSION = '0.1'
-LATEST_FFADO_RELEASE_URL = 'http://www.ffado.org/files/libffado-2.0-beta6.tar.gz'
-LATEST_FFADO_RELEASE_UNPACK_DIR = 'libffado-2.0-beta6'
+LATEST_FFADO_RELEASE_URL = 'http://www.ffado.org/files/libffado-2.0-beta7.tar.gz'
+LATEST_FFADO_RELEASE_UNPACK_DIR = 'libffado-2.0-beta7'
 LATEST_JACK1_RELEASE_URL = 'http://jackaudio.org/downloads/jack-audio-connection-kit-0.109.2.tar.gz'
 LATEST_JACK1_RELEASE_UNPACK_DIR = 'jack-audio-connection-kit-0.109.2'
 
-def ask_for_dir(descr):
+def ask_for_dir(descr, suggestion):
     ret_dir = None
     while True:
-        ret_dir = raw_input("Please specify a %s directory: " % descr)
-        
+        ret_dir = raw_input("Please specify a %s directory [%s]: " % (descr, suggestion))
+        if ret_dir == "":
+            ret_dir = suggestion
+
         if not os.path.exists(ret_dir):
             try:
                 os.makedirs(ret_dir)
             except:
                 yesno = raw_input("Could not create the %s directory. Try again? [yes/no] " % descr)
-                if yesno[0] != 'y':
+                if yesno == "" or yesno[0] != 'y':
                     return None
                 else:
                     continue
             break
         else:
-            yesno = raw_input("WARNING: the %s directory already exists. Do you want to overwrite it? [yes/no] " % descr)
-            if yesno[0] != 'y':
-                yesno = raw_input("Try again? [yes/no] ")
-                if yesno[0] != 'y':
+            yesno = raw_input("WARNING: the %s directory at %s already exists. Do you want to overwrite it? [yes/no] " % (descr, ret_dir))
+            if yesno == "" or yesno[0] != 'y':
+                yesno = raw_input("Specify new %s directory? [yes/no] " % descr)
+                if yesno == "" or yesno[0] != 'y':
                     return None
                 else:
                     continue
             else:
-                os.system('rm -Rf "%s"' % ret_dir)
-                os.makedirs(ret_dir)
-                break
+                yesno = raw_input("WARNING: about to remove the old %s directory at %s. Proceed? [yes/no] " % (descr, ret_dir))
+                if yesno == "" or yesno[0] != 'y':
+                    yesno = raw_input("Specify new %s directory? [yes/no] " % descr)
+                    if yesno == "" or yesno[0] != 'y':
+                        return None
+                    else:
+                        continue
+                else:
+                    os.system('rm -Rf "%s"' % ret_dir)
+                    os.makedirs(ret_dir)
+                    break
     return ret_dir
 
 def fetch_source(build_dir, source_descriptor, target):
+    logfile = "%s/%s.log" % (build_dir, target)
+    os.system('echo "" > %s' % logfile)
+
     if source_descriptor[1] == 'svn':
-        print " checking out SVN repository: %s" % source_descriptor[2]
+        print " Checking out SVN repository: %s" % source_descriptor[2]
         cwd = os.getcwd()
         os.chdir(build_dir)
-        os.system('svn co "%s" "%s"' % (source_descriptor[2], target))
+        retval = os.system('svn co "%s" "%s" >> %s' % (source_descriptor[2], target, logfile))
         os.chdir(cwd)
+        if retval:
+            print "  Failed to checkout the SVN repository. Inspect %s for details. (is subversion installed?)" % logfile
+            return False
         return True
     elif source_descriptor[1] == 'tar.gz':
-        print " downloading tarball: %s" % source_descriptor[2]
+        print " Downloading tarball: %s" % source_descriptor[2]
         import urllib
         tmp_file = '%s/tmp.tar.gz' % build_dir
-        urllib.urlretrieve(source_descriptor[2], tmp_file)
+        try:
+            urllib.urlretrieve(source_descriptor[2], tmp_file)
+        except:
+            print " Could not retrieve source tarball."
+            return False
         cwd = os.getcwd()
         os.chdir(build_dir)
         print " extracting tarball..."
-        os.system('tar -zxf "%s"' % tmp_file)
+        retval = os.system('tar -zxf "%s" > %s' % (tmp_file, logfile))
+        if retval:
+            print "  Failed to extract the source tarball. Inspect %s for details." % logfile
+            os.chdir(cwd)
+            return False
         if source_descriptor[3]:
-            os.system('mv "%s" "%s"' % (source_descriptor[3], target))
+            retval = os.system('mv "%s" "%s"' % (source_descriptor[3], target))
+            if retval:
+                print "  Failed to move the extracted tarball"
+                os.chdir(cwd)
+                return False
         os.chdir(cwd)
         return True
     else:
         print "bad source type"
         return False
+
 
 welcome_msg = """
 FFADO sandbox install utility """ + FFADOSBI_VERSION + """
@@ -108,9 +137,9 @@ print welcome_msg
 
 # get the paths to be used
 if 'HOME' in os.environ.keys():
-    suggestion = "%s/ffadosandbox" % os.environ['HOME']
+    suggestion_sandbox = "%s/ffadosandbox" % os.environ['HOME']
 else:
-    suggestion = "/home/myuser/ffadosandbox"
+    suggestion_sandbox = "/home/myuser/ffadosandbox"
 
 sandbox_dir_msg = """
 SANDBOX DIRECTORY
@@ -129,12 +158,12 @@ Suggestion: %s
 NOTE: if you specify a system directory here, the tool will install
 system-wide (if run as root). This is not recommended, but can be
 useful for automated installs. Uninstall will be a lot harder though.
-""" % suggestion
+""" % suggestion_sandbox
 
 if 'HOME' in os.environ.keys():
-    suggestion = "%s/ffadobuild" % os.environ['HOME']
+    suggestion_build = "%s/ffadobuild" % os.environ['HOME']
 else:
-    suggestion = "/home/myuser/ffadobuild"
+    suggestion_build = "/home/myuser/ffadobuild"
 
 build_dir_msg = """
 BUILD DIRECTORY
@@ -148,10 +177,10 @@ The build directory can be removed as soon as this tool has finished.
 It is not automatically removed.
 
 Suggestion: %s
-""" % suggestion
+""" % suggestion_build
 
 print sandbox_dir_msg
-sandbox_dir = ask_for_dir('sandbox')
+sandbox_dir = ask_for_dir('sandbox', suggestion_sandbox)
 if sandbox_dir == None:
     print "Cannot proceed without valid sandbox directory."
     exit(-1)
@@ -159,7 +188,7 @@ print(" using %s as sandbox directory" % sandbox_dir)
 
 
 print build_dir_msg
-build_dir = ask_for_dir('build')
+build_dir = ask_for_dir('build', suggestion_build)
 if build_dir == None:
     print "Cannot proceed without valid build directory."
     exit(-1)
@@ -171,7 +200,7 @@ print(" using %s as build directory" % build_dir)
 
 ffado_versions = {}
 ffado_versions[0] = ['SVN trunk', 'svn', 'http://subversion.ffado.org/ffado/trunk/libffado', None]
-ffado_versions[1] = ['libffado-2.0 (recommended)', 'svn', 'http://subversion.ffado.org/ffado/branches/libffado-2.0', None]
+ffado_versions[1] = ['SVN libffado-2.0 (recommended)', 'svn', 'http://subversion.ffado.org/ffado/branches/libffado-2.0', None]
 ffado_versions[2] = ['latest release', 'tar.gz', LATEST_FFADO_RELEASE_URL, LATEST_FFADO_RELEASE_UNPACK_DIR]
 
 ffado_versions_msg = """
@@ -189,7 +218,7 @@ while True:
             raise
     except:
         yesno = raw_input("Invalid FFADO version specified. Try again? [yes/no] ")
-        if yesno[0] != 'y':
+        if yesno == "" or yesno[0] != 'y':
             print "Cannot proceed without valid FFADO version."
             exit(-1)
         else:
@@ -219,7 +248,7 @@ while True:
             raise
     except:
         yesno = raw_input("Invalid jack version specified. Try again? [yes/no] ")
-        if yesno[0] != 'y':
+        if yesno == "" or yesno[0] != 'y':
             print "Cannot proceed without valid jack version."
             exit(-1)
         else:
@@ -245,32 +274,77 @@ print "Fetching FFADO source..."
 if not fetch_source(build_dir, use_ffado_version, 'libffado'):
     print "Could not fetch FFADO source"
     exit(-1)
-print " got FFADO source"
+print " Successfully fetched FFADO source"
 
 print "Fetching jack source..."
 
 if not fetch_source(build_dir, use_jack_version, 'jack'):
     print "Could not fetch jack source"
     exit(-1)
-print " got jack source"
+print " Successfully fetched jack source"
 
 cwd = os.getcwd()
+
+ffado_log = "%s/ffadobuild.log" % build_dir
+ffado_scons_options = "-j2" # TODO: interactive config of the build
+os.system('echo "" > %s' % ffado_log) 
+
 # configure FFADO
 os.chdir("%s/libffado/" % build_dir)
-os.system('scons PREFIX="%s"' % sandbox_dir)
+print "Building FFADO..."
+print " Compiling..."
+retval = os.system('scons PREFIX="%s" %s >> %s' % (sandbox_dir, ffado_scons_options, ffado_log))
+if retval:
+    print """
+Failed to configure/build FFADO. Most likely this is due to uninstalled dependencies.
+Check %s for details.
+""" % ffado_log
+    exit(-1)
 
 # install FFADO
-os.system('scons install')
+print " Installing into %s..." % sandbox_dir
+retval = os.system('scons install >> %s' % (ffado_log))
+if retval:
+    print "Failed to install FFADO. Check %s for details." % ffado_log
+    exit(-1)
 
 # configure JACK
 os.chdir("%s/jack/" % build_dir)
+jack_log = "%s/jackbuild.log" % build_dir
+os.system('echo "" > %s' % jack_log) 
+
+print "Building Jack..."
 if use_jack_version[1] == 'svn':
-    os.system('./autogen.sh') 
-os.system('./configure --prefix="%s"' % sandbox_dir)
+    print " Initializing build system..."
+    retval = os.system('./autogen.sh >> %s' % jack_log)
+    if retval:
+        print """
+Failed to initialize the jack build system. Most likely this is due to uninstalled dependencies.
+Check %s for details.
+""" % jack_log
+        exit(-1)
+
+print " Configuring build..."
+retval = os.system('./configure --prefix="%s" >> %s' % (sandbox_dir, jack_log))
+if retval:
+    print """
+Failed to configure the jack build. Most likely this is due to uninstalled dependencies.
+Check %s for details.
+""" % jack_log
+    exit(-1)
 
 # build and install jack
-os.system('make')
-os.system('make install')
+print " Compiling..."
+retval = os.system('make >> %s' % (jack_log))
+if retval:
+    print "Failed to build jack. Check %s for details." % jack_log
+    exit(-1)
+
+print " Installing into %s..." % sandbox_dir
+retval = os.system('make install >> %s' % (jack_log))
+if retval:
+    print "Failed to install jack. Check %s for details." % jack_log
+    exit(-1)
 
 # write the bashrc file
 sandbox_bashrc = """
@@ -286,11 +360,15 @@ export PKG_CONFIG_PATH
 export PATH
 """ % (sandbox_dir, sandbox_dir, sandbox_dir)
 
+print "Writing shell configuration file..."
 sandbox_rc_file = "%s/ffado.rc" % sandbox_dir
-
-fid = open(sandbox_rc_file, "w")
-fid.write(sandbox_bashrc)
-fid.close()
+try:
+    fid = open(sandbox_rc_file, "w")
+    fid.write(sandbox_bashrc)
+    fid.close()
+except:
+    print "Could not write the sandbox rc file."
+    exit(-1)
 
 os.chdir(cwd)
 
@@ -301,7 +379,7 @@ such that it uses them instead of the system versions.
 
 If you use the bash shell (or compatible) you can use the following
 rc script: %s. The procedure to use the sandboxed ffado+jack would be:
-   
+
    $ source %s
    $ jackd -R -d firewire
 
