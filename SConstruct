@@ -205,7 +205,12 @@ if not env.GetOption('clean'):
 	# Check for working gcc and g++ compilers and their environment.
 	#
 	if not conf.CompilerCheck():
-		print "It seems as if your system isn't even able to compile any C-/C++-programs. Probably you don't have gcc and g++ installed. Compiling a package from source without a working compiler is very hard to do, please install the needed packages.\nHint: on *ubuntu you need both gcc- and g++-packages installed, easiest solution is to install build-essential which depends on gcc and g++."
+		print "\nIt seems as if your system isn't even able to compile any C-/C++-programs. Probably you don't have gcc and g++ installed. Compiling a package from source without a working compiler is very hard to do, please install the needed packages.\nHint: on *ubuntu you need both gcc- and g++-packages installed, easiest solution is to install build-essential which depends on gcc and g++."
+		Exit( 1 )
+
+	# Check for pkg-config before using pkg-config to check for other dependencies.
+	if not conf.CheckForPKGConfig():
+		print "\nThe program 'pkg-config' could be found.\nEither you have to install the corresponding package first or make sure that PATH points to the right directions."
 		Exit( 1 )
 
 	#
@@ -216,8 +221,6 @@ if not env.GetOption('clean'):
 	allpresent &= conf.CheckHeader( "expat.h" )
 	allpresent &= conf.CheckLib( 'expat', 'XML_ExpatVersion', '#include <expat.h>' )
 	
-	allpresent &= conf.CheckForPKGConfig();
-
 	pkgs = {
 		'libraw1394' : '1.3.0',
 		'libiec61883' : '1.1.0',
