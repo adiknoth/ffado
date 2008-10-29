@@ -95,7 +95,7 @@ version is provided which is a 'known good' version.  The first few
 libraries it seems it is not necessary that the version must
 match. The chances that it works also with an older versions are good:
 
-libxml++2   (>= 2.13.0)
+libxml++2   (>= 2.6.13)
 
 These libraries here should be at least the version listed:
 
