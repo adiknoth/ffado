@@ -599,3 +599,7 @@ env.AlwaysBuild( "tags", "TAGS" )
 if 'NoCache' in dir(env):
     env.NoCache( "tags", "TAGS" )
 
+# Another convinience target
+if env.GetOption( "clean" ):
+	env.Execute( "rm cache/objects -Rf" )
+
