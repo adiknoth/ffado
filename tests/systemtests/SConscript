@@ -39,10 +39,11 @@ static_env = env.Clone()
 # test-mixer, test-volume
 #
 apps = {
-	"test-isorecv-1" : ["test-isorecv-1.cpp", "realtimetools.cpp"],
-	"test-isoxmit-1" : ["test-isoxmit-1.cpp", "realtimetools.cpp"],
+	"ffado-test-isorecv" : ["test-isorecv-1.cpp", "realtimetools.cpp"],
+	"ffado-test-isoxmit" : ["test-isoxmit-1.cpp", "realtimetools.cpp"],
 }
 
 for app in apps.keys():
 	env.Program( target=app, source = env.Split( apps[app] ) )
+	env.Install( "$bindir", app )
 

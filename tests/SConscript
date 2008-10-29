@@ -43,11 +43,12 @@ static_env = env.Clone()
 # test-mixer, test-volume
 #
 apps = {
-	"test-ffado" : "test-ffado.cpp",
+	"ffado-test" : "test-ffado.cpp",
 }
 
 for app in apps.keys():
 	env.Program( target=app, source = env.Split( apps[app] ) )
+	env.Install( "$bindir", app )
 
 env.SConscript( dirs=["streaming", "systemtests"], exports="env" )
 

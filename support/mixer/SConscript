@@ -78,8 +78,8 @@ if env.has_key('PYUIC'):
     e.Depends( "ffadomixer_config.py", "#/config.h" )
     e.Install( "$pythondir", "ffadomixer_config.py" )
 
-    e.ScanReplace( "ffadomixer.in" )
-    e.Depends( "ffadomixer", "#/config.h" )
-    e.Depends( "ffadomixer", "SConscript" )
-    e.Install( "$bindir", "ffadomixer" )
+    e.ScanReplace( "ffado-mixer.in" )
+    e.Depends( "ffado-mixer", "#/config.h" )
+    e.Depends( "ffado-mixer", "SConscript" )
+    e.Install( "$bindir", "ffado-mixer" )
 

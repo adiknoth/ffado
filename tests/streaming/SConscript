@@ -29,9 +29,11 @@ env.PrependUnique( CPPPATH=["#/src"] )
 env.PrependUnique( LIBPATH=["#/src"] )
 env.PrependUnique( LIBS=["ffado"] )
 
-cppapps = "teststreaming3"
+apps = {
+	"ffado-test-streaming" : "teststreaming3.cpp",
+}
 
-for app in env.Split( cppapps ):
-	env.Program( target=app, source = [ app+".cpp" ] )
-
+for app in apps.keys():
+	env.Program( target=app, source = env.Split( apps[app] ) )
+	env.Install( "$bindir", app )
 
