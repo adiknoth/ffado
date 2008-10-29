@@ -210,7 +210,7 @@ if not env.GetOption('clean'):
 
 	# Check for pkg-config before using pkg-config to check for other dependencies.
 	if not conf.CheckForPKGConfig():
-		print "\nThe program 'pkg-config' could be found.\nEither you have to install the corresponding package first or make sure that PATH points to the right directions."
+		print "\nThe program 'pkg-config' could not be found.\nEither you have to install the corresponding package first or make sure that PATH points to the right directions."
 		Exit( 1 )
 
 	#
