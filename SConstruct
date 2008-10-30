@@ -513,7 +513,7 @@ env['CONFIGDIR'] = "~/.ffado"
 env['CACHEDIR'] = "~/.ffado"
 
 env['USER_CONFIG_FILE'] = env['CONFIGDIR'] + "/configuration"
-env['SYSTEM_CONFIG_FILE'] = env['sharedir'] + "/configuration"
+env['SYSTEM_CONFIG_FILE'] = env['SHAREDIR'] + "/configuration"
 
 env['REGISTRATION_URL'] = "http://ffado.org/deviceregistration/register.php?action=register"
 
