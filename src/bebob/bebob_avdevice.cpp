@@ -77,7 +77,6 @@ bool
 AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
-        return false;
         // try a bebob-specific command to check for the firmware
         ExtendedPlugInfoCmd extPlugInfoCmd( configRom.get1394Service() );
         UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
