@@ -274,35 +274,28 @@ results above get rechecked.
 	#
 
 	# PyQT checks
-        build_mixer = False
+	build_mixer = False
 	if conf.CheckForApp( "which pyuic4" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'PyQt4' ):
 		env['PYUIC4'] = True
 		build_mixer = True
 	
-		if conf.CheckForApp( "xdg-desktop-menu --help" ):
-			env['XDG_TOOLS'] = True
-		else:
-			print """
-	I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
-	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
-	"""
-	elif conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
+	if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
 		env['PYUIC'] = True
 		build_mixer = True
 	
-		if conf.CheckForApp( "xdg-desktop-menu --help" ):
-			env['XDG_TOOLS'] = True
-		else:
-			print """
-	I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
-	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
-	"""
+	if conf.CheckForApp( "xdg-desktop-menu --help" ):
+		env['XDG_TOOLS'] = True
+	else:
+		print """
+I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
+this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffado-mixer".
+"""
 	
 	if not build_mixer:
 		print """
 	I couldn't find all the prerequisites ('pyuic' / 'pyuic4' and the python-modules 'dbus' and
-	'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
-	Therefor the mixer won't get installed.
+	'qt' / 'PyQt4', the packages could be named like dbus-python and PyQt) to build the mixer.
+	Therefor neither the qt3 nor the qt4 mixer will get installed.
 	"""
 
 config_guess = conf.ConfigGuess()
@@ -575,7 +568,7 @@ else:
 		if env.GetOption( "clean" ):
 			env.Execute( action )
 
-	if env.has_key( 'XDG_TOOLS' ) and env.has_key( 'PYUIC' ):
+	if env.has_key( 'XDG_TOOLS' ) and env.has_key( 'PYUIC4' ):
 		if not env.GetOption("clean"):
 			action = "install"
 		else:

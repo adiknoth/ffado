@@ -52,9 +52,9 @@ if env.has_key('PYUIC'):
 
     #
     # For the ffadomixer.in
-    e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substitute( e )
+    e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python-qt3' ) ).safe_substitute( e )
     # For the installation of the stuff
-    e['pythondir'] = Template( os.path.join( e['sharedir'], 'python' ) ).safe_substitute( e )
+    e['pythondir'] = Template( os.path.join( e['sharedir'], 'python-qt3' ) ).safe_substitute( e )
 
     for m in e['MIXERGUIS']:
         app = "mixer_" + m
@@ -78,8 +78,8 @@ if env.has_key('PYUIC'):
     e.Depends( "ffadomixer_config.py", "#/config.h" )
     e.Install( "$pythondir", "ffadomixer_config.py" )
 
-    e.ScanReplace( "ffado-mixer.in" )
-    e.Depends( "ffado-mixer", "#/config.h" )
-    e.Depends( "ffado-mixer", "SConscript" )
-    e.Install( "$bindir", "ffado-mixer" )
+    e.ScanReplace( "ffado-mixer3.in" )
+    e.Depends( "ffado-mixer3", "#/config.h" )
+    e.Depends( "ffado-mixer3", "SConscript" )
+    e.Install( "$bindir", "ffado-mixer3" )
 
