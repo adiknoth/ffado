@@ -75,8 +75,11 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
 
     def nicknameChanged( self, name ):
         #print "nicknameChanged( %s )" % name
-        asciiData = name.toAscii()
-        self.nickname.setText( asciiData.data() )
+        if self.nickname.canChangeValue():
+            asciiData = name.toAscii()
+            self.nickname.setText( asciiData.data() )
+        else:
+            self.txtNickname.setText( self.nickname.text() )
 
     def initValues( self ):
         #print "GlobalMixer::initValues()"
@@ -84,7 +87,7 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
         for i in range( nb_clocks ):
             self.clocksource.insertItem( nb_clocks, self.clockselect.getEnumLabel( i ) )
         self.clocksource.setCurrentIndex( self.clockselect.selected() )
-        
+
         nb_rates = self.samplerateselect.count()
         for i in range( nb_rates ):
             self.samplerate.insertItem( nb_rates, self.samplerateselect.getEnumLabel( i ) )
@@ -92,6 +95,14 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
 
         self.txtNickname.setText( self.nickname.text() )
 
+        self.samplerate.setEnabled(self.samplerateselect.canChangeValue())
+        self.clocksource.setEnabled(self.clockselect.canChangeValue())
+        if self.nickname.canChangeValue():
+            self.txtNickname.setEnabled(True)
+        else:
+            self.txtNickname.setEnabled(False)
+
     def polledUpdate(self):
         self.samplerate.setEnabled(self.samplerateselect.canChangeValue())
         self.clocksource.setEnabled(self.clockselect.canChangeValue())
+        self.txtNickname.setEnabled(self.nickname.canChangeValue())

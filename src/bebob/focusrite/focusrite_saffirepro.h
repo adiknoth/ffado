@@ -368,6 +368,7 @@ public:
 
     virtual std::string getNickname();
     virtual bool setNickname(std::string name);
+    virtual bool canChangeNickname();
 protected:
     void rebootDevice();
     void flashLed();

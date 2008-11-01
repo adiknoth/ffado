@@ -568,6 +568,12 @@ SaffireProDevice::getNickname()
     } else return "Unknown";
 }
 
+bool
+SaffireProDevice::canChangeNickname()
+{
+    return true;
+}
+
 void
 SaffireProDevice::showDevice()
 {

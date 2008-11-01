@@ -48,6 +48,8 @@ public:
     virtual bool setValue(std::string v);
     virtual std::string getValue();
 
+    virtual bool canChangeValue();
+
     virtual void show();
 
 protected:

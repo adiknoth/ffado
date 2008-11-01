@@ -338,9 +338,10 @@ class TextInterface:
         self.bus=dbus.SessionBus()
         self.dev = self.bus.get_object( self.servername, self.basepath )
         self.iface = dbus.Interface( self.dev, dbus_interface="org.ffado.Control.Element.Text" )
-
+        self.iface_element = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Element')
     def text(self):
         return self.iface.getValue()
-
     def setText(self,text):
         self.iface.setValue(text)
+    def canChangeValue(self):
+        return self.iface_element.canChangeValue()

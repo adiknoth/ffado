@@ -184,7 +184,13 @@ FFADODevice::setNickname( std::string name)
 std::string
 FFADODevice::getNickname()
 {
-    return "Unknown";
+    return "Unsupported";
+}
+
+bool
+FFADODevice::canChangeNickname()
+{
+    return false;
 }
 
 void

@@ -463,6 +463,13 @@ public:
     virtual bool setNickname(std::string name);
 
     /**
+     * @brief return whether the nick name of this device can be changed
+     *
+     * @return true if the nick can be changed
+     */
+    virtual bool canChangeNickname();
+
+    /**
      * @brief handle a bus reset
      *
      * Called whenever a bus reset is detected. Handle everything

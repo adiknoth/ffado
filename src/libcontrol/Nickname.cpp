@@ -52,6 +52,11 @@ Nickname::getValue()
     return m_Device.getNickname();
 }
 
+bool
+Nickname::canChangeValue()
+{
+    return m_Device.canChangeNickname();
+}
 
 void
 Nickname::show()
