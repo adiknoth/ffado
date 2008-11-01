@@ -91,12 +91,17 @@ AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
             ExtendedPlugInfoInfoType::eIT_NoOfChannels );
         extendedPlugInfoInfoType.initialize();
         extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
-    
+
         if ( !extPlugInfoCmd.fire() ) {
             debugError( "Number of channels command failed\n" );
             return false;
         }
-    
+
+        if((extPlugInfoCmd.getResponse() != AVCCommand::eR_Implemented)) {
+            // command not supported
+            return false;
+        }
+
         ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
         if ( infoType
             && infoType->m_plugNrOfChns )
