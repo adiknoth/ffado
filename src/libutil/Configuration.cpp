@@ -28,7 +28,7 @@
 using namespace libconfig;
 namespace Util {
 
-IMPL_DEBUG_MODULE( Configuration, Configuration, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( Configuration, Configuration, DEBUG_LEVEL_NORMAL );
 
 Configuration::Configuration()
 {
