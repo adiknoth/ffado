@@ -277,6 +277,16 @@ public:
     }
 
     /**
+     * @brief update the current generation
+     *
+     * @return the current generation
+     **/
+    void updateGeneration() {
+        Util::MutexLockHelper lock(*m_handle_lock);
+        raw1394_update_generation( m_handle, getGeneration());
+    }
+
+    /**
      * @brief sets the SPLIT_TIMEOUT_HI and SPLIT_TIMEOUT_LO CSR registers
      *
      * sets the SPLIT_TIMEOUT_HI and SPLIT_TIMEOUT_LO CSR registers on node

@@ -183,6 +183,8 @@ Ieee1394Service::waitForBusResetStormToEnd( int nb_tries, int sleep_time_ms ) {
         Util::SystemTimeSource::SleepUsecRelative( sleep_time_ms * 1000);
     } while (gen_current != getGeneration() && --nb_tries);
 
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Bus reset storm over at gen: %u\n", gen_current);
+
     if (!nb_tries) {
         debugError( "Bus reset storm did not stop on time...\n");
         return false;
