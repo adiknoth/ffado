@@ -129,7 +129,7 @@ class PanelManager(QMainWindow):
         return self.tabs.count()
 
     def pollPanels(self):
-        log.debug("PanelManager::pollPanels()")
+        #log.debug("PanelManager::pollPanels()")
         # only when not modifying the tabs
         if self.tabs.isEnabled():
             for guid in self.panels.keys():
