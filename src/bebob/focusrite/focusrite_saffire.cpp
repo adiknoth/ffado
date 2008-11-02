@@ -380,6 +380,17 @@ SaffireDevice::destroyMixer()
     return true;
 }
 
+std::vector<int>
+SaffireDevice::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    frequencies.push_back(44100);
+    frequencies.push_back(48000);
+    frequencies.push_back(88200);
+    frequencies.push_back(96000);
+    return frequencies;
+}
+
 void
 SaffireDevice::showDevice()
 {
