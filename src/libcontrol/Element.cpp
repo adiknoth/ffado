@@ -91,6 +91,12 @@ Element::unlockControl()
     getLock().Unlock();
 }
 
+bool
+Element::isControlLocked()
+{
+    return getLock().isLocked();
+}
+
 Util::Mutex&
 Element::getLock()
 {

@@ -101,7 +101,7 @@ class Element
 , public DBus::IntrospectableAdaptor
 , public DBus::ObjectAdaptor
 {
-friend class Container; // This should not be necessary since Container derives from Element
+friend class Container; // required to have container access other slave elements
 public:
 
     Element( DBus::Connection& connection,
@@ -121,6 +121,7 @@ public:
 protected:
     void Lock();
     void Unlock();
+    bool isLocked();
     Util::Mutex* getLock();
 
     Element *           m_Parent;
@@ -136,7 +137,7 @@ typedef std::vector<Element *>::const_iterator ConstElementVectorIterator;
 
 class Container
 : public org::ffado::Control::Element::Container
-, public Element
+, public DBusControl::Element
 {
 public:
     Container( DBus::Connection& connection,

@@ -89,6 +89,7 @@ public:
     // e.g. when the config tree is rebuilt
     virtual void lockControl();
     virtual void unlockControl();
+    virtual bool isControlLocked();
 
     /**
      * Update signal handler
