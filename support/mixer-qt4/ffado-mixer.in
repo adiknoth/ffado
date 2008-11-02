@@ -31,13 +31,13 @@ import sys
 # Add the path of the installed ffado-mixer-modules
 sys.path.append( "$PYTHONDIR" )
 
-from ffadomixer_config import POLL_SLEEP_TIME_MSEC, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
+from ffadomixer_config import * #POLL_SLEEP_TIME_MSEC, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
 
 import os
 import time
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject, QTimer
-from PyQt4.QtGui import QApplication, QMessageBox
+from PyQt4.QtGui import QApplication, QMessageBox, QIcon
 
 from ffado_dbus_util import *
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     import logging
     logging.basicConfig()
 
-    if $DEBUG:
+    if DEBUG:
         debug_level = logging.DEBUG
     else:
         debug_level = logging.INFO
@@ -75,6 +75,7 @@ if __name__ == "__main__":
     log = logging.getLogger('main')
 
     app = QApplication(sys.argv)
+    app.setWindowIcon( QIcon( SHAREDIR + "/icons/hi64-apps-ffado.png" ) )
 
     msg = QMessageBox()
 

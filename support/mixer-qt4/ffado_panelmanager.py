@@ -21,15 +21,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-from ffadomixer_config import FFADO_VERSION, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
 
-from PyQt4.QtGui import QFrame, QWidget, QTabWidget, QVBoxLayout
+from ffadomixer_config import * #FFADO_VERSION, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
+
+from PyQt4.QtGui import QFrame, QWidget, QTabWidget, QVBoxLayout, QMainWindow, QIcon, QAction, qApp
 from PyQt4.QtCore import QTimer
 
 from ffado_panelmanagerstatusui import Ui_PanelManagerStatusUI
 
 from ffado_dbus_util import *
 from ffado_registration import *
+
+from ffado_configuration import DeviceList
 
 from mixer_phase88 import *
 from mixer_phase24 import *
@@ -59,25 +62,6 @@ except ImportError:
 else:
     use_generic = True
 
-SupportedDevices=[
-    [(0x000aac, 0x00000003),'Phase88Control'],
-    [(0x000aac, 0x00000004),'Phase24Control'],
-    [(0x000aac, 0x00000007),'Phase24Control'],
-    [(0x00130e, 0x00000003),'SaffireProMixer'],
-    [(0x00130e, 0x00000006),'SaffireProMixer'],
-    [(0x00130e, 0x00000000),'SaffireMixer'],
-    [(0x001486, 0x00000af2),'AudioFireMixer'],
-    [(0x001486, 0x00000af4),'AudioFireMixer'],
-    [(0x001486, 0x00000af8),'AudioFireMixer'],
-    [(0x001486, 0x0000af12),'AudioFireMixer'],
-    [(0x0007f5, 0x00010049),'BCoAudio5Control'],
-    [(0x0040AB, 0x00010049),'EdirolFa66Control'],
-    [(0x0040AB, 0x00010048),'EdirolFa101Control'],
-    [(0x00000f, 0x00010067),'MackieOnyxMixer'],
-    [(0x000f1b, 0x00010064),'QuataFireMixer'],
-    [(0x0001f2, 0x00000000),'MotuMixer'],
-    ]
-
 # pseudo-guid
 GUID_GENERIC_MIXER = 0
 
@@ -94,28 +78,42 @@ class PanelManagerStatus(QWidget, Ui_PanelManagerStatusUI):
         QWidget.__init__(self,parent)
         self.setupUi(self)
 
-class PanelManager(QWidget):
+class PanelManager(QMainWindow):
     def __init__(self, parent, devmgr):
-        QWidget.__init__(self, parent)
+        QMainWindow.__init__(self, parent)
         self.devmgr = devmgr
         self.devmgr.registerPreUpdateCallback(self.devlistPreUpdate)
         self.devmgr.registerPostUpdateCallback(self.devlistPostUpdate)
         self.devmgr.registerUpdateCallback(self.devlistUpdate)
         self.devmgr.registerDestroyedCallback(self.devmgrDestroyed)
 
+        filemenu = self.menuBar().addMenu( "File" )
+        quitaction = QAction( "Quit", self )
+        quitaction.setShortcut( self.tr("Ctrl+q") )
+        self.connect( quitaction, SIGNAL( "triggered()" ), self, SLOT( "close()" ) )
+        filemenu.addAction( quitaction )
+        helpmenu = self.menuBar().addMenu( "Help" )
+        aboutqtaction = QAction( "About Qt", self )
+        self.connect( aboutqtaction, SIGNAL( "triggered()" ), qApp, SLOT( "aboutQt()" ) )
+        helpmenu.addAction( aboutqtaction )
+
+        self.statusBar().showMessage( "Initializing...", 5000 )
+
         # maps a device GUID to a QT panel
         self.panels = {}
 
         # a layout for ourselves
-        self.layout = QVBoxLayout( self )
+        mw = QWidget( self )
+        self.layout = QVBoxLayout( mw )
+        self.setCentralWidget( mw )
 
         # the tabs
-        self.tabs = QTabWidget(self)
+        self.tabs = QTabWidget(mw)
         self.tabs.hide()
         self.layout.addWidget(self.tabs)
 
         # a dialog that is shown during update
-        self.status = PanelManagerStatus(self)
+        self.status = PanelManagerStatus(mw)
         self.status.lblMessage.setText("Initializing...")
         self.layout.addWidget(self.status)
         self.status.show()
@@ -125,10 +123,13 @@ class PanelManager(QWidget):
         QObject.connect( self.alivetimer, SIGNAL('timeout()'), self.commCheck )
         self.alivetimer.start( 2000 )
 
+        self.devices = DeviceList( "%s/configuration" % SHAREDIR )
+
     def count(self):
         return self.tabs.count()
 
     def pollPanels(self):
+        log.debug("PanelManager::pollPanels()")
         # only when not modifying the tabs
         if self.tabs.isEnabled():
             for guid in self.panels.keys():
@@ -148,6 +149,7 @@ class PanelManager(QWidget):
         self.tabs.hide()
         self.status.lblMessage.setText("Bus reconfiguration in progress, please wait...")
         self.status.show()
+        self.statusBar().showMessage("bus reconfiguration in progress...", 5000)
 
     def devlistPostUpdate(self):
         log.debug("devlistPostUpdate")
@@ -199,7 +201,9 @@ class PanelManager(QWidget):
             self.alivetimer.stop()
 
     def updatePanels(self):
+        log.debug("PanelManager::updatePanels()")
         nbDevices = self.devmgr.getNbDevices()
+        self.statusBar().showMessage("Reconfiguring the mixer panels...")
 
         # list of panels present
         guids_with_tabs = self.panels.keys()
@@ -262,17 +266,13 @@ class PanelManager(QWidget):
                                      vendorName, modelName)
             reg.check_for_registration()
 
-            thisdev = (vendorId, modelId);
             # The MOTU devices use unitVersion to differentiate models.  For the
             # moment thought we don't need to know precisely which model we're
             # using.
             if vendorId == 0x1f2:
-                thisdev = (vendorId, 0x00000000)
+                modelId = 0x00000000
 
-            dev = None
-            for d in SupportedDevices:
-                if d[0] == thisdev:
-                    dev = d
+            dev = self.devices.getDeviceById( vendorId, modelId )
 
             w = QWidget( )
             l = QVBoxLayout( w )
@@ -303,8 +303,8 @@ class PanelManager(QWidget):
             #
             # Specific (or dummy) mixer widgets get loaded in the following
             #
-            if dev != None:
-                mixerapp = dev[1]
+            if 'mixer' in dev and dev['mixer'] != None:
+                mixerapp = dev['mixer']
                 exec( "mixerwidget = "+mixerapp+"( w )" )
             else:
                 mixerwidget = DummyMixer( w )
@@ -338,10 +338,12 @@ class PanelManager(QWidget):
             self.tabs.setEnabled(False)
             self.status.lblMessage.setText("No supported device found.")
             self.status.show()
+            self.statusBar().showMessage("No supported device found.", 5000)
         else:
             self.tabs.show()
             self.tabs.setEnabled(True)
             self.status.hide()
+            self.statusBar().showMessage("Configured the mixer for %i devices." % self.tabs.count())
             if use_generic:
                 #
                 # Show the generic (development) mixer if it is available

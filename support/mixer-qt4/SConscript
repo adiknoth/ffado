@@ -60,6 +60,7 @@ if env.has_key('PYUIC4'):
     e['OTHERAPPS'] = ['ffado_dbus_util',
                       'ffado_regdialog',
                       'ffado_panelmanager',
+                      'ffado_configuration',
                       'mixer_saffire_base'
                      ]
 
@@ -96,3 +97,4 @@ if env.has_key('PYUIC4'):
     e.Depends( "ffado-mixer", "SConscript" )
     e.Install( "$bindir", "ffado-mixer" )
 
+    e.Install( "$sharedir/icons", "../xdg/hi64-apps-ffado.png" )
