@@ -186,7 +186,7 @@ AvDevice::getStreamingState()
     *oPCR0q = CondSwapFromBus32(*oPCR0q);
     *iPCR0q = CondSwapFromBus32(*iPCR0q);
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "iPCR0: %08X, oPCR0: %08X\n", *iPCR0q, *oPCR0q);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "iPCR0: %08X, oPCR0: %08X\n", *iPCR0q, *oPCR0q);
 
     if(iPCR0.n_p2p_connections > 0 && oPCR0.n_p2p_connections > 0) {
         return eSS_Both;
