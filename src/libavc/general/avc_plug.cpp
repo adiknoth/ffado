@@ -266,7 +266,6 @@ Plug::discoverConnections()
 bool
 Plug::discoverPlugType()
 {
-
     return true;
 }
 
@@ -540,6 +539,7 @@ Plug::discoverConnectionsInput()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Discovering incoming connections...\n");
 
+    m_inputConnections.clear();
     int sourcePlugGlobalId=getSignalSource();
 
     if(sourcePlugGlobalId >= 0) {
@@ -1989,6 +1989,7 @@ static void addConnection( PlugConnectionVector& connections,
 bool
 PlugManager::tidyPlugConnections(PlugConnectionVector& connections)
 {
+    connections.clear();
     for ( PlugVector::const_iterator it = m_plugs.begin();
           it !=  m_plugs.end();
           ++it )

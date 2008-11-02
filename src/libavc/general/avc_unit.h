@@ -87,8 +87,7 @@ public:
     typedef std::vector<SyncInfo> SyncInfoVector;
     virtual const SyncInfoVector& getSyncInfos() const
         { return m_syncInfos; }
-    virtual const SyncInfo* getActiveSyncInfo() const
-        { return m_activeSyncInfo; }
+    virtual const SyncInfo* getActiveSyncInfo();
 
     virtual bool setActiveSync( const SyncInfo& syncInfo );
 
@@ -121,6 +120,7 @@ protected:
     virtual bool clean();
 
     virtual bool enumerateSubUnits();
+    virtual bool rediscoverConnections();
     virtual bool discoverPlugConnections();
     virtual bool discoverSubUnitsPlugConnections();
     virtual bool discoverPlugs();
@@ -130,7 +130,6 @@ protected:
                                 AVC::plug_id_t plugMaxId );
     virtual bool propagatePlugInfo();
     virtual bool discoverSyncModes();
-    virtual bool updateActiveSyncInfo();
     virtual bool checkSyncConnectionsAndAddToList( AVC::PlugVector& plhs,
                                            AVC::PlugVector& prhs,
                                            std::string syncDescription );
@@ -166,7 +165,6 @@ protected:
     PlugConnectionVector      m_plugConnections;
     PlugManager*              m_pPlugManager;
     SyncInfoVector            m_syncInfos;
-    SyncInfo*                 m_activeSyncInfo;
 
 private:
     DECLARE_DEBUG_MODULE;
