@@ -167,6 +167,8 @@
 #define FR_SAFFIREPRO_CMD_ID_USE_HIGHVOLTAGE_RAIL   91
 #define FR_SAFFIREPRO_CMD_ID_USING_HIGHVOLTAGE_RAIL 92
 
+#define FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG_MASK  0x000000FF
+#define FR_SAFFIREPRO_CMD_ID_SYNC_LOCK_MASK    0x0000FF00
 #define FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG            93
 #define FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL       0
 #define FR_SAFFIREPRO_CMD_SYNC_CONFIG_SPDIF          2
@@ -362,6 +364,7 @@ public:
 
     virtual bool setSamplingFrequency( int );
     virtual int getSamplingFrequency( );
+    virtual std::vector<int> getSupportedSamplingFrequencies();
 
     virtual bool buildMixer();
     virtual bool destroyMixer();

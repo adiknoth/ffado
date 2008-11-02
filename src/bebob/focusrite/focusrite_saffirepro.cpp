@@ -311,6 +311,9 @@ SaffireProDevice::buildMixer()
             "DeviceName", "Flash Device Name", "Device name stored in flash memory");
     result &= m_ControlContainer->addElement(m_deviceNameControl);
 
+    // add a direct register access element
+    result &= addElement(new RegisterControl(*this, "Register", "Register Access", "Direct register access"));
+
     if (!result) {
         debugWarning("One or more device control elements could not be created.");
         // clean up those that couldn't be created
@@ -421,7 +424,7 @@ SaffireProDevice::updateClockSources() {
     }
     debugOutput(DEBUG_LEVEL_VERBOSE, "SYNC_CONFIG field value: %08lX\n", sync );
 
-    switch(sync & 0xFF) {
+    switch(sync & FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG_MASK) {
         default:
             debugWarning( "Unexpected SYNC_CONFIG field value: %08lX\n", sync );
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
@@ -433,19 +436,19 @@ SaffireProDevice::updateClockSources() {
             m_active_clocksource = &m_spdif_clocksource;
             break;
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1:
-            m_wordclock_clocksource.active=true;
-            m_active_clocksource = &m_wordclock_clocksource;
-            break;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
             m_adat1_clocksource.active=true;
             m_active_clocksource = &m_adat1_clocksource;
             break;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
             m_adat2_clocksource.active=true;
             m_active_clocksource = &m_adat2_clocksource;
             break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+            m_wordclock_clocksource.active=true;
+            m_active_clocksource = &m_wordclock_clocksource;
+            break;
     }
-    switch((sync >> 8) & 0xFF) {
+    switch((sync && FR_SAFFIREPRO_CMD_ID_SYNC_LOCK_MASK) >> 8) {
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
             // always locked
             break;
@@ -453,13 +456,13 @@ SaffireProDevice::updateClockSources() {
             m_spdif_clocksource.locked=true;
             break;
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1:
-            m_wordclock_clocksource.locked=true;
-            break;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
             m_adat1_clocksource.locked=true;
             break;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
             m_adat2_clocksource.locked=true;
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+            m_wordclock_clocksource.locked=true;
             break;
         default:
             debugWarning( "Unexpected SYNC_CONFIG_STATE field value: %08lX\n", sync );
@@ -512,6 +515,19 @@ SaffireProDevice::getSupportedClockSources()
         r.push_back(m_adat2_clocksource);
     }
     return r;
+}
+
+std::vector<int>
+SaffireProDevice::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    frequencies.push_back(44100);
+    frequencies.push_back(48000);
+    frequencies.push_back(88200);
+    frequencies.push_back(96000);
+    frequencies.push_back(176400);
+    frequencies.push_back(192000);
+    return frequencies;
 }
 
 uint16_t
@@ -696,7 +712,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                     rebootDevice();
 
                     // the device needs quite some time to reboot
-                    Util::SystemTimeSource::SleepUsecRelative(2 * 1000 * 1000);
+                    Util::SystemTimeSource::SleepUsecRelative(6 * 1000 * 1000);
 
                     // wait for the device to finish the reboot
                     timeout = 10; // multiples of 1s
@@ -726,6 +742,18 @@ SaffireProDevice::setSamplingFrequency( int s )
                 // wait some more
                 Util::SystemTimeSource::SleepUsecRelative(1 * 1000 * 1000);
 
+                // update the generation of the 1394 service
+                get1394Service().updateGeneration();
+
+                // update our config rom since it might have changed
+                // if this fails it means we have disappeared from the bus
+                // that's bad.
+                if(!getConfigRom().updatedNodeId()) {
+                    debugError("Could not update node id\n");
+                    getDeviceManager().unlockBusResetHandler();
+                    return false;
+                }
+
                 // we have to rediscover the device
                 if (discover()) break;
             } else {
@@ -753,12 +781,10 @@ SaffireProDevice::setSamplingFrequency( int s )
             debugError("Setting samplerate failed...\n");
             return false;
         }
-
         return true;
     }
     // not executable
     return false;
-
 }
 
 void
