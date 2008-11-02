@@ -210,67 +210,61 @@ AVCCommand::fire()
         }
     }
 
-    int ntries = 10;
     bool result = false;
-    while(ntries--) {
-        unsigned int resp_len;
-        quadlet_t* resp = m_p1394Service->transactionBlock( m_nodeId,
-                                                            (quadlet_t*)m_fcpFrame,
-                                                            ( fcpFrameSize+3 ) / 4,
-                                                            &resp_len );
-        if ( resp ) {
-            resp_len *= 4;
-            unsigned char* buf = ( unsigned char* ) resp;
-    
-            m_eResponse = ( EResponse )( *buf );
-            switch ( m_eResponse )
-            {
-                case eR_Accepted:
-                case eR_Implemented:
-                case eR_Rejected:
-                case eR_NotImplemented:
-                {
-                    Util::Cmd::BufferDeserialize de( buf, resp_len );
-                    result = deserialize( de );
-        
-                    debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,"  Response:\n");
-                    showFcpFrame( buf, de.getNrOfConsumedBytes() );
-        
-                    Util::Cmd::StringSerializer se_dbg;
-                    serialize( se_dbg );
-        
-                    // output the debug message in smaller chunks to avoid problems
-                    // with a max message size
-                    unsigned int chars_to_write=se_dbg.getString().size();
-                    unsigned int chars_written=0;
-                    while (chars_written<chars_to_write) {
-                        debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n",
-                                    se_dbg.getString().substr(chars_written, DEBUG_MAX_MESSAGE_LENGTH).c_str());
-                        chars_written += DEBUG_MAX_MESSAGE_LENGTH-1;
-                    }
-                }
-                break;
-                default:
-                    debugWarning( "unexpected response received (0x%x)\n", m_eResponse );
-                    debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,"  Response:\n");
-        
-                    Util::Cmd::BufferDeserialize de( buf, resp_len );
-                    deserialize( de );
-        
-                    showFcpFrame( buf, de.getNrOfConsumedBytes() );
-    
-            }
-            debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "\n" );
-            m_p1394Service->transactionBlockClose();
-            break; // response received
-        } else {
-            debugOutput( DEBUG_LEVEL_VERBOSE, "no response (ntries: %d)\n", ntries );
-            m_p1394Service->transactionBlockClose();
-        }
-    }
+    unsigned int resp_len;
+    quadlet_t* resp = m_p1394Service->transactionBlock( m_nodeId,
+                                                        (quadlet_t*)m_fcpFrame,
+                                                        ( fcpFrameSize+3 ) / 4,
+                                                        &resp_len );
+    if ( resp ) {
+        resp_len *= 4;
+        unsigned char* buf = ( unsigned char* ) resp;
 
-    if (!ntries) {
-        debugWarning( "transaction failed\n" );
+        m_eResponse = ( EResponse )( *buf );
+        switch ( m_eResponse )
+        {
+            case eR_Accepted:
+            case eR_Implemented:
+            case eR_Rejected:
+            case eR_NotImplemented:
+            {
+                Util::Cmd::BufferDeserialize de( buf, resp_len );
+                result = deserialize( de );
+    
+                debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,"  Response:\n");
+                showFcpFrame( buf, de.getNrOfConsumedBytes() );
+    
+                Util::Cmd::StringSerializer se_dbg;
+                serialize( se_dbg );
+    
+                // output the debug message in smaller chunks to avoid problems
+                // with a max message size
+                unsigned int chars_to_write=se_dbg.getString().size();
+                unsigned int chars_written=0;
+                while (chars_written<chars_to_write) {
+                    debugOutputShort(DEBUG_LEVEL_VERY_VERBOSE, "%s\n",
+                                se_dbg.getString().substr(chars_written, DEBUG_MAX_MESSAGE_LENGTH).c_str());
+                    chars_written += DEBUG_MAX_MESSAGE_LENGTH-1;
+                }
+            }
+            break;
+            default:
+                debugWarning( "unexpected response received (0x%x)\n", m_eResponse );
+                debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE,"  Response:\n");
+    
+                Util::Cmd::BufferDeserialize de( buf, resp_len );
+                deserialize( de );
+    
+                showFcpFrame( buf, de.getNrOfConsumedBytes() );
+                result = false;
+
+        }
+        debugOutputShort( DEBUG_LEVEL_VERY_VERBOSE, "\n" );
+        m_p1394Service->transactionBlockClose();
+    } else {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "no response\n" );
+        result = false;
+        m_p1394Service->transactionBlockClose();
     }
 
     return result;
