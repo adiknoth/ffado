@@ -979,14 +979,32 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
             reg |= (clock_source & MOTU_CLKSRC_MASK);
         }
 
-        // In other OSes bit 26 of MOTU_REG_CLK_CTRL always seems
-        // to be set when this register is written to although the
-        // reason isn't currently known.  When we set it, it appears
-        // to prevent output being produced so we'll leave it unset
-        // until we work out what's going on.  Other systems write
-        // to MOTU_REG_CLK_CTRL multiple times, so that may be
-        // part of the mystery.
-        //   value |= 0x04000000;
+        // Bits 24-26 of MOTU_REG_CLK_CTRL behave a little differently
+        // depending on the model.  In addition, different bit patterns are
+        // written depending on whether streaming is enabled, disabled or is
+        // changing state.  For now we go with the combination used when
+        // streaming is enabled since it seems to work for the other states
+        // as well.  Since device muting can be effected by these bits, we
+        // may utilise this in future during streaming startup to prevent
+        // noises during stabilisation.
+        //
+        // For most models (possibly all except the Ultralite) all 3 bits
+        // can be zero and audio is still output.
+        //
+        // For the Traveler, if bit 26 is set (as it is under other OSes),
+        // bit 25 functions as a device mute bit: if set, audio is output
+        // while if 0 the entire device is muted.  If bit 26 is unset,
+        // setting bit 25 doesn't appear to be detrimental.
+        //
+        // For the Ultralite, other OSes leave bit 26 unset.  However, unlike
+        // other devices bit 25 seems to function as a mute bit in this case.
+        //
+        // The function of bit 24 is currently unknown.  Other OSes set it
+        // for all devices so we will too.
+        reg &= 0xf8ffffff;
+        if (m_motu_model == MOTU_MODEL_TRAVELER)
+            reg |= 0x04000000;
+        reg |= 0x03000000;
         if (WriteRegister(MOTU_REG_CLK_CTRL, reg) == 0) {
             supported=true;
         } else {
