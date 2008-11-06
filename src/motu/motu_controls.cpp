@@ -693,7 +693,7 @@ OpticalMode::setValue(int v)
 
     // Set mode as requested.  An invalid setting is effectively ignored.
     if (v>=0 && v<=3) {
-      if (m_register == MOTU_DIR_IN) {
+      if (m_register == MOTU_CTRL_DIR_IN) {
         val = (val & ~0x0300) | ((v & 0x03) << 8);
       } else {
         val = (val & ~0x0c00) | ((v & 0x03) << 10);
@@ -715,7 +715,7 @@ OpticalMode::getValue()
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
-    if (m_register == MOTU_DIR_IN)
+    if (m_register == MOTU_CTRL_DIR_IN)
       val = (val >> 8) & 0x03;
     else
       val = (val >> 10) & 0x03;

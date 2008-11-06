@@ -37,6 +37,7 @@
 
 #define MOTU_BASE_ADDR               0xfffff0000000ULL
 
+/* Bitmasks and values used when setting MOTU device registers */
 #define MOTU_RATE_BASE_44100         (0<<3)
 #define MOTU_RATE_BASE_48000         (1<<3)
 #define MOTU_RATE_MULTIPLIER_1X      (0<<4)
@@ -62,10 +63,6 @@
 #define MOTU_CLKSRC_AES_EBU          7
 #define MOTU_CLKSRC_NONE             0xffff
 #define MOTU_CLKSRC_UNCHANGED        MOTU_CLKSRC_NONE
-
-#define MOTU_DIR_IN          1
-#define MOTU_DIR_OUT         2
-#define MOTU_DIR_INOUT       (MOTU_DIR_IN | MOTU_DIR_OUT)
 
 #define MOTU_METER_PEAKHOLD_MASK     0x3800
 #define MOTU_METER_PEAKHOLD_SHIFT    11
@@ -102,6 +99,14 @@
 #define MOTU_PA_OPTICAL_ANY      (MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ON)
 #define MOTU_PA_OPTICAL_MASK     MOTU_PA_OPTICAL_ANY
 #define MOTU_PA_PADDING          0x0100
+#define MOTU_PA_IN               0x0200
+#define MOTU_PA_OUT              0x0400
+#define MOTU_PA_INOUT            (MOTU_PA_IN | MOTU_PA_OUT)
+
+/* Generic "direction" flags */
+#define MOTU_DIR_IN          1
+#define MOTU_DIR_OUT         2
+#define MOTU_DIR_INOUT       (MOTU_DIR_IN | MOTU_DIR_OUT)
 
 class ConfigRom;
 class Ieee1394Service;
@@ -134,7 +139,6 @@ struct VendorModelEntry {
 
 struct PortEntry {
     const char *port_name;
-    unsigned int port_dir;
     unsigned int port_flags;
     unsigned int port_offset;
 };
