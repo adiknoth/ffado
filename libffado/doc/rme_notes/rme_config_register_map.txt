@@ -1,18 +1,45 @@
-RME Fireface-800 register map
-=============================
+RME Fireface-400 / Fireface-800 register map
+============================================
 
-Version: 0.1
+Version: 0.2
 Author: Jonathan Woithe
-Date: 24 March 2008
+Date: 6 November 2008
+
+
+Definitions
+-----------
+
+CBA = Command Buffer Address
+FF800 = Fireface-800
+FF400 = Fireface-400
+
+
+Device address space location
+-----------------------------
+
+While some register addresses are common between the two interfaces, the
+absolute addresses of the settings and control differ.  These are defined
+relative to the device "command buffer" address:
+
+  FF800: command buffer address (CBA) = 0xfc88f000
+  FF400: command buffer address (CBA) = 0x80100500
+
+The location of the configuration (settings) registers relative to the
+command buffer is consistent across devices:
+
+  conf reg 1 address = command buffer address + 5*4
+
+For a FF800 this equates to 0xfc88f014.
 
 
 Controlling sample rate (DDS)
 -----------------------------
 
 Sample rate is controlled by writing the desired sample rate in Hz to the
-sample rate control register (0xfc88f000).  Rates which have been observed
-are 32k, 44.056k, 44.144k, 44.1k, 45.937k, 46.080k, 47.952k, 48k and
-48.048k, along with corresponding 2x and 4x rates.
+sample rate control register located at offset 0 from the command buffer
+address (0xfc88f000 on a FF800).  Rates which have been observed are 32k,
+44.056k, 44.144k, 44.1k, 45.937k, 46.080k, 47.952k, 48k and 48.048k, along
+with corresponding 2x and 4x rates.
 
 Nowhere is there any evidence of register 0xfc88f000 being read by the PC. 
 It seems that the PC explicitly sets the device to its desired sample rate
@@ -23,66 +50,72 @@ Configuration registers 1, 2 and 3
 ----------------------------------
 
 Most RME device configuration is done using configuration registers 1, 2
-and 3.  These are:
+and 3.  For the ff800 these are:
 
-  config1 = configuration register 1 (0xfc88f014)
-  config2 = configuration register 2 (0xfc88f018)
-  config3 = configuration register 3 (0xfc88f01c)
+  config1 = configuration register 1 (FF800: 0xfc88f014)
+  config2 = configuration register 2 (FF800: 0xfc88f018)
+  config3 = configuration register 3 (FF800: 0xfc88f01c)
 
 When making a configuration change these registers are always written in a
 block of 12 bytes starting at 0xfc88f014 with a block write operation.
 
-Configuration register 1 (0xfc88f014):
+Configuration register 1 (FF800: 0xfc88f014):
 
   bits 31-8: unknown, set to 0
-  bits 17-16: Input #7 plug switch (part 1 of 2):
-    00 = rear only
-    01 = front only
-    10 = front+rear
+  bits 17-16: Phones level:
+    00 = +4 dBu
+    01 = -10 dBV
+    10 = hi-gain
   bits 15-14: unknown, set to 0
-  bits 13-11: Output level control (part 1 of 2):
+  bits 13-11: Output level control (part 1 of 2: FPGA LED drive):
     001 = hi-gain
     010 = +4dBU
     100 = -10dBV
-  bit 10: Instrument option: Drive (part 1 of 2) (active = 1)
+  bit 10: Instrument option: Drive (part 1 of 2: FPGA LED drive) (active = 1)
   bit 9: unknown, set to 0
   bit 8: Phantom power, mic 10 (active = 1)
   bit 7: Phantom power, mic 8 (active = 1)
   bit 6: unknown, set to 0
-  bits 5-3: Input level control (part 1 of 2):
+  bits 5-3: Input level control (part 1 of 2: FPGA LED drive):
     001 = lo-gain
     010 = +4dBU
     100 = -10dbV
-  bit 2: Instrument option: speaker emulation (active = 1)
+  bit 2: Instrument option: speaker emulation (part 1 of 2: FPGA LED drive)
+    (active = 1)
   bit 1: Phantom power, mic 9 (active = 1)
   bit 0: Phantom power, mic 7 (active = 1)
 
-Configuration register 2 (0xfc88f018):
+Configuration register 2 (FF800: 0xfc88f018):
 
   bits 31-12: unknown, set to 0
   bit 11: Input #1 front switch (active = 1)
   bit 10: unknown, set to 0
-  bit 9: Instrument option: Drive (part 2 of 2) (active = 0)
+  bit 9: Instrument option: Drive (part 2 of 2: CPLD function) (active = 0)
   bit 8: Input #8 rear switch (active = 1)
   bit 7: Input #8 front switch (active = 1)
   bit 6: Input #7 rear switch (active = 1)
   bit 5: Input #7 front switch (active = 1)
-  bits 4-3: Output level control (part 2 of 2):
+  bits 4-3: Output level control (part 2 of 2: CPLD function):
     00 = undefined
     01 = -10dBV
     10 = hi-gain
     11 = +4dBU
   bit 2: Input #1 rear switch (active = 1)
-  bits 1-0: Input level control (part 2 of 2):
+  bits 1-0: Input level control (part 2 of 2: CPLD function):
     00 = lo-gain
     01 = undefined
     10 = +4dBU
     11 = -10dbV
 
-Configuration register 3 (0xfc88f01c):
-  bit 31: unknown, set to 1
+Configuration register 3 (FF800: 0xfc88f01c):
+  bit 31: "Drop and stop": always set to 1
   bit 30: Unit option: TMS (active = 1)
-  bits 29-14: unknown, set to 10-0100-0000-00
+  bits 29-27: set to 0
+  bit 26: set to 1 for FF400, 0 for FF800
+  bits 25-17: set to 0
+  bit 16: P12DB_AN0 (normally set to 0)
+  bit 15: set to 0
+  bit 14: Toggle TCO (normally set to 0)
   bit 13: Word clock single speed: 0 = off, 1 = on
   bits 12-10: Sync reference source:
     000 = ADAT1
@@ -95,7 +128,10 @@ Configuration register 3 (0xfc88f01c):
   bit 7: SPDIF output option: non-audio
   bit 6: SPDIF output option: emphasis
   bit 5: SPDIF output option: professional
-  bits 4-1: unknown, set to 1111
+  bit 4: QS control (set to 1)
+  bit 3: DS control (set to 1)
+  bit 2: Freq1 control (set to 1)
+  bit 1: Freq0 control (set to 1)
   bit 0: Clock mode: 0 = Master, 1 = Autosync
 
 
@@ -139,6 +175,23 @@ Streaming end register (0x200000034):
 
 3 zero quadlets are written starting at address 0x200000034 to stop
 streaming.
+
+
+Iso data
+--------
+
+Audio/midi data is sent and received on isochronous channels previously
+configured by the driver.  It seems the data is sent with one channel per
+quadlet.  The audio data is a 24 bit integer stored in the most-significant
+3 bytes of a quadlet.  The LSB (low byte) of certain channels in the stream
+sent by the Fireface is used to send synchronising information:
+
+  Low byte of channel 6 = current frame
+  Low byte of channel 7 = phase
+  Low byte of channel 1 = rx sample counter, low byte
+  Low byte of channel 4 = rx sample counter, high byte
+  Low byte of channel 0 = tx buffer size, low byte
+  Low byte of channel 5 = tx buffer size, high byte
 
 
 Mixer controls
