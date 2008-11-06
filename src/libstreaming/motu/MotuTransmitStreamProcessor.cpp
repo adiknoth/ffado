@@ -80,17 +80,6 @@ MotuTransmitStreamProcessor::getMaxPacketSize() {
 }
 
 unsigned int
-MotuTransmitStreamProcessor::getAveragePacketSize()
-{
-    // in one second we have 8000 packets
-    // containing FRAMERATE frames
-    // so on average bytes/packet: (8000 packet headers + FRAMERATE * frame_size) / 8000
-    #warning FIXME
-    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
-    return framerate<=48000?616:(framerate<=96000?1032:1160);
-}
-
-unsigned int
 MotuTransmitStreamProcessor::getNominalFramesPerPacket() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     return framerate<=48000?8:(framerate<=96000?16:32);
@@ -686,8 +675,8 @@ int MotuTransmitStreamProcessor::encodePortToMotuMidiEvents(
             midibuffer[mb_head++] = *src;
             mb_head &= MIDIBUFFER_SIZE-1;
             if (unlikely(mb_head == mb_tail)) {
-            /* Buffer overflow - dump oldest byte */
-            /* FIXME: ideally this would dump an entire MIDI message, but this is only
+            /* Buffer overflow - dump oldest byte. */
+            /* Ideally this would dump an entire MIDI message, but this is only
              * feasible if it's possible to determine the message size easily.
              */
                 mb_tail = (mb_tail+1) & (MIDIBUFFER_SIZE-1);
