@@ -520,16 +520,17 @@ MotuDevice::buildMixerAudioControls(void) {
     if (DevicesProperty[m_motu_model-1].mixer == NULL) {
         debugOutput(DEBUG_LEVEL_WARNING, "No mixer controls defined for model %d\n", m_motu_model);
         result = false;
-    }
-    const struct MatrixMixBus *buses = DevicesProperty[m_motu_model-1].mixer->mixer_buses;
-    if (buses == NULL) {
-        debugOutput(DEBUG_LEVEL_WARNING, "No buses defined for model %d\n", m_motu_model);
-        result = false;
-    }
-    const struct MatrixMixChannel *channels = DevicesProperty[m_motu_model-1].mixer->mixer_channels;
-    if (channels == NULL) {
-        debugOutput(DEBUG_LEVEL_WARNING, "No channels defined for model %d\n", m_motu_model);
-        result = false;
+    } else {
+        const struct MatrixMixBus *buses = DevicesProperty[m_motu_model-1].mixer->mixer_buses;
+        if (buses == NULL) {
+            debugOutput(DEBUG_LEVEL_WARNING, "No buses defined for model %d\n", m_motu_model);
+            result = false;
+        }
+        const struct MatrixMixChannel *channels = DevicesProperty[m_motu_model-1].mixer->mixer_channels;
+        if (channels == NULL) {
+            debugOutput(DEBUG_LEVEL_WARNING, "No channels defined for model %d\n", m_motu_model);
+            result = false;
+        }
     }
     if (result == false) {
         return true;
