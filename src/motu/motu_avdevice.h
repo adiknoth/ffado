@@ -125,6 +125,7 @@ enum EMotuModel {
     MOTU_MODEL_8PRE     = 0x0004,
     MOTU_MODEL_828MkI   = 0x0005,
     MOTU_MODEL_896HD    = 0x0006,
+    MOTU_MODEL_828mk3   = 0x0007,
 };
 
 struct VendorModelEntry {
