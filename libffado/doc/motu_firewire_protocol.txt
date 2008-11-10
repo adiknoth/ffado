@@ -2,7 +2,7 @@ Notes on the firewire protocol used by MOTU audio devices
 =========================================================
 
 Author: Jonathan Woithe
-Document version: 20081106-1
+Document version: 20081110-1
 
 
 Audio/MIDI data
@@ -375,6 +375,7 @@ hardware are as follows:
   0x00000009 = Traveler
   0x0000000d = Ultralite
   0x0000000f = 8pre
+  0x00000015 = 828 Mk 3
 
 Alternatively one could probe for registers known to exist on only one of
 the interfaces.  The trim gain / 20 dB pad status register (0x0c1c) for
