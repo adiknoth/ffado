@@ -45,7 +45,7 @@ class DeviceList:
 				if not p == "":
 					key = p[0:p.find("=")]
 					value = p[p.find("=")+1:]
-					if re.search( "[^0-9x]", value ) == None: # convert hex-numbers to int
+					if re.search( "^0x[0-9a-fA-F]*", value ) != None: # convert hex-numbers to int
 						value = int( value, 16 )              # or should it be long?
 					item[ key ] = value
 			self.addDevice( item )

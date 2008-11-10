@@ -267,7 +267,7 @@ class PanelManager(QMainWindow):
             reg.check_for_registration()
 
             # The MOTU devices use unitVersion to differentiate models.  For the
-            # moment thought we don't need to know precisely which model we're
+            # moment though we don't need to know precisely which model we're
             # using.
             if vendorId == 0x1f2:
                 modelId = 0x00000000
