@@ -49,7 +49,7 @@
 // not lose debug output. should be enabled though.
 #define DEBUG_USE_MESSAGE_BUFFER             1
 // max message length in the debug messagebuffer
-#define DEBUG_MAX_MESSAGE_LENGTH           512
+#define DEBUG_MAX_MESSAGE_LENGTH          1024
 // number of messages in the debug messagebuffer (power of two)
 #define DEBUG_MB_BUFFERS                  1024
 
