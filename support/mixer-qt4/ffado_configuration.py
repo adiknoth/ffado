@@ -21,7 +21,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import re
+import re, os
 
 class DeviceList:
 	def __init__( self, filename="" ):
@@ -30,6 +30,8 @@ class DeviceList:
 			self.updateFromFile( filename )
 
 	def updateFromFile( self, filename ):
+		if not os.path.exists( filename ):
+			return
 		f = open( filename, "r" )
 		stream = f.read()
 		stream = re.sub( "#[^#\n]*\n", "\n", stream )                               # remove the comments

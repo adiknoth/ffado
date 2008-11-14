@@ -92,7 +92,19 @@ class PanelManager(QMainWindow):
         quitaction.setShortcut( self.tr("Ctrl+q") )
         self.connect( quitaction, SIGNAL( "triggered()" ), self, SLOT( "close()" ) )
         filemenu.addAction( quitaction )
+
+        editmenu = self.menuBar().addMenu( "Edit" )
+        updateaction = QAction( "Update Mixer Panels", self )
+        self.connect( updateaction, SIGNAL( "triggered()" ), self.updatePanels )
+        editmenu.addAction( updateaction )
+        resetaction = QAction( "Trigger Bus Reset", self )
+        self.connect( resetaction, SIGNAL( "triggered()" ), self.busreset )
+        editmenu.addAction( resetaction )
+
         helpmenu = self.menuBar().addMenu( "Help" )
+        aboutaction = QAction( "About FFADO", self )
+        self.connect( aboutaction, SIGNAL( "triggered()" ), self.aboutFFADO )
+        helpmenu.addAction( aboutaction )
         aboutqtaction = QAction( "About Qt", self )
         self.connect( aboutqtaction, SIGNAL( "triggered()" ), qApp, SLOT( "aboutQt()" ) )
         helpmenu.addAction( aboutqtaction )
@@ -123,7 +135,8 @@ class PanelManager(QMainWindow):
         QObject.connect( self.alivetimer, SIGNAL('timeout()'), self.commCheck )
         self.alivetimer.start( 2000 )
 
-        self.devices = DeviceList( "%s/configuration" % SHAREDIR )
+        self.devices = DeviceList( SYSTEM_CONFIG_FILE )
+        self.devices.updateFromFile( USER_CONFIG_FILE )
 
     def count(self):
         return self.tabs.count()
@@ -351,3 +364,22 @@ class PanelManager(QMainWindow):
                 w = GenericMixer( devmgr.bus, FFADO_DBUS_SERVER, mw )
                 self.tabs.addTab( w, "Generic Mixer" )
                 self.panels[GUID_GENERIC_MIXER] = w
+
+    def busreset( self ):
+        QMessageBox.information( self, "Not supported", "Triggering bus resets from the mixer (via dbus) isn't yet supported." )
+
+    def aboutFFADO(self):
+        QMessageBox.about( self, "About FFADO", """
+<h1>ffado.org</h1>
+
+<p>FFADO is the new approach to have firewire audio on linux.</p>
+
+<p>&copy; 2006-2008 by the FFADO developers<br />ffado is licensed under the GPLv3, for the full license text see <a href="http://www.gnu.org/licenses/">www.gnu.org/licenses</a> or the LICENSE.* files shipped with ffado.</p>
+
+<p>FFADO developers are:<ul>
+<li>Pieter Palmers
+<li>Daniel Wagner
+<li>Jonathan Woithe
+<li>Arnold Krille
+</ul>
+""" )
