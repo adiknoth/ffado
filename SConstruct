@@ -150,10 +150,22 @@ def CheckForApp( context, app ):
 def CheckForPyModule( context, module ):
 	context.Message( "Checking for the python module '" + module + "' " )
 	ret = True
-	try:
-		imp.find_module( module )
-	except ImportError:
-		ret = False
+	path = None
+	while module.count(".") > 0 and ret:
+		thismod = module.split(".")[0]
+		try:
+			modinfo = imp.find_module( thismod, path )
+		except ImportError:
+			ret = False
+		else:
+			newmod = imp.load_module( thismod, modinfo[0], modinfo[1], modinfo[2] )
+			path = newmod.__path__
+		module = ".".join( module.split(".")[1:] )
+	if ret:
+		try:
+			imp.find_module( module )
+		except ImportError:
+			ret = False
 	context.Result( ret )
 	return ret
 
@@ -275,15 +287,15 @@ results above get rechecked.
 
 	# PyQT checks
 	build_mixer = False
-	if conf.CheckForApp( "which pyuic4" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'PyQt4' ):
+	if conf.CheckForApp( 'which pyuic4' ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'PyQt4' ) and conf.CheckForPyModule( 'dbus.mainloop.qt' ):
 		env['PYUIC4'] = True
 		build_mixer = True
 	
-	if conf.CheckForApp( "which pyuic" ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
+	if conf.CheckForApp( 'which pyuic' ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
 		env['PYUIC'] = True
 		build_mixer = True
 	
-	if conf.CheckForApp( "xdg-desktop-menu --help" ):
+	if conf.CheckForApp( 'xdg-desktop-menu --help' ):
 		env['XDG_TOOLS'] = True
 	else:
 		print """
