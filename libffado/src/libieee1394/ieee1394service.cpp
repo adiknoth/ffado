@@ -136,12 +136,24 @@ Ieee1394Service::~Ieee1394Service()
     }
 }
 
+#define DEVICEFAILTEXT "Could not get libraw1394 handle.\n\
+This usually means:\n\
+ a) The device-node /dev/raw1394 doesn't exists because you don't have a\n\
+    (recognized) firewire controller.\n \
+ b) The modules needed aren't loaded. This is not in the scope of ffado but of\n\
+    your distribution, so if you have a firewire controller that should be\n\
+    supported and the modules aren't loaded, file a bug with your distributions\n\
+    bug tracker.\n \
+ c) You don't have permissions to access /dev/raw1394. 'ls -l /dev/raw1394'\n\
+    shows the device-node with its permissions, make sure you belong to the\n\
+    right group and the group is allowed to access the device.\n"
+
 int
 Ieee1394Service::detectNbPorts()
 {
     raw1394handle_t tmp_handle = raw1394_new_handle();
     if ( tmp_handle == NULL ) {
-        debugError("Could not get libraw1394 handle.\n");
+        debugError(DEVICEFAILTEXT);
         return -1;
     }
     struct raw1394_portinfo pinf[IEEE1394SERVICE_MAX_FIREWIRE_PORTS];
