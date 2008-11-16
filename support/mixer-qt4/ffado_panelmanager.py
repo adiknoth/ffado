@@ -24,7 +24,7 @@
 
 from ffadomixer_config import * #FFADO_VERSION, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
 
-from PyQt4.QtGui import QFrame, QWidget, QTabWidget, QVBoxLayout, QMainWindow, QIcon, QAction, qApp
+from PyQt4.QtGui import QFrame, QWidget, QTabWidget, QVBoxLayout, QMainWindow, QIcon, QAction, qApp, QStyleOptionTabWidgetFrame
 from PyQt4.QtCore import QTimer
 
 from ffado_panelmanagerstatusui import Ui_PanelManagerStatusUI
@@ -78,65 +78,68 @@ class PanelManagerStatus(QWidget, Ui_PanelManagerStatusUI):
         QWidget.__init__(self,parent)
         self.setupUi(self)
 
-class PanelManager(QMainWindow):
-    def __init__(self, parent, devmgr):
+class OwnTabWidget(QTabWidget):
+    def __init__(self,parent):
+        QTabWidget.__init__(self,parent)
+
+    def tabInserted(self,index):
+        self.checkTabBar()
+
+    def tabRemoved(self,index):
+        self.checkTabBar()
+
+    def checkTabBar(self):
+        if self.count()<2:
+            self.tabBar().hide()
+        else:
+            self.tabBar().show()
+
+class PanelManager(QWidget):
+    def __init__(self, parent, devmgr=None):
         QMainWindow.__init__(self, parent)
-        self.devmgr = devmgr
-        self.devmgr.registerPreUpdateCallback(self.devlistPreUpdate)
-        self.devmgr.registerPostUpdateCallback(self.devlistPostUpdate)
-        self.devmgr.registerUpdateCallback(self.devlistUpdate)
-        self.devmgr.registerDestroyedCallback(self.devmgrDestroyed)
-
-        filemenu = self.menuBar().addMenu( "File" )
-        quitaction = QAction( "Quit", self )
-        quitaction.setShortcut( self.tr("Ctrl+q") )
-        self.connect( quitaction, SIGNAL( "triggered()" ), self, SLOT( "close()" ) )
-        filemenu.addAction( quitaction )
-
-        editmenu = self.menuBar().addMenu( "Edit" )
-        updateaction = QAction( "Update Mixer Panels", self )
-        self.connect( updateaction, SIGNAL( "triggered()" ), self.updatePanels )
-        editmenu.addAction( updateaction )
-        resetaction = QAction( "Trigger Bus Reset", self )
-        self.connect( resetaction, SIGNAL( "triggered()" ), self.busreset )
-        editmenu.addAction( resetaction )
-
-        helpmenu = self.menuBar().addMenu( "Help" )
-        aboutaction = QAction( "About FFADO", self )
-        self.connect( aboutaction, SIGNAL( "triggered()" ), self.aboutFFADO )
-        helpmenu.addAction( aboutaction )
-        aboutqtaction = QAction( "About Qt", self )
-        self.connect( aboutqtaction, SIGNAL( "triggered()" ), qApp, SLOT( "aboutQt()" ) )
-        helpmenu.addAction( aboutqtaction )
-
-        self.statusBar().showMessage( "Initializing...", 5000 )
+        self.setObjectName("PanelManager")
 
         # maps a device GUID to a QT panel
         self.panels = {}
 
         # a layout for ourselves
-        mw = QWidget( self )
-        self.layout = QVBoxLayout( mw )
-        self.setCentralWidget( mw )
+        self.layout = QVBoxLayout(self)
 
         # the tabs
-        self.tabs = QTabWidget(mw)
+        self.tabs = OwnTabWidget(self)
         self.tabs.hide()
         self.layout.addWidget(self.tabs)
 
         # a dialog that is shown during update
-        self.status = PanelManagerStatus(mw)
-        self.status.lblMessage.setText("Initializing...")
+        self.status = PanelManagerStatus(self)
         self.layout.addWidget(self.status)
         self.status.show()
+
+        self.devices = DeviceList( SYSTEM_CONFIG_FILE )
+        self.devices.updateFromFile( USER_CONFIG_FILE )
+
+        if devmgr is not None:
+            self.setManager(devmgr)
+
+    def setManager(self,devmgr):
+        self.devmgr = devmgr
+        self.devmgr.registerPreUpdateCallback(self.devlistPreUpdate)
+        self.devmgr.registerPostUpdateCallback(self.devlistPostUpdate)
+        self.devmgr.registerUpdateCallback(self.devlistUpdate)
+        self.devmgr.registerDestroyedCallback(self.devmgrDestroyed)
+        # create a timer to poll the panels
+        self.polltimer = QTimer()
+        self.connect( self.polltimer, SIGNAL('timeout()'), self.pollPanels )
+        self.polltimer.start( POLL_SLEEP_TIME_MSEC )
+
+        # create a timer to initialize the panel after the main form is shown
+        # since initialization can take a while
+        QTimer.singleShot( POLL_SLEEP_TIME_MSEC, self.updatePanels )
 
         # live check timer
         self.alivetimer = QTimer()
         QObject.connect( self.alivetimer, SIGNAL('timeout()'), self.commCheck )
         self.alivetimer.start( 2000 )
-
-        self.devices = DeviceList( SYSTEM_CONFIG_FILE )
-        self.devices.updateFromFile( USER_CONFIG_FILE )
 
     def count(self):
         return self.tabs.count()
@@ -162,7 +165,7 @@ class PanelManager(QMainWindow):
         self.tabs.hide()
         self.status.lblMessage.setText("Bus reconfiguration in progress, please wait...")
         self.status.show()
-        self.statusBar().showMessage("bus reconfiguration in progress...", 5000)
+        #self.statusBar().showMessage("bus reconfiguration in progress...", 5000)
 
     def devlistPostUpdate(self):
         log.debug("devlistPostUpdate")
@@ -216,7 +219,7 @@ class PanelManager(QMainWindow):
     def updatePanels(self):
         log.debug("PanelManager::updatePanels()")
         nbDevices = self.devmgr.getNbDevices()
-        self.statusBar().showMessage("Reconfiguring the mixer panels...")
+        #self.statusBar().showMessage("Reconfiguring the mixer panels...")
 
         # list of panels present
         guids_with_tabs = self.panels.keys()
@@ -299,14 +302,14 @@ class PanelManager(QMainWindow):
             #
             # Generic elements for all mixers follow here:
             #
-            tmp = GlobalMixer( w )
-            tmp.configrom = cfgrom
-            tmp.clockselect = clockselect
-            tmp.samplerateselect = samplerateselect
-            tmp.nickname = nickname
-            tmp.hw = hw
-            tmp.initValues()
-            l.addWidget( tmp, 1 )
+            globalmixer = GlobalMixer( w )
+            globalmixer.configrom = cfgrom
+            globalmixer.clockselect = clockselect
+            globalmixer.samplerateselect = samplerateselect
+            globalmixer.nickname = nickname
+            globalmixer.hw = hw
+            globalmixer.initValues()
+            l.addWidget( globalmixer, 1 )
 
             #
             # Line to separate
@@ -341,6 +344,7 @@ class PanelManager(QMainWindow):
             else:
                 title = mixerapp
 
+            globalmixer.setName(title)
             self.tabs.addTab( w, title )
             self.panels[guid] = w
 
@@ -351,12 +355,12 @@ class PanelManager(QMainWindow):
             self.tabs.setEnabled(False)
             self.status.lblMessage.setText("No supported device found.")
             self.status.show()
-            self.statusBar().showMessage("No supported device found.", 5000)
+            #self.statusBar().showMessage("No supported device found.", 5000)
         else:
             self.tabs.show()
             self.tabs.setEnabled(True)
             self.status.hide()
-            self.statusBar().showMessage("Configured the mixer for %i devices." % self.tabs.count())
+            #self.statusBar().showMessage("Configured the mixer for %i devices." % self.tabs.count())
             if use_generic:
                 #
                 # Show the generic (development) mixer if it is available
@@ -368,18 +372,4 @@ class PanelManager(QMainWindow):
     def busreset( self ):
         QMessageBox.information( self, "Not supported", "Triggering bus resets from the mixer (via dbus) isn't yet supported." )
 
-    def aboutFFADO(self):
-        QMessageBox.about( self, "About FFADO", """
-<h1>ffado.org</h1>
-
-<p>FFADO is the new approach to have firewire audio on linux.</p>
-
-<p>&copy; 2006-2008 by the FFADO developers<br />ffado is licensed under the GPLv3, for the full license text see <a href="http://www.gnu.org/licenses/">www.gnu.org/licenses</a> or the LICENSE.* files shipped with ffado.</p>
-
-<p>FFADO developers are:<ul>
-<li>Pieter Palmers
-<li>Daniel Wagner
-<li>Jonathan Woithe
-<li>Arnold Krille
-</ul>
-""" )
+# vim: et
