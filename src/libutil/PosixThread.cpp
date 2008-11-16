@@ -124,7 +124,15 @@ int PosixThread::Start()
         }
 
         memset(&rt_param, 0, sizeof(rt_param));
-        rt_param.sched_priority = fPriority;
+        if(fPriority <= 0) {
+            debugWarning("Clipping to minimum priority (%d -> 1)\n", fPriority);
+            rt_param.sched_priority = 1;
+        } else if(fPriority >= 99) {
+            debugWarning("Clipping to maximum priority (%d -> 98)\n", fPriority);
+            rt_param.sched_priority = 98;
+        } else {
+            rt_param.sched_priority = fPriority;
+        }
 
         if ((res = pthread_attr_setschedparam(&attributes, &rt_param))) {
             debugError("Cannot set scheduling priority for RT thread %d %s\n", res, strerror(res));
@@ -132,7 +140,8 @@ int PosixThread::Start()
         }
 
         if ((res = pthread_create(&fThread, &attributes, ThreadHandler, this))) {
-            debugError("Cannot set create thread %d %s\n", res, strerror(res));
+            debugError("Cannot create realtime thread (%d: %s)\n", res, strerror(res));
+            debugError(" priority: %d %s\n", fPriority);
             return -1;
         }
 
@@ -141,7 +150,7 @@ int PosixThread::Start()
         debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Create non RT thread %p\n", m_id.c_str(), this);
 
         if ((res = pthread_create(&fThread, 0, ThreadHandler, this))) {
-            debugError("Cannot set create thread %d %s\n", res, strerror(res));
+            debugError("Cannot create thread %d %s\n", res, strerror(res));
             return -1;
         }
 
@@ -187,7 +196,15 @@ int PosixThread::AcquireRealTime()
         return -1;
 
     memset(&rtparam, 0, sizeof(rtparam));
-    rtparam.sched_priority = fPriority;
+    if(fPriority <= 0) {
+        debugWarning("Clipping to minimum priority (%d -> 1)\n", fPriority);
+        rtparam.sched_priority = 1;
+    } else if(fPriority >= 99) {
+        debugWarning("Clipping to maximum priority (%d -> 98)\n", fPriority);
+        rtparam.sched_priority = 98;
+    } else {
+        rtparam.sched_priority = fPriority;
+    }
 
     //if ((res = pthread_setschedparam(fThread, SCHED_FIFO, &rtparam)) != 0) {
 

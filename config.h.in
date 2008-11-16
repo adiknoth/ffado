@@ -111,7 +111,7 @@
 #define IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS              1000000
 
 #define IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME       1
-#define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE    -10
+#define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO               1
 
 // config rom read wait interval
 #define IEEE1394SERVICE_CONFIGROM_READ_WAIT_USECS         1000
@@ -167,7 +167,7 @@
 // At this moment, the jack backend uses base+5 to init ffado
 // prio
 #define ISOHANDLERMANAGER_ISO_PRIO_INCREASE                  0
-#define ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV            -6
+#define ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV            -1
 #define ISOHANDLERMANAGER_ISO_PRIO_INCREASE_XMIT             1
 
 // the timeout for ISO activity on any thread

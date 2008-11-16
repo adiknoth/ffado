@@ -532,6 +532,7 @@ bool
 IsoHandlerManager::setThreadParameters(bool rt, int priority) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);
     if (priority > THREAD_MAX_RTPRIO) priority = THREAD_MAX_RTPRIO; // cap the priority
+    if (priority < THREAD_MIN_RTPRIO) priority = THREAD_MIN_RTPRIO; // cap the priority
     m_realtime = rt;
     m_priority = priority;
 
