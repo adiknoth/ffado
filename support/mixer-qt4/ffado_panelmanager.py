@@ -369,7 +369,4 @@ class PanelManager(QWidget):
                 self.tabs.addTab( w, "Generic Mixer" )
                 self.panels[GUID_GENERIC_MIXER] = w
 
-    def busreset( self ):
-        QMessageBox.information( self, "Not supported", "Triggering bus resets from the mixer (via dbus) isn't yet supported." )
-
 # vim: et

@@ -72,10 +72,6 @@ class FFADOWindow(QMainWindow):
         self.updateaction.setEnabled(False)
         self.connect(self.updateaction, SIGNAL("triggered()"), self.manager.updatePanels)
         editmenu.addAction(self.updateaction)
-        self.resetaction = QAction("Trigger Bus Reset", self)
-        self.connect(self.resetaction, SIGNAL("triggered()"), self.manager.busreset)
-        editmenu.addAction(self.resetaction)
-        self.resetaction.setEnabled(False)
 
         helpmenu = self.menuBar().addMenu( "Help" )
         aboutaction = QAction( "About FFADO", self )
@@ -120,7 +116,6 @@ class FFADOWindow(QMainWindow):
         self.manager.setManager(devmgr)
         self.setCentralWidget(self.manager)
         self.updateaction.setEnabled(True)
-        self.resetaction.setEnabled(True)
 
     def aboutFFADO(self):
         QMessageBox.about( self, "About FFADO", """
