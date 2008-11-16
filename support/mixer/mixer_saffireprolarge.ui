@@ -2544,7 +2544,7 @@
                                                             <cstring>txtOMixIMixO2</cstring>
                                                         </property>
                                                         <property name="text">
-                                                            <string>IMixL</string>
+                                                            <string>IMixR</string>
                                                         </property>
                                                         <property name="alignment">
                                                             <set>AlignCenter</set>
@@ -2976,7 +2976,7 @@
                                                             <cstring>txtOMixIMixO4</cstring>
                                                         </property>
                                                         <property name="text">
-                                                            <string>IMixL</string>
+                                                            <string>IMixR</string>
                                                         </property>
                                                         <property name="alignment">
                                                             <set>AlignCenter</set>
@@ -3359,7 +3359,7 @@
                                                             <cstring>txtOMixIMixO6</cstring>
                                                         </property>
                                                         <property name="text">
-                                                            <string>IMixL</string>
+                                                            <string>IMixR</string>
                                                         </property>
                                                         <property name="alignment">
                                                             <set>AlignCenter</set>
@@ -3731,7 +3731,7 @@
                                                             <cstring>txtOMixIMixO8</cstring>
                                                         </property>
                                                         <property name="text">
-                                                            <string>IMixL</string>
+                                                            <string>IMixR</string>
                                                         </property>
                                                         <property name="alignment">
                                                             <set>AlignCenter</set>
@@ -4152,7 +4152,7 @@
                                                             <cstring>txtOMixIMixO10</cstring>
                                                         </property>
                                                         <property name="text">
-                                                            <string>IMixL</string>
+                                                            <string>IMixR</string>
                                                         </property>
                                                         <property name="alignment">
                                                             <set>AlignCenter</set>
