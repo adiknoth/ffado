@@ -20,6 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from PyQt4.QtCore import QObject, pyqtSignature
 from PyQt4.QtGui import QWidget, QMessageBox
 from mixer_globalui import Ui_GlobalMixerUi
 
@@ -27,12 +28,21 @@ import logging
 log = logging.getLogger('global')
 
 class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
-    def __init__( self, parent ):
+    def __init__( self, parent, name=None ):
         QWidget.__init__( self, parent )
         self.setupUi(self)
+        self.setName(name)
 
-    def clockChanged( self, clock ):
-        #print "updateClockSource( " + str(clock) + " )"
+    def setName(self,name):
+        if name is not None:
+            self.lblName.setText(name)
+            self.lblName.show()
+        else:
+            self.lblName.hide()
+
+    @pyqtSignature("int")
+    def on_clocksource_activated( self, clock ):
+        #log.debug("updateClockSource( " + str(clock) + " )")
         if self.clockselect.canChangeValue():
             self.clockselect.select( clock )
         else:
@@ -52,8 +62,9 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
                 QMessageBox.Ok )
             self.clocksource.setCurrentIndex( selected )
 
-    def samplerateChanged( self, sr ):
-        log.debug("samplerateChanged( " + str(sr) + " )")
+    @pyqtSignature("int")
+    def on_samplerate_activated( self, sr ):
+        log.debug("on_samplerate_activated( " + str(sr) + " )")
         if self.samplerateselect.canChangeValue():
             self.samplerateselect.select( sr )
         else:
@@ -73,8 +84,9 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
                 QMessageBox.Ok )
             self.samplerate.setCurrentIndex( selected )
 
-    def nicknameChanged( self, name ):
-        #print "nicknameChanged( %s )" % name
+    @pyqtSignature("QString")
+    def on_nickname_activated( self, name ):
+        #log.debug("on_nickname_activated( %s )" % name)
         if self.nickname.canChangeValue():
             asciiData = name.toAscii()
             self.nickname.setText( asciiData.data() )
