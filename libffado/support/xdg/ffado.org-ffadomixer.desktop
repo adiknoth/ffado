@@ -1,9 +1,9 @@
 [Desktop Entry]
 Comment=
-Exec=ffadomixer
+Exec=ffado-mixer
 GenericName=
 Icon=ffado
-Name=ffadomixer
+Name=ffado-mixer
 Path=
 Type=Application
 Categories=Mixer;Audio;AudioVideo;HardwareSettings;Qt
