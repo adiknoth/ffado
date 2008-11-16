@@ -43,7 +43,7 @@
           <item row="0" column="0" >
            <widget class="QTabWidget" name="tabWidget14" >
             <property name="currentIndex" >
-             <number>0</number>
+             <number>4</number>
             </property>
             <widget class="QWidget" name="tab" >
              <attribute name="title" >
@@ -206,7 +206,7 @@
                 <item row="0" column="1" >
                  <widget class="QLabel" name="txtOMixIMixO2" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>
@@ -587,7 +587,7 @@
                 <item row="0" column="2" >
                  <widget class="QLabel" name="txtOMixIMixO4" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>
@@ -927,7 +927,7 @@
                 <item row="0" column="2" >
                  <widget class="QLabel" name="txtOMixIMixO6" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>
@@ -1254,7 +1254,7 @@
                 <item row="0" column="2" >
                  <widget class="QLabel" name="txtOMixIMixO8" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>
@@ -1638,7 +1638,7 @@
                 <item row="0" column="2" >
                  <widget class="QLabel" name="txtOMixIMixO10" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>
