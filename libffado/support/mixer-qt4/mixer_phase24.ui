@@ -1,0 +1,767 @@
+<ui version="4.0" >
+ <comment>Copyright (C) 2005-2008 by Pieter Palmers
+	
+	This file is part of FFADO
+	FFADO = Free Firewire (pro-)audio drivers for linux
+	
+	FFADO is based upon FreeBoB.
+	
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 2 of the License, or
+	(at your option) version 3 of the License.
+	
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+</comment>
+ <class>Phase24ControlUI</class>
+ <widget class="QWidget" name="Phase24ControlUI" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>331</width>
+    <height>390</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Terratec Phase 24 Control</string>
+  </property>
+  <layout class="QGridLayout" >
+   <item row="2" column="0" >
+    <widget class="QLabel" name="textLabel1_2_2" >
+     <property name="text" >
+      <string>3/4 Out Level</string>
+     </property>
+     <property name="wordWrap" >
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0" >
+    <widget class="QLabel" name="textLabel1_2_2_3" >
+     <property name="text" >
+      <string>Analog In Level</string>
+     </property>
+     <property name="wordWrap" >
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" >
+    <widget class="QLabel" name="textLabel1_2_2_2_3_2" >
+     <property name="text" >
+      <string>Sync Source</string>
+     </property>
+     <property name="wordWrap" >
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1" >
+    <widget class="QComboBox" name="cmbFrontLevel" >
+     <item>
+      <property name="text" >
+       <string>Line</string>
+      </property>
+     </item>
+     <item>
+      <property name="text" >
+       <string>Headphone</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="3" column="1" >
+    <widget class="QComboBox" name="cmbLineLevel" >
+     <item>
+      <property name="text" >
+       <string>0</string>
+      </property>
+     </item>
+     <item>
+      <property name="text" >
+       <string>1</string>
+      </property>
+     </item>
+     <item>
+      <property name="text" >
+       <string>2</string>
+      </property>
+     </item>
+     <item>
+      <property name="text" >
+       <string>3</string>
+      </property>
+     </item>
+     <item>
+      <property name="text" >
+       <string>4</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="4" column="1" >
+    <widget class="QComboBox" name="cmbSetSyncSource" >
+     <item>
+      <property name="text" >
+       <string>Internal</string>
+      </property>
+     </item>
+     <item>
+      <property name="text" >
+       <string>External</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2" >
+    <widget class="QGroupBox" name="groupBox1" >
+     <property name="title" >
+      <string>Hardware Mixer</string>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="0" column="0" >
+       <layout class="QGridLayout" >
+        <item row="0" column="0" colspan="2" >
+         <widget class="QLabel" name="textLabel2_4_2_3_2" >
+          <property name="text" >
+           <string>In</string>
+          </property>
+          <property name="alignment" >
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" >
+         <layout class="QVBoxLayout" >
+          <item>
+           <widget class="QLabel" name="textLabel2_3" >
+            <property name="text" >
+             <string>Analog</string>
+            </property>
+            <property name="wordWrap" >
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="sldLineIn" >
+            <property name="minimum" >
+             <number>0</number>
+            </property>
+            <property name="maximum" >
+             <number>25600</number>
+            </property>
+            <property name="singleStep" >
+             <number>10000</number>
+            </property>
+            <property name="pageStep" >
+             <number>1000</number>
+            </property>
+            <property name="orientation" >
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="tickInterval" >
+             <number>10000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="1" >
+         <layout class="QVBoxLayout" >
+          <item>
+           <widget class="QLabel" name="textLabel2_4_2" >
+            <property name="text" >
+             <string>SPDIF</string>
+            </property>
+            <property name="wordWrap" >
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="sldSPDIFIn" >
+            <property name="minimum" >
+             <number>0</number>
+            </property>
+            <property name="maximum" >
+             <number>25600</number>
+            </property>
+            <property name="singleStep" >
+             <number>10000</number>
+            </property>
+            <property name="pageStep" >
+             <number>1000</number>
+            </property>
+            <property name="orientation" >
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="tickInterval" >
+             <number>10000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="2" >
+       <layout class="QGridLayout" >
+        <item row="1" column="2" >
+         <layout class="QVBoxLayout" >
+          <item>
+           <widget class="QLabel" name="textLabel2_4_2_2" >
+            <property name="text" >
+             <string>SPDIF</string>
+            </property>
+            <property name="wordWrap" >
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="sldSPDIFOut" >
+            <property name="minimum" >
+             <number>0</number>
+            </property>
+            <property name="maximum" >
+             <number>25600</number>
+            </property>
+            <property name="singleStep" >
+             <number>10000</number>
+            </property>
+            <property name="pageStep" >
+             <number>1000</number>
+            </property>
+            <property name="orientation" >
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="tickInterval" >
+             <number>10000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="0" >
+         <layout class="QVBoxLayout" >
+          <item>
+           <widget class="QLabel" name="textLabel2" >
+            <property name="text" >
+             <string>1/2</string>
+            </property>
+            <property name="wordWrap" >
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="sldInput12" >
+            <property name="minimum" >
+             <number>0</number>
+            </property>
+            <property name="maximum" >
+             <number>25600</number>
+            </property>
+            <property name="singleStep" >
+             <number>10000</number>
+            </property>
+            <property name="pageStep" >
+             <number>1000</number>
+            </property>
+            <property name="orientation" >
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="tickInterval" >
+             <number>10000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="1" column="3" >
+         <spacer>
+          <property name="orientation" >
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType" >
+           <enum>QSizePolicy::Expanding</enum>
+          </property>
+          <property name="sizeHint" >
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="1" >
+         <layout class="QVBoxLayout" >
+          <item>
+           <widget class="QLabel" name="textLabel2_2" >
+            <property name="text" >
+             <string>3/4</string>
+            </property>
+            <property name="wordWrap" >
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="sldInput34" >
+            <property name="minimum" >
+             <number>0</number>
+            </property>
+            <property name="maximum" >
+             <number>25600</number>
+            </property>
+            <property name="singleStep" >
+             <number>10000</number>
+            </property>
+            <property name="pageStep" >
+             <number>1000</number>
+            </property>
+            <property name="orientation" >
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="tickInterval" >
+             <number>10000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item row="0" column="0" colspan="5" >
+         <widget class="QLabel" name="textLabel2_4_2_3_2_2" >
+          <property name="text" >
+           <string>Out</string>
+          </property>
+          <property name="wordWrap" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="4" >
+         <layout class="QVBoxLayout" >
+          <item>
+           <widget class="QLabel" name="textLabel2_4_2_2_2" >
+            <property name="text" >
+             <string>Master</string>
+            </property>
+            <property name="wordWrap" >
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="sldMaster" >
+            <property name="minimumSize" >
+             <size>
+              <width>0</width>
+              <height>80</height>
+             </size>
+            </property>
+            <property name="minimum" >
+             <number>0</number>
+            </property>
+            <property name="maximum" >
+             <number>25600</number>
+            </property>
+            <property name="singleStep" >
+             <number>10000</number>
+            </property>
+            <property name="pageStep" >
+             <number>1000</number>
+            </property>
+            <property name="orientation" >
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="tickInterval" >
+             <number>10000</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item row="0" column="1" >
+       <spacer>
+        <property name="orientation" >
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType" >
+         <enum>QSizePolicy::Expanding</enum>
+        </property>
+        <property name="sizeHint" >
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="2" >
+    <widget class="QGroupBox" name="groupBox2" >
+     <property name="title" >
+      <string>Routing</string>
+     </property>
+     <layout class="QGridLayout" >
+      <item row="1" column="1" >
+       <widget class="QComboBox" name="cmbOutSource34" >
+        <item>
+         <property name="text" >
+          <string>Wave Out 1/2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Wave Out 3/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Line in</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>SPDIF in</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Mixer</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Wave Out SPDIF</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="2" column="1" >
+       <widget class="QComboBox" name="cmbOutSourceSPDIF" >
+        <item>
+         <property name="text" >
+          <string>Wave Out 1/2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Wave Out 3/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Line in</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>SPDIF in</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Mixer</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Wave Out SPDIF</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="2" column="0" >
+       <widget class="QLabel" name="textLabel1_2_2_2_3" >
+        <property name="text" >
+         <string>SPDIF</string>
+        </property>
+        <property name="wordWrap" >
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" >
+       <widget class="QLabel" name="textLabel1_2_2_2" >
+        <property name="text" >
+         <string>3/4</string>
+        </property>
+        <property name="wordWrap" >
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" >
+       <widget class="QComboBox" name="cmbOutSource12" >
+        <item>
+         <property name="text" >
+          <string>Wave Out 1/2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Wave Out 3/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Line in</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>SPDIF in</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Mixer</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Wave Out SPDIF</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="0" >
+       <widget class="QLabel" name="textLabel1_2_2_2_2" >
+        <property name="text" >
+         <string>1/2</string>
+        </property>
+        <property name="wordWrap" >
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <layoutdefault spacing="6" margin="11" />
+ <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+ <tabstops>
+  <tabstop>sldInput12</tabstop>
+  <tabstop>sldInput34</tabstop>
+  <tabstop>sldLineIn</tabstop>
+  <tabstop>sldSPDIFOut</tabstop>
+  <tabstop>sldSPDIFIn</tabstop>
+  <tabstop>sldMaster</tabstop>
+  <tabstop>cmbFrontLevel</tabstop>
+  <tabstop>cmbOutSource12</tabstop>
+  <tabstop>cmbOutSource34</tabstop>
+  <tabstop>cmbOutSourceSPDIF</tabstop>
+  <tabstop>cmbSetSyncSource</tabstop>
+ </tabstops>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>sldInput12</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setVolume12(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldInput34</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setVolume34(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldLineIn</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setVolumeLineIn(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldSPDIFOut</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setVolumeSPDIFOut(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldSPDIFIn</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setVolumeSPDIFIn(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldMaster</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setVolumeMaster(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbFrontLevel</sender>
+   <signal>activated(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setFrontLevel(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbSetSyncSource</sender>
+   <signal>activated(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setSyncSource(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbOutSourceSPDIF</sender>
+   <signal>activated(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setOutSourceSPDIF(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbOutSource12</sender>
+   <signal>activated(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setOutSource12(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbOutSource34</sender>
+   <signal>activated(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setOutSource34(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbLineLevel</sender>
+   <signal>activated(int)</signal>
+   <receiver>Phase24ControlUI</receiver>
+   <slot>setLineLevel(int)</slot>
+   <hints>
+    <hint type="sourcelabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel" >
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

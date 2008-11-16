@@ -42,6 +42,9 @@
          <layout class="QGridLayout" >
           <item row="0" column="0" >
            <widget class="QTabWidget" name="tabWidget14" >
+            <property name="currentIndex" >
+             <number>4</number>
+            </property>
             <widget class="QWidget" name="tab" >
              <attribute name="title" >
               <string>Out1/&amp;2</string>
@@ -203,7 +206,7 @@
                 <item row="0" column="1" >
                  <widget class="QLabel" name="txtOMixIMixO2" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>
@@ -306,10 +309,10 @@
                     <number>0</number>
                    </property>
                    <property name="maximum" >
-                    <number>255</number>
+                    <number>127</number>
                    </property>
                    <property name="singleStep" >
-                    <number>2</number>
+                    <number>1</number>
                    </property>
                    <property name="pageStep" >
                     <number>16</number>
@@ -584,7 +587,7 @@
                 <item row="0" column="2" >
                  <widget class="QLabel" name="txtOMixIMixO4" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>
@@ -659,10 +662,10 @@
                     <number>0</number>
                    </property>
                    <property name="maximum" >
-                    <number>255</number>
+                    <number>127</number>
                    </property>
                    <property name="singleStep" >
-                    <number>2</number>
+                    <number>1</number>
                    </property>
                    <property name="pageStep" >
                     <number>16</number>
@@ -924,7 +927,7 @@
                 <item row="0" column="2" >
                  <widget class="QLabel" name="txtOMixIMixO6" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>
@@ -1021,10 +1024,10 @@
                     <number>0</number>
                    </property>
                    <property name="maximum" >
-                    <number>255</number>
+                    <number>127</number>
                    </property>
                    <property name="singleStep" >
-                    <number>2</number>
+                    <number>1</number>
                    </property>
                    <property name="pageStep" >
                     <number>16</number>
@@ -1251,7 +1254,7 @@
                 <item row="0" column="2" >
                  <widget class="QLabel" name="txtOMixIMixO8" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>
@@ -1383,10 +1386,10 @@
                     <number>0</number>
                    </property>
                    <property name="maximum" >
-                    <number>255</number>
+                    <number>127</number>
                    </property>
                    <property name="singleStep" >
-                    <number>2</number>
+                    <number>1</number>
                    </property>
                    <property name="pageStep" >
                     <number>16</number>
@@ -1635,7 +1638,7 @@
                 <item row="0" column="2" >
                  <widget class="QLabel" name="txtOMixIMixO10" >
                   <property name="text" >
-                   <string>IMixL</string>
+                   <string>IMixR</string>
                   </property>
                   <property name="alignment" >
                    <set>Qt::AlignCenter</set>

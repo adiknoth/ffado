@@ -26,6 +26,8 @@ from PyQt4.QtGui import QWidget, QHBoxLayout, QVBoxLayout, \
                         QPushButton, QSpacerItem, QSizePolicy
 from mixer_audiofire_stripui import Ui_AfMonitorWidget
 from mixer_audiofire_settingsui import Ui_AfSettingsWidget
+import logging
+log = logging.getLogger('audiofire')
 
 class AfMonitorWidget(QWidget, Ui_AfMonitorWidget):
     def __init__(self,parent = None):
@@ -40,7 +42,7 @@ class AfSettingsWidget(QWidget, Ui_AfSettingsWidget):
 class AudioFireMixer(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        print "Init AudioFire mixer window"
+        log.debug("Init AudioFire mixer window")
 
     def getDisplayTitle(self):
         modelId = self.configrom.getModelId()
@@ -60,11 +62,11 @@ class AudioFireMixer(QWidget):
             state = 1
         else:
             state = 0
-        print "set %s %d %d to %d" % (
+        log.debug("set %s %d %d to %d" % (
                     self.MatrixButtonControls[sender][0],
                     self.MatrixButtonControls[sender][1],
                     self.MatrixButtonControls[sender][2],
-                    state)
+                    state))
         self.hw.setMatrixMixerValue(self.MatrixButtonControls[sender][0], 
                                     self.MatrixButtonControls[sender][1],
                                     self.MatrixButtonControls[sender][2],
@@ -73,11 +75,11 @@ class AudioFireMixer(QWidget):
     def updateMatrixRotary(self,a0):
         sender = self.sender()
         vol = a0
-        print "set %s %d %d to %d" % (
+        log.debug("set %s %d %d to %d" % (
                     self.MatrixRotaryControls[sender][0],
                     self.MatrixRotaryControls[sender][1],
                     self.MatrixRotaryControls[sender][2],
-                    vol)
+                    vol))
         self.hw.setMatrixMixerValue(self.MatrixRotaryControls[sender][0], 
                                     self.MatrixRotaryControls[sender][1],
                                     self.MatrixRotaryControls[sender][2],
@@ -87,11 +89,11 @@ class AudioFireMixer(QWidget):
         sender = self.sender()
         vol = a0
         #vol = 0x01000000-vol
-        print "set %s %d %d to %d" % (
+        log.debug("set %s %d %d to %d" % (
                     self.MatrixVolumeControls[sender][0],
                     self.MatrixVolumeControls[sender][1],
                     self.MatrixVolumeControls[sender][2],
-                    vol)
+                    vol))
         self.hw.setMatrixMixerValue(self.MatrixVolumeControls[sender][0], 
                                     self.MatrixVolumeControls[sender][1],
                                     self.MatrixVolumeControls[sender][2],
@@ -101,9 +103,9 @@ class AudioFireMixer(QWidget):
         sender = self.sender()
         vol = a0
         #vol = 0x01000000-vol
-        print "set %s to %d" % (
+        log.debug("set %s to %d" % (
                     self.VolumeControls[sender][0],
-                    vol)
+                    vol))
         self.hw.setContignuous(self.VolumeControls[sender][0],
                               vol)
 
@@ -113,14 +115,14 @@ class AudioFireMixer(QWidget):
             state = 1
         else:
             state = 0
-        print "set %s to %d" % (
+        log.debug("set %s to %d" % (
                     self.SelectorControls[sender][0],
-                    state)
+                    state))
         self.hw.setDiscrete(self.SelectorControls[sender][0], state)
 
     def updateTrigger(self):
         sender = self.sender()
-        print "trigger %s" % (self.TriggerControls[sender][0])
+        log.debug("trigger %s" % (self.TriggerControls[sender][0]))
         self.hw.setDiscrete(self.TriggerControls[sender][0], 1)
 
     def updateSPDIFmodeControl(self,a0):
@@ -130,13 +132,13 @@ class AudioFireMixer(QWidget):
         else:
             state = 0
         if state:
-            print "set %s to %d" % (
+            log.debug("set %s to %d" % (
                         self.SPDIFmodeControls[sender][0],
-                        self.SPDIFmodeControls[sender][1])
+                        self.SPDIFmodeControls[sender][1]))
             self.hw.setDiscrete(self.SPDIFmodeControls[sender][0], self.SPDIFmodeControls[sender][1])
 
     def buildMixer(self):
-        print "Building mixer"
+        log.debug("Building mixer")
         self.MatrixButtonControls={}
         self.MatrixRotaryControls={}
         self.MatrixVolumeControls={}
@@ -238,7 +240,7 @@ class AudioFireMixer(QWidget):
 
         for inpair in range(nb_pys_in):
             # create GUI elements
-            print "strip"
+            log.debug("strip")
             grpInput = QGroupBox(tab)
             tablayout.addWidget(grpInput)
             grpInput.setTitle("IN %d" % (inpair+1))
@@ -281,7 +283,7 @@ class AudioFireMixer(QWidget):
         self.SPDIFmodeControls[settings.radioProfessional] = ["/SpdifMode", 1]
 
     def initValues(self):
-        print "Init values"
+        log.debug("Init values")
 
         for ctrl, info in self.MatrixVolumeControls.iteritems():
             vol = self.hw.getMatrixMixerValue(self.MatrixVolumeControls[ctrl][0],
@@ -289,7 +291,7 @@ class AudioFireMixer(QWidget):
                                                 self.MatrixVolumeControls[ctrl][2])
 
             #vol = 0x01000000-vol
-            print "%s volume is %d" % (ctrl.objectName() , vol)
+            log.debug("%s volume is %d" % (ctrl.objectName() , vol))
             ctrl.setValue(vol)
 
             # connect the UI element
@@ -300,7 +302,7 @@ class AudioFireMixer(QWidget):
                                                 self.MatrixButtonControls[ctrl][1],
                                                 self.MatrixButtonControls[ctrl][2])
 
-            print "%s state is %d" % (ctrl.objectName() , state)
+            log.debug("%s state is %d" % (ctrl.objectName() , state))
             if state:
                 ctrl.setChecked(True)
             else:
@@ -314,7 +316,7 @@ class AudioFireMixer(QWidget):
                                                 self.MatrixRotaryControls[ctrl][1],
                                                 self.MatrixRotaryControls[ctrl][2])
 
-            print "%s value is %d" % (ctrl.objectName(), vol)
+            log.debug("%s value is %d" % (ctrl.objectName(), vol))
             ctrl.setValue(vol)
 
             # connect the UI element
@@ -324,7 +326,7 @@ class AudioFireMixer(QWidget):
             vol = self.hw.getContignuous(self.VolumeControls[ctrl][0])
 
             #vol = 0x01000000-vol
-            print "%s volume is %d" % (ctrl.objectName() , vol)
+            log.debug("%s volume is %d" % (ctrl.objectName() , vol))
             ctrl.setValue(vol)
 
             # connect the UI element
@@ -332,7 +334,7 @@ class AudioFireMixer(QWidget):
 
         for ctrl, info in self.SelectorControls.iteritems():
             state = self.hw.getDiscrete(self.SelectorControls[ctrl][0])
-            print "%s state is %d" % (ctrl.objectName() , state)
+            log.debug("%s state is %d" % (ctrl.objectName() , state))
             if state:
                 ctrl.setChecked(True)
             else:
@@ -347,7 +349,7 @@ class AudioFireMixer(QWidget):
 
         for ctrl, info in self.SPDIFmodeControls.iteritems():
             state = self.hw.getDiscrete(self.SPDIFmodeControls[ctrl][0])
-            print "%s state is %d" % (ctrl.objectName() , state)
+            log.debug("%s state is %d" % (ctrl.objectName() , state))
             if state == self.SPDIFmodeControls[ctrl][1]:
                 ctrl.setChecked(True)
             else:

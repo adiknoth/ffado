@@ -26,6 +26,9 @@ import dbus
 import dbus.mainloop.qt
 dbus.mainloop.qt.DBusQtMainLoop(set_as_default=True)
 
+import logging
+log = logging.getLogger('dbus')
+
 class ControlInterface:
     def __init__(self, servername, basepath):
         self.basepath=basepath
@@ -42,7 +45,7 @@ class ControlInterface:
             else:
                 dev_cont.setValueIdx(idx,v)
         except:
-            print "Failed to set Continuous %s on server %s" % (path, self.servername)
+            log.error("Failed to set Continuous %s on server %s" % (path, self.servername))
 
     def getContignuous(self, subpath, idx=None):
         try:
@@ -54,7 +57,7 @@ class ControlInterface:
             else:
                 return dev_cont.getValueIdx(idx)
         except:
-            print "Failed to get Continuous %s on server %s" % (path, self.servername)
+            log.error("Failed to get Continuous %s on server %s" % (path, self.servername))
             return 0
 
     def setDiscrete(self, subpath, v):
@@ -64,7 +67,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Discrete')
             dev_cont.setValue(v)
         except:
-            print "Failed to set Discrete %s on server %s" % (path, self.servername)
+            log.error("Failed to set Discrete %s on server %s" % (path, self.servername))
 
     def getDiscrete(self, subpath):
         try:
@@ -73,7 +76,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Discrete')
             return dev_cont.getValue()
         except:
-            print "Failed to get Discrete %s on server %s" % (path, self.servername)
+            log.error("Failed to get Discrete %s on server %s" % (path, self.servername))
             return 0
 
     def setText(self, subpath, v):
@@ -83,7 +86,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Text')
             dev_cont.setValue(v)
         except:
-            print "Failed to set Text %s on server %s" % (path, self.servername)
+            log.error("Failed to set Text %s on server %s" % (path, self.servername))
 
     def getText(self, subpath):
         try:
@@ -92,7 +95,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Text')
             return dev_cont.getValue()
         except:
-            print "Failed to get Text %s on server %s" % (path, self.servername)
+            log.error("Failed to get Text %s on server %s" % (path, self.servername))
             return 0
 
     def setMatrixMixerValue(self, subpath, row, col, v):
@@ -102,7 +105,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.MatrixMixer')
             dev_cont.setValue(row, col, v)
         except:
-            print "Failed to set MatrixMixer %s on server %s" % (path, self.servername)
+            log.error("Failed to set MatrixMixer %s on server %s" % (path, self.servername))
 
     def getMatrixMixerValue(self, subpath, row, col):
         try:
@@ -111,7 +114,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.MatrixMixer')
             return dev_cont.getValue(row, col)
         except:
-            print "Failed to get MatrixMixer %s on server %s" % (path, self.servername)
+            log.error("Failed to get MatrixMixer %s on server %s" % (path, self.servername))
             return 0
 
     def enumSelect(self, subpath, v):
@@ -121,7 +124,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Enum')
             dev_cont.select(v)
         except:
-            print "Failed to select %s on server %s" % (path, self.servername)
+            log.error("Failed to select %s on server %s" % (path, self.servername))
 
     def enumSelected(self, subpath):
         try:
@@ -130,7 +133,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Enum')
             return dev_cont.selected()
         except:
-            print "Failed to get selected enum %s on server %s" % (path, self.servername)
+            log.error("Failed to get selected enum %s on server %s" % (path, self.servername))
             return 0
 
     def enumGetLabel(self, subpath, v):
@@ -140,7 +143,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Enum')
             return dev_cont.getEnumLabel(v)
         except:
-            print "Failed to get enum label %s on server %s" % (path, self.servername)
+            log.error("Failed to get enum label %s on server %s" % (path, self.servername))
             return 0
 
     def enumCount(self, subpath):
@@ -150,7 +153,7 @@ class ControlInterface:
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Enum')
             return dev_cont.count()
         except:
-            print "Failed to get enum count %s on server %s" % (path, self.servername)
+            log.error("Failed to get enum count %s on server %s" % (path, self.servername))
             return 0
 
 class DeviceManagerInterface:
@@ -174,7 +177,7 @@ class DeviceManagerInterface:
         # signal reception does not work yet since we need a mainloop for that
         # and qt3 doesn't provide one for python/dbus
         try:
-            print "connecting to: Updated on %s (server: %s)" % (self.basepath, self.servername)
+            log.debug("connecting to: Updated on %s (server: %s)" % (self.basepath, self.servername))
             self.dev.connect_to_signal("Updated", self.updateSignal, \
                                     dbus_interface="org.ffado.Control.Element.Container")
             self.dev.connect_to_signal("PreUpdate", self.preUpdateSignal, \
@@ -212,40 +215,52 @@ class DeviceManagerInterface:
         self.destroyedSignalHandlerArgs[callback] = arg
 
     def updateSignal(self):
-        print ("Received update signal")
+        log.debug("Received update signal")
         for handler in self.updateSignalHandlers:
             arg = self.updateSignalHandlerArgs[handler]
-            if arg:
-                handler(arg)
-            else:
-                handler()
+            try:
+                if arg:
+                    handler(arg)
+                else:
+                    handler()
+            except:
+                log.error("Failed to execute handler %s" % handler)
 
     def preUpdateSignal(self):
-        print ("Received pre-update signal")
+        log.debug("Received pre-update signal")
         for handler in self.preUpdateSignalHandlers:
             arg = self.preUpdateSignalHandlerArgs[handler]
-            if arg:
-                handler(arg)
-            else:
-                handler()
+            try:
+                if arg:
+                    handler(arg)
+                else:
+                    handler()
+            except:
+                log.error("Failed to execute handler %s" % handler)
 
     def postUpdateSignal(self):
-        print ("Received post-update signal")
+        log.debug("Received post-update signal")
         for handler in self.postUpdateSignalHandlers:
             arg = self.postUpdateSignalHandlerArgs[handler]
-            if arg:
-                handler(arg)
-            else:
-                handler()
+            try:
+                if arg:
+                    handler(arg)
+                else:
+                    handler()
+            except:
+                log.error("Failed to execute handler %s" % handler)
 
     def destroyedSignal(self):
-        print ("Received destroyed signal")
+        log.debug("Received destroyed signal")
         for handler in self.destroyedSignalHandlers:
             arg = self.destroyedSignalHandlerArgs[handler]
-            if arg:
-                handler(arg)
-            else:
-                handler()
+            try:
+                if arg:
+                    handler(arg)
+                else:
+                    handler()
+            except:
+                log.error("Failed to execute handler %s" % handler)
 
     def getNbDevices(self):
         return self.iface.getNbElements()
@@ -279,6 +294,7 @@ class ClockSelectInterface:
         self.bus=dbus.SessionBus()
         self.dev = self.bus.get_object(self.servername, self.basepath)
         self.iface = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.AttributeEnum')
+        self.iface_element = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Element')
     def count(self):
         return self.iface.count()
     def select(self, idx):
@@ -293,6 +309,8 @@ class ClockSelectInterface:
         return self.iface.getAttributeValue(idx)
     def getAttributeName(self, idx):
         return self.iface.getAttributeName(idx)
+    def canChangeValue(self):
+        return self.iface_element.canChangeValue()
 
 class SamplerateSelectInterface:
     def __init__(self, servername, devicepath):
@@ -301,6 +319,7 @@ class SamplerateSelectInterface:
         self.bus=dbus.SessionBus()
         self.dev = self.bus.get_object(self.servername, self.basepath)
         self.iface = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Enum')
+        self.iface_element = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Element')
     def count(self):
         return self.iface.count()
     def select(self, idx):
@@ -309,6 +328,8 @@ class SamplerateSelectInterface:
         return self.iface.selected()
     def getEnumLabel(self, idx):
         return self.iface.getEnumLabel(idx)
+    def canChangeValue(self):
+        return self.iface_element.canChangeValue()
 
 class TextInterface:
     def __init__(self, servername, basepath):
@@ -317,9 +338,10 @@ class TextInterface:
         self.bus=dbus.SessionBus()
         self.dev = self.bus.get_object( self.servername, self.basepath )
         self.iface = dbus.Interface( self.dev, dbus_interface="org.ffado.Control.Element.Text" )
-
+        self.iface_element = dbus.Interface(self.dev, dbus_interface='org.ffado.Control.Element.Element')
     def text(self):
         return self.iface.getValue()
-
     def setText(self,text):
         self.iface.setValue(text)
+    def canChangeValue(self):
+        return self.iface_element.canChangeValue()

@@ -20,10 +20,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from PyQt4.QtGui import QWidget, QHBoxLayout
+from PyQt4.QtGui import QWidget, QHBoxLayout, QMessageBox
 from mixer_saffire_base import SaffireMixerBase
 from mixer_saffirepro_largeui import Ui_SaffireProMixerLargeUI
 from mixer_saffirepro_smallui import Ui_SaffireProMixerSmallUI
+
+import logging
+log = logging.getLogger('saffirepro')
 
 class SaffireProMixer(QWidget):
     def __init__(self,parent = None):
@@ -52,20 +55,21 @@ class SaffireProMixer(QWidget):
 
     def selectCorrectMode(self):
         if self.samplerate <= 96000:
-            print "large"
+            log.debug("large")
             self.small.hide()
             self.large.initValues()
             self.large.show()
         else:
-            print "small"
+            log.debug("small")
             self.large.hide()
             self.small.initValues()
             self.small.show()
 
     def initValues(self):
+        self.is_not_streaming = self.samplerateselect.canChangeValue()
         selected = self.samplerateselect.selected()
         self.samplerate = int(self.samplerateselect.getEnumLabel( selected ))
-        print "detected samplerate %d" % self.samplerate
+        log.debug("detected samplerate %d" % self.samplerate)
 
         # adat on PRO26 makes a difference
         modelId = self.configrom.getModelId()
@@ -74,10 +78,10 @@ class SaffireProMixer(QWidget):
             state = self.hw.getDiscrete('/Control/ADATDisable')
             if state:
                 self.have_adat = False
-                print "detected PRO26, ADAT disabled"
+                log.debug("detected PRO26, ADAT disabled")
             else:
                 self.have_adat = True
-                print "detected PRO26, ADAT enabled"
+                log.debug("detected PRO26, ADAT enabled")
         elif modelId == 0x00000006: # PRO10
             self.is_pro10 = True
             self.have_adat = False
@@ -97,8 +101,11 @@ class SaffireProMixer(QWidget):
         self.selectCorrectMode()
 
     def polledUpdate(self):
-        # fixme: todo
-        pass
+        self.is_not_streaming = self.samplerateselect.canChangeValue()
+        if self.samplerate <= 96000:
+            self.large.polledUpdate()
+        else:
+            self.small.polledUpdate()
 
 class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase):
     def __init__(self,parent = None):
@@ -107,7 +114,7 @@ class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase)
         SaffireMixerBase.__init__(self)
         self.setupUi(self)
         self.have_adat = False
-        print "Init large Saffire Pro mixer window"
+        log.debug("Init large Saffire Pro mixer window")
 
         self.VolumeControls={
             self.sldIMixAnalog1L: ['/Mixer/InputMix', 0, 0], 
@@ -211,19 +218,19 @@ class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase)
             self.chkMidiEnable: ['/Control/MIDIEnable'],
             self.chkAdatDisable: ['/Control/ADATDisable'],
             # Mixer switches
-            self.chkMute12: ['/Mixer/Out12Mute'],
+            self.chkMute12: ['/Mixer/Out12Mute', [self.chkHwCtrl12]],
             self.chkHwCtrl12: ['/Mixer/Out12HwCtrl'],
             self.chkPad12: ['/Mixer/Out12Pad'],
             self.chkDim12: ['/Mixer/Out12Dim'],
-            self.chkMute34: ['/Mixer/Out34Mute'],
+            self.chkMute34: ['/Mixer/Out34Mute', [self.chkHwCtrl34]],
             self.chkHwCtrl34: ['/Mixer/Out34HwCtrl'],
             self.chkPad34: ['/Mixer/Out34Pad'],
             self.chkDim34: ['/Mixer/Out34Dim'],
-            self.chkMute56: ['/Mixer/Out56Mute'],
+            self.chkMute56: ['/Mixer/Out56Mute', [self.chkHwCtrl56]],
             self.chkHwCtrl56: ['/Mixer/Out56HwCtrl'],
             self.chkPad56: ['/Mixer/Out56Pad'],
             self.chkDim56: ['/Mixer/Out56Dim'],
-            self.chkMute78: ['/Mixer/Out78Mute'],
+            self.chkMute78: ['/Mixer/Out78Mute', [self.chkHwCtrl78]],
             self.chkHwCtrl78: ['/Mixer/Out78HwCtrl'],
             self.chkPad78: ['/Mixer/Out78Pad'],
             self.chkDim78: ['/Mixer/Out78Dim'],
@@ -266,9 +273,55 @@ class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase)
     def updateLowResVolume(self,a0):
         SaffireMixerBase.updateLowResVolume(self,a0)
     def updateSelector(self,a0):
+        sender = self.sender()
+        #if sender == self.chkAC3 and not self.my_parent.is_not_streaming:
+            #msg = QMessageBox()
+            #msg.question( msg, "Error", \
+                #"<qt>Change not permitted. Is streaming active?</qt>", \
+                #QMessageBox.Ok )
+            #self.chkAC3.setEnabled(False)
+            #if a0:
+                #self.chkAC3.setChecked(False)
+            #else:
+                #self.chkAC3.setChecked(True)
+            #return
+        if sender == self.chkMidiEnable and not self.my_parent.is_not_streaming:
+            msg = QMessageBox()
+            msg.question( msg, "Error", \
+                "<qt>Change not permitted. Is streaming active?</qt>", \
+                QMessageBox.Ok )
+            self.chkMidiEnable.setEnabled(False)
+            state = self.hw.getDiscrete(self.SelectorControls[self.chkMidiEnable][0])
+            if state:
+                self.chkMidiEnable.setChecked(True)
+            else:
+                self.chkMidiEnable.setChecked(False)
+            return
+        if sender == self.chkAdatDisable and not self.my_parent.is_not_streaming:
+            msg = QMessageBox()
+            msg.question( msg, "Error", \
+                "<qt>Change not permitted. Is streaming active?</qt>", \
+                QMessageBox.Ok )
+            self.chkAdatDisable.setEnabled(False)
+            state = self.hw.getDiscrete(self.SelectorControls[self.chkAdatDisable][0])
+            if state:
+                self.chkAdatDisable.setChecked(True)
+            else:
+                self.chkAdatDisable.setChecked(False)
+            return
         SaffireMixerBase.updateSelector(self,a0)
+
     def triggerButton(self):
+        sender = self.sender()
+        if sender == self.btnReboot and not self.my_parent.is_not_streaming:
+            msg = QMessageBox()
+            msg.question( msg, "Error", \
+                "<qt>Operation not permitted. Is streaming active?</qt>", \
+                QMessageBox.Ok )
+            self.btnReboot.setEnabled(False)
+            return
         SaffireMixerBase.triggerButton(self)
+
     def saveText(self):
         SaffireMixerBase.saveText(self)
     def initCombo(self, combo):
@@ -292,13 +345,34 @@ class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase)
         self.tabInputMix.setCurrentWidget(self.tabInputMix.widget(0))
         SaffireMixerBase.updateValues(self)
 
+    def polledUpdate(self):
+        #log.debug("polled update (large)")
+        self.polledUpdateHwCtrl(self.chkHwCtrl12, self.sldOut12Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl34, self.sldOut34Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl56, self.sldOut56Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl78, self.sldOut78Level)
+
+        #make these inaccessible whenever streaming is running
+        #self.chkAC3.setEnabled(self.my_parent.is_not_streaming)
+        self.chkMidiEnable.setEnabled(self.my_parent.is_not_streaming)
+        self.chkAdatDisable.setEnabled(self.my_parent.is_not_streaming)
+        self.btnReboot.setEnabled(self.my_parent.is_not_streaming)
+
+    def polledUpdateHwCtrl(self, selector, volctrl):
+        state = selector.isChecked()
+        if state:
+            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl, 2)
+            volctrl.setEnabled(False)
+        else:
+            volctrl.setEnabled(True)
+
 class SaffireProMixerSmall(QWidget, Ui_SaffireProMixerSmallUI, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
         SaffireMixerBase.__init__(self)
         self.setupUi(self)
-        print "Init small Saffire Pro mixer window"
+        log.debug("Init small Saffire Pro mixer window")
 
         self.VolumeControls={
 
@@ -405,9 +479,55 @@ class SaffireProMixerSmall(QWidget, Ui_SaffireProMixerSmallUI, SaffireMixerBase)
     def updateLowResVolume(self,a0):
         SaffireMixerBase.updateLowResVolume(self,a0)
     def updateSelector(self,a0):
+        sender = self.sender()
+        #if sender == self.chkAC3 and not self.my_parent.is_not_streaming:
+            #msg = QMessageBox()
+            #msg.question( msg, "Error", \
+                #"<qt>Change not permitted. Is streaming active?</qt>", \
+                #QMessageBox.Ok )
+            #self.chkAC3.setEnabled(False)
+            #if a0:
+                #self.chkAC3.setChecked(False)
+            #else:
+                #self.chkAC3.setChecked(True)
+            #return
+        if sender == self.chkMidiEnable and not self.my_parent.is_not_streaming:
+            msg = QMessageBox()
+            msg.question( msg, "Error", \
+                "<qt>Change not permitted. Is streaming active?</qt>", \
+                QMessageBox.Ok )
+            self.chkMidiEnable.setEnabled(False)
+            state = self.hw.getDiscrete(self.SelectorControls[self.chkMidiEnable][0])
+            if state:
+                self.chkMidiEnable.setChecked(True)
+            else:
+                self.chkMidiEnable.setChecked(False)
+            return
+        if sender == self.chkAdatDisable and not self.my_parent.is_not_streaming:
+            msg = QMessageBox()
+            msg.question( msg, "Error", \
+                "<qt>Change not permitted. Is streaming active?</qt>", \
+                QMessageBox.Ok )
+            self.chkAdatDisable.setEnabled(False)
+            state = self.hw.getDiscrete(self.SelectorControls[self.chkAdatDisable][0])
+            if state:
+                self.chkAdatDisable.setChecked(True)
+            else:
+                self.chkAdatDisable.setChecked(False)
+            return
         SaffireMixerBase.updateSelector(self,a0)
+
     def triggerButton(self):
+        sender = self.sender()
+        if sender == self.btnReboot and not self.my_parent.is_not_streaming:
+            msg = QMessageBox()
+            msg.question( msg, "Error", \
+                "<qt>Operation not permitted. Is streaming active?</qt>", \
+                QMessageBox.Ok )
+            self.btnReboot.setEnabled(False)
+            return
         SaffireMixerBase.triggerButton(self)
+
     def saveText(self):
         SaffireMixerBase.saveText(self)
     def initCombo(self, combo):
@@ -417,3 +537,24 @@ class SaffireProMixerSmall(QWidget, Ui_SaffireProMixerSmallUI, SaffireMixerBase)
 
     def updateValues(self):
         SaffireMixerBase.updateValues(self)
+
+    def polledUpdate(self):
+        #log.debug("polled update (small)")
+        self.polledUpdateHwCtrl(self.chkHwCtrl12, self.sldOut12Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl34, self.sldOut34Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl56, self.sldOut56Level)
+        self.polledUpdateHwCtrl(self.chkHwCtrl78, self.sldOut78Level)
+
+        #make these inaccessible whenever streaming is running
+        #self.chkAC3.setEnabled(self.my_parent.is_not_streaming)
+        self.chkMidiEnable.setEnabled(self.my_parent.is_not_streaming)
+        self.chkAdatDisable.setEnabled(self.my_parent.is_not_streaming)
+        self.btnReboot.setEnabled(self.my_parent.is_not_streaming)
+
+    def polledUpdateHwCtrl(self, selector, volctrl):
+        state = selector.isChecked()
+        if state:
+            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl, 2)
+            volctrl.setEnabled(False)
+        else:
+            volctrl.setEnabled(True)

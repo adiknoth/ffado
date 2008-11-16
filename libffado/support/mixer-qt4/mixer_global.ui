@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>721</width>
-    <height>191</height>
+    <width>444</width>
+    <height>81</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -35,91 +35,106 @@
   <property name="windowTitle" >
    <string>Global Mixer Options</string>
   </property>
-  <layout class="QHBoxLayout" >
+  <layout class="QHBoxLayout" name="horizontalLayout" >
+   <property name="margin" >
+    <number>3</number>
+   </property>
    <item>
-    <layout class="QVBoxLayout" >
-     <item>
-      <layout class="QHBoxLayout" >
-       <item>
-        <widget class="QLabel" name="textLabel1" >
-         <property name="text" >
-          <string>Device Nickname:</string>
-         </property>
-         <property name="wordWrap" >
-          <bool>false</bool>
-         </property>
-         <property name="buddy" >
-          <cstring>txtNickname</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLineEdit" name="txtNickname" >
-         <property name="minimumSize" >
-          <size>
-           <width>100</width>
-           <height>0</height>
-          </size>
-         </property>
-        </widget>
-       </item>
-      </layout>
+    <layout class="QGridLayout" name="gridLayout_2" >
+     <property name="horizontalSpacing" >
+      <number>9</number>
+     </property>
+     <item row="0" column="0" colspan="2" >
+      <widget class="QLabel" name="lblName" >
+       <property name="font" >
+        <font>
+         <weight>75</weight>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text" >
+        <string>TextLabel</string>
+       </property>
+      </widget>
      </item>
-     <item>
-      <layout class="QHBoxLayout" >
-       <item>
-        <widget class="QLabel" name="textLabel2" >
-         <property name="text" >
-          <string>Clock Source:</string>
-         </property>
-         <property name="wordWrap" >
-          <bool>false</bool>
-         </property>
-         <property name="buddy" >
-          <cstring>clocksource</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="clocksource" />
-       </item>
-       <item>
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType" >
-          <enum>QSizePolicy::Expanding</enum>
-         </property>
-         <property name="sizeHint" >
-          <size>
-           <width>31</width>
-           <height>21</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="textLabel2_2" >
-         <property name="text" >
-          <string>Sample Rate:</string>
-         </property>
-         <property name="wordWrap" >
-          <bool>false</bool>
-         </property>
-         <property name="buddy" >
-          <cstring>samplerate</cstring>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="samplerate" >
-         <property name="enabled" >
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-      </layout>
+     <item row="1" column="0" >
+      <widget class="QLabel" name="textLabel1" >
+       <property name="text" >
+        <string>Nickname:</string>
+       </property>
+       <property name="wordWrap" >
+        <bool>false</bool>
+       </property>
+       <property name="buddy" >
+        <cstring>txtNickname</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1" >
+      <widget class="QLineEdit" name="txtNickname" >
+       <property name="minimumSize" >
+        <size>
+         <width>100</width>
+         <height>0</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="gridLayout" >
+     <property name="horizontalSpacing" >
+      <number>9</number>
+     </property>
+     <item row="0" column="1" >
+      <widget class="QComboBox" name="clocksource" >
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" >
+      <widget class="QLabel" name="textLabel2_2" >
+       <property name="text" >
+        <string>Sample Rate:</string>
+       </property>
+       <property name="wordWrap" >
+        <bool>false</bool>
+       </property>
+       <property name="buddy" >
+        <cstring>samplerate</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1" >
+      <widget class="QComboBox" name="samplerate" >
+       <property name="enabled" >
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy" >
+        <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" >
+      <widget class="QLabel" name="textLabel2" >
+       <property name="text" >
+        <string>Clock Source:</string>
+       </property>
+       <property name="wordWrap" >
+        <bool>false</bool>
+       </property>
+       <property name="buddy" >
+        <cstring>clocksource</cstring>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -131,10 +146,10 @@
      <property name="sizeType" >
       <enum>QSizePolicy::Expanding</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0" >
       <size>
        <width>330</width>
-       <height>71</height>
+       <height>10</height>
       </size>
      </property>
     </spacer>
@@ -144,54 +159,5 @@
  <layoutdefault spacing="6" margin="11" />
  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
  <resources/>
- <connections>
-  <connection>
-   <sender>clocksource</sender>
-   <signal>activated(int)</signal>
-   <receiver>GlobalMixerUi</receiver>
-   <slot>clockChanged(int)</slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>20</x>
-     <y>20</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>20</x>
-     <y>20</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>txtNickname</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>GlobalMixerUi</receiver>
-   <slot>nicknameChanged(QString)</slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>20</x>
-     <y>20</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>20</x>
-     <y>20</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>samplerate</sender>
-   <signal>activated(int)</signal>
-   <receiver>GlobalMixerUi</receiver>
-   <slot>samplerateChanged(int)</slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>20</x>
-     <y>20</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>20</x>
-     <y>20</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

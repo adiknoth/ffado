@@ -22,6 +22,9 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 
+import logging
+log = logging.getLogger('saffirebase')
+
 # the class that holds all actual control code
 class SaffireMixerBase:
     def __init__(self):
@@ -29,23 +32,22 @@ class SaffireMixerBase:
 
     def updateMatrixVolume(self,a0):
         sender = self.sender()
-        #vol = 0x7FFF-a0
         vol = a0
-        print "set %s %d %d to %d" % (
+        log.debug("set %s %d %d to %d" % (
                     self.VolumeControls[sender][0],
                     self.VolumeControls[sender][1],
                     self.VolumeControls[sender][2],
-                    vol)
+                    vol))
         self.hw.setMatrixMixerValue(self.VolumeControls[sender][0], 
                                     self.VolumeControls[sender][1],
                                     self.VolumeControls[sender][2],
                                     vol)
     def updateLowResVolume(self,a0):
         sender = self.sender()
-        vol = a0
-        print "set %s to %d" % (
+        vol = 127 - a0
+        log.debug("set %s to %d" % (
                     self.VolumeControlsLowRes[sender][0],
-                    vol)
+                    vol))
         self.hw.setDiscrete(self.VolumeControlsLowRes[sender][0], vol)
 
     def updateSelector(self,a0):
@@ -54,16 +56,16 @@ class SaffireMixerBase:
             state = 1
         else:
             state = 0
-        print "set %s to %d" % (
+        log.debug("set %s to %d" % (
                     self.SelectorControls[sender][0],
-                    state)
+                    state))
         self.hw.setDiscrete(self.SelectorControls[sender][0], state)
 
         # if there are linked selector controls, update them
         if len(self.SelectorControls[sender]) >= 2:
             linked = self.SelectorControls[sender][1]
             for ctl in linked:
-                if ctl.state():
+                if ctl.isChecked():
                     state = 1
                 else:
                     state = 0
@@ -71,15 +73,15 @@ class SaffireMixerBase:
 
     def triggerButton(self):
         sender = self.sender()
-        print "trigger %s" % (
-                    self.TriggerButtonControls[sender][0])
+        log.debug("trigger %s" % (
+                    self.TriggerButtonControls[sender][0]))
         self.hw.setDiscrete(self.TriggerButtonControls[sender][0], 1)
 
     def saveText(self):
         sender = self.sender()
         textbox = self.saveTextControls[sender][0]
-        print "save %s" % (
-                    textbox.text().ascii())
+        log.debug("save %s" % (
+                    textbox.text().ascii()))
         self.hw.setText(self.TextControls[textbox][0], textbox.text().ascii())
 
     def initCombo(self, combo):
@@ -99,20 +101,19 @@ class SaffireMixerBase:
     def updateValues(self):
         for ctrl, info in self.VolumeControls.iteritems():
             vol = self.hw.getMatrixMixerValue(self.VolumeControls[ctrl][0],
-                                                self.VolumeControls[ctrl][1],
-                                                self.VolumeControls[ctrl][2])
-            print "%s volume is %d" % (ctrl.objectName() , 0x7FFF-vol)
-            #ctrl.setValue(0x7FFF-vol)
+                                              self.VolumeControls[ctrl][1],
+                                              self.VolumeControls[ctrl][2])
+            log.debug("%s volume is %d" % (ctrl.objectName() , vol))
             ctrl.setValue(vol)
         for ctrl, info in self.VolumeControlsLowRes.iteritems():
             vol = self.hw.getDiscrete(self.VolumeControlsLowRes[ctrl][0])
 
-            print "%s volume is %d" % (ctrl.objectName() , vol)
-            ctrl.setValue(vol)
+            log.debug("%s volume is %d" % (ctrl.objectName() , 127-vol))
+            ctrl.setValue(127 - vol)
 
         for ctrl, info in self.SelectorControls.iteritems():
             state = self.hw.getDiscrete(self.SelectorControls[ctrl][0])
-            print "%s state is %d" % (ctrl.objectName() , state)
+            log.debug("%s state is %d" % (ctrl.objectName() , state))
             if state:
                 ctrl.setChecked(True)
             else:
@@ -123,16 +124,15 @@ class SaffireMixerBase:
 
         for ctrl, info in self.TextControls.iteritems():
             text = self.hw.getText(self.TextControls[ctrl][0])
-            print "%s text is %s" % (ctrl.objectName() , text)
+            log.debug("%s text is %s" % (ctrl.objectName() , text))
             ctrl.setText(text)
 
         for ctrl, info in self.ComboControls.iteritems():
             self.initCombo(ctrl)
 
-    def polledUpdateVolumeLowRes(self, srcpath, ctrl):
-        vol = self.hw.getDiscrete(srcpath)
-        #print "polledUpdateVolumeLowRes: vol = %s" % vol
-        #ctrl.setValue(255-vol)
+    def polledUpdateVolumeLowRes(self, srcpath, ctrl, divider=1):
+        vol = self.hw.getDiscrete(srcpath) / divider
+        #log.debug("polledUpdateVolumeLowRes: vol = %s" % vol)
         ctrl.setValue(vol)
 
     def initValues(self):

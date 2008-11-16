@@ -6,6 +6,14 @@ device_definitions = (
     modelname   = "Onyx Firewire";
     driver      = 1; # BeBoB
 },
+{ # Added by arnonym from ffado-mixers list
+    vendorid    = 0x00000f;
+    modelid     = 0x00010067;
+    vendorname  = "Mackie";
+    modelname   = "Onyx Firewire";
+    driver      = 1; # BeBoB
+    mixer       = "MackieOnyxMixer";
+},
 {
     vendorid    = 0x0003db;
     modelid     = 0x00010048;
@@ -26,6 +34,7 @@ device_definitions = (
     vendorname  = "BridgeCo";
     modelname   = "Audio 5";
     driver      = 1; # BeBoB
+    mixer       = "BCoAudio5Control";
 },
 {
     vendorid    = 0x000a92;
@@ -47,6 +56,7 @@ device_definitions = (
     vendorname  = "TerraTec Electronic GmbH";
     modelname   = "Phase 88 FW";
     driver      = 1; # BeBoB
+    mixer       = "Phase88Control";
 },
 {
     vendorid    = 0x000aac;
@@ -54,6 +64,7 @@ device_definitions = (
     vendorname  = "TerraTec Electronic GmbH";
     modelname   = "Phase X24 FW (model version 4)";
     driver      = 1; # BeBoB
+    mixer       = "Phase24Control";
 },
 {
     vendorid    = 0x000aac;
@@ -61,6 +72,7 @@ device_definitions = (
     vendorname  = "TerraTec Electronic GmbH";
     modelname   = "Phase X24 FW (model version 7)";
     driver      = 1; # BeBoB
+    mixer       = "Phase24Control";
 },
 {
     vendorid    = 0x000f1b;
@@ -68,6 +80,7 @@ device_definitions = (
     vendorname  = "ESI";
     modelname   = "Quatafire 610";
     driver      = 1; # BeBoB
+    mixer       = "QuataFireMixer";
 },
 {
     vendorid    = 0x00130e;
@@ -75,6 +88,7 @@ device_definitions = (
     vendorname  = "Focusrite";
     modelname   = "Saffire Pro26IO";
     driver      = 1; # BeBoB
+    mixer       = "SaffireProMixer";
 },
 {
     vendorid    = 0x00130e;
@@ -82,6 +96,7 @@ device_definitions = (
     vendorname  = "Focusrite";
     modelname   = "Saffire Pro10IO";
     driver      = 1; # BeBoB
+    mixer       = "SaffireProMixer";
 },
 {
     vendorid    = 0x00130e;
@@ -89,6 +104,7 @@ device_definitions = (
     vendorname  = "Focusrite";
     modelname   = "Saffire (LE)";
     driver      = 1; # BeBoB
+    mixer       = "SaffireMixer";
 },
 {
     vendorid    = 0x0040ab;
@@ -96,6 +112,7 @@ device_definitions = (
     vendorname  = "EDIROL";
     modelname   = "FA-66";
     driver      = 1; # BeBoB
+    mixer       = "EdirolFa66Control";
 },
 {
     vendorid    = 0x0040ab;
@@ -103,6 +120,7 @@ device_definitions = (
     vendorname  = "EDIROL";
     modelname   = "FA-101";
     driver      = 1; # BeBoB
+    mixer       = "EdirolFa101Control";
 },
 {
     vendorid    = 0x000d6c;
@@ -145,6 +163,7 @@ device_definitions = (
     vendorname = "Echo";
     modelname = "AudioFire2";
     driver = 2;
+    mixer = "AudioFireMixer";
   }, 
   {
     vendorid = 0x1486;
@@ -152,6 +171,7 @@ device_definitions = (
     vendorname = "Echo";
     modelname = "AudioFire4";
     driver = 2;
+    mixer = "AudioFireMixer";
   }, 
   {
     vendorid = 0x1486;
@@ -159,6 +179,7 @@ device_definitions = (
     vendorname = "Echo";
     modelname = "AudioFire8";
     driver = 2;
+    mixer = "AudioFireMixer";
   }, 
   {
     vendorid = 0x1486;
@@ -166,6 +187,7 @@ device_definitions = (
     vendorname = "Echo";
     modelname = "AudioFire12";
     driver = 2;
+    mixer = "AudioFireMixer";
   }, 
   {
     vendorid = 0x1486;
@@ -201,5 +223,13 @@ device_definitions = (
     vendorname = "Mackie";
     modelname = "Onyx 1200F";
     driver = 2;
+  },
+  { # added by arnonym from ffado-mixers list
+    vendorid = 0x0001f2;
+    modelid = 0x00000000;
+    vendorname = "Motu";
+    modelname = "All of them";
+    driver = 10;
+    mixer = "MotuMixer";
   }
 );

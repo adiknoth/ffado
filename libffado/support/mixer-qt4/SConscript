@@ -29,22 +29,30 @@ Import( 'env' )
 if env.has_key('PYUIC4'):
     e = env.Clone()
     e['MIXERGUIS'] = [
-                        #'phase24', 'phase88',
+                        'phase24', 
+                        'phase88',
                         'saffire_mono', 'saffire_stereo',
                         'saffirepro_large', 'saffirepro_small',
                         'saffirele_large', 'saffirele_small',
                         'audiofire_strip', 'audiofire_settings',
-                        #'bcoaudio5', 'edirolfa66',
-                        #'mackie_generic', 'quatafire', 'motu',
+                        'bcoaudio5',
+                        'edirolfa101', 'edirolfa66',
+                        'quatafire',
+                        'mackie_onyxmixer',
+                        'motu',
                         'global', 'dummy'
                      ]
     e['MIXERAPPS'] = [
-                        #'phase24', 'phase88',
+                        'phase24',
+                        'phase88',
                         'saffire',
                         'saffirepro',
                         'audiofire',
-                        #'bcoaudio5', 'edirolfa66',
-                        #'mackie_generic', 'quatafire', 'motu',
+                        'bcoaudio5',
+                        'edirolfa101', 'edirolfa66',
+                        'quatafire',
+                        'mackie_onyxmixer',
+                        'motu',
                         'global', 'dummy'
                      ]
 
@@ -52,6 +60,7 @@ if env.has_key('PYUIC4'):
     e['OTHERAPPS'] = ['ffado_dbus_util',
                       'ffado_regdialog',
                       'ffado_panelmanager',
+                      'ffado_configuration',
                       'mixer_saffire_base'
                      ]
 
@@ -83,8 +92,9 @@ if env.has_key('PYUIC4'):
     e.Depends( "ffadomixer_config.py", "#/config.h" )
     e.Install( "$pythondir", "ffadomixer_config.py" )
 
-    e.ScanReplace( "ffadomixer.in" )
-    e.Depends( "ffadomixer", "#/config.h" )
-    e.Depends( "ffadomixer", "SConscript" )
-    e.Install( "$bindir", "ffadomixer" )
+    e.ScanReplace( "ffado-mixer.in" )
+    e.Depends( "ffado-mixer", "#/config.h" )
+    e.Depends( "ffado-mixer", "SConscript" )
+    e.Install( "$bindir", "ffado-mixer" )
 
+    e.Install( "$sharedir/icons", "../xdg/hi64-apps-ffado.png" )

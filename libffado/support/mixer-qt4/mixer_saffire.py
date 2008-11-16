@@ -28,6 +28,9 @@ from mixer_saffire_monoui import Ui_SaffireMixerMonoUI
 from mixer_saffirele_smallui import Ui_SaffireLEMixerSmallUI
 from mixer_saffirele_largeui import Ui_SaffireLEMixerLargeUI
 
+import logging
+log = logging.getLogger('saffire')
+
 #MIXER LAYOUT:
 #
 #   |-- Out9/10--| |-- Out1/2 --| |-- Out3/4 --| |-- Out5/6 --| |-- Out7/8 --|
@@ -82,12 +85,12 @@ class SaffireMixer(QWidget):
     def selectCorrectMode(self):
         if self.is_saffire_le:
             if self.samplerate <= 48000:
-                print "large"
+                log.debug("large")
                 self.small.hide()
                 self.large.initValues()
                 self.large.show()
             else:
-                print "small"
+                log.debug("small")
                 self.large.hide()
                 self.small.initValues()
                 self.small.show()
@@ -109,10 +112,10 @@ class SaffireMixer(QWidget):
         # SaffireLE:    0x130e010004????
         if int(self.configrom.getGUID(), 16) >= 0x130e0100040000:
             self.is_saffire_le = True
-            print "Found SaffireLE GUID"
+            log.debug("Found SaffireLE GUID")
         else:
             self.is_saffire_le = False
-            print "Found Saffire GUID"
+            log.debug("Found Saffire GUID")
 
         # init depending on what device we have
         # and what mode it is in
@@ -258,7 +261,7 @@ class SaffireMixerStereo(QWidget, Ui_SaffireMixerStereoUI, SaffireMixerBase):
     def polledUpdateHwCtrl(self, selector, volctrl):
         state = selector.isChecked()
         if state:
-            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl)
+            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl, 64)
             volctrl.setEnabled(False)
         else:
             volctrl.setEnabled(True)
@@ -281,7 +284,7 @@ class SaffireMixerStereo(QWidget, Ui_SaffireMixerStereoUI, SaffireMixerBase):
     def updateValues(self):
         SaffireMixerBase.updateValues(self)
     def switchStereoMode(self):
-        print "should switch to mono mode"
+        log.debug("should switch to mono mode")
         self.my_parent.setMonoMode(1)
         self.my_parent.selectCorrectMode()
 
@@ -402,7 +405,7 @@ class SaffireMixerMono(QWidget, Ui_SaffireMixerMonoUI, SaffireMixerBase):
     def polledUpdateHwCtrl(self, selector, volctrl):
         state = selector.isChecked()
         if state:
-            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl)
+            self.polledUpdateVolumeLowRes('/Mixer/MonitorDial', volctrl, 4)
             volctrl.setEnabled(False)
         else:
             volctrl.setEnabled(True)
@@ -426,7 +429,7 @@ class SaffireMixerMono(QWidget, Ui_SaffireMixerMonoUI, SaffireMixerBase):
         SaffireMixerBase.updateValues(self)
 
     def switchStereoMode(self):
-        print "should switch to stero mode"
+        log.debug("should switch to stereo mode")
         self.my_parent.setMonoMode(0)
         self.my_parent.selectCorrectMode()
 
@@ -437,7 +440,7 @@ class SaffireLEMixerLarge(QWidget, Ui_SaffireLEMixerLargeUI, SaffireMixerBase):
         self.setupUi(self)
         SaffireMixerBase.__init__(self)
 
-        print "Init large Saffire LE mixer window"
+        log.debug("Init large Saffire LE mixer window")
 
         self.VolumeControls={
                 self.sldIN1Out1: ['/Mixer/LEMix48', 0, 0],
@@ -560,7 +563,7 @@ class SaffireLEMixerSmall(QWidget, Ui_SaffireLEMixerSmallUI, SaffireMixerBase):
         self.setupUi(self)
         SaffireMixerBase.__init__(self)
 
-        print "Init small Saffire LE mixer window"
+        log.debug("Init small Saffire LE mixer window")
 
         self.VolumeControls={
                 self.sldIN1RecMix:    ['/Mixer/LEMix96', 0, 4],

@@ -40,6 +40,9 @@
     <layout class="QVBoxLayout" >
      <item>
       <widget class="QTabWidget" name="tabWidget4" >
+       <property name="currentIndex" >
+        <number>0</number>
+       </property>
        <widget class="QWidget" name="tab" >
         <attribute name="title" >
          <string>Out1/2</string>
@@ -73,10 +76,10 @@
                    <number>0</number>
                   </property>
                   <property name="maximum" >
-                   <number>255</number>
+                   <number>127</number>
                   </property>
                   <property name="singleStep" >
-                   <number>2</number>
+                   <number>1</number>
                   </property>
                   <property name="pageStep" >
                    <number>16</number>
@@ -524,10 +527,10 @@
                    <number>0</number>
                   </property>
                   <property name="maximum" >
-                   <number>255</number>
+                   <number>127</number>
                   </property>
                   <property name="singleStep" >
-                   <number>2</number>
+                   <number>1</number>
                   </property>
                   <property name="pageStep" >
                    <number>16</number>
@@ -986,10 +989,10 @@
                    <number>0</number>
                   </property>
                   <property name="maximum" >
-                   <number>255</number>
+                   <number>127</number>
                   </property>
                   <property name="singleStep" >
-                   <number>2</number>
+                   <number>1</number>
                   </property>
                   <property name="pageStep" >
                    <number>16</number>
@@ -1424,10 +1427,10 @@
                    <number>0</number>
                   </property>
                   <property name="maximum" >
-                   <number>255</number>
+                   <number>127</number>
                   </property>
                   <property name="singleStep" >
-                   <number>2</number>
+                   <number>1</number>
                   </property>
                   <property name="pageStep" >
                    <number>16</number>
@@ -2310,8 +2313,6 @@
  </widget>
  <layoutdefault spacing="6" margin="11" />
  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
- <customwidgets>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
