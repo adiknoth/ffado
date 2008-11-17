@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.2
+Version: 0.3
 Author: Jonathan Woithe
-Date: 6 November 2008
+Date: 15 November 2008
 
 
 Definitions
@@ -141,40 +141,60 @@ Streaming control registers
 There appears to be a number of registers involved in the setup of device
 streaming.
 
-Streaming start parameter register (0x20000001c):
+Device (streaming) initialisation register (FF800: 0x20000001c, FF400: CBA)
 
-This register comprises the 3 quadlets starting at address 0x20000001c.  The
-first quadlet contains the sample rate in Hz.  The second and third quadlets
-were always observed to take the values 0x0000e000 and 0x0000001c
-respectively.
+This register comprises the 3 quadlets starting at address 0x20000001c on
+the FF800 and the CBA on the FF400.  The first quadlet contains the sample
+rate in Hz.  The second quadlet is mapped as follows:
+  bits 31-11 = number of audio channels
+  bits 10-0  = iso tx channel (PC to interface)
+In all local tests with a FF800 the value of this quadlet was always equal
+to 0x0000e000 (28 channels, PC transmits on iso channel 0).
+
+The third quadlet is mapped as follows.
+  bits 10-0 = number of audio channels
+  bit 11    = speed flag; set to 1 if firewire bus is at 800 Mbps
+In local tests with a FF800 the value of this register was always 0x0000001c
+(28 channels, 400 Mbps firewire bus).
 
 After this register is configured, 4 quadlets are read starting from
 0x801c0000.  The numbers returned don't appear to bear any relationship to
 those written to this same location later on.
 
-Streaming start ready register (0x200000028):
+Device (streaming) start register (FF800: 0x200000028, FF400: CBA+0x1c):
 
-A value of 0x1c000000 is written to this register after the streaming start
-parameter register has been written to.
+The start of streaming differs between the FF800 in more than just the
+address of the relevant register.  On the FF800 this register is mapped
+as follows:
+  bits 10-0 = number of audio channels
+  bit 11    = bus speed flag; set to 1 if firewire bus is at 800 Mbps
+On a FF400 the register is as follows:
+  bits 4-0  = number of audio channels
+  bits 9-5  = iso tx channel (PC to interface)
+During initial testing with a FF800 the value of this register was always 
+0x0000001c (28 audio channels, PC tx on iso channel 0).
 
-Streaming channel setup register (0x801c0000):
+Channel mute setup register (write to 0x801c0000):
 
-After writing to the streaming start ready register, 0x70 bytes (28
-quadlets) are written starting at 0x801c0000.  Each quadlet appears to
-represent one channel on the Fireface800.  On closing down streaming each
-quadlet is set to 1, while during startup some values are set to zero
-(although they are probably not the channels being opened for playback, more
-testing is needed).  Irrespective of the setting of these registers it
-appears that data for all channels is always sent to/from the Fireface-800.
+After writing to the streaming start register, 0x70 bytes (28 quadlets) are
+written starting at 0x801c0000.  Each quadlet represents one channel on the
+Fireface800.  A value of 1 mutes the respective channel - indeed on closing
+down streaming each quadlet is set to 1.  During startup some values are set
+to zero - the ones set to zero may be determined by the channels which have
+active software data sources although this is yet to be confirmed with more
+testing.  Irrespective of the setting of these registers it appears that
+data for all channels is always sent to/from the Fireface-800.
 
-This register is also read during streaming setup but the returned value
-bears little relationship to that which is written to it.  The purpose of
-this read and/or the meaning of the returned value is as yet unknown.
+Note that when register 0x801c0000 is read it functions as the device status
+register.  It is read during streaming setup, but obviously it bears no
+relationship to the channel mute status.
 
-Streaming end register (0x200000034):
+Streaming end register (FF800: 0x200000034, FF400: CBA+0x4):
 
-3 zero quadlets are written starting at address 0x200000034 to stop
-streaming.
+On the FF800, streaming is stopped by writing 3 zeroed quadlets to
+consecutive registers starting at address 0x200000034.  For the FF400 one
+writes 3 zeroed quadlets to consecutive registers from CBA+0x4, followed
+by a 0x00000001 to CBA+0x10 (making a 4-quadlet write in total).
 
 
 Iso data
