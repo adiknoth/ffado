@@ -86,7 +86,6 @@ class EdirolFa66Control(QWidget, Ui_EdirolFa66ControlUI):
         self.setValue('bal6', bal)
 
     def setValue(self, name, val):
-        val = -val
         ctrl = self.VolumeControls[name]
         log.debug("setting %s to %d" % (name, val))
         self.hw.setContignuous(ctrl[0], val, idx = ctrl[1])
@@ -106,4 +105,4 @@ class EdirolFa66Control(QWidget, Ui_EdirolFa66ControlUI):
                 else:
                     val = -32768
 
-            ctrl[2].setValue(-val)
+            ctrl[2].setValue(val)
