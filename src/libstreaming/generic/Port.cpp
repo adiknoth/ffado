@@ -125,14 +125,34 @@ void Port::setBufferAddress(void *buff) {
 void
 Port::enable()  {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Enabling port %s...\n",m_Name.c_str());
-    m_disabled=false;
+    m_disabled = false;
 }
 
 /// Disable the port. (this can be called anytime)
 void
 Port::disable() {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Disabling port %s...\n",m_Name.c_str());
-    m_disabled=false;
+    m_disabled = true;
+}
+
+
+/**
+ * Obtain the port type in string format
+ * @return type name of the port
+ */
+std::string
+Port::getPortTypeName()
+{
+    switch(m_PortType) {
+        case E_Audio:
+            return "Audio";
+        case E_Midi:
+            return "MIDI";
+        case E_Control:
+            return "Control";
+        default:
+            return "Invalid";
+    }
 }
 
 void Port::show() {

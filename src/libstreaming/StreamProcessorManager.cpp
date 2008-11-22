@@ -1316,6 +1316,43 @@ void StreamProcessorManager::dumpInfo() {
 
     debugOutputShort( DEBUG_LEVEL_NORMAL, "----------------------------------------------------\n");
 
+    // list port info in verbose mode
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, "Port Information\n");
+    int nb_ports;
+    
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, " Playback\n");
+    nb_ports = getPortCount(Port::E_Playback);
+    for(int i=0; i < nb_ports; i++) {
+        Port *p = getPortByIndex(i, Port::E_Playback);
+        debugOutputShort( DEBUG_LEVEL_VERBOSE, "  %3d (%p): ", i, p);
+        if (p) {
+            bool disabled = p->isDisabled();
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "[%p] [%3s] ", &p->getManager(), (disabled?"off":"on"));
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "[%7s] ", p->getPortTypeName().c_str());
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "%3s ", p->getName().c_str());
+        } else {
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "invalid ");
+        }
+        debugOutputShort( DEBUG_LEVEL_VERBOSE, "\n");
+    }
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, " Capture\n");
+    nb_ports = getPortCount(Port::E_Capture);
+    for(int i=0; i < nb_ports; i++) {
+        Port *p = getPortByIndex(i, Port::E_Capture);
+        debugOutputShort( DEBUG_LEVEL_VERBOSE, "  %3d (%p): ", i, p);
+        if (p) {
+            bool disabled = p->isDisabled();
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "[%p] [%3s] ", &p->getManager(), (disabled?"off":"on"));
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "[%7s] ", p->getPortTypeName().c_str());
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, " %3s ", p->getName().c_str());
+        } else {
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, " invalid ");
+        }
+        debugOutputShort( DEBUG_LEVEL_VERBOSE, "\n");
+    }
+
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, "----------------------------------------------------\n");
+
 }
 
 void StreamProcessorManager::setVerboseLevel(int l) {

@@ -104,6 +104,7 @@ public:
     unsigned int getEventSize();
 
     enum E_PortType getPortType() {return m_PortType;}; ///< returns the port type (is fixed)
+    std::string getPortTypeName();
     enum E_Direction getDirection() {return m_Direction;}; ///< returns the direction (is fixed)
 
     /**
