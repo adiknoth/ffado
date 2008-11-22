@@ -91,7 +91,7 @@ vars_to_check = [
 	'XDG_DATA_DIRS',
 	'HOME',
 	'CC',
-	'CCFLAGS',
+	'CFLAGS',
 	'CXX',
 	'CXXFLAGS',
 	'CPPFLAGS',
