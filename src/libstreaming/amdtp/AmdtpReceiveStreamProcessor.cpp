@@ -378,7 +378,7 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
                     sample_int=(sample_int >> 16) & 0x000000FF;
                     sample_int |= 0x01000000; // flag that there is a midi event present
                     *buffer = sample_int;
-                    debugOutput(DEBUG_LEVEL_VERBOSE, "Received midi byte %08X on port %p index %d\n", sample_int, p, j-p.location);
+                    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Received midi byte %08X on port %p index %d\n", sample_int, p, j-p.location);
                 } else {
                     // make sure no event is received
                     *buffer = 0;
