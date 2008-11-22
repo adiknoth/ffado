@@ -62,6 +62,7 @@ Ieee1394Service::Ieee1394Service()
     , m_pIsoManager( new IsoHandlerManager( *this ) )
     , m_pCTRHelper ( new CycleTimerHelper( *this, IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC ) )
     , m_have_new_ctr_read ( false )
+    , m_filterFCPResponse ( false )
     , m_pWatchdog ( new Util::Watchdog() )
 {
     for (unsigned int i=0; i<64; i++) {
@@ -91,6 +92,7 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
                                            rt && IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME,
                                            IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO ) )
     , m_have_new_ctr_read ( false )
+    , m_filterFCPResponse ( false )
     , m_pWatchdog ( new Util::Watchdog() )
 {
     for (unsigned int i=0; i<64; i++) {
@@ -821,6 +823,8 @@ Ieee1394Service::handleFcpResponse(nodeid_t nodeid,
                                    int response, size_t length,
                                    unsigned char *data)
 {
+    static struct sFcpBlock fcp_block_last;
+
     fb_quadlet_t *data_quads = (fb_quadlet_t *)data;
     #ifdef DEBUG
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"fcp response: node 0x%hX, response = %d, length = %d bytes\n",
@@ -856,9 +860,21 @@ Ieee1394Service::handleFcpResponse(nodeid_t nodeid,
                 debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response not for this request: %08lX != %08lX\n",
                              FCP_MASK_SUBUNIT_AND_OPCODE(first_quadlet),
                              FCP_MASK_SUBUNIT_AND_OPCODE(CondSwapFromBus32(m_fcp_block.request[0])));
+            } else if(m_filterFCPResponse && (memcmp(fcp_block_last.response, data, length) == 0)) {
+                // This is workaround for the Edirol FA-101. The device tends to send more than
+                // one responde to one request. This seems to happen when discovering 
+                // function blocks and looks very likely there is a race condition in the 
+                // device. The workaround here compares the just arrived FCP responde
+                // to the last one. If it is the same as the previously one then we
+                // just ignore it. The downside of this approach is, we cannot issue
+                // the same FCP twice.
+                debugWarning("Received duplicate FCP response. Ignore it\n");
             } else {
                 m_fcp_block.response_length = (length + sizeof(quadlet_t) - 1) / sizeof(quadlet_t);
                 memcpy(m_fcp_block.response, data, length);
+                if (m_filterFCPResponse) {
+                    memcpy(fcp_block_last.response, data, length);
+                }
                 m_fcp_block.status = eFS_Responded;
             }
        }
@@ -918,6 +934,12 @@ Ieee1394Service::getSplitTimeoutUsecs(fb_nodeid_t nodeId)
     split_timeout_low = CondSwapFromBus32(split_timeout_low);
 
     return (split_timeout_hi & 7) * 1000000 + (split_timeout_low >> 19) * 125;
+}
+
+void 
+Ieee1394Service::setFCPResponseFiltering(bool enable)
+{
+    m_filterFCPResponse = enable;
 }
 
 int

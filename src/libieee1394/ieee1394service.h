@@ -322,6 +322,15 @@ public:
 
     Util::Configuration *getConfiguration() {return m_configuration;};
 
+    /**
+     * @brief enable or disable FCP response doublicate filtering
+     *
+     * this is use only for devices (e.g. edirol fa101) which have a 
+     * buggy FCP implementation and send more then one FCP response 
+     * for one request. 
+     */
+    void setFCPResponseFiltering(bool enable);
+
 // ISO channel stuff
 public:
     signed int getAvailableBandwidth();
@@ -392,6 +401,8 @@ private:
     IsoHandlerManager*      m_pIsoManager;
     CycleTimerHelper*       m_pCTRHelper;
     bool                    m_have_new_ctr_read;
+
+    bool            m_filterFCPResponse;
 
     // the RT watchdog
     Util::Watchdog*     m_pWatchdog;

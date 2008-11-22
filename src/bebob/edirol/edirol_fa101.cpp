@@ -39,6 +39,8 @@ EdirolFa101Device::EdirolFa101Device( DeviceManager& d,
     m_fixed_clocksource.id = 0;
     m_fixed_clocksource.slipping = false;
     m_fixed_clocksource.description = "Device Controlled";
+
+    get1394Service().setFCPResponseFiltering(true);
 }
 
 EdirolFa101Device::~EdirolFa101Device()
