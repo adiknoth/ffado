@@ -90,6 +90,11 @@ vars_to_check = [
 	'XDG_CONFIG_DIRS',
 	'XDG_DATA_DIRS',
 	'HOME',
+	'CC',
+	'CCFLAGS',
+	'CXX',
+	'CXXFLAGS',
+	'CPPFLAGS',
 ]
 for var in vars_to_check:
 	if os.environ.has_key(var):
@@ -99,10 +104,8 @@ for var in vars_to_check:
 
 env = Environment( tools=['default','scanreplace','pyuic','pyuic4','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
-if os.environ.has_key('CC'):
-	env['CC'] = os.environ['CC']
-if os.environ.has_key('CXX'):
-	env['CXX'] = os.environ['CXX']
+if os.environ.has_key('LDFLAGS'):
+	env['LINKFLAGS'] = os.environ['LDFLAGS']
 
 # grab OS CFLAGS / CCFLAGS
 env['OS_CFLAGS']=[]
