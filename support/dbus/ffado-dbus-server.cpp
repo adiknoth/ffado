@@ -228,6 +228,25 @@ main( int argc, char **argv )
 {
     struct arguments arguments;
 
+    printf("-----------------------------------------------\n");
+    printf("FFADO Control DBUS service\n");
+    printf("Part of the FFADO project -- www.ffado.org\n");
+    printf("Version: %s\n", PACKAGE_VERSION);
+    printf("(C) 2008, Pieter Palmers\n");
+    printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
+    printf("-----------------------------------------------\n\n");
+
+    // check the library version
+    const char *libversion = ffado_get_version();
+    const char *progversion = PACKAGE_STRING;
+    if(strcmp(libversion, progversion) != 0) {
+        printf("Library version mismatch. (required: %s, present: %s)\n", progversion, libversion);
+        printf("Please run this application against the exact corresponding library\n");
+        printf("it was compiled for. The most common cause for this is having more\n");
+        printf("than one version of libffado installed.\n\n");
+        return exitfunction(-1);
+    }
+
     // Default values.
     arguments.silent      = 0;
     arguments.verbose     = DEBUG_LEVEL_NORMAL;
@@ -246,11 +265,6 @@ main( int argc, char **argv )
         debugError("Could not parse command line\n" );
         return exitfunction(-1);
     }
-    printMessage("FFADO Control DBUS service\n");
-
-    debugOutput( DEBUG_LEVEL_NORMAL, "verbose level = %d\n", arguments.verbose);
-    debugOutput( DEBUG_LEVEL_NORMAL, "Using ffado library version: %s\n\n", ffado_get_version() );
-
 
     printMessage(" Discovering devices...\n");
     m_deviceManager = new DeviceManager();
