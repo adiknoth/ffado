@@ -730,6 +730,7 @@ bool IsoHandler::enable(int cycle)
 
     // indicate that the first iterate() still has to occur.
     m_last_now = 0xFFFFFFFF;
+    m_last_packet_handled_at = 0xFFFFFFFF;
 
     m_State = E_Running;
     return true;
