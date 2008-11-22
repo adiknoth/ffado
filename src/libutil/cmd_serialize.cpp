@@ -43,7 +43,7 @@ IMPL_DEBUG_MODULE( BufferDeserialize, BufferDeserialize, DEBUG_LEVEL_NORMAL );
 bool
 CoutSerializer::write( byte_t d, const char* name )
 {
-    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d:        0x%02x %-40.40s\n", m_cnt, d, name );
+    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d:        0x%02x %-60.60s\n", m_cnt, d, name );
     m_cnt += sizeof( byte_t );
 
     return true;
@@ -52,7 +52,7 @@ CoutSerializer::write( byte_t d, const char* name )
 bool
 CoutSerializer::write( uint16_t d, const char* name )
 {
-    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d:    0x%04x %-40.40s\n", m_cnt, d, name );
+    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d:    0x%04x %-60.60s\n", m_cnt, d, name );
     m_cnt += sizeof( uint16_t );
 
     return true;
@@ -61,7 +61,7 @@ CoutSerializer::write( uint16_t d, const char* name )
 bool
 CoutSerializer::write( quadlet_t d, const char* name )
 {
-    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d: 0x%08x %-40.40s\n", m_cnt, d, name );
+    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d: 0x%08x %-60.60s\n", m_cnt, d, name );
     m_cnt += sizeof( quadlet_t );
     return true;
 }
@@ -69,7 +69,7 @@ CoutSerializer::write( quadlet_t d, const char* name )
 bool
 CoutSerializer::write( const char * v, size_t len, const char* name )
 {
-    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d: %s %-40.40s\n", m_cnt, v, name );
+    debugOutput( DEBUG_LEVEL_NORMAL, "  %3d: %s %-60.60s\n", m_cnt, v, name );
     m_cnt += len;
     return true;
 }
