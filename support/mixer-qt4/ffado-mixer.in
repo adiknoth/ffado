@@ -148,6 +148,7 @@ if __name__ == "__main__":
     logging.getLogger('dbus').setLevel(debug_level)
     logging.getLogger('registration').setLevel(debug_level)
     logging.getLogger('panelmanager').setLevel(debug_level)
+    logging.getLogger('configparser').setLevel(debug_level)
 
     logging.getLogger('global').setLevel(debug_level)
 

@@ -25,6 +25,9 @@ import re, os
 
 import shlex
 
+import logging
+log = logging.getLogger('configparser')
+
 class DeviceList:
 	def __init__( self, filename="" ):
 		self.devices = list()
@@ -46,16 +49,17 @@ class DeviceList:
 			self.addDevice( dev )
 
 	def getDeviceById( self, vendor, model ):
-		#print "DeviceList::getDeviceById( %s, %s )" % (vendor, model )
+		log.debug("DeviceList::getDeviceById( %s, %s )" % (vendor, model ))
 		for dev in self.devices:
-			if dev['vendorid'] == vendor and dev['modelid'] == model:
+			if int("%s" % dev['vendorid'], 0) == int("%s" % vendor, 0) and \
+			   int("%s" % dev['modelid'], 0) == int("%s" % model, 0):
 				return dev
 		tmp = dict()
 		self.devices.append( tmp )
 		return tmp
 
 	def addDevice( self, device_dict ):
-		#print "DeviceList::addDevice()"
+		log.debug("DeviceList::addDevice()")
 		dev = self.getDeviceById( device_dict['vendorid'], device_dict['modelid'] )
 		dev.update( device_dict )
 
@@ -74,16 +78,16 @@ class Parser:
 		if token != "(":
 			return
 		self.lex.get_token()
-		#print "%sWill parse list" % level
+		log.debug("%sWill parse list" % level)
 		ret = []
 		token = self.peaktoken()
 		while token != ")":
 			ret.append( self.parsenamedvalue( level+"  " ) )
 			token = self.peaktoken()
-		#print "%slist is %s" % (level, str(ret))
+		log.debug("%slist is %s" % (level, str(ret)))
 		self.lex.get_token()
 		if self.peaktoken() == ",":
-			#print "%sFound a delimiter" % level
+			log.debug("%sFound a delimiter" % level)
 			self.lex.get_token()
 		return ret
 
@@ -91,7 +95,7 @@ class Parser:
 		token = self.lex.get_token()
 		if token != "{":
 			return
-		#print "%sWill parse map" % level
+		log.debug("%sWill parse map" % level)
 		ret = {}
 		token = self.peaktoken()
 		while token != "}":
@@ -101,15 +105,15 @@ class Parser:
 				ret[ tmp[0] ] = tmp[1]
 			token = self.peaktoken()
 		token = self.lex.get_token()
-		#print "%sMap ended with '%s' and '%s'"% (level,token,peaktoken(self))
+		log.debug("%sMap ended with '%s' and '%s'"% (level,token,self.peaktoken()))
 		if self.peaktoken() in (",",";"):
-			#print "%sFound a delimiter!" % level
+			log.debug("%sFound a delimiter!" % level)
 			self.lex.get_token()
 		return ret
 
 	def parsevalue( self, level="" ):
 		token = self.lex.get_token()
-		#print "%sparsevalue() called on token '%s'" % (level, token)
+		log.debug("%sparsevalue() called on token '%s'" % (level, token))
 		self.lex.push_token( token )
 		if token == "(":
 			value = self.parselist( level+"  " )
@@ -119,25 +123,25 @@ class Parser:
 			value = self.lex.get_token().replace( "\"", "" )
 		token = self.peaktoken()
 		if token == ";":
-			#print "%sFound a delimiter!" % level
+			log.debug("%sFound a delimiter!" % level)
 			self.lex.get_token()
 		return value
 
 	def parsenamedvalue( self, level="" ):
 		token = self.lex.get_token()
-		#print "%sparsenamedvalue() called on token '%s'" % (level, token)
+		log.debug("%sparsenamedvalue() called on token '%s'" % (level, token))
 		if token == "{":
 			self.lex.push_token( token )
 			return self.parsemap( level+"  " )
 		if len(token) > 0 and token not in ("{","}","(",")",",",";"):
-			#print "%sGot name '%s'" %(level,token)
+			log.debug("%sGot name '%s'" %(level,token))
 			name = token
 			token = self.lex.get_token()
 			if token in ("=",":"):
 				#print "%sWill parse value" % level
 				value = self.parsevalue( level )
 				return (name,value)
-		#print "%sparsenamedvalue() will return None!" % level
+		log.debug("%sparsenamedvalue() will return None!" % level)
 		return
 
 #
@@ -149,6 +153,7 @@ if __name__ == "__main__":
 
 	file = sys.argv[1]
 
+	log.setLevel(logging.DEBUG)
 	devs = DeviceList( file )
 
 	print devs.devices
