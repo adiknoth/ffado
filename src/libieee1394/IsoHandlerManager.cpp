@@ -344,6 +344,7 @@ IsoTask::Execute()
             handler_died = true;
         }
     }
+
     if(handler_died) {
         m_running = false;
         return false; // one or more handlers have died
