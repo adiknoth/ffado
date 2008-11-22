@@ -34,10 +34,12 @@ namespace Streaming {
 
 IMPL_DEBUG_MODULE( PortManager, PortManager, DEBUG_LEVEL_NORMAL );
 
-PortManager::PortManager() {
+PortManager::PortManager()
+{
 }
 
-PortManager::~PortManager() {
+PortManager::~PortManager()
+{
     flushDebugOutput();
     // delete all ports that are still registered to the manager
     while (m_Ports.size()) {
@@ -45,35 +47,42 @@ PortManager::~PortManager() {
       // PortManager::unregister().
       delete m_Ports.front();
     }
+    for ( Util::FunctorVectorIterator it = m_UpdateHandlers.begin();
+          it != m_UpdateHandlers.end();
+          ++it )
+    {
+        Util::Functor* func = *it;
+        delete func;
+    }
 }
 
-bool PortManager::makeNameUnique(Port *port)
+bool
+PortManager::makeNameUnique(Port *port)
 {
-    bool done=false;
-    int idx=0;
-    std::string portname_orig=port->getName();
-    
-    while(!done && idx<10000) {
+    bool done = false;
+    int idx = 0;
+    std::string portname_orig = port->getName();
+
+    while(!done && idx < 10000) {
         bool is_unique=true;
-        
+
         for ( PortVectorIterator it = m_Ports.begin();
         it != m_Ports.end();
         ++it )
         {
             is_unique &= !((*it)->getName() == port->getName());
         }
-        
+
         if (is_unique) {
-            done=true;
+            done = true;
         } else {
             std::ostringstream portname;
             portname << portname_orig << idx++;
-            
             port->setName(portname.str());
         }
     }
-    
-    if(idx<10000) return true;
+
+    if(idx < 10000) return true;
     else return false;
 }
 
@@ -82,7 +91,8 @@ bool PortManager::makeNameUnique(Port *port)
  * @param port
  * @return
  */
-bool PortManager::registerPort(Port *port)
+bool
+PortManager::registerPort(Port *port)
 {
     assert(port);
 
@@ -93,13 +103,15 @@ bool PortManager::registerPort(Port *port)
 
     if (makeNameUnique(port)) {
         m_Ports.push_back(port);
+        callUpdateHandlers();
         return true;
     } else {
         return false;
     }
 }
 
-bool PortManager::unregisterPort(Port *port)
+bool
+PortManager::unregisterPort(Port *port)
 {
     assert(port);
     debugOutput( DEBUG_LEVEL_VERBOSE, "unregistering port %s\n",port->getName().c_str());
@@ -110,6 +122,7 @@ bool PortManager::unregisterPort(Port *port)
     {
         if(*it == port) {
             m_Ports.erase(it);
+            callUpdateHandlers();
             return true;
         }
     }
@@ -117,10 +130,11 @@ bool PortManager::unregisterPort(Port *port)
     debugOutput( DEBUG_LEVEL_VERBOSE, "port %s not found \n",port->getName().c_str());
 
     return false; //not found
-
 }
 
-int PortManager::getPortCount(enum Port::E_PortType type) {
+int
+PortManager::getPortCount(enum Port::E_PortType type)
+{
     int count=0;
 
     for ( PortVectorIterator it = m_Ports.begin();
@@ -134,21 +148,27 @@ int PortManager::getPortCount(enum Port::E_PortType type) {
     return count;
 }
 
-int PortManager::getPortCount() {
-    int count=0;
+int
+PortManager::getPortCount()
+{
+    int count = 0;
 
-    count+=m_Ports.size();
+    count += m_Ports.size();
 
     return count;
 }
 
-Port * PortManager::getPortAtIdx(unsigned int index) {
+Port *
+PortManager::getPortAtIdx(unsigned int index)
+{
 
     return m_Ports.at(index);
 
 }
 
-void PortManager::setVerboseLevel(int i) {
+void
+PortManager::setVerboseLevel(int i)
+{
     setDebugLevel(i);
     for ( PortVectorIterator it = m_Ports.begin();
       it != m_Ports.end();
@@ -159,7 +179,9 @@ void PortManager::setVerboseLevel(int i) {
 }
 
 
-bool PortManager::resetPorts() {
+bool
+PortManager::resetPorts()
+{
     debugOutput( DEBUG_LEVEL_VERBOSE, "reset ports\n");
 
     for ( PortVectorIterator it = m_Ports.begin();
@@ -174,7 +196,9 @@ bool PortManager::resetPorts() {
     return true;
 }
 
-bool PortManager::initPorts() {
+bool
+PortManager::initPorts()
+{
     debugOutput( DEBUG_LEVEL_VERBOSE, "init ports\n");
 
     for ( PortVectorIterator it = m_Ports.begin();
@@ -189,7 +213,9 @@ bool PortManager::initPorts() {
     return true;
 }
 
-bool PortManager::preparePorts() {
+bool
+PortManager::preparePorts()
+{
     debugOutput( DEBUG_LEVEL_VERBOSE, "preparing ports\n");
 
     for ( PortVectorIterator it = m_Ports.begin();
@@ -200,9 +226,63 @@ bool PortManager::preparePorts() {
             debugFatal("Could not prepare port %s",(*it)->getName().c_str());
             return false;
         }
-
     }
     return true;
+}
+
+bool
+PortManager::addPortManagerUpdateHandler( Util::Functor* functor )
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Adding PortManagerUpdate handler (%p)\n", functor);
+    m_UpdateHandlers.push_back( functor );
+    return true;
+}
+
+bool
+PortManager::remPortManagerUpdateHandler( Util::Functor* functor )
+{
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Removing PortManagerUpdate handler (%p)\n", functor);
+
+    for ( Util::FunctorVectorIterator it = m_UpdateHandlers.begin();
+          it != m_UpdateHandlers.end();
+          ++it )
+    {
+        if ( *it == functor ) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " found\n");
+            m_UpdateHandlers.erase( it );
+            return true;
+        }
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, " not found\n");
+    return false;
+}
+
+Util::Functor*
+PortManager::getUpdateHandlerForPtr(void *ptr)
+{
+    for ( Util::FunctorVectorIterator it = m_UpdateHandlers.begin();
+          it != m_UpdateHandlers.end();
+          ++it )
+    {
+        if ( (*it)->matchCallee(ptr) ) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, " found\n");
+            return *it;
+        }
+    }
+    return NULL;
+}
+
+void
+PortManager::callUpdateHandlers()
+{
+    for ( Util::FunctorVectorIterator it = m_UpdateHandlers.begin();
+          it != m_UpdateHandlers.end();
+          ++it )
+    {
+        Util::Functor* func = *it;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Calling PortManagerUpdate handler (%p)\n", func);
+        ( *func )();
+    }
 }
 
 }

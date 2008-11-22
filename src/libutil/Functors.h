@@ -25,6 +25,7 @@
 #define __FFADO_FUNCTORS__
 
 #include <semaphore.h>
+#include <vector>
 
 namespace Util {
 
@@ -35,7 +36,11 @@ public:
     virtual ~Functor() {}
 
     virtual void operator() () = 0;
+    virtual bool matchCallee(void *) = 0;
 };
+
+typedef std::vector<Functor *> FunctorVector;
+typedef std::vector<Functor *>::iterator FunctorVectorIterator;
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -73,9 +78,13 @@ public:
                 sem_post( m_pSem);
             }
             if (m_bDelete) {
-            delete this;
+                delete this;
+            }
         }
-    }
+    virtual bool matchCallee(void *p)
+        {
+            return p == (void *)m_pCallee;
+        }
 
 private:
     CalleePtr  m_pCallee;
@@ -125,6 +134,11 @@ public:
             }
     }
 
+    virtual bool matchCallee(void *p)
+        {
+            return p == (void *)m_pCallee;
+        }
+
 private:
     CalleePtr  m_pCallee;
     MemFunPtr  m_pMemFun;
@@ -165,6 +179,10 @@ public:
             if (m_bDelete) {
                 delete this;
             }
+        }
+    virtual bool matchCallee(void *p)
+        {
+            return false;
         }
 
 private:

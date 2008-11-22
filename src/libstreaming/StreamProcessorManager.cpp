@@ -215,12 +215,19 @@ bool StreamProcessorManager::registerProcessor(StreamProcessor *processor)
     if (processor->getType() == StreamProcessor::ePT_Receive) {
         processor->setVerboseLevel(getDebugLevel()); // inherit debug level
         m_ReceiveProcessors.push_back(processor);
+        Util::Functor* f = new Util::MemberFunctor0< StreamProcessorManager*, void (StreamProcessorManager::*)() >
+                    ( this, &StreamProcessorManager::updateShadowLists, false );
+        processor->addPortManagerUpdateHandler(f);
+        updateShadowLists();
         return true;
     }
-
     if (processor->getType() == StreamProcessor::ePT_Transmit) {
         processor->setVerboseLevel(getDebugLevel()); // inherit debug level
         m_TransmitProcessors.push_back(processor);
+        Util::Functor* f = new Util::MemberFunctor0< StreamProcessorManager*, void (StreamProcessorManager::*)() >
+                    ( this, &StreamProcessorManager::updateShadowLists, false );
+        processor->addPortManagerUpdateHandler(f);
+        updateShadowLists();
         return true;
     }
 
@@ -245,6 +252,13 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
                     m_SyncSource = NULL;
                 }
                 m_ReceiveProcessors.erase(it);
+                // remove the functor
+                Util::Functor * f = processor->getUpdateHandlerForPtr(this);
+                if(f) {
+                    processor->remPortManagerUpdateHandler(f);
+                    delete f;
+                }
+                updateShadowLists();
                 return true;
             }
         }
@@ -261,6 +275,13 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
                     m_SyncSource = NULL;
                 }
                 m_TransmitProcessors.erase(it);
+                // remove the functor
+                Util::Functor * f = processor->getUpdateHandlerForPtr(this);
+                if(f) {
+                    processor->remPortManagerUpdateHandler(f);
+                    delete f;
+                }
+                updateShadowLists();
                 return true;
             }
         }
@@ -272,7 +293,7 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 
 bool StreamProcessorManager::setSyncSource(StreamProcessor *s) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting sync source to (%p)\n", s);
-    m_SyncSource=s;
+    m_SyncSource = s;
     return true;
 }
 
@@ -352,6 +373,8 @@ bool StreamProcessorManager::prepare() {
     int timeout_usec = 2*1000LL * 1000LL * m_period / m_nominal_framerate;
     debugOutput(DEBUG_LEVEL_VERBOSE, "setting activity timeout to %d\n", timeout_usec);
     setActivityWaitTimeoutUsec(timeout_usec);
+
+    updateShadowLists();
 
     return true;
 }
@@ -1410,31 +1433,67 @@ int StreamProcessorManager::getPortCount(enum Port::E_Direction direction) {
     return count;
 }
 
-// TODO: implement a port map here, instead of the loop
-Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction direction) {
-    int count=0;
-    int prevcount=0;
+void
+StreamProcessorManager::updateShadowLists()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Updating port shadow lists...\n");
+    m_CapturePorts_shadow.clear();
+    m_PlaybackPorts_shadow.clear();
 
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+        it != m_ReceiveProcessors.end();
+        ++it ) {
+        PortManager *pm = *it;
+        for (int i=0; i < pm->getPortCount(); i++) {
+            Port *p = pm->getPortAtIdx(i);
+            if (!p) {
+                debugError("getPortAtIdx(%d) returned NULL\n", i);
+                continue;
+            }
+            if(p->getDirection() != Port::E_Capture) {
+                debugError("port at idx %d for receive SP is not a capture port!\n", i);
+                continue;
+            }
+            m_CapturePorts_shadow.push_back(p);
+        }
+    }
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) {
+        PortManager *pm = *it;
+        for (int i=0; i < pm->getPortCount(); i++) {
+            Port *p = pm->getPortAtIdx(i);
+            if (!p) {
+                debugError("getPortAtIdx(%d) returned NULL\n", i);
+                continue;
+            }
+            if(p->getDirection() != Port::E_Playback) {
+                debugError("port at idx %d for transmit SP is not a playback port!\n", i);
+                continue;
+            }
+            m_PlaybackPorts_shadow.push_back(p);
+        }
+    }
+}
+
+Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction direction) {
+    debugOutputExtreme( DEBUG_LEVEL_ULTRA_VERBOSE, "getPortByIndex(%d, %d)...\n", idx, direction);
     if (direction == Port::E_Capture) {
-        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-            it != m_ReceiveProcessors.end();
-            ++it ) {
-            count += (*it)->getPortCount();
-            if (count > idx) {
-                return (*it)->getPortAtIdx(idx-prevcount);
-            }
-            prevcount=count;
+        #ifdef DEBUG
+        if(idx >= (int)m_CapturePorts_shadow.size()) {
+            debugError("Capture port %d out of range (%d)\n", idx, m_CapturePorts_shadow.size());
+            return NULL;
         }
+        #endif
+        return m_CapturePorts_shadow.at(idx);
     } else {
-        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-            it != m_TransmitProcessors.end();
-            ++it ) {
-            count += (*it)->getPortCount();
-            if (count > idx) {
-                return (*it)->getPortAtIdx(idx-prevcount);
-            }
-            prevcount=count;
+        #ifdef DEBUG
+        if(idx >= (int)m_PlaybackPorts_shadow.size()) {
+            debugError("Playback port %d out of range (%d)\n", idx, m_PlaybackPorts_shadow.size());
+            return NULL;
         }
+        #endif
+        return m_PlaybackPorts_shadow.at(idx);
     }
     return NULL;
 }

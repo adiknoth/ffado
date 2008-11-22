@@ -767,6 +767,7 @@ DeviceManager::initStreaming()
         debugWarning("Could not set processorManager sync source (%p)\n",
             getSyncSource());
     }
+
     return true;
 }
 
