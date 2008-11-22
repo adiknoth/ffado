@@ -412,7 +412,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             // try to fix up the timestamp
             int64_t last_timestamp_fixed;
             // first try to add one second
-            last_timestamp_fixed = m_last_timestamp + TICKS_PER_SECOND;
+            last_timestamp_fixed = addTicks(m_last_timestamp, TICKS_PER_SECOND);
             diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
             if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
                 debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
@@ -420,10 +420,9 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                              m_last_timestamp, diff, ticks_per_packet);
                 debugWarning("HACK: fixed by adding one second of ticks. This is a bug being run-time fixed.\n");
                 m_last_timestamp = last_timestamp_fixed;
-            }
-            // then try to subtract one second
-            last_timestamp_fixed = m_last_timestamp - TICKS_PER_SECOND;
-            if(last_timestamp_fixed >= 0) {
+            } else {
+                // if that didn't work, try to subtract one second
+                last_timestamp_fixed = substractTicks(m_last_timestamp, TICKS_PER_SECOND);
                 diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
                 if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
                     debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
