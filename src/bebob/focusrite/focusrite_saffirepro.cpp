@@ -816,16 +816,16 @@ SaffireProDevice::saveSettings() {
 
 void
 SaffireProDevice::flashLed() {
-    int ledFlashDuration=2;
+    int ledFlashDuration = 2;
     if(!getOption("ledFlashDuration", ledFlashDuration)) {
-        debugWarning("Could not retrieve ledFlashDuration parameter, defaulting to 2sec\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Could not retrieve ledFlashDuration parameter, defaulting to 2sec\n");
     }
-    int ledFlashFrequency=10;
+    int ledFlashFrequency = 10;
     if(!getOption("ledFlashFrequency", ledFlashFrequency)) {
-        debugWarning("Could not retrieve ledFlashFrequency parameter, defaulting to 10Hz\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Could not retrieve ledFlashFrequency parameter, defaulting to 10Hz\n");
     }
 
-    uint32_t reg=0;
+    uint32_t reg = 0;
     debugOutput( DEBUG_LEVEL_VERBOSE, "flashing led ...\n" );
     
     reg = FR_SAFFIREPRO_CMD_SET_FLASH_SECS(reg, ledFlashDuration);
