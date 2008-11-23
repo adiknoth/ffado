@@ -89,6 +89,29 @@ protected:
     FFADODevice &m_Device;
 };
 
+/*!
+ * @brief Stream status control element
+ */
+class StreamingStatus
+: public Enum
+{
+public:
+    StreamingStatus(FFADODevice &);
+    virtual ~StreamingStatus() {};
+
+    virtual bool select(int idx);
+    virtual int selected();
+    virtual int count();
+    virtual std::string getEnumLabel(int idx);
+
+    virtual bool canChangeValue();
+
+    virtual void show();
+
+protected:
+    FFADODevice &m_Device;
+};
+
 }; // namespace Control
 
 #endif // CONTROL_CLOCK_SELECT_H

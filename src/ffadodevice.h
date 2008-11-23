@@ -263,10 +263,10 @@ public:
      * @brief stream states
      */
     enum eStreamingState {
-        eSS_Idle,        ///> not streaming
-        eSS_Sending,     ///> the device is sending a stream
-        eSS_Receiving,   ///> the device is receiving a stream
-        eSS_Both,        ///> the device is sending and receiving a stream
+        eSS_Idle = 0,        ///> not streaming
+        eSS_Sending = 1,     ///> the device is sending a stream
+        eSS_Receiving = 2,   ///> the device is receiving a stream
+        eSS_Both = 3,        ///> the device is sending and receiving a stream
     };
 
     /**

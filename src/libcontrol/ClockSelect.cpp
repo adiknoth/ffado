@@ -259,5 +259,67 @@ SamplerateSelect::show()
 
 }
 
+// --- stream status feedback selection ---
+
+StreamingStatus::StreamingStatus(FFADODevice &d)
+: Enum(&d)
+, m_Device( d )
+{
+    setName("StreamingStatus");
+    setLabel("Streaming Status");
+    setDescription("Obtain information of the current streaming status of a device");
+}
+
+bool
+StreamingStatus::select(int idx)
+{
+    debugWarning("Cannot change stream status through control interface\n");
+    return false;
+}
+
+int
+StreamingStatus::selected()
+{
+    return m_Device.getStreamingState();
+}
+
+int
+StreamingStatus::count()
+{
+    // NOTE: this should correspond to the number of enums in FFADODevice::eStreamingState
+    return 4;
+}
+
+std::string
+StreamingStatus::getEnumLabel(int idx)
+{
+    switch(idx) {
+        case FFADODevice::eSS_Idle:
+            return "Idle";
+        case FFADODevice::eSS_Sending:
+            return "Sending";
+        case FFADODevice::eSS_Receiving:
+            return "Receiving";
+        case FFADODevice::eSS_Both:
+            return "Both";
+        default:
+            debugError("Invalid enum index specified: %d\n", idx);
+            return "Invalid enum index";
+    }
+}
+
+bool
+StreamingStatus::canChangeValue()
+{
+    return false;
+}
+
+void
+StreamingStatus::show()
+{
+    debugOutput( DEBUG_LEVEL_NORMAL, "StreamingStatus Element %s, current: %d\n",
+        getName().c_str(), m_Device.getStreamingState());
+}
+
 
 } // namespace Control

@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>444</width>
-    <height>81</height>
+    <width>700</width>
+    <height>80</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -35,12 +35,21 @@
   <property name="windowTitle" >
    <string>Global Mixer Options</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout" >
-   <property name="margin" >
+  <layout class="QHBoxLayout" >
+   <property name="leftMargin" >
+    <number>3</number>
+   </property>
+   <property name="topMargin" >
+    <number>3</number>
+   </property>
+   <property name="rightMargin" >
+    <number>3</number>
+   </property>
+   <property name="bottomMargin" >
     <number>3</number>
    </property>
    <item>
-    <layout class="QGridLayout" name="gridLayout_2" >
+    <layout class="QGridLayout" >
      <property name="horizontalSpacing" >
       <number>9</number>
      </property>
@@ -83,7 +92,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QGridLayout" name="gridLayout" >
+    <layout class="QGridLayout" >
      <property name="horizontalSpacing" >
       <number>9</number>
      </property>
@@ -139,6 +148,47 @@
     </layout>
    </item>
    <item>
+    <widget class="QGroupBox" name="grpStatus" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Preferred" hsizetype="Maximum" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="title" >
+      <string>Stream Status</string>
+     </property>
+     <layout class="QVBoxLayout" >
+      <item>
+       <widget class="QCheckBox" name="chkStreamOut" >
+        <property name="enabled" >
+         <bool>false</bool>
+        </property>
+        <property name="layoutDirection" >
+         <enum>Qt::RightToLeft</enum>
+        </property>
+        <property name="text" >
+         <string>Outgoing</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="chkStreamIn" >
+        <property name="enabled" >
+         <bool>false</bool>
+        </property>
+        <property name="layoutDirection" >
+         <enum>Qt::RightToLeft</enum>
+        </property>
+        <property name="text" >
+         <string>Incoming</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <spacer>
      <property name="orientation" >
       <enum>Qt::Horizontal</enum>
@@ -146,7 +196,7 @@
      <property name="sizeType" >
       <enum>QSizePolicy::Expanding</enum>
      </property>
-     <property name="sizeHint" stdset="0" >
+     <property name="sizeHint" >
       <size>
        <width>330</width>
        <height>10</height>

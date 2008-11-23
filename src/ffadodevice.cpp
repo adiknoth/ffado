@@ -73,6 +73,10 @@ FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom 
         if(!m_genericContainer->addElement(new Control::Nickname(*this))) {
             debugWarning("failed to add Nickname control to container\n");
         }
+        // add a generic control for the streaming status
+        if(!m_genericContainer->addElement(new Control::StreamingStatus(*this))) {
+            debugWarning("failed to add StreamingStatus control to container\n");
+        }
     }
 }
 
