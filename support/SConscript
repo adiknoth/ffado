@@ -25,5 +25,5 @@ Import( 'env' )
 
 env = env.Clone()
 
-env.SConscript( dirs=["mixer","mixer-qt4","firmware","dbus"], exports="env" )
+env.SConscript( dirs=["mixer","mixer-qt4","firmware","dbus","tools"], exports="env" )
 
