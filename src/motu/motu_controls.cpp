@@ -863,7 +863,7 @@ MeterControl::MeterControl(MotuDevice &parent, unsigned int ctrl_mask, unsigned 
 }
 
 void MeterControl::validate(void) {
-    if (m_register & (1<< m_shift) == 0) {
+    if ((m_register & (1<< m_shift)) == 0) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Inconsistent mask/shift: 0x%08x/%d\n", m_register, m_shift);
     }
 }

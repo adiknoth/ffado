@@ -36,4 +36,6 @@ sources = [
 if env.has_key('DEBUG') and env['DEBUG']:
     env.AppendUnique( CCFLAGS=["-DDEBUG","-g"] )
 
+env.AppendUnique( CCFLAGS=["-DYY_NO_INPUT"] )
+
 libconfig = env.StaticLibrary('libconfigpp', sources)
