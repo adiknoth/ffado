@@ -153,25 +153,9 @@ def CheckForApp( context, app ):
 
 def CheckForPyModule( context, module ):
 	context.Message( "Checking for the python module '" + module + "' " )
-	ret = True
-	path = None
-	while module.count(".") > 0 and ret:
-		thismod = module.split(".")[0]
-		try:
-			modinfo = imp.find_module( thismod, path )
-		except ImportError:
-			ret = False
-		else:
-			newmod = imp.load_module( thismod, modinfo[0], modinfo[1], modinfo[2] )
-			path = newmod.__path__
-		module = ".".join( module.split(".")[1:] )
-	if ret:
-		try:
-			imp.find_module( module )
-		except ImportError:
-			ret = False
-	context.Result( ret )
-	return ret
+	ret = context.TryAction( "python $SOURCE", "import %s" % module, ".py" )
+	context.Result( ret[0] )
+	return ret[0]
 
 def CompilerCheck( context ):
 	context.Message( "Checking for a working C-compiler " )
