@@ -545,9 +545,6 @@ if not env.GetOption('clean'):
     if env['BUILD_TESTS']:
         Default( 'tests' )
 
-if not env.has_key( 'DESTDIR' ):
-	env.Execute( env.Action( "rm -f %s/ffadomixer" % env['bindir'] ) )
-
 #
 # Deal with the DESTDIR vs. xdg-tools conflict (which is basicely that the
 # xdg-tools can't deal with DESTDIR, so the packagers have to deal with this
