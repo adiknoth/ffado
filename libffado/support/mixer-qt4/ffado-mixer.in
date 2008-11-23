@@ -43,6 +43,8 @@ from ffado_dbus_util import *
 
 from ffado_panelmanager import PanelManager
 
+from ffado_logginghandler import *
+
 """Just a small helper to ask the retry-question without a blocking messagebox"""
 class StartDialog(QWidget):
     def __init__(self, parent):
@@ -54,10 +56,18 @@ class StartDialog(QWidget):
         self.layout.addWidget(self.label, 0, 0, Qt.AlignCenter)
         self.layout.addWidget(self.button, 1, 0, Qt.AlignCenter)
 
-
 class FFADOWindow(QMainWindow):
     def __init__(self, parent):
         QMainWindow.__init__(self, parent)
+
+        self.textlogger = QTextLogger(self)
+        dock = QDockWidget("Log Messages",self)
+        dock.setWidget(self.textlogger)
+        logging.getLogger('').addHandler(self.textlogger)
+        self.addDockWidget(Qt.BottomDockWidgetArea, dock)
+
+        self.statuslogger = QStatusLogger(self, self.statusBar(), 20)
+        logging.getLogger('').addHandler(self.statuslogger)
 
         self.manager = PanelManager(self)
 
@@ -85,7 +95,7 @@ class FFADOWindow(QMainWindow):
         self.connect( aboutqtaction, SIGNAL( "triggered()" ), qApp, SLOT( "aboutQt()" ) )
         helpmenu.addAction( aboutqtaction )
 
-        self.statusBar().showMessage( "Initializing...", 5000 )
+        log.info( "Starting up" )
 
         QTimer.singleShot( 1, self.connectToDBUS )
 
@@ -93,13 +103,7 @@ class FFADOWindow(QMainWindow):
         try:
             self.setupDeviceManager()
         except dbus.DBusException, ex:
-            log.error("")
-            log.error("")
-            log.error("===========================================================")
-            log.error("ERROR: Could not communicate with the FFADO DBus service...")
-            log.error("===========================================================")
-            log.error("")
-            log.error("")
+            log.error("Could not communicate with the FFADO DBus service...")
             if not hasattr(self,"retry"):
                 self.retry = StartDialog(self)
                 self.setCentralWidget(self.retry)
@@ -142,7 +146,7 @@ class FFADOWindow(QMainWindow):
 if __name__ == "__main__":
     #set up logging
     import logging
-    logging.basicConfig()
+    logging.basicConfig( datefmt="%H:%M:%S", format="%(asctime)s %(name)-16s %(levelname)-8s %(message)s" )
 
     if DEBUG:
         debug_level = logging.DEBUG
