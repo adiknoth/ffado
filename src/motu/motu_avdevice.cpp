@@ -1649,6 +1649,12 @@ Streaming::Port *p=NULL;
 
     if (!p) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",name);
+    } else {
+        /* All ports created are enabled, more or less by definition.  If
+         * we don't need a port due to sample rate or device configuration
+         * we don't currently create it.  This may change.
+         */
+        p->enable();
     }
     free(name);
     return true;
