@@ -157,7 +157,7 @@ Port::getPortTypeName()
 
 void Port::show() {
     debugOutput(DEBUG_LEVEL_VERBOSE,"Name          : %s\n", m_Name.c_str());
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Enabled?      : %d\n", m_disabled);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Enabled?      : %d\n", m_disabled==false);
     debugOutput(DEBUG_LEVEL_VERBOSE,"State?        : %d\n", m_State);
     debugOutput(DEBUG_LEVEL_VERBOSE,"Buffer Size   : %d\n", m_buffersize);
     debugOutput(DEBUG_LEVEL_VERBOSE,"Event Size    : %d\n", getEventSize());
