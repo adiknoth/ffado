@@ -1397,7 +1397,7 @@ MotuDevice::prepare() {
     // of the event data.
     asprintf(&buff,"%s_pbk_MIDI0",id.c_str());
     p = new Streaming::MotuMidiPort(*m_transmitProcessor, buff,
-        Streaming::Port::E_Capture, 4);
+        Streaming::Port::E_Playback, 4);
     if (!p) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
     }
@@ -1649,12 +1649,6 @@ Streaming::Port *p=NULL;
 
     if (!p) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",name);
-    } else {
-        /* All ports created are enabled, more or less by definition.  If
-         * we don't need a port due to sample rate or device configuration
-         * we don't currently create it.  This may change.
-         */
-        p->enable();
     }
     free(name);
     return true;
