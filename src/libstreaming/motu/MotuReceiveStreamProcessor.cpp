@@ -218,13 +218,13 @@ bool MotuReceiveStreamProcessor::processReadBlock(char *data,
 
         case Port::E_Audio:
             if(decodeMotuEventsToPort(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not decode packet data to port %s",(*it)->getName().c_str());
+                debugWarning("Could not decode packet data to port %s\n",(*it)->getName().c_str());
                 no_problem=false;
             }
             break;
         case Port::E_Midi:
              if(decodeMotuMidiEventsToPort(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                 debugWarning("Could not decode packet midi data to port %s",(*it)->getName().c_str());
+                 debugWarning("Could not decode packet midi data to port %s\n",(*it)->getName().c_str());
                  no_problem=false;
              }
             break;

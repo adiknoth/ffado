@@ -493,8 +493,14 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
     for ( PortVectorIterator it = m_Ports.begin();
       it != m_Ports.end();
       ++it ) {
-        // If this port is disabled, don't process it
-        // if((*it)->isDisabled()) {continue;};
+        // If this port is disabled, unconditionally send it silence.
+        if((*it)->isDisabled()) {
+          if (encodeSilencePortToMotuEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+            debugWarning("Could not encode silence for disabled port %s to Motu events\n",(*it)->getName().c_str());
+            // Don't treat this as a fatal error at this point
+          }
+          continue;
+        fi
 
         Port *port=(*it);
 
@@ -502,13 +508,13 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
 
         case Port::E_Audio:
             if (encodePortToMotuEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not encode port %s to Motu events",(*it)->getName().c_str());
+                debugWarning("Could not encode port %s to Motu events\n",(*it)->getName().c_str());
                 no_problem=false;
             }
             break;
         case Port::E_Midi:
              if (encodePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                 debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
+                 debugWarning("Could not encode port %s to Midi events\n",(*it)->getName().c_str());
                  no_problem=false;
              }
             break;
@@ -534,13 +540,13 @@ MotuTransmitStreamProcessor::transmitSilenceBlock(char *data,
 
         case Port::E_Audio:
             if (encodeSilencePortToMotuEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
+                debugWarning("Could not encode port %s to MBLA events\n",(*it)->getName().c_str());
                 no_problem = false;
             }
             break;
         case Port::E_Midi:
             if (encodeSilencePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
+                debugWarning("Could not encode port %s to Midi events\n",(*it)->getName().c_str());
                 no_problem = false;
             }
             break;
