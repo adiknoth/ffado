@@ -494,7 +494,7 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
       it != m_Ports.end();
       ++it ) {
         // If this port is disabled, don't process it
-        if((*it)->isDisabled()) {continue;};
+        // if((*it)->isDisabled()) {continue;};
 
         Port *port=(*it);
 
