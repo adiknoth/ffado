@@ -500,7 +500,7 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
             // Don't treat this as a fatal error at this point
           }
           continue;
-        fi
+        }
 
         Port *port=(*it);
 
