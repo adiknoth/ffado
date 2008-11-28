@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.3
+Version: 0.4
 Author: Jonathan Woithe
-Date: 15 November 2008
+Date: 27 November 2008
 
 
 Definitions
@@ -45,6 +45,10 @@ Nowhere is there any evidence of register 0xfc88f000 being read by the PC.
 It seems that the PC explicitly sets the device to its desired sample rate
 and then caches the sample rate locally.
 
+In terms of multipliers the RME treats sample rates greater than 112000 Hz
+as 4x rates, with rates greater than 56000 Hz as 2x rates.  Rates less than
+30000 Hz and greater than 210000 Hz are invalid.
+
 
 Configuration registers 1, 2 and 3
 ----------------------------------
@@ -61,7 +65,7 @@ block of 12 bytes starting at 0xfc88f014 with a block write operation.
 
 Configuration register 1 (FF800: 0xfc88f014):
 
-  bits 31-8: unknown, set to 0
+  bits 31-18: unknown, set to 0
   bits 17-16: Phones level:
     00 = +4 dBu
     01 = -10 dBV
@@ -135,6 +139,29 @@ Configuration register 3 (FF800: 0xfc88f01c):
   bit 0: Clock mode: 0 = Master, 1 = Autosync
 
 
+Waiting for device flash
+------------------------
+
+To preserve the device's settings across power cycles the settings are
+stored in a flash memory on the device.  This is read during driver
+initialisation to ensure the driver's status agrees with that of the device.
+
+When interacting with the device's flash memory one must wait for the
+completion of an operation before attempting another.  The location of the
+"device busy" flag differs between the FF400 and FF800.
+
+On the FF800 is part of the quadlet register at 0x801c0004 (part of the
+read-only status register block beginning at 0x801c0000).  The device is
+ready to accept another command when bit 30 is set.
+
+On the FF400 the wait state is found by reading a quadlet from CBR+8*4.
+If this quadlet is zero the FF400 is ready to accept another command.
+
+Most device flash operations have a minimum time to complete.  There's no
+point in polling the device busy flag until at least this much time has
+elapsed.
+
+
 Streaming control registers
 ---------------------------
 
@@ -201,10 +228,22 @@ Iso data
 --------
 
 Audio/midi data is sent and received on isochronous channels previously
-configured by the driver.  It seems the data is sent with one channel per
-quadlet.  The audio data is a 24 bit integer stored in the most-significant
-3 bytes of a quadlet.  The LSB (low byte) of certain channels in the stream
-sent by the Fireface is used to send synchronising information:
+configured by the driver.  On a dedicated bus with nothing else present, the
+stream to the fireface is sent on iso channel 0 while data from the fireface
+is sent on iso channel 1.
+
+No CIP header is included in the iso data packet.  Fireface data follows
+immediately after the standard 2-quadlet firewire iso packet header.
+
+Each iso packet contains a number of samples across all 28 device channels.
+For 1x rates, 7 samples per channel seem to be sent.  Thus the size of 
+the data portion of a 1x iso packet is 28*4*7 = 784, with a total packet
+size being 784 + 8 = 792.
+
+The data is sent with one audio channel per quadlet.  The audio data is a 24
+bit integer stored in the most-significant 3 bytes of a quadlet.  The LSB
+(low byte) of certain channels in the stream sent by the Fireface is used to
+send synchronising information:
 
   Low byte of channel 6 = current frame
   Low byte of channel 7 = phase
@@ -212,6 +251,25 @@ sent by the Fireface is used to send synchronising information:
   Low byte of channel 4 = rx sample counter, high byte
   Low byte of channel 0 = tx buffer size, low byte
   Low byte of channel 5 = tx buffer size, high byte
+  Low byte of channel 2 & 3 = unknown (midi?)
+
+The low byte data from channels 0-7 is repeated in channels 8-15 and 16-23
+respectively, with channels 24-27 containing the low byte data from channels
+0-3.  This repetition holds for the low bytes of channels 2-3 in all data
+seen so far, it might not necessarily be the case in general - it depends
+what the low byte data from channels 2 and 3 are used for.
+
+The rx sample counter appears to be used to detect missed samples.  The
+current frame and phase from a received packet is used in conjunction with
+the stored values of these from the previous frame to track the phase of
+the audio clock.
+
+A "frame" consists of a fixed number of samples across all channels of the
+device.  At 1x rates this appears to be 7, but it might not be fixed.  Even
+though this is the same as the number of samples per channel per packet, a
+given packet can experience a change in the "current frame" part way
+through.  In other words, the "current frame" is not necessarily constant
+for all samples in a packet.
 
 
 Mixer controls
@@ -274,3 +332,11 @@ unknown at this stage.
 
 In each 28-element array the channel data appears in standard fireface
 order.
+
+
+Host LED
+--------
+
+The "host" LED of the FF800 is controlled by a dedicated register at
+0x200000324.  Note that this register address goes beyond the 32-bit
+boundary.
