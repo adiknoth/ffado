@@ -61,6 +61,7 @@ if env.has_key('PYUIC4'):
                       'ffado_regdialog',
                       'ffado_panelmanager',
                       'ffado_configuration',
+                      'ffado_logginghandler',
                       'mixer_saffire_base'
                      ]
 

@@ -55,7 +55,6 @@ class QTextLogger( QTextEdit, logging.Handler ):
             color = QColor( "#808080" )
         self.setTextColor( color )
         tmp = "%s %s: %s" % (record.asctime, record.name, record.getMessage())
-        print tmp
         self.append( tmp )
         self.verticalScrollBar().triggerAction( QAbstractSlider.SliderToMaximum )
 
