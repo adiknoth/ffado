@@ -83,8 +83,27 @@ def GetPKGFlags( context, name, version="" ):
 	context.Result( True )
 	return ret
 
+#
+# Checks for the existance of the package and returns the value of the specified variable.
+#
+def GetPKGVariable( context, name, variable ):
+	import os
+
+	context.Message( "Checking for variable %s in package %s... \t" % (variable,name) )
+
+	ret = context.TryAction( "pkg-config --exists '%s'" % name )[0]
+	if not ret:
+		context.Result( ret )
+		return ret
+
+	out = os.popen2( "pkg-config --variable=%s %s" % (variable,name) )[1]
+	ret = out.read()
+
+	context.Result( True )
+	return ret
+
 def generate( env, **kw ):
-	env['PKGCONFIG_TESTS' ] = { 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG, 'GetPKGFlags' : GetPKGFlags }
+	env['PKGCONFIG_TESTS' ] = { 'CheckForPKGConfig' : CheckForPKGConfig, 'CheckForPKG' : CheckForPKG, 'GetPKGFlags' : GetPKGFlags, 'GetPKGVariable' : GetPKGVariable }
 
 def exists( env ):
 	return 1

@@ -40,8 +40,6 @@ if build_dir:
 else:
 	build_base=''
 
-destdir = ARGUMENTS.get( 'DESTDIR', "" )
-
 if not os.path.isdir( "cache" ):
 	os.makedirs( "cache" )
 
@@ -313,6 +311,10 @@ pkg = 'alsa'
 name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
 env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, '1.0.0' )
 
+#
+# Get the directory where dbus stores the service-files
+#
+env['dbus_service_dir'] = conf.GetPKGVariable( 'dbus-1', 'session_bus_services_dir' ).strip()
 
 config_guess = conf.ConfigGuess()
 
@@ -364,6 +366,11 @@ else:
 	env['build_base']="#/"
 
 #
+# Get the DESTDIR (if wanted) from the commandline
+#
+env.destdir = ARGUMENTS.get( 'DESTDIR', "" )
+
+#
 # Uppercase variables are for usage in code, lowercase versions for usage in
 # scons-files for installing.
 #
@@ -371,10 +378,10 @@ env['BINDIR'] = Template( env['BINDIR'] ).safe_substitute( env )
 env['LIBDIR'] = Template( env['LIBDIR'] ).safe_substitute( env )
 env['INCLUDEDIR'] = Template( env['INCLUDEDIR'] ).safe_substitute( env )
 env['SHAREDIR'] = Template( env['SHAREDIR'] ).safe_substitute( env )
-env['bindir'] = Template( destdir + env['BINDIR'] ).safe_substitute( env )
-env['libdir'] = Template( destdir + env['LIBDIR'] ).safe_substitute( env )
-env['includedir'] = Template( destdir + env['INCLUDEDIR'] ).safe_substitute( env )
-env['sharedir'] = Template( destdir + env['SHAREDIR'] ).safe_substitute( env )
+env['bindir'] = Template( env.destdir + env['BINDIR'] ).safe_substitute( env )
+env['libdir'] = Template( env.destdir + env['LIBDIR'] ).safe_substitute( env )
+env['includedir'] = Template( env.destdir + env['INCLUDEDIR'] ).safe_substitute( env )
+env['sharedir'] = Template( env.destdir + env['SHAREDIR'] ).safe_substitute( env )
 
 env.Command( target=env['sharedir'], source="", action=Mkdir( env['sharedir'] ) )
 
@@ -576,7 +583,7 @@ if not env.has_key( 'DESTDIR' ):
 # xdg-tools can't deal with DESTDIR, so the packagers have to deal with this
 # their own :-/
 #
-if len(destdir) > 0:
+if len(env.destdir) > 0:
 	if not len( ARGUMENTS.get( "WILL_DEAL_WITH_XDG_MYSELF", "" ) ) > 0:
 		print """
 WARNING!

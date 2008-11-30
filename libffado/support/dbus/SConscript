@@ -1,3 +1,4 @@
+#!/bin/env python
 #
 # Copyright (C) 2007-2008 Arnold Krille
 # Copyright (C) 2007-2008 Pieter Palmers
@@ -20,6 +21,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+import os
 
 Import( 'env' )
 
@@ -63,9 +66,17 @@ for app in apps.keys():
     if app.find( "test" ) == -1:
         env.Install( "$bindir", app )
 
+if env['dbus_service_dir'] and ( env.destdir or os.access( env['dbus_service_dir'], os.W_OK ) ):
+    print "Will install the service-file"
+    servicefile = env.ScanReplace('org.ffado.Control.service.in')
+    targetdir = env.destdir + env['dbus_service_dir']
+    env.Alias( "install", env.Install( env.destdir + env['dbus_service_dir'], servicefile ) )
+
 # static versions
 if static_env['BUILD_STATIC_TOOLS']:
     static_env.Append(LIBS=File('#/src/libffado.a'))
     for app in apps.keys():
         static_app = app + "-static"
         static_env.Program( target=static_app, source = static_env.Split( apps[app] ) )
+
+# vim: et
