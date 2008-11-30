@@ -82,6 +82,7 @@ Build the tests in their directory. As some contain quite some functionality,
     BoolOption( "BUILD_STATIC_TOOLS", "Build a statically linked version of the FFADO tools.", False ),
     EnumOption('DIST_TARGET', 'Build target for cross compiling packagers', 'auto', allowed_values=('auto', 'i386', 'i686', 'x86_64', 'powerpc', 'powerpc64', 'none' ), ignorecase=2),
     BoolOption( "ENABLE_OPTIMIZATIONS", "Enable optimizations and the use of processor specific extentions (MMX/SSE/...).", False ),
+	BoolOption( "PEDANTIC", "Enable -Werror and more pedantic options during compile.", False ),
 
 	)
 
@@ -270,53 +271,47 @@ results above get rechecked.
 	env['HAVE_LRINTF'] = HAVE_LRINTF;
 	env.Replace(CFLAGS=oldcf)
 
-	#
-	# Optional checks follow:
-	#
+#
+# Optional checks follow:
+#
 
-	# PyQT checks
-	build_mixer = False
-	if conf.CheckForApp( 'which pyuic4' ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'PyQt4' ) and conf.CheckForPyModule( 'dbus.mainloop.qt' ):
-		env['PYUIC4'] = True
-		build_mixer = True
-	
-	if conf.CheckForApp( 'which pyuic' ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
-		env['PYUIC'] = True
-		build_mixer = True
-	
-	if conf.CheckForApp( 'xdg-desktop-menu --help' ):
-		env['XDG_TOOLS'] = True
-	else:
-		print """
+# PyQT checks
+build_mixer = False
+if conf.CheckForApp( 'which pyuic4' ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'PyQt4' ) and conf.CheckForPyModule( 'dbus.mainloop.qt' ):
+	env['PYUIC4'] = True
+	build_mixer = True
+
+if conf.CheckForApp( 'which pyuic' ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
+	env['PYUIC'] = True
+	build_mixer = True
+
+if conf.CheckForApp( 'xdg-desktop-menu --help' ):
+	env['XDG_TOOLS'] = True
+else:
+	print """
 I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
 this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffado-mixer".
 """
-	
-		if conf.CheckForApp( "xdg-desktop-menu --help" ):
-			env['XDG_TOOLS'] = True
-		else:
-			print """
-	I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
-	this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
-	"""
-	
-	if not build_mixer:
-		print """
-	I couldn't find all the prerequisites ('pyuic' / 'pyuic4' and the python-modules 'dbus' and
-	'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
-	Therefor the mixer won't get installed.
-	"""
+
+if conf.CheckForApp( "xdg-desktop-menu --help" ):
+	env['XDG_TOOLS'] = True
+else:
+	print """
+I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
+this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
+"""
+
+if not build_mixer and not env.GetOption('clean'):
+	print """
+I couldn't find all the prerequisites ('pyuic' / 'pyuic4' and the python-modules 'dbus' and
+'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
+Therefor the mixer won't get installed.
+"""
 
 # ALSA checks
 pkg = 'alsa'
 name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
 env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, '1.0.0' )
-if env['%s_FLAGS'%name2] == 0:
-	env['HAVE_ALSA'] = False
-	print " ALSA not found, not building ALSA plugin."
-else:
-	env['HAVE_ALSA'] = True
-	print " ALSA found, building ALSA plugin."
 
 
 config_guess = conf.ConfigGuess()
@@ -325,25 +320,23 @@ env = conf.Finish()
 
 if env['DEBUG']:
 	print "Doing a DEBUG build"
-	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
-	env.AppendUnique( CCFLAGS=["-DDEBUG","-Wall","-g"] )
-	env.AppendUnique( CFLAGS=["-DDEBUG","-Wall","-g"] )
+	env.MergeFlags( "-DDEBUG -Wall -g" )
 else:
-	env.AppendUnique( CCFLAGS=["-O2","-DNDEBUG"] )
-	env.AppendUnique( CFLAGS=["-O2","-DNDEBUG"] )
+	env.MergeFlags( "-O2 -DNDEBUG" )
 
 if env['PROFILE']:
 	print "Doing a PROFILE build"
-	# -Werror could be added to, which would force the devs to really remove all the warnings :-)
-	env.AppendUnique( CCFLAGS=["-Wall","-g"] )
-	env.AppendUnique( CFLAGS=["-Wall","-g"] )
+	env.MergeFlags( "-Wall -g" )
+
+if env['PEDANTIC']:
+	env.MergeFlags( "-Werror" )
 
 
 # this is required to indicate that the DBUS version we use has support
 # for platform dependent threading init functions
 # this is true for DBUS >= 0.96 or so. Since we require >= 1.0 it is
 # always true
-env.AppendUnique( CCFLAGS=["-DDBUS_HAS_THREADS_INIT_DEFAULT"] )
+env.MergeFlags( "-DDBUS_HAS_THREADS_INIT_DEFAULT" )
 
 if env['ENABLE_ALL']:
 	env['ENABLE_BEBOB'] = True
@@ -491,28 +484,22 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
     # build for 64-bit userland?
     if env['DIST_TARGET'] == "powerpc64":
         print "Doing a 64-bit PowerPC build"
-        env.AppendUnique( CCFLAGS=["-m64"] )
-        env.AppendUnique( CFLAGS=["-m64"] )
+        env.MergeFlags( "-m64" )
     elif env['DIST_TARGET'] == "x86_64":
         print "Doing a 64-bit x86 build"
-        env.AppendUnique( CCFLAGS=["-m64"] )
-        env.AppendUnique( CFLAGS=["-m64"] )
+        env.MergeFlags( "-m64" )
         needs_fPIC = True
     else:
         print "Doing a 32-bit build"
-	env.AppendUnique( CCFLAGS=["-m32"] )
-	env.AppendUnique( CFLAGS=["-m32"] )
+	env.MergeFlags( "-m32" )
 
-if needs_fPIC or '-fPIC' in env['OS_CFLAGS']:
-    env.AppendUnique( CFLAGS=["-fPIC"] )
-if needs_fPIC or '-fPIC' in env['OS_CCFLAGS']:
-    env.AppendUnique( CCFLAGS=["-fPIC"] )
+if needs_fPIC or '-fPIC' in env['OS_CFLAGS'] or "-fPIC" in env['OS_CCFLAGS']:
+    env.MergeFlags( "-fPIC" )
 
 # end of processor-specific section
 if env['ENABLE_OPTIMIZATIONS']:
     opt_flags.extend (["-fomit-frame-pointer","-ffast-math","-funroll-loops"])
-    env.AppendUnique( CCFLAGS=opt_flags )
-    env.AppendUnique( CFLAGS=opt_flags )
+    env.MergeFlags( opt_flags )
     print "Doing an optimized build..."
 
 env['REVISION'] = os.popen('svnversion .').read()[:-1]
