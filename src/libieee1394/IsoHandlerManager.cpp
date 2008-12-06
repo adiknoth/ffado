@@ -791,16 +791,19 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         int bufferfill_mode_threshold = BUFFERFILL_MODE_THRESHOLD;
         int min_interrupts_per_period = MINIMUM_INTERRUPTS_PER_PERIOD;
         int max_nb_buffers_recv = MAX_RECV_NB_BUFFERS;
+        int min_packetsize_recv = MIN_RECV_PACKET_SIZE;
         if(config) {
             config->getValueForSetting("ieee1394.isomanager.iso_receive_mode", receive_mode_setting);
             config->getValueForSetting("ieee1394.isomanager.bufferfill_mode_threshold", bufferfill_mode_threshold);
             config->getValueForSetting("ieee1394.isomanager.min_interrupts_per_period", min_interrupts_per_period);
             config->getValueForSetting("ieee1394.isomanager.max_nb_buffers_recv", max_nb_buffers_recv);
+            config->getValueForSetting("ieee1394.isomanager.min_packetsize_recv", min_packetsize_recv);
         }
 
         // setup the optimal parameters for the raw1394 ISO buffering
         unsigned int packets_per_period = stream->getPacketsPerPeriod();
-        unsigned int max_packet_size = stream->getMaxPacketSize() + 8; // bufferfill takes another 8 bytes for headers
+        // reserve space for the 1394 header too (might not be necessary)
+        unsigned int max_packet_size = stream->getMaxPacketSize() + 8;
         unsigned int page_size = getpagesize();
 
         enum raw1394_iso_dma_recv_mode receive_mode;
@@ -833,6 +836,11 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         if (max_packet_size > page_size) {
             debugError("max packet size (%u) > page size (%u)\n", max_packet_size, page_size);
             return false;
+        }
+        if (max_packet_size < (unsigned)min_packetsize_recv) {
+            debugError("min packet size (%u) < MIN_RECV_PACKET_SIZE (%u), using min value\n",
+                       max_packet_size, min_packetsize_recv);
+            max_packet_size = min_packetsize_recv;
         }
 
         // the interrupt/wakeup interval prediction of raw1394 is a mess...
@@ -867,19 +875,27 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         int min_interrupts_per_period = MINIMUM_INTERRUPTS_PER_PERIOD;
         int max_nb_buffers_xmit = MAX_XMIT_NB_BUFFERS;
         int max_packetsize_xmit = MAX_XMIT_PACKET_SIZE;
+        int min_packetsize_xmit = MIN_XMIT_PACKET_SIZE;
         if(config) {
             config->getValueForSetting("ieee1394.isomanager.min_interrupts_per_period", min_interrupts_per_period);
             config->getValueForSetting("ieee1394.isomanager.max_nb_buffers_xmit", max_nb_buffers_xmit);
             config->getValueForSetting("ieee1394.isomanager.max_packetsize_xmit", max_packetsize_xmit);
+            config->getValueForSetting("ieee1394.isomanager.min_packetsize_xmit", min_packetsize_xmit);
         }
 
         // setup the optimal parameters for the raw1394 ISO buffering
-        unsigned int max_packet_size = stream->getMaxPacketSize();
+        // reserve space for the 1394 header too (might not be necessary)
+        unsigned int max_packet_size = stream->getMaxPacketSize() + 8;
 
         if (max_packet_size > (unsigned)max_packetsize_xmit) {
             debugError("max packet size (%u) > MAX_XMIT_PACKET_SIZE (%u)\n",
                        max_packet_size, max_packetsize_xmit);
             return false;
+        }
+        if (max_packet_size < (unsigned)min_packetsize_xmit) {
+            debugError("min packet size (%u) < MIN_XMIT_PACKET_SIZE (%u), using min value\n",
+                       max_packet_size, min_packetsize_xmit);
+            max_packet_size = min_packetsize_xmit;
         }
 
         int buffers = max_nb_buffers_xmit;
