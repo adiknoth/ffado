@@ -727,6 +727,27 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.disable_hide(self.ana6_pad)
             self.disable_hide(self.ana7_pad)
             self.disable_hide(self.ana8_pad)
+        elif (self.model == MOTU_MODEL_ULTRALITE):
+            self.disable_hide(self.ana1_level)
+            self.disable_hide(self.ana2_level)
+            self.disable_hide(self.ana3_level)
+            self.disable_hide(self.ana4_level)
+            self.disable_hide(self.ana5_level)
+            self.disable_hide(self.ana6_level)
+            self.disable_hide(self.ana7_level)
+            self.disable_hide(self.ana8_level)
+            self.disable_hide(self.ana1_boost)
+            self.disable_hide(self.ana2_boost)
+            self.disable_hide(self.ana3_boost)
+            self.disable_hide(self.ana4_boost)
+            self.disable_hide(self.ana5_boost)
+            self.disable_hide(self.ana6_boost)
+            self.disable_hide(self.ana7_boost)
+            self.disable_hide(self.ana8_boost)
+
+            # FIXME: Need to set the label of the pad controls to "Phase Inv" or
+            # something similar
+
         else:
             self.disable_hide(self.ana1_trimgain)
             self.disable_hide(self.ana1_trimgain_label)

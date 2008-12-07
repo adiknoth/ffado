@@ -389,14 +389,16 @@ const MixerCtrl MixerCtrls_Ultralite[] = {
     {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
 
     /* For mic/line input controls, the "register" is the zero-based channel number */
-    {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 0},
-    {"Control/Ana2_", "Analog 2 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 1},
-    {"Control/Ana3_", "Analog 3 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 2},
-    {"Control/Ana4_", "Analog 4 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 3},
-    {"Control/Ana5_", "Analog 5 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 4},
-    {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 5},
-    {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 6},
-    {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 7},
+    {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 0},
+    {"Control/Ana2_", "Analog 2 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 1},
+    {"Control/Ana3_", "Analog 3 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 2},
+    {"Control/Ana4_", "Analog 4 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 3},
+    {"Control/Ana5_", "Analog 5 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 4},
+    {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 5},
+    {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 6},
+    {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 7},
+    {"Control/Spdif1_", "SPDIF 1 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 6},
+    {"Control/Spdif2_", "SPDIF 2 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 7},
 
     /* For phones source control, "register" is currently unused */
     {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
@@ -644,11 +646,27 @@ MotuDevice::buildMixerAudioControls(void) {
             type &= ~MOTU_CTRL_MIX_DEST;
         }
 
+        if (type & MOTU_CTRL_INPUT_UL_GAIN) {
+            snprintf(name, 100, "%s%s", ctrl->name, "trimgain");
+            snprintf(label,100, "%s%s", ctrl->label,"trimgain");
+            result &= m_MixerContainer->addElement(
+                new InputGainPadInv(*this, ctrl->dev_register, MOTU_CTRL_MODE_UL_GAIN,
+                    name, label, ctrl->desc));
+            type &= ~MOTU_CTRL_INPUT_UL_GAIN;
+        }
+        if (type & MOTU_CTRL_INPUT_PHASE_INV) {
+            snprintf(name, 100, "%s%s", ctrl->name, "phaseinv");
+            snprintf(label,100, "%s%s", ctrl->label,"phaseinv");
+            result &= m_MixerContainer->addElement(
+                new InputGainPadInv(*this, ctrl->dev_register, MOTU_CTRL_MODE_PHASE_INV,
+                    name, label, ctrl->desc));
+            type &= ~MOTU_CTRL_INPUT_PHASE_INV;
+        }
         if (type & MOTU_CTRL_INPUT_TRIMGAIN) {
             snprintf(name, 100, "%s%s", ctrl->name, "trimgain");
             snprintf(label,100, "%s%s", ctrl->label,"trimgain");
             result &= m_MixerContainer->addElement(
-                new InputGainPad(*this, ctrl->dev_register, MOTU_CTRL_MODE_TRIMGAIN,
+                new InputGainPadInv(*this, ctrl->dev_register, MOTU_CTRL_MODE_TRIMGAIN,
                     name, label, ctrl->desc));
             type &= ~MOTU_CTRL_INPUT_TRIMGAIN;
         }
@@ -656,7 +674,7 @@ MotuDevice::buildMixerAudioControls(void) {
             snprintf(name, 100, "%s%s", ctrl->name, "pad");
             snprintf(label,100, "%s%s", ctrl->label,"pad");
             result &= m_MixerContainer->addElement(
-                new InputGainPad(*this, ctrl->dev_register, MOTU_CTRL_MODE_PAD,
+                new InputGainPadInv(*this, ctrl->dev_register, MOTU_CTRL_MODE_PAD,
                     name, label, ctrl->desc));
             type &= ~MOTU_CTRL_INPUT_PAD;
         }
