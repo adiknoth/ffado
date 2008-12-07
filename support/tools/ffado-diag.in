@@ -21,8 +21,12 @@
 # Test for common FFADO problems
 #
 
-import os
 import sys
+
+# Add the path of the installed dependent files
+sys.path.append( "$PYTHONDIR" )
+
+import os
 import commands
 import re
 import logging
