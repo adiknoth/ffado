@@ -239,6 +239,7 @@ protected:
     Streaming::MotuTransmitStreamProcessor *m_transmitProcessor;
 
 private:
+    bool buildMixerAudioControls(void);
     bool addPort(Streaming::StreamProcessor *s_processor,
         char *name,
         enum Streaming::Port::E_Direction direction,

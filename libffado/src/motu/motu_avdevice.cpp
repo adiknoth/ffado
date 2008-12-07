@@ -35,7 +35,6 @@
 #include "libstreaming/motu/MotuTransmitStreamProcessor.h"
 #include "libstreaming/motu/MotuPort.h"
 
-#include "libutil/DelayLockedLoop.h"
 #include "libutil/Time.h"
 #include "libutil/Configuration.h"
 
@@ -509,7 +508,8 @@ MotuDevice::~MotuDevice()
 }
 
 bool
-MotuDevice::buildMixer() {
+MotuDevice::buildMixerAudioControls(void) {
+
     bool result = true;
     MotuMatrixMixer *fader_mmixer = NULL;
     MotuMatrixMixer *pan_mmixer = NULL;
@@ -519,13 +519,9 @@ MotuDevice::buildMixer() {
     const struct MatrixMixChannel *channels = NULL;
     unsigned int bus, ch, i;
 
-    destroyMixer();
-
-    // create the mixer object container
-    m_MixerContainer = new Control::Container(this, "Mixer");
-    if (!m_MixerContainer) {
-        debugError("Could not create mixer container...\n");
-        return false;
+    if (DevicesProperty[m_motu_model-1].mixer == NULL) {
+        debugOutput(DEBUG_LEVEL_WARNING, "No mixer controls defined for model %d\n", m_motu_model);
+        result = false;
     } else {
         buses = DevicesProperty[m_motu_model-1].mixer->mixer_buses;
         if (buses == NULL) {
@@ -538,12 +534,11 @@ MotuDevice::buildMixer() {
             result = false;
         }
     }
-
     if (result == false) {
         return true;
     }
 
-    /* Create the matrix mixers and populate them */
+    /* Create the top-level matrix mixers */
     fader_mmixer = new ChannelFaderMatrixMixer(*this, "fader");
     result &= m_MixerContainer->addElement(fader_mmixer);
     pan_mmixer = new ChannelPanMatrixMixer(*this, "pan");
@@ -554,14 +549,14 @@ MotuDevice::buildMixer() {
     mute_mmixer = new ChannelBinSwMatrixMixer(*this, "mute",
         MOTU_CTRL_MASK_MUTE_VALUE, MOTU_CTRL_MASK_MUTE_SETENABLE);
     result &= m_MixerContainer->addElement(mute_mmixer);
-    buses = DevicesProperty[m_motu_model-1].mixer->mixer_buses;
+
     for (bus=0; bus<DevicesProperty[m_motu_model-1].mixer->n_mixer_buses; bus++) {
         fader_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
         pan_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
         solo_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
         mute_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
     }
-    channels = DevicesProperty[m_motu_model-1].mixer->mixer_channels;
+
     for (ch=0; ch<DevicesProperty[m_motu_model-1].mixer->n_mixer_channels; ch++) {
         uint32_t flags = channels[ch].flags;
         if (flags & MOTU_CTRL_CHANNEL_FADER)
@@ -574,7 +569,7 @@ MotuDevice::buildMixer() {
             mute_mmixer->addColInfo(channels[ch].name, 0, channels[ch].addr_ofs);
         flags &= ~(MOTU_CTRL_CHANNEL_FADER|MOTU_CTRL_CHANNEL_PAN|MOTU_CTRL_CHANNEL_SOLO|MOTU_CTRL_CHANNEL_MUTE);
         if (flags) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Control %s: unknown flag bits 0x%08x\n", channels[ch].name, flags);
+            debugOutput(DEBUG_LEVEL_WARNING, "Control %s: unknown flag bits 0x%08x\n", channels[ch].name, flags);
         }
     }
 
@@ -582,9 +577,15 @@ MotuDevice::buildMixer() {
     // here, but usually these will be a part of a matrix mixer.
     for (i=0; i<DevicesProperty[m_motu_model-1].mixer->n_mixer_ctrls; i++) {
         const struct MixerCtrl *ctrl = &DevicesProperty[m_motu_model-1].mixer->mixer_ctrl[i];
-        unsigned int type = ctrl->type;
+        unsigned int type;
         char name[100];
         char label[100];
+
+        if (ctrl == NULL) {
+            debugOutput(DEBUG_LEVEL_WARNING, "NULL control at index %d for model %d\n", i, m_motu_model);
+            continue;
+        }
+        type = ctrl->type;
         if (type & MOTU_CTRL_CHANNEL_FADER) {
             snprintf(name, 100, "%s%s", ctrl->name, "fader");
             snprintf(label,100, "%s%s", ctrl->label,"fader");
@@ -722,9 +723,28 @@ MotuDevice::buildMixer() {
         }
 
         if (type) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown mixer control type flag bits 0x%08x\n", ctrl->type);
+            debugOutput(DEBUG_LEVEL_WARNING, "Unknown mixer control type flag bits 0x%08x\n", ctrl->type);
         }
     }
+    return result;
+}
+
+bool
+MotuDevice::buildMixer() {
+    bool result = true;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Building a MOTU mixer...\n");
+
+    destroyMixer();
+        
+    // create the mixer object container
+    m_MixerContainer = new Control::Container(this, "Mixer");
+    if (!m_MixerContainer) {
+        debugError("Could not create mixer container...\n");
+        return false;
+    }
+
+    // Create and populate the top-level matrix mixers
+    result = buildMixerAudioControls();
 
     /* Now add some general device information controls.  These may yet
      * become device-specific if it turns out to be easier that way.
