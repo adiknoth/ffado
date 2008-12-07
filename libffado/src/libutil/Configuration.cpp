@@ -28,7 +28,7 @@
 using namespace libconfig;
 namespace Util {
 
-IMPL_DEBUG_MODULE( Configuration, Configuration, DEBUG_LEVEL_VERBOSE );
+IMPL_DEBUG_MODULE( Configuration, Configuration, DEBUG_LEVEL_NORMAL );
 
 Configuration::Configuration()
 {
@@ -225,6 +225,67 @@ Configuration::ConfigFile::showSetting(libconfig::Setting &s, std::string prefix
         }
         break;
     }
+}
+
+bool
+Configuration::getValueForSetting(std::string path, int32_t &ref)
+{
+    libconfig::Setting *s = getSetting( path );
+    if(s) {
+        // FIXME: this can be done using the libconfig methods
+        Setting::Type t = s->getType();
+        if(t == Setting::TypeInt) {
+            ref = *s;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has value %d\n", path.c_str(), ref);
+            return true;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has wrong type\n", path.c_str());
+            return false;
+        }
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' not found\n", path.c_str());
+        return false;
+    }
+}
+
+bool
+Configuration::getValueForSetting(std::string path, int64_t &ref)
+{
+    libconfig::Setting *s = getSetting( path );
+    if(s) {
+        // FIXME: this can be done using the libconfig methods
+        Setting::Type t = s->getType();
+        if(t == Setting::TypeInt64) {
+            ref = *s;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has value %d\n", path.c_str(), ref);
+            return true;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has wrong type\n", path.c_str());
+            return false;
+        }
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' not found\n", path.c_str());
+        return false;
+    }
+}
+
+libconfig::Setting *
+Configuration::getSetting( std::string path )
+{
+    for ( std::vector<ConfigFile *>::iterator it = m_ConfigFiles.begin();
+      it != m_ConfigFiles.end();
+      ++it )
+    {
+        ConfigFile *c = *it;
+        try {
+            Setting &s = c->lookup(path);
+            return &s;
+        } catch (...) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  %s has no setting %s\n",
+                        c->getName().c_str(), path.c_str());
+        }
+    }
+    return NULL;
 }
 
 

@@ -43,10 +43,6 @@ SaffireProDevice::SaffireProDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( 
                  getConfigRom().getNodeId() );
 
     addOption(Util::OptionContainer::Option("rebootOnSamplerateChange", true));
-    // the saffire pro doesn't seem to like it if the commands are too fast
-    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 500) {
-        AVC::AVCCommand::setSleepAfterAVCCommand( 500 );
-    }
 
     updateClockSources();
 }
@@ -61,9 +57,9 @@ SaffireProDevice::buildMixer()
 {
     bool result=true;
     debugOutput(DEBUG_LEVEL_VERBOSE, "Building a Focusrite SaffirePro mixer...\n");
-    
+
     destroyMixer();
-    
+
     // create the mixer object container
     m_MixerContainer = new Control::Container(this, "Mixer");
 
@@ -143,6 +139,12 @@ SaffireProDevice::buildMixer()
         new BinaryControl(*this, 
                 FR_SAFFIREPRO_CMD_ID_BITFIELD_OUT78, FR_SAFFIREPRO_CMD_BITFIELD_BIT_DIM,
                 "Out78Dim", "Out7/8 Dim", "Output 7/8 Level Dim"));
+
+    // front panel dial position
+    result &= m_MixerContainer->addElement(
+        new DialPositionControl(*this, 
+                FR_SAFFIREPRO_CMD_ID_MONITOR_DIAL, 0,
+                "MonitorDial", "Monitor Dial", "Monitor Dial Value"));
 
     // direct monitoring controls
     result &= m_MixerContainer->addElement(
@@ -309,6 +311,9 @@ SaffireProDevice::buildMixer()
             "DeviceName", "Flash Device Name", "Device name stored in flash memory");
     result &= m_ControlContainer->addElement(m_deviceNameControl);
 
+    // add a direct register access element
+    result &= addElement(new RegisterControl(*this, "Register", "Register Access", "Direct register access"));
+
     if (!result) {
         debugWarning("One or more device control elements could not be created.");
         // clean up those that couldn't be created
@@ -419,7 +424,7 @@ SaffireProDevice::updateClockSources() {
     }
     debugOutput(DEBUG_LEVEL_VERBOSE, "SYNC_CONFIG field value: %08lX\n", sync );
 
-    switch(sync & 0xFF) {
+    switch(sync & FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG_MASK) {
         default:
             debugWarning( "Unexpected SYNC_CONFIG field value: %08lX\n", sync );
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
@@ -431,19 +436,19 @@ SaffireProDevice::updateClockSources() {
             m_active_clocksource = &m_spdif_clocksource;
             break;
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1:
-            m_wordclock_clocksource.active=true;
-            m_active_clocksource = &m_wordclock_clocksource;
-            break;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
             m_adat1_clocksource.active=true;
             m_active_clocksource = &m_adat1_clocksource;
             break;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
             m_adat2_clocksource.active=true;
             m_active_clocksource = &m_adat2_clocksource;
             break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+            m_wordclock_clocksource.active=true;
+            m_active_clocksource = &m_wordclock_clocksource;
+            break;
     }
-    switch((sync >> 8) & 0xFF) {
+    switch((sync && FR_SAFFIREPRO_CMD_ID_SYNC_LOCK_MASK) >> 8) {
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
             // always locked
             break;
@@ -451,13 +456,13 @@ SaffireProDevice::updateClockSources() {
             m_spdif_clocksource.locked=true;
             break;
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT1:
-            m_wordclock_clocksource.locked=true;
-            break;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
             m_adat1_clocksource.locked=true;
             break;
-        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_ADAT2:
             m_adat2_clocksource.locked=true;
+            break;
+        case FR_SAFFIREPRO_CMD_SYNC_CONFIG_WORDCLOCK:
+            m_wordclock_clocksource.locked=true;
             break;
         default:
             debugWarning( "Unexpected SYNC_CONFIG_STATE field value: %08lX\n", sync );
@@ -512,6 +517,19 @@ SaffireProDevice::getSupportedClockSources()
     return r;
 }
 
+std::vector<int>
+SaffireProDevice::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    frequencies.push_back(44100);
+    frequencies.push_back(48000);
+    frequencies.push_back(88200);
+    frequencies.push_back(96000);
+    frequencies.push_back(176400);
+    frequencies.push_back(192000);
+    return frequencies;
+}
+
 uint16_t
 SaffireProDevice::getConfigurationIdSyncMode()
 {
@@ -521,6 +539,33 @@ SaffireProDevice::getConfigurationIdSyncMode()
         return 0xFFFF;
     }
     return sync & 0xFFFF;
+}
+
+uint64_t
+SaffireProDevice::getConfigurationId()
+{
+    // have the generic mechanism create a unique configuration id.
+    uint64_t id = BeBoB::AvDevice::getConfigurationId();
+
+    // there are some parts that can be enabled/disabled and
+    // that have influence on the AV/C model and channel config
+    // so add them to the config id
+    #if 0
+    // FIXME: doesn't seem to be working, but the channel count
+    //        makes that it's not that important
+    if(getEnableDigitalChannel(eDC_SPDIF)) {
+        id |= 1ULL << 40;
+    }
+    if(isPro26()) {
+        if(getEnableDigitalChannel(eDC_ADAT1)) {
+            id |= 1ULL << 41;
+        }
+        if(getEnableDigitalChannel(eDC_ADAT2)) {
+            id |= 1ULL << 42;
+        }
+    }
+    #endif
+    return id;
 }
 
 bool
@@ -537,6 +582,12 @@ SaffireProDevice::getNickname()
     if(m_deviceNameControl) {
         return m_deviceNameControl->getValue();
     } else return "Unknown";
+}
+
+bool
+SaffireProDevice::canChangeNickname()
+{
+    return true;
 }
 
 void
@@ -661,7 +712,7 @@ SaffireProDevice::setSamplingFrequency( int s )
                     rebootDevice();
 
                     // the device needs quite some time to reboot
-                    Util::SystemTimeSource::SleepUsecRelative(2 * 1000 * 1000);
+                    Util::SystemTimeSource::SleepUsecRelative(6 * 1000 * 1000);
 
                     // wait for the device to finish the reboot
                     timeout = 10; // multiples of 1s
@@ -691,6 +742,18 @@ SaffireProDevice::setSamplingFrequency( int s )
                 // wait some more
                 Util::SystemTimeSource::SleepUsecRelative(1 * 1000 * 1000);
 
+                // update the generation of the 1394 service
+                get1394Service().updateGeneration();
+
+                // update our config rom since it might have changed
+                // if this fails it means we have disappeared from the bus
+                // that's bad.
+                if(!getConfigRom().updatedNodeId()) {
+                    debugError("Could not update node id\n");
+                    getDeviceManager().unlockBusResetHandler();
+                    return false;
+                }
+
                 // we have to rediscover the device
                 if (discover()) break;
             } else {
@@ -718,12 +781,10 @@ SaffireProDevice::setSamplingFrequency( int s )
             debugError("Setting samplerate failed...\n");
             return false;
         }
-
         return true;
     }
     // not executable
     return false;
-
 }
 
 void
@@ -755,16 +816,16 @@ SaffireProDevice::saveSettings() {
 
 void
 SaffireProDevice::flashLed() {
-    int ledFlashDuration=2;
+    int ledFlashDuration = 2;
     if(!getOption("ledFlashDuration", ledFlashDuration)) {
-        debugWarning("Could not retrieve ledFlashDuration parameter, defaulting to 2sec\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Could not retrieve ledFlashDuration parameter, defaulting to 2sec\n");
     }
-    int ledFlashFrequency=10;
+    int ledFlashFrequency = 10;
     if(!getOption("ledFlashFrequency", ledFlashFrequency)) {
-        debugWarning("Could not retrieve ledFlashFrequency parameter, defaulting to 10Hz\n");
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Could not retrieve ledFlashFrequency parameter, defaulting to 10Hz\n");
     }
 
-    uint32_t reg=0;
+    uint32_t reg = 0;
     debugOutput( DEBUG_LEVEL_VERBOSE, "flashing led ...\n" );
     
     reg = FR_SAFFIREPRO_CMD_SET_FLASH_SECS(reg, ledFlashDuration);
@@ -862,6 +923,19 @@ SaffireProDevice::getPllLockRange() {
     debugOutput( DEBUG_LEVEL_VERBOSE,
                      "PLL lock range: %d\n", retval );
     return retval;
+}
+
+bool
+SaffireProDevice::isMidiEnabled() {
+    uint32_t ready;
+    if ( !getSpecificValue(FR_SAFFIREPRO_CMD_ID_AVC_MODEL_MIDI, &ready ) ) {
+        debugError( "getSpecificValue failed\n" );
+        return false;
+    }
+
+    debugOutput( DEBUG_LEVEL_VERBOSE,
+                     "isMidiEnabled: %d\n", ready != 0 );
+    return ready != 0;
 }
 
 unsigned int

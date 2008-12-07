@@ -45,7 +45,7 @@ StreamProcessorManager::StreamProcessorManager(DeviceManager &p)
     , m_SyncSource(NULL)
     , m_parent( p )
     , m_xrun_happened( false )
-    , m_activity_wait_timeout_usec( 1000*1000 )
+    , m_activity_wait_timeout_nsec( 0 ) // dynamically set
     , m_nb_buffers( 0 )
     , m_period( 0 )
     , m_audio_datatype( eADT_Float )
@@ -65,7 +65,7 @@ StreamProcessorManager::StreamProcessorManager(DeviceManager &p, unsigned int pe
     , m_SyncSource(NULL)
     , m_parent( p )
     , m_xrun_happened( false )
-    , m_activity_wait_timeout_usec( 1000*1000 )
+    , m_activity_wait_timeout_nsec( 0 ) // dynamically set
     , m_nb_buffers(nb_buffers)
     , m_period(period)
     , m_audio_datatype( eADT_Float )
@@ -149,22 +149,20 @@ StreamProcessorManager::waitForActivity()
     struct timespec ts;
     int result;
 
-    long long int timeout_nsec=0;
-    if (m_activity_wait_timeout_usec >= 0) {
-        timeout_nsec = m_activity_wait_timeout_usec * 1000LL;
+    if (m_activity_wait_timeout_nsec >= 0) {
 
         if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
             debugError("clock_gettime failed\n");
             return eAR_Error;
         }
-        ts.tv_nsec += timeout_nsec;
+        ts.tv_nsec += m_activity_wait_timeout_nsec;
         while(ts.tv_nsec >= 1000000000LL) {
             ts.tv_sec += 1;
             ts.tv_nsec -= 1000000000LL;
         }
     }
 
-    if (m_activity_wait_timeout_usec >= 0) {
+    if (m_activity_wait_timeout_nsec >= 0) {
         result = sem_timedwait(&m_activity_semaphore, &ts);
     } else {
         result = sem_wait(&m_activity_semaphore);
@@ -185,13 +183,13 @@ StreamProcessorManager::waitForActivity()
             debugError("(%p) sem_[timed]wait error (result=%d errno=EINVAL)\n", 
                         this, result);
             debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, timeout_nsec, ts.tv_sec, ts.tv_nsec);
+                       this, m_activity_wait_timeout_nsec, ts.tv_sec, ts.tv_nsec);
             return eAR_Error;
         } else {
             debugError("(%p) sem_[timed]wait error (result=%d errno=%d)\n", 
                         this, result, errno);
             debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, timeout_nsec, ts.tv_sec, ts.tv_nsec);
+                       this, m_activity_wait_timeout_nsec, ts.tv_sec, ts.tv_nsec);
             return eAR_Error;
         }
     }
@@ -218,12 +216,19 @@ bool StreamProcessorManager::registerProcessor(StreamProcessor *processor)
     if (processor->getType() == StreamProcessor::ePT_Receive) {
         processor->setVerboseLevel(getDebugLevel()); // inherit debug level
         m_ReceiveProcessors.push_back(processor);
+        Util::Functor* f = new Util::MemberFunctor0< StreamProcessorManager*, void (StreamProcessorManager::*)() >
+                    ( this, &StreamProcessorManager::updateShadowLists, false );
+        processor->addPortManagerUpdateHandler(f);
+        updateShadowLists();
         return true;
     }
-
     if (processor->getType() == StreamProcessor::ePT_Transmit) {
         processor->setVerboseLevel(getDebugLevel()); // inherit debug level
         m_TransmitProcessors.push_back(processor);
+        Util::Functor* f = new Util::MemberFunctor0< StreamProcessorManager*, void (StreamProcessorManager::*)() >
+                    ( this, &StreamProcessorManager::updateShadowLists, false );
+        processor->addPortManagerUpdateHandler(f);
+        updateShadowLists();
         return true;
     }
 
@@ -248,6 +253,13 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
                     m_SyncSource = NULL;
                 }
                 m_ReceiveProcessors.erase(it);
+                // remove the functor
+                Util::Functor * f = processor->getUpdateHandlerForPtr(this);
+                if(f) {
+                    processor->remPortManagerUpdateHandler(f);
+                    delete f;
+                }
+                updateShadowLists();
                 return true;
             }
         }
@@ -264,6 +276,13 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
                     m_SyncSource = NULL;
                 }
                 m_TransmitProcessors.erase(it);
+                // remove the functor
+                Util::Functor * f = processor->getUpdateHandlerForPtr(this);
+                if(f) {
+                    processor->remPortManagerUpdateHandler(f);
+                    delete f;
+                }
+                updateShadowLists();
                 return true;
             }
         }
@@ -275,7 +294,7 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
 
 bool StreamProcessorManager::setSyncSource(StreamProcessor *s) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting sync source to (%p)\n", s);
-    m_SyncSource=s;
+    m_SyncSource = s;
     return true;
 }
 
@@ -355,6 +374,8 @@ bool StreamProcessorManager::prepare() {
     int timeout_usec = 2*1000LL * 1000LL * m_period / m_nominal_framerate;
     debugOutput(DEBUG_LEVEL_VERBOSE, "setting activity timeout to %d\n", timeout_usec);
     setActivityWaitTimeoutUsec(timeout_usec);
+
+    updateShadowLists();
 
     return true;
 }
@@ -439,6 +460,20 @@ StreamProcessorManager::startDryRunning()
 
 bool StreamProcessorManager::syncStartAll() {
     if(m_SyncSource == NULL) return false;
+
+    // get the options
+    int signal_delay_ticks = STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS;
+    int sync_wait_time_msec = STREAMPROCESSORMANAGER_SYNC_WAIT_TIME_MSEC;
+    int cycles_for_startup = STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP;
+    int prestart_cycles_for_xmit = STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_XMIT;
+    int prestart_cycles_for_recv = STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_RECV;
+    Util::Configuration &config = m_parent.getConfiguration();
+    config.getValueForSetting("streaming.spm.signal_delay_ticks", signal_delay_ticks);
+    config.getValueForSetting("streaming.spm.sync_wait_time_msec", sync_wait_time_msec);
+    config.getValueForSetting("streaming.spm.cycles_for_startup", cycles_for_startup);
+    config.getValueForSetting("streaming.spm.prestart_cycles_for_xmit", prestart_cycles_for_xmit);
+    config.getValueForSetting("streaming.spm.prestart_cycles_for_recv", prestart_cycles_for_recv);
+
     // figure out when to get the SP's running.
     // the xmit SP's should also know the base timestamp
     // streams should be aligned here
@@ -460,7 +495,7 @@ bool StreamProcessorManager::syncStartAll() {
     // more robust. It should be noted though that shifting the transfer
     // time to a later time instant also causes the xmit buffer fill to be
     // lower on average.
-    max_of_min_delay += STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS;
+    max_of_min_delay += signal_delay_ticks;
 
     m_SyncSource->setSyncDelay(max_of_min_delay);
     unsigned int syncdelay = m_SyncSource->getSyncDelay();
@@ -479,7 +514,7 @@ bool StreamProcessorManager::syncStartAll() {
     // DLL to have a decent sync (FIXME: does the DLL get updated when dry-running)?
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for sync...\n");
 
-    unsigned int nb_sync_runs = (STREAMPROCESSORMANAGER_SYNC_WAIT_TIME_MSEC * getNominalRate());
+    unsigned int nb_sync_runs = (sync_wait_time_msec * getNominalRate());
     nb_sync_runs /= 1000;
     nb_sync_runs /= getPeriodSize();
 
@@ -512,7 +547,7 @@ bool StreamProcessorManager::syncStartAll() {
     // this is the time window we have to setup all SP's such that they 
     // can start wet-running correctly.
     time_of_first_sample = addTicks(time_of_first_sample,
-                                    STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP * TICKS_PER_CYCLE);
+                                    cycles_for_startup * TICKS_PER_CYCLE);
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "  => first sample at TS=%011llu (%03us %04uc %04ut)...\n", 
         time_of_first_sample,
@@ -523,10 +558,10 @@ bool StreamProcessorManager::syncStartAll() {
     // we should start wet-running the transmit SP's some cycles in advance
     // such that we know it is wet-running when it should output its first sample
     uint64_t time_to_start_xmit = substractTicks(time_of_first_sample, 
-                                                 STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_XMIT * TICKS_PER_CYCLE);
+                                                 prestart_cycles_for_xmit * TICKS_PER_CYCLE);
 
     uint64_t time_to_start_recv = substractTicks(time_of_first_sample,
-                                                 STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_RECV * TICKS_PER_CYCLE);
+                                                 prestart_cycles_for_recv * TICKS_PER_CYCLE);
     debugOutput( DEBUG_LEVEL_VERBOSE, "  => xmit starts at  TS=%011llu (%03us %04uc %04ut)...\n", 
         time_to_start_xmit,
         (unsigned int)TICKS_TO_SECS(time_to_start_xmit),
@@ -585,7 +620,7 @@ bool StreamProcessorManager::syncStartAll() {
     // that will block the waitForPeriod call until everyone has started (theoretically)
     // note: the SP's are scheduled to start in STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP cycles,
     // so a 20 times this value should be a good timeout
-    int cnt = STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP * 20; // by then it should have started
+    int cnt = cycles_for_startup * 20; // by then it should have started
     while (!m_SyncSource->isRunning() && cnt) {
         SleepRelativeUsec(125);
         cnt--;
@@ -649,13 +684,18 @@ StreamProcessorManager::alignReceivedStreams()
 
     unsigned int i;
 
-    unsigned int periods_per_align_try = (STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC * getNominalRate());
+    int cnt = STREAMPROCESSORMANAGER_NB_ALIGN_TRIES;
+    int align_average_time_msec = STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC;
+    Util::Configuration &config = m_parent.getConfiguration();
+    config.getValueForSetting("streaming.spm.align_tries", cnt);
+    config.getValueForSetting("streaming.spm.align_average_time_msec", align_average_time_msec);
+
+    unsigned int periods_per_align_try = (align_average_time_msec * getNominalRate());
     periods_per_align_try /= 1000;
     periods_per_align_try /= getPeriodSize();
     debugOutput( DEBUG_LEVEL_VERBOSE, " averaging over %u periods...\n", periods_per_align_try);
 
     bool aligned = false;
-    int cnt = STREAMPROCESSORMANAGER_NB_ALIGN_TRIES;
     while (!aligned && cnt--) {
         nb_sync_runs = periods_per_align_try;
         while(nb_sync_runs) {
@@ -1300,6 +1340,43 @@ void StreamProcessorManager::dumpInfo() {
 
     debugOutputShort( DEBUG_LEVEL_NORMAL, "----------------------------------------------------\n");
 
+    // list port info in verbose mode
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, "Port Information\n");
+    int nb_ports;
+    
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, " Playback\n");
+    nb_ports = getPortCount(Port::E_Playback);
+    for(int i=0; i < nb_ports; i++) {
+        Port *p = getPortByIndex(i, Port::E_Playback);
+        debugOutputShort( DEBUG_LEVEL_VERBOSE, "  %3d (%p): ", i, p);
+        if (p) {
+            bool disabled = p->isDisabled();
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "[%p] [%3s] ", &p->getManager(), (disabled?"off":"on"));
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "[%7s] ", p->getPortTypeName().c_str());
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "%3s ", p->getName().c_str());
+        } else {
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "invalid ");
+        }
+        debugOutputShort( DEBUG_LEVEL_VERBOSE, "\n");
+    }
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, " Capture\n");
+    nb_ports = getPortCount(Port::E_Capture);
+    for(int i=0; i < nb_ports; i++) {
+        Port *p = getPortByIndex(i, Port::E_Capture);
+        debugOutputShort( DEBUG_LEVEL_VERBOSE, "  %3d (%p): ", i, p);
+        if (p) {
+            bool disabled = p->isDisabled();
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "[%p] [%3s] ", &p->getManager(), (disabled?"off":"on"));
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, "[%7s] ", p->getPortTypeName().c_str());
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, " %3s ", p->getName().c_str());
+        } else {
+            debugOutputShort( DEBUG_LEVEL_VERBOSE, " invalid ");
+        }
+        debugOutputShort( DEBUG_LEVEL_VERBOSE, "\n");
+    }
+
+    debugOutputShort( DEBUG_LEVEL_VERBOSE, "----------------------------------------------------\n");
+
 }
 
 void StreamProcessorManager::setVerboseLevel(int l) {
@@ -1357,31 +1434,67 @@ int StreamProcessorManager::getPortCount(enum Port::E_Direction direction) {
     return count;
 }
 
-// TODO: implement a port map here, instead of the loop
-Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction direction) {
-    int count=0;
-    int prevcount=0;
+void
+StreamProcessorManager::updateShadowLists()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Updating port shadow lists...\n");
+    m_CapturePorts_shadow.clear();
+    m_PlaybackPorts_shadow.clear();
 
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+        it != m_ReceiveProcessors.end();
+        ++it ) {
+        PortManager *pm = *it;
+        for (int i=0; i < pm->getPortCount(); i++) {
+            Port *p = pm->getPortAtIdx(i);
+            if (!p) {
+                debugError("getPortAtIdx(%d) returned NULL\n", i);
+                continue;
+            }
+            if(p->getDirection() != Port::E_Capture) {
+                debugError("port at idx %d for receive SP is not a capture port!\n", i);
+                continue;
+            }
+            m_CapturePorts_shadow.push_back(p);
+        }
+    }
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) {
+        PortManager *pm = *it;
+        for (int i=0; i < pm->getPortCount(); i++) {
+            Port *p = pm->getPortAtIdx(i);
+            if (!p) {
+                debugError("getPortAtIdx(%d) returned NULL\n", i);
+                continue;
+            }
+            if(p->getDirection() != Port::E_Playback) {
+                debugError("port at idx %d for transmit SP is not a playback port!\n", i);
+                continue;
+            }
+            m_PlaybackPorts_shadow.push_back(p);
+        }
+    }
+}
+
+Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction direction) {
+    debugOutputExtreme( DEBUG_LEVEL_ULTRA_VERBOSE, "getPortByIndex(%d, %d)...\n", idx, direction);
     if (direction == Port::E_Capture) {
-        for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
-            it != m_ReceiveProcessors.end();
-            ++it ) {
-            count += (*it)->getPortCount();
-            if (count > idx) {
-                return (*it)->getPortAtIdx(idx-prevcount);
-            }
-            prevcount=count;
+        #ifdef DEBUG
+        if(idx >= (int)m_CapturePorts_shadow.size()) {
+            debugError("Capture port %d out of range (%d)\n", idx, m_CapturePorts_shadow.size());
+            return NULL;
         }
+        #endif
+        return m_CapturePorts_shadow.at(idx);
     } else {
-        for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
-            it != m_TransmitProcessors.end();
-            ++it ) {
-            count += (*it)->getPortCount();
-            if (count > idx) {
-                return (*it)->getPortAtIdx(idx-prevcount);
-            }
-            prevcount=count;
+        #ifdef DEBUG
+        if(idx >= (int)m_PlaybackPorts_shadow.size()) {
+            debugError("Playback port %d out of range (%d)\n", idx, m_PlaybackPorts_shadow.size());
+            return NULL;
         }
+        #endif
+        return m_PlaybackPorts_shadow.at(idx);
     }
     return NULL;
 }

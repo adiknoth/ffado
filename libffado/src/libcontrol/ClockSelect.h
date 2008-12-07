@@ -57,6 +57,8 @@ public:
     ///> get the name of the attribute with a certain index
     virtual std::string getAttributeName(int attridx);
 
+    virtual bool canChangeValue();
+
     virtual void show();
 
 protected:
@@ -78,6 +80,31 @@ public:
     virtual int selected();
     virtual int count();
     virtual std::string getEnumLabel(int idx);
+
+    virtual bool canChangeValue();
+
+    virtual void show();
+
+protected:
+    FFADODevice &m_Device;
+};
+
+/*!
+ * @brief Stream status control element
+ */
+class StreamingStatus
+: public Enum
+{
+public:
+    StreamingStatus(FFADODevice &);
+    virtual ~StreamingStatus() {};
+
+    virtual bool select(int idx);
+    virtual int selected();
+    virtual int count();
+    virtual std::string getEnumLabel(int idx);
+
+    virtual bool canChangeValue();
 
     virtual void show();
 

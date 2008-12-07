@@ -29,8 +29,6 @@
 
 #include "fbtypes.h"
 
-#include <libavc1394/avc1394.h>
-
 class Ieee1394Service;
 
 namespace Util {
@@ -69,22 +67,22 @@ class AVCCommand
 {
 public:
     enum EResponse {
-        eR_Unknown        = 0,
-        eR_NotImplemented = AVC1394_RESP_NOT_IMPLEMENTED,
-        eR_Accepted       = AVC1394_RESP_ACCEPTED,
-        eR_Rejected       = AVC1394_RESP_REJECTED,
-        eR_InTransition   = AVC1394_RESP_IN_TRANSITION,
-        eR_Implemented    = AVC1394_RESP_IMPLEMENTED,
-        eR_Changed        = AVC1394_RESP_CHANGED,
-        eR_Interim        = AVC1394_RESP_INTERIM,
+        eR_Unknown        = 0xff,
+        eR_NotImplemented = 0x08,
+        eR_Accepted       = 0x09,
+        eR_Rejected       = 0x0A,
+        eR_InTransition   = 0x0B,
+        eR_Implemented    = 0x0C,
+        eR_Changed        = 0x0D,
+        eR_Interim        = 0x0F,
     };
 
     enum ECommandType {
-        eCT_Control         = AVC1394_CTYP_CONTROL,
-        eCT_Status          = AVC1394_CTYP_STATUS,
-        eCT_SpecificInquiry = AVC1394_CTYP_SPECIFIC_INQUIRY,
-        eCT_Notify          = AVC1394_CTYP_NOTIFY,
-        eCT_GeneralInquiry  = AVC1394_CTYP_GENERAL_INQUIRY,
+        eCT_Control         = 0x00,
+        eCT_Status          = 0x01,
+        eCT_SpecificInquiry = 0x02,
+        eCT_Notify          = 0x03,
+        eCT_GeneralInquiry  = 0x04,
         eCT_Unknown         = 0xff,
     };
 
@@ -111,9 +109,6 @@ public:
 
     virtual const char* getCmdName() const = 0;
 
-    // workaround
-    static void setSleepAfterAVCCommand( int time );
-    static int getSleepAfterAVCCommand( ) {return m_time;};
 protected:
     void showFcpFrame( const unsigned char* buf,
                unsigned short frameSize ) const;
@@ -135,8 +130,7 @@ private:
     opcode_t     m_opcode;
     EResponse    m_eResponse;
     ECommandType m_commandType;
-    static int   m_time;
-    
+
 protected:
     DECLARE_DEBUG_MODULE;
 };

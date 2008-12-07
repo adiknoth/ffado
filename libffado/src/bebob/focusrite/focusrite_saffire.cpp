@@ -34,11 +34,6 @@ SaffireDevice::SaffireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( config
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::SaffireDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 
-    // the saffire doesn't seem to like it if the commands are too fast
-    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 1000) {
-        AVC::AVCCommand::setSleepAfterAVCCommand( 1000 );
-    }
-
     if(getConfigRom().getGuid() < 0x130e0100040000LL) {
         m_isSaffireLE = false;
     } else {
@@ -252,7 +247,7 @@ SaffireDevice::buildMixer()
 
         result &= m_MixerContainer->addElement(
             new DialPositionControl(*this, 
-                    FR_SAFFIRE_CMD_ID_MONITOR_DIAL,
+                    FR_SAFFIRE_CMD_ID_MONITOR_DIAL, 0,
                     "MonitorDial", "Monitor Dial", "Monitor Dial Value"));
 
         // metering
@@ -383,6 +378,17 @@ SaffireDevice::destroyMixer()
     m_MixerContainer->clearElements(true);
     delete m_MixerContainer;
     return true;
+}
+
+std::vector<int>
+SaffireDevice::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    frequencies.push_back(44100);
+    frequencies.push_back(48000);
+    frequencies.push_back(88200);
+    frequencies.push_back(96000);
+    return frequencies;
 }
 
 void

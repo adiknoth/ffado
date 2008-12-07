@@ -39,8 +39,8 @@ static_env = env.Clone()
 # test-mixer, test-volume
 #
 apps = {
-	"test-isorecv-1" : ["test-isorecv-1.cpp", "realtimetools.cpp"],
-	"test-isoxmit-1" : ["test-isoxmit-1.cpp", "realtimetools.cpp"],
+	"ffado-test-isorecv" : ["test-isorecv-1.cpp", "realtimetools.cpp"],
+	"ffado-test-isoxmit" : ["test-isoxmit-1.cpp", "realtimetools.cpp"],
 	"test-sysload" : ["test-sysload.cpp", "realtimetools.cpp"],
 	"gen-loadpulses" : ["gen-loadpulses.cpp", "realtimetools.cpp"],
 	"test-clock_nanosleep" : ["test-clock_nanosleep.cpp", "realtimetools.cpp"],
@@ -48,4 +48,5 @@ apps = {
 
 for app in apps.keys():
 	env.Program( target=app, source = env.Split( apps[app] ) )
+	env.Install( "$bindir", app )
 

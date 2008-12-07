@@ -62,191 +62,240 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_MOTU, 0, 0x0000000f, 0x000001f2, MOTU_MODEL_8PRE, "MOTU", "8pre"},
     {FW_VENDORID_MOTU, 0, 0x00000001, 0x000001f2, MOTU_MODEL_828MkI, "MOTU", "828MkI"},
     {FW_VENDORID_MOTU, 0, 0x00000005, 0x000001f2, MOTU_MODEL_896HD, "MOTU", "896HD"},
+    {FW_VENDORID_MOTU, 0, 0x00000015, 0x000001f2, MOTU_MODEL_828mk3, "MOTU", "828Mk3"},
 };
 
 // Ports declarations
 const PortEntry Ports_828MKI[] =
 {
-    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
-    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
-    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
-    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
-    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
-    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
-    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
-    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
-    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
-    {"ADAT1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
-    {"ADAT2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
-    {"ADAT3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 46},
-    {"ADAT4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 49},
-    {"ADAT5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 52},
-    {"ADAT6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 55},
-    {"ADAT7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 58},
-    {"ADAT8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 61},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"SPDIF1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
+    {"SPDIF2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
+    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
+    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
+    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 46},
+    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 49},
+    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 61},
 };
 
 const PortEntry Ports_896HD[] =
 {
-    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
-    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
-    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
-    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
-    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 16},
-    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 10},
-    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 13},
-    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 22},
-    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 16},
-    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 25},
-    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 28},
-    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 22},
-    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 31},
-    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 25},
-    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 34},
-    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 28},
-    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 37},
-    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 31},
-    {"MainOut-L", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
-    {"MainOut-R", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
-    {"AES/EBU1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 46},
-    {"AES/EBU2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 49},
-    {"ADAT1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
-    {"ADAT2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
-    {"ADAT3", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 58},
-    {"ADAT4", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 61},
-    {"ADAT5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
-    {"ADAT6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
-    {"ADAT7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
-    {"ADAT8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
+    {"Mix-L", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Phones-L", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 37},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 31},
+    {"MainOut-L", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
+    {"MainOut-R", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
+    {"AES/EBU1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 46},
+    {"AES/EBU2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 49},
+    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
+    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
+    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
+    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
 };
 
 const PortEntry Ports_828MKII[] =
 {
-    {"Main-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
-    {"Main-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
-    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
-    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
-    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
-    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
-    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
-    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
-    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
-    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
-    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
-    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
-    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
-    {"Mic1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
-    {"Mic2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
-    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 46},
-    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 49},
-    {"ADAT1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 52},
-    {"ADAT2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 55},
-    {"ADAT3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 58},
-    {"ADAT4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 61},
-    {"ADAT5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
-    {"ADAT6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
-    {"ADAT7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
-    {"ADAT8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
+    {"Main-L", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
+    {"Main-R", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
+    {"Mix-L", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
+    {"Phones-L", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Mic1", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
+    {"Mic2", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
+    {"SPDIF1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 46},
+    {"SPDIF2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 49},
+    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
+    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
+    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
+    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
 };
 
 const PortEntry Ports_TRAVELER[] = 
 {
-    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
-    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
-    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
-    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
-    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 16},
-    {"Analog1", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 10},
-    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog2", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 13},
-    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 22},
-    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 16},
-    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 25},
-    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 28},
-    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 22},
-    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 31},
-    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 25},
-    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 34},
-    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 28},
-    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 37},
-    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 31},
-    {"AES/EBU1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
-    {"AES/EBU2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
-    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 46},
-    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 49},
-    {"Toslink1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 46},
-    {"Toslink2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 49},
-    {"ADAT1", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
-    {"ADAT2", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
-    {"ADAT3", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 58},
-    {"ADAT4", MOTU_DIR_INOUT, MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 61},
-    {"ADAT5", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
-    {"ADAT6", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
-    {"ADAT7", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
-    {"ADAT8", MOTU_DIR_INOUT, MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
+    {"Mix-L", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Phones-L", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 37},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 31},
+    {"AES/EBU1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
+    {"AES/EBU2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
+    {"SPDIF1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 46},
+    {"SPDIF2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 49},
+    {"Toslink1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 46},
+    {"Toslink2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 49},
+    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
+    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
+    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
+    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
 };
 
 const PortEntry Ports_ULTRALITE[] =
 {
-    {"Main-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 46},
-    {"Main-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 49},
-    {"Padding1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 46},
-    {"Padding2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 49},
-    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
-    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
-    {"Mic1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
-    {"Mic2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog1", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
-    {"Analog2", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog3", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
-    {"Analog4", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
-    {"Analog5", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
-    {"Analog6", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
-    {"Analog7", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
-    {"Analog8", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
-    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
-    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
-    {"SPDIF1", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
-    {"SPDIF2", MOTU_DIR_INOUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
+    {"Main-L", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
+    {"Main-R", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
+    {"Mix-L", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Mic1", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Mic2", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog1", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog2", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
+    {"Phones-L", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Padding1", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 46},
+    {"Padding2", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 49},
+    {"SPDIF1", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 46},
+    {"SPDIF2", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 49},
 };
 
 const PortEntry Ports_8PRE[] =
 {
-    {"Analog1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
-    {"Analog2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog3", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
-    {"Analog4", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
-    {"Analog5", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
-    {"Analog6", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
-    {"Analog7", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
-    {"Analog8", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
-    {"Mix-L", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
-    {"Mix-R", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
-    {"Main-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
-    {"Main-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
-    {"Phones-L", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
-    {"Phones-R", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
-    {"ADAT1", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
-    {"ADAT1", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 22},
-    {"ADAT2", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
-    {"ADAT2", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 25},
-    {"ADAT3", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 46},
-    {"ADAT3", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 28},
-    {"ADAT4", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 49},
-    {"ADAT4", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 31},
-    {"ADAT5", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 52},
-    {"ADAT5", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 34},
-    {"ADAT6", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 55},
-    {"ADAT6", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 37},
-    {"ADAT7", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 58},
-    {"ADAT7", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
-    {"ADAT8", MOTU_DIR_IN, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 61},
-    {"ADAT8", MOTU_DIR_OUT, MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
+    {"Analog1", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog2", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog3", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog4", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog5", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog6", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog7", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog8", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
+    {"Mix-L", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Main-L", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Main-R", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Phones-L", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"ADAT1", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
+    {"ADAT1", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 22},
+    {"ADAT2", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
+    {"ADAT2", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 25},
+    {"ADAT3", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 46},
+    {"ADAT3", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 28},
+    {"ADAT4", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 49},
+    {"ADAT4", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 31},
+    {"ADAT5", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT5", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 34},
+    {"ADAT6", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT6", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 37},
+    {"ADAT7", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT7", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
+    {"ADAT8", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT8", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
+};
+
+const PortEntry Ports_828mk3[] = 
+{
+    {"Mix-L", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Phones-L", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 37},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 31},
+    {"SPDIF1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 40},
+    {"SPDIF2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 43},
+    {"Padding1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT|MOTU_PA_PADDING, 46},
+    {"Padding2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT|MOTU_PA_PADDING, 49},
+    {"Toslink1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 40},
+    {"Toslink2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 43},
+    {"Toslink3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 46},
+    {"Toslink4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 49},
+    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 64},
+    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 67},
+    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 70},
+    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 73},
+    {"ADAT9", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 76},
+    {"ADAT10", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 79},
+    {"ADAT11", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 82},
+    {"ADAT12", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 85},
+    {"ADAT13", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 88},
+    {"ADAT14", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 91},
+    {"ADAT15", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 94},
+    {"ADAT16", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 97},
 };
 
 // Mixer registers
@@ -300,8 +349,8 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
 
     /* For optical mode controls, the "register" is used to indicate direction */
-    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
-    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
 };
 
 const MatrixMixBus MixerBuses_Ultralite[] = {
@@ -320,8 +369,18 @@ const MatrixMixChannel MixerChannels_Ultralite[] = {
     {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
     {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
     {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    {"AES/EBU 1", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"AES/EBU 2", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
     {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
     {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
+    {"ADAT 1", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"ADAT 2", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"ADAT 3", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"ADAT 4", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"ADAT 5", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"ADAT 6", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"ADAT 7", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"ADAT 8", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
 };
 
 const MixerCtrl MixerCtrls_Ultralite[] = {
@@ -344,8 +403,8 @@ const MixerCtrl MixerCtrls_Ultralite[] = {
     {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
 
     /* For optical mode controls, the "register" is used to indicate direction */
-    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
-    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
 };
 
 const MixerCtrl MixerCtrls_896HD[] = {
@@ -358,8 +417,8 @@ const MixerCtrl MixerCtrls_896HD[] = {
     {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
 
     /* For optical mode controls, the "register" is used to indicate direction */
-    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
-    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
 
     /* For meter controls the "register" indicates which meter controls are available */
     {"Control/Meter_", "Meter ", "", MOTU_CTRL_METER,
@@ -387,8 +446,8 @@ const MixerCtrl MixerCtrls_828Mk2[] = {
     {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
 
     /* For optical mode controls, the "register" is used to indicate direction */
-    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_IN},
-    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_DIR_OUT},
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
 };
 
 const MotuMixer Mixer_Traveler = MOTUMIXER(
@@ -414,6 +473,7 @@ const DevicePropertyEntry DevicesProperty[] = {
     { Ports_8PRE,      N_ELEMENTS( Ports_8PRE ),       96000 },
     { Ports_828MKI,    N_ELEMENTS( Ports_828MKI ),     48000 },
     { Ports_896HD,     N_ELEMENTS( Ports_896HD ),     192000, &Mixer_896HD, },
+    { Ports_828mk3,    N_ELEMENTS( Ports_828mk3 ),    192000 },
 };
 
 MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
@@ -450,22 +510,37 @@ MotuDevice::~MotuDevice()
 
 bool
 MotuDevice::buildMixer() {
-    unsigned int i;
     bool result = true;
     MotuMatrixMixer *fader_mmixer = NULL;
     MotuMatrixMixer *pan_mmixer = NULL;
     MotuMatrixMixer *solo_mmixer = NULL;
     MotuMatrixMixer *mute_mmixer = NULL;
-    unsigned int bus, ch;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Building a MOTU mixer...\n");
+    const struct MatrixMixBus *buses = NULL;
+    const struct MatrixMixChannel *channels = NULL;
+    unsigned int bus, ch, i;
 
     destroyMixer();
-        
+
     // create the mixer object container
     m_MixerContainer = new Control::Container(this, "Mixer");
     if (!m_MixerContainer) {
         debugError("Could not create mixer container...\n");
         return false;
+    } else {
+        buses = DevicesProperty[m_motu_model-1].mixer->mixer_buses;
+        if (buses == NULL) {
+            debugOutput(DEBUG_LEVEL_WARNING, "No buses defined for model %d\n", m_motu_model);
+            result = false;
+        }
+        channels = DevicesProperty[m_motu_model-1].mixer->mixer_channels;
+        if (channels == NULL) {
+            debugOutput(DEBUG_LEVEL_WARNING, "No channels defined for model %d\n", m_motu_model);
+            result = false;
+        }
+    }
+
+    if (result == false) {
+        return true;
     }
 
     /* Create the matrix mixers and populate them */
@@ -479,14 +554,14 @@ MotuDevice::buildMixer() {
     mute_mmixer = new ChannelBinSwMatrixMixer(*this, "mute",
         MOTU_CTRL_MASK_MUTE_VALUE, MOTU_CTRL_MASK_MUTE_SETENABLE);
     result &= m_MixerContainer->addElement(mute_mmixer);
-    const struct MatrixMixBus *buses = DevicesProperty[m_motu_model-1].mixer->mixer_buses;
+    buses = DevicesProperty[m_motu_model-1].mixer->mixer_buses;
     for (bus=0; bus<DevicesProperty[m_motu_model-1].mixer->n_mixer_buses; bus++) {
         fader_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
         pan_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
         solo_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
         mute_mmixer->addRowInfo(buses[bus].name, 0, buses[bus].address);
     }
-    const struct MatrixMixChannel *channels = DevicesProperty[m_motu_model-1].mixer->mixer_channels;
+    channels = DevicesProperty[m_motu_model-1].mixer->mixer_channels;
     for (ch=0; ch<DevicesProperty[m_motu_model-1].mixer->n_mixer_channels; ch++) {
         uint32_t flags = channels[ch].flags;
         if (flags & MOTU_CTRL_CHANNEL_FADER)
@@ -806,6 +881,26 @@ MotuDevice::discover()
     return true;
 }
 
+enum FFADODevice::eStreamingState
+MotuDevice::getStreamingState()
+{
+    unsigned int val = ReadRegister(MOTU_REG_ISOCTRL);
+    /* Streaming is active if either bit 22 (Motu->PC streaming
+     * enable) or bit 30 (PC->Motu streaming enable) is set.
+     */
+    debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU_REG_ISOCTRL: %08x\n", val);
+
+    if((val & 0x40400000) != 0) {
+        return eSS_Both;
+    } else if ((val & 0x40000000) != 0) {
+        return eSS_Receiving;
+    } else if ((val & 0x00400000) != 0) {
+        return eSS_Sending;
+    } else {
+        return eSS_Idle;
+    }
+}
+
 int
 MotuDevice::getSamplingFrequency( ) {
 /*
@@ -902,7 +997,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
         // this stage it will be up to the user to re-enable the optical
         // port if the sample rate is set to a 1x or 2x rate later.
         if (cancel_adat) {
-            setOpticalMode(MOTU_DIR_INOUT, MOTU_OPTICAL_MODE_OFF);
+            setOpticalMode(MOTU_CTRL_DIR_INOUT, MOTU_OPTICAL_MODE_OFF);
         }
 
         // Set up new frequency if requested
@@ -917,14 +1012,32 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
             reg |= (clock_source & MOTU_CLKSRC_MASK);
         }
 
-        // In other OSes bit 26 of MOTU_REG_CLK_CTRL always seems
-        // to be set when this register is written to although the
-        // reason isn't currently known.  When we set it, it appears
-        // to prevent output being produced so we'll leave it unset
-        // until we work out what's going on.  Other systems write
-        // to MOTU_REG_CLK_CTRL multiple times, so that may be
-        // part of the mystery.
-        //   value |= 0x04000000;
+        // Bits 24-26 of MOTU_REG_CLK_CTRL behave a little differently
+        // depending on the model.  In addition, different bit patterns are
+        // written depending on whether streaming is enabled, disabled or is
+        // changing state.  For now we go with the combination used when
+        // streaming is enabled since it seems to work for the other states
+        // as well.  Since device muting can be effected by these bits, we
+        // may utilise this in future during streaming startup to prevent
+        // noises during stabilisation.
+        //
+        // For most models (possibly all except the Ultralite) all 3 bits
+        // can be zero and audio is still output.
+        //
+        // For the Traveler, if bit 26 is set (as it is under other OSes),
+        // bit 25 functions as a device mute bit: if set, audio is output
+        // while if 0 the entire device is muted.  If bit 26 is unset,
+        // setting bit 25 doesn't appear to be detrimental.
+        //
+        // For the Ultralite, other OSes leave bit 26 unset.  However, unlike
+        // other devices bit 25 seems to function as a mute bit in this case.
+        //
+        // The function of bit 24 is currently unknown.  Other OSes set it
+        // for all devices so we will too.
+        reg &= 0xf8ffffff;
+        if (m_motu_model == MOTU_MODEL_TRAVELER)
+            reg |= 0x04000000;
+        reg |= 0x03000000;
         if (WriteRegister(MOTU_REG_CLK_CTRL, reg) == 0) {
             supported=true;
         } else {
@@ -1264,7 +1377,7 @@ MotuDevice::prepare() {
     // of the event data.
     asprintf(&buff,"%s_pbk_MIDI0",id.c_str());
     p = new Streaming::MotuMidiPort(*m_transmitProcessor, buff,
-        Streaming::Port::E_Capture, 4);
+        Streaming::Port::E_Playback, 4);
     if (!p) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
     }
@@ -1476,7 +1589,7 @@ signed int optical_mode = getOpticalMode(direction);
 signed int size = 4+6;
 
 unsigned int i;
-unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_DIR_IN:MOTU_DIR_OUT;
+unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
 unsigned int flags = (1 << ( optical_mode + 4 ));
 
     if ( sample_rate > 96000 )
@@ -1489,7 +1602,7 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     // Don't test for padding port flag here since we need to include such
     // pseudo-ports when calculating the event size.
     for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
-        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_dir & dir ) &&
+        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & dir ) &&
 	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_RATE_MASK & flags ) &&
 	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_OPTICAL_MASK & flags )) {
             size += 3;
@@ -1537,7 +1650,7 @@ const char *mode_str = direction==Streaming::Port::E_Capture?"cap":"pbk";
 Streaming::StreamProcessor *s_processor;
 unsigned int i;
 char *buff;
-unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_DIR_IN:MOTU_DIR_OUT;
+unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
 unsigned int flags = (1 << ( optical_mode + 4 ));
 
     if ( sample_rate > 96000 )
@@ -1560,7 +1673,7 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     }
 
     for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
-        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_dir & dir ) &&
+        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & dir ) &&
 	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_RATE_MASK & flags ) &&
 	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
 	   !( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_PADDING )) {

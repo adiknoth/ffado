@@ -24,6 +24,7 @@
 #ifndef __FFADO_STREAMPROCESSORMANAGER__
 #define __FFADO_STREAMPROCESSORMANAGER__
 
+#include "generic/PortManager.h"
 #include "generic/Port.h"
 #include "generic/StreamProcessor.h"
 
@@ -101,9 +102,9 @@ public:
     // this is the amount of usecs we wait before an activity
     // timeout occurs.
     void setActivityWaitTimeoutUsec(int usec)
-            {m_activity_wait_timeout_usec = usec;};
+            {m_activity_wait_timeout_nsec = usec*1000LL;};
     int getActivityWaitTimeoutUsec() 
-            {return m_activity_wait_timeout_usec;};
+            {return m_activity_wait_timeout_nsec/1000;};
 
     int getPortCount(enum Port::E_PortType, enum Port::E_Direction);
     int getPortCount(enum Port::E_Direction);
@@ -167,7 +168,7 @@ protected: // FIXME: private?
 
     // thread related vars
     bool m_xrun_happened;
-    int m_activity_wait_timeout_usec;
+    int64_t m_activity_wait_timeout_nsec;
     bool m_thread_realtime;
     int m_thread_priority;
 
@@ -177,6 +178,11 @@ protected: // FIXME: private?
     // processor list
     StreamProcessorVector m_ReceiveProcessors;
     StreamProcessorVector m_TransmitProcessors;
+
+    // port shadow lists
+    PortVector m_CapturePorts_shadow;
+    PortVector m_PlaybackPorts_shadow;
+    void updateShadowLists();
 
     unsigned int m_nb_buffers;
     unsigned int m_period;

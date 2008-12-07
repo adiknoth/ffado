@@ -80,6 +80,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_last_cycle( -1 )
    , m_last_now( 0xFFFFFFFF )
    , m_last_packet_handled_at( 0xFFFFFFFF )
+   , m_receive_mode ( RAW1394_DMA_PACKET_PER_BUFFER )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
@@ -105,6 +106,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_last_cycle( -1 )
    , m_last_now( 0xFFFFFFFF )
    , m_last_packet_handled_at( 0xFFFFFFFF )
+   , m_receive_mode ( RAW1394_DMA_PACKET_PER_BUFFER )
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
@@ -130,6 +132,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_last_cycle( -1 )
    , m_last_now( 0xFFFFFFFF )
    , m_last_packet_handled_at( 0xFFFFFFFF )
+   , m_receive_mode ( RAW1394_DMA_PACKET_PER_BUFFER )
    , m_Client( 0 )
    , m_speed( speed )
    , m_prebuffers( 0 )
@@ -375,7 +378,6 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
                     unsigned char *data, unsigned int length,
                     unsigned char channel, unsigned char tag, unsigned char sy,
                     unsigned int cycle, unsigned int dropped) {
-
     // keep track of dropped cycles
     int dropped_cycles = 0;
     if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
@@ -395,48 +397,29 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
     }
     m_last_cycle = cycle;
 
-    uint32_t pkt_ctr = cycle << 12;
+    // the m_last_now value is set when the iterate() function is called.
+    uint32_t now_cycles = CYCLE_TIMER_GET_CYCLES(m_last_now);
 
-    // if we assume that one iterate() loop doesn't take longer than 0.5 seconds,
-    // the seconds field won't change while the iterate loop runs
-    // this means that we can preset 'now' before running iterate()
-    uint32_t now_secs = CYCLE_TIMER_GET_SECS(m_last_now);
-    // causality results in the fact that 'now' is always after 'cycle'
-    // except if additional packets are received between setting the
-    // m_last_now and the starting the iterate() loop.
-    // this causes the m_last_now to be set at a time before the last packet
-    // in this loop is received. however, it's not going to be >4000 cycles.
-    // hence:
-    // - if the m_last_now > cycle, there is no need to unwrap
-    //   both values are within the same second
-    // - if m_last_now < cycle it can mean two things:
-    //    * m_last_now has wrapped, but is still later than cycle
-    //      hence diffCycles(m_last_now, cycle) > 0. We should unwrap
-    //    * m_last_now has not wrapped, and cycle is ahead of m_last_now
-    //      this means that the cycle is more recent than the saved
-    //      m_last_now value
-    // . Hence if we calculate
-    // the unwrapped difference, and it's larger than 0, this means
-    // that m_last_now is after the current cycle. .
-    // it m_last_now is before the current cycle, we should not unwrap
-    // NOTE: another option is to reread the m_last_now
-    if( (CYCLE_TIMER_GET_CYCLES(m_last_now) < cycle)
-        && diffCycles(CYCLE_TIMER_GET_CYCLES(m_last_now), cycle) >= 0) {
-        debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                           "unwrapping %d => %d, %d\n",
-                           CYCLE_TIMER_GET_CYCLES(m_last_now),
-                           cycle);
-        // the cycle field has wrapped, substract one second
-        if(now_secs == 0) {
-            now_secs = 127;
-        } else  {
-            now_secs -= 1;
-        }
-    }
+    // two cases can occur:
+    // (1) this packet has been received before iterate() was called (normal case).
+    // (2) this packet has been received after iterate() was called.
+    //     happens when the kernel flushes more packets while we are already processing.
+    //
+    // In case (1) now_cycles is a small number of cycles larger than cycle. In
+    // case (2) now_cycles is a small number of cycles smaller than cycle.
+    // hence  abs(diffCycles(now_cycles, cycles)) has to be 'small'
 
+    // we can calculate the time of arrival for this packet as
+    // 'now' + diffCycles(cycles, now_cycles) * TICKS_PER_CYCLE
+    // in its properly wrapped version
+    int64_t diff_cycles = diffCycles(cycle, now_cycles);
+    int64_t tmp = CYCLE_TIMER_TO_TICKS(m_last_now);
+    tmp += diff_cycles * (int64_t)TICKS_PER_CYCLE;
+    uint64_t pkt_ctr_ticks = wrapAtMinMaxTicks(tmp);
+    uint32_t pkt_ctr = TICKS_TO_CYCLE_TIMER(pkt_ctr_ticks);
     #ifdef DEBUG
-    if( (CYCLE_TIMER_GET_CYCLES(m_last_now) < cycle)
-        && diffCycles(CYCLE_TIMER_GET_CYCLES(m_last_now), cycle) < 0
+    if( (now_cycles < cycle)
+        && diffCycles(now_cycles, cycle) < 0
         // ignore this on dropped cycles, since it's normal
         // that now is ahead on the received packets (as we miss packets)
         && dropped_cycles == 0) 
@@ -444,7 +427,6 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Special non-unwrapping happened\n");
     }
     #endif
-    pkt_ctr |= (now_secs & 0x7F) << 25;
 
     #if ISOHANDLER_CHECK_CTR_RECONSTRUCTION
     // add a seconds field
@@ -464,10 +446,11 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
     uint32_t pkt_ctr_ref = cycle << 12;
     pkt_ctr_ref |= (now_secs_ref & 0x7F) << 25;
 
-    if(pkt_ctr != pkt_ctr_ref) {
+    if((pkt_ctr & ~0x0FFFL) != pkt_ctr_ref) {
         debugWarning("reconstructed CTR counter discrepancy\n");
-        debugWarning(" ingredients: %X, %lX, %lX, %lX, %lX, %ld, %ld\n",
-                       cycle, pkt_ctr_ref, pkt_ctr, now, m_last_now, now_secs_ref, now_secs);
+        debugWarning(" ingredients: %X, %lX, %lX, %lX, %lX, %ld, %ld, %ld, %lld\n",
+                       cycle, pkt_ctr_ref, pkt_ctr, now, m_last_now, now_secs_ref, CYCLE_TIMER_GET_SECS(now), CYCLE_TIMER_GET_SECS(m_last_now), tmp);
+        debugWarning(" diffcy = %ld \n", diff_cycles);
     }
     #endif
     m_last_packet_handled_at = pkt_ctr;
@@ -519,23 +502,26 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
         // mark invalid
         pkt_ctr = 0xFFFFFFFF;
     } else {
-        pkt_ctr = cycle << 12;
+        // the m_last_now value is set when the iterate() function is called.
+        uint32_t now_cycles = CYCLE_TIMER_GET_CYCLES(m_last_now);
 
-        // if we assume that one iterate() loop doesn't take longer than 0.5 seconds,
-        // the seconds field won't change while the iterate loop runs
-        // this means that we can preset 'now' before running iterate()
-        uint32_t now_secs = CYCLE_TIMER_GET_SECS(m_last_now);
-        // causality results in the fact that 'now' is always after 'cycle'
-        if(CYCLE_TIMER_GET_CYCLES(m_last_now) > (unsigned int)cycle) {
-            // the cycle field has wrapped, add one second
-            now_secs += 1;
-            // no need for this:
-            //if(now_secs == 128) {
-            //    now_secs = 0;
-            //}
-            // since we mask later on
-        }
-        pkt_ctr |= (now_secs & 0x7F) << 25;
+        // two cases can occur:
+        // (1) this packet has been received before iterate() was called (normal case).
+        // (2) this packet has been received after iterate() was called.
+        //     happens when the kernel flushes more packets while we are already processing.
+        //
+        // In case (1) now_cycles is a small number of cycles larger than cycle. In
+        // case (2) now_cycles is a small number of cycles smaller than cycle.
+        // hence  abs(diffCycles(now_cycles, cycles)) has to be 'small'
+
+        // we can calculate the time of arrival for this packet as
+        // 'now' + diffCycles(cycles, now_cycles) * TICKS_PER_CYCLE
+        // in its properly wrapped version
+        int64_t diff_cycles = diffCycles(cycle, now_cycles);
+        int64_t tmp = CYCLE_TIMER_TO_TICKS(m_last_now);
+        tmp += diff_cycles * (int64_t)TICKS_PER_CYCLE;
+        uint64_t pkt_ctr_ticks = wrapAtMinMaxTicks(tmp);
+        pkt_ctr = TICKS_TO_CYCLE_TIMER(pkt_ctr_ticks);
 
         #if ISOHANDLER_CHECK_CTR_RECONSTRUCTION
         // add a seconds field
@@ -546,17 +532,18 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
             // the cycle field has wrapped, add one second
             now_secs_ref += 1;
             // no need for this:
-            //if(now_secs == 128) {
-            //    now_secs = 0;
-            //}
-            // since we mask later on
+            if(now_secs_ref == 128) {
+               now_secs_ref = 0;
+            }
         }
         uint32_t pkt_ctr_ref = cycle << 12;
         pkt_ctr_ref |= (now_secs_ref & 0x7F) << 25;
 
-        if(pkt_ctr != pkt_ctr_ref) {
+        if((pkt_ctr & ~0x0FFFL) != pkt_ctr_ref) {
             debugWarning("reconstructed CTR counter discrepancy\n");
-            pkt_ctr=pkt_ctr_ref;
+            debugWarning(" ingredients: %X, %lX, %lX, %lX, %lX, %ld, %ld, %ld, %lld\n",
+                        cycle, pkt_ctr_ref, pkt_ctr, now, m_last_now, now_secs_ref, CYCLE_TIMER_GET_SECS(now), CYCLE_TIMER_GET_SECS(m_last_now), tmp);
+            debugWarning(" diffcy = %ld \n", diff_cycles);
         }
         #endif
     }
@@ -674,9 +661,9 @@ bool IsoHandler::prepare()
                                 m_buf_packets,
                                 m_max_packet_size,
                                 m_Client->getChannel(),
-                                RAW1394_DMA_PACKET_PER_BUFFER,
+                                m_receive_mode,
                                 m_irq_interval)) {
-            debugFatal("Could not do receive initialisation (DMA_BUFFERFILL)!\n" );
+            debugFatal("Could not do receive initialisation!\n" );
             debugFatal("  %s\n",strerror(errno));
             return false;
         }
@@ -727,6 +714,7 @@ bool IsoHandler::enable(int cycle)
 
     // indicate that the first iterate() still has to occur.
     m_last_now = 0xFFFFFFFF;
+    m_last_packet_handled_at = 0xFFFFFFFF;
 
     m_State = E_Running;
     return true;

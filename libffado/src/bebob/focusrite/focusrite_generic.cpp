@@ -448,16 +448,18 @@ VolumeControlLowRes::getValue()
 }
 
 // hardware dial control
-DialPositionControl::DialPositionControl(FocusriteDevice& parent, int id)
+DialPositionControl::DialPositionControl(FocusriteDevice& parent, int id, int shift)
 : Control::Discrete(&parent)
 , m_Parent(parent)
 , m_cmd_id ( id )
+, m_shift ( shift )
 {}
-DialPositionControl::DialPositionControl(FocusriteDevice& parent, int id,
+DialPositionControl::DialPositionControl(FocusriteDevice& parent, int id, int shift,
                 std::string name, std::string label, std::string descr)
 : Control::Discrete(&parent)
 , m_Parent(parent)
 , m_cmd_id ( id )
+, m_shift ( shift )
 {
     setName(name);
     setLabel(label);
@@ -473,7 +475,11 @@ DialPositionControl::getValue()
         debugError( "getSpecificValue failed\n" );
         return 0;
     } else {
-        val = val >> 5;
+        if (m_shift > 0) {
+            val = val >> m_shift;
+        } else if (m_shift < 0) {
+            val = val << -m_shift;
+        }
         debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %d = %d\n", 
                                          m_cmd_id, val);
         return val;

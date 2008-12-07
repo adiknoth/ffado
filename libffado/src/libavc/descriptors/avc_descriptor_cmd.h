@@ -26,19 +26,14 @@
 
 #include "../general/avc_generic.h"
 
-#include <libavc1394/avc1394.h>
-
 namespace AVC {
 
+#define AVC1394_CMD_OPEN_DESCRIPTOR         0x08
+#define AVC1394_CMD_READ_DESCRIPTOR         0x09
+#define AVC1394_CMD_WRITE_DESCRIPTOR        0x0A
+#define AVC1394_CMD_SEARCH_DESCRIPTOR       0x0B
+#define AVC1394_CMD_OBJECT_NUMBER_SELECT    0x0D
 
-// defined in avc1394.h
-// #define AVC1394_CMD_OPEN_DESCRIPTOR         0x08
-// #define AVC1394_CMD_READ_DESCRIPTOR         0x09
-// #define AVC1394_CMD_WRITE_DESCRIPTOR        0x0A
-// #define AVC1394_CMD_SEARCH_DESCRIPTOR       0x0B
-// #define AVC1394_CMD_OBJECT_NUMBER_SELECT    0x0D
-
-// not yet defined
 #define AVC1394_CMD_CREATE_DESCRIPTOR       0x0C
 #define AVC1394_CMD_OPEN_INFOBLOCK          0x05
 #define AVC1394_CMD_READ_INFOBLOCK          0x06

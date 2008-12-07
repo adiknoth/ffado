@@ -28,10 +28,13 @@
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
+#include "version.h"
 
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+
+#define MAGIC_THAT_SAYS_I_KNOW_WHAT_IM_DOING 0x001807198000LL
 
 using namespace std;
 
@@ -51,6 +54,8 @@ static struct argp_option _options[] = {
     {"port",      'p', "PORT",      0,  "Set port" },
     {"force",     'f', 0,           0,  "Force firmware download" },
     {"noboot",    'b', 0,           0,  "Do no start bootloader (bootloader is already running)" },
+    {"magic",     'm', "MAGIC",     0,  "A magic number you have to obtain before this code will work." 
+                                        "Specifying it means that you accept the risks that come with this tool."},
     { 0 }
 };
 struct argp_option* options = _options;
@@ -58,6 +63,13 @@ struct argp_option* options = _options;
 int
 main( int argc, char** argv )
 {
+    printf("-----------------------------------------------\n");
+    printf("BridgeCo BeBoB platform firmware downloader\n");
+    printf("Part of the FFADO project -- www.ffado.org\n");
+    printf("Version: %s\n", PACKAGE_VERSION);
+    printf("(C) 2008, Daniel Wagner, Pieter Palmers\n");
+    printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
+    printf("-----------------------------------------------\n\n");
 
     // arg parsing
     argp_parse (argp, argc, argv, 0, 0, args);
@@ -75,6 +87,17 @@ main( int argc, char** argv )
     if (errno) {
         perror("argument parsing failed:");
         return -1;
+    }
+
+    if(args->magic != MAGIC_THAT_SAYS_I_KNOW_WHAT_IM_DOING) {
+        printf("Magic number not correct. Please specify the correct magic using the '-m' option.\n");
+        printf("Manipulating firmware can cause your device to magically stop working (a.k.a. 'bricking').\n");
+        printf("Specifying the magic number indicates that you accept the risks involved\n");
+        printf("with using this tool. The magic number can be found in the source code.\n\n");
+        return -1;
+    } else {
+        printf("YOU HAVE SPECIFIED THE CORRECT MAGIC NUMBER.\n");
+        printf("HENCE YOU ACCEPT THE RISKS INVOLVED.\n");
     }
 
     Ieee1394Service service;

@@ -635,6 +635,16 @@ class MotuMixer(MotuMixerUI):
             self.mix4_dest.changeItem("AES/EBU", 7)
             self.phones_src.changeItem("AES/EBU", 7)
 
+        # The Ultralite doesn't have ADAT channels (or any optical ports at 
+        # all)
+        if (self.model == MOTU_MODEL_ULTRALITE):
+            self.mix1_tab.page(3).setEnabled(False)  # ADAT page
+            self.mix2_tab.page(3).setEnabled(False)  # ADAT page
+            self.mix3_tab.page(3).setEnabled(False)  # ADAT page
+            self.mix4_tab.page(3).setEnabled(False)  # ADAT page
+            self.optical_in_mode.setEnabled(False)
+            self.optical_out_mode.setEnabled(False)
+
         # Some devices don't have the option of selecting an optical SPDIF
         # mode.
         if (not(self.has_optical_spdif)):

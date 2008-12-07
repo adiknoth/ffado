@@ -73,6 +73,10 @@ FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom 
         if(!m_genericContainer->addElement(new Control::Nickname(*this))) {
             debugWarning("failed to add Nickname control to container\n");
         }
+        // add a generic control for the streaming status
+        if(!m_genericContainer->addElement(new Control::StreamingStatus(*this))) {
+            debugWarning("failed to add StreamingStatus control to container\n");
+        }
     }
 }
 
@@ -143,9 +147,22 @@ FFADODevice::saveCache()
     return false;
 }
 
+bool
+FFADODevice::needsRediscovery()
+{
+    // require rediscovery by default
+    return true;
+}
+
 enum FFADODevice::eSyncState
 FFADODevice::getSyncState( ) {
     return eSS_Unknown;
+}
+
+enum FFADODevice::eStreamingState
+FFADODevice::getStreamingState()
+{
+    return eSS_Idle;
 }
 
 bool
@@ -171,7 +188,13 @@ FFADODevice::setNickname( std::string name)
 std::string
 FFADODevice::getNickname()
 {
-    return "Unknown";
+    return "Unsupported";
+}
+
+bool
+FFADODevice::canChangeNickname()
+{
+    return false;
 }
 
 void

@@ -61,17 +61,11 @@ namespace BeBoB {
 
 AvDevice::AvDevice( DeviceManager& d, std::auto_ptr< ConfigRom >( configRom ) )
     : GenericAVC::AvDevice( d, configRom )
+    , m_last_discovery_config_id ( 0xFFFFFFFFFFFFFFFFLLU )
     , m_Mixer ( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
-
-    // DM1500 based devices seem to upset the linux1394 stack when commands are
-    // sent too fast.
-    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 200) {
-        AVC::AVCCommand::setSleepAfterAVCCommand( 200 );
-    }
-
 }
 
 AvDevice::~AvDevice()
@@ -83,7 +77,6 @@ bool
 AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
-        return false;
         // try a bebob-specific command to check for the firmware
         ExtendedPlugInfoCmd extPlugInfoCmd( configRom.get1394Service() );
         UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
@@ -98,12 +91,17 @@ AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
             ExtendedPlugInfoInfoType::eIT_NoOfChannels );
         extendedPlugInfoInfoType.initialize();
         extPlugInfoCmd.setInfoType( extendedPlugInfoInfoType );
-    
+
         if ( !extPlugInfoCmd.fire() ) {
             debugError( "Number of channels command failed\n" );
             return false;
         }
-    
+
+        if((extPlugInfoCmd.getResponse() != AVCCommand::eR_Implemented)) {
+            // command not supported
+            return false;
+        }
+
         ExtendedPlugInfoInfoType* infoType = extPlugInfoCmd.getInfoType();
         if ( infoType
             && infoType->m_plugNrOfChns )
@@ -207,6 +205,10 @@ AvDevice::discover()
     if(!buildMixer()) {
         debugWarning("Could not build mixer\n");
     }
+
+    // keep track of the config id of this discovery
+    m_last_discovery_config_id = getConfigurationId();
+
     return true;
 }
 
@@ -653,6 +655,14 @@ AvDevice::getConfigurationIdSyncMode()
 
     debugError( "Could not retrieve sync mode\n" );
     return 0;
+}
+
+bool
+AvDevice::needsRediscovery()
+{
+    // require rediscovery if the config id differs from the one saved
+    // in the previous discovery
+    return getConfigurationId() != m_last_discovery_config_id;
 }
 
 uint64_t

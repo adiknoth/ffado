@@ -24,7 +24,7 @@
 #
 
 FFADO_API_VERSION="8"
-FFADO_VERSION="2.0.900"
+FFADO_VERSION="2.999.0"
 
 import os
 import re
@@ -62,7 +62,7 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
 	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks AV/C part.", True ),
 	BoolOption( "ENABLE_MOTU", "Enable/Disable the MOTU part.", True ),
-	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", False ),
+	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", True ),
 	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
 	BoolOption( "ENABLE_RME", "Enable/Disable the RME part.", False ),
 	#BoolOption( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE part.", False ),
@@ -93,6 +93,11 @@ vars_to_check = [
 	'XDG_CONFIG_DIRS',
 	'XDG_DATA_DIRS',
 	'HOME',
+	'CC',
+	'CFLAGS',
+	'CXX',
+	'CXXFLAGS',
+	'CPPFLAGS',
 ]
 for var in vars_to_check:
 	if os.environ.has_key(var):
@@ -102,10 +107,8 @@ for var in vars_to_check:
 
 env = Environment( tools=['default','scanreplace','pyuic','pyuic4','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
-if os.environ.has_key('CC'):
-	env['CC'] = os.environ['CC']
-if os.environ.has_key('CXX'):
-	env['CXX'] = os.environ['CXX']
+if os.environ.has_key('LDFLAGS'):
+	env['LINKFLAGS'] = os.environ['LDFLAGS']
 
 # grab OS CFLAGS / CCFLAGS
 env['OS_CFLAGS']=[]
@@ -222,7 +225,6 @@ if not env.GetOption('clean'):
 	
 	pkgs = {
 		'libraw1394' : '1.3.0',
-		'libavc1394' : '0.5.3',
 		'libiec61883' : '1.1.0',
 		'dbus-1' : '1.0',
 		}
@@ -528,7 +530,7 @@ env['CONFIGDIR'] = "~/.ffado"
 env['CACHEDIR'] = "~/.ffado"
 
 env['USER_CONFIG_FILE'] = env['CONFIGDIR'] + "/configuration"
-env['SYSTEM_CONFIG_FILE'] = env['sharedir'] + "/configuration"
+env['SYSTEM_CONFIG_FILE'] = env['SHAREDIR'] + "/configuration"
 
 env['REGISTRATION_URL'] = "http://ffado.org/deviceregistration/register.php?action=register"
 
@@ -541,17 +543,16 @@ env['top_srcdir'] = env.Dir( "." ).abspath
 # Start building
 #
 env.ScanReplace( "config.h.in" )
+env.ScanReplace( "config_debug.h.in" )
+env.ScanReplace( "version.h.in" )
+
 # ensure that the config.h is updated
 env.Depends( "config.h", "SConstruct" )
 env.Depends( "config.h", 'cache/' + build_base + "options.cache" )
 
-env.ScanReplace( "config_debug.h.in" )
-
-env.ScanReplace( "version.h.in" )
-env.Depends( "version.h", "SConstruct" )
-env.Depends( "version.h", 'cache/' + build_base + "options.cache" )
-# update version.h whenever the SVN revision changes
+# update version.h whenever the version or SVN revision changes
 env.Depends( "version.h", env.Value(env['REVISION']))
+env.Depends( "version.h", env.Value(env['VERSION']))
 
 env.Depends( "libffado.pc", "SConstruct" )
 pkgconfig = env.ScanReplace( "libffado.pc.in" )
@@ -575,9 +576,6 @@ if not env.GetOption('clean'):
     if env['BUILD_TESTS']:
         Default( 'tests' )
 
-if not env.has_key( 'DESTDIR' ):
-	env.Execute( env.Action( "rm -f %s/ffadomixer" % env['bindir'] ) )
-
 #
 # Deal with the DESTDIR vs. xdg-tools conflict (which is basicely that the
 # xdg-tools can't deal with DESTDIR, so the packagers have to deal with this
@@ -600,7 +598,7 @@ else:
 		if env.GetOption( "clean" ):
 			env.Execute( action )
 
-	if env.has_key( 'XDG_TOOLS' ) and env.has_key( 'PYUIC' ):
+	if env.has_key( 'XDG_TOOLS' ) and env.has_key( 'PYUIC4' ):
 		if not env.GetOption("clean"):
 			action = "install"
 		else:

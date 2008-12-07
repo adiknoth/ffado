@@ -37,6 +37,7 @@
 #include "debugmodule/debugmodule.h"
 
 #include "devicemanager.h"
+#include "version.h"
 
 #include <iostream>
 #include <string>
@@ -95,6 +96,14 @@ main( int argc, char** argv )
 {
     using namespace std;
 
+    printf("-----------------------------------------------\n");
+    printf("ECHO FireWorks platform firmware downloader\n");
+    printf("Part of the FFADO project -- www.ffado.org\n");
+    printf("Version: %s\n", PACKAGE_VERSION);
+    printf("(C) 2008, Pieter Palmers\n");
+    printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
+    printf("-----------------------------------------------\n\n");
+
     memset(args, 0, sizeof(args));
 
     args->guid = 0xFFFFFFFFFFFFFFFFLL;
@@ -113,14 +122,14 @@ main( int argc, char** argv )
     }
 
     if(args->magic != MAGIC_THAT_SAYS_I_KNOW_WHAT_IM_DOING) {
-        printMessage("Magic number not correct. Please specify the correct magic using the '-m' option.\n");
-        printMessage("Manipulating firmware can cause your device to magically stop working (a.k.a. 'bricking').\n");
-        printMessage("Specifying the magic number indicates that you accept the risks involved\n");
-        printMessage("with using this tool. The magic number can be found in the source code.\n");
+        printf("Magic number not correct. Please specify the correct magic using the '-m' option.\n");
+        printf("Manipulating firmware can cause your device to magically stop working (a.k.a. 'bricking').\n");
+        printf("Specifying the magic number indicates that you accept the risks involved\n");
+        printf("with using this tool. The magic number can be found in the source code.\n\n");
         return -1;
     } else {
-        printMessage("YOU HAVE SPECIFIED THE CORRECT MAGIC NUMBER.\n");
-        printMessage("HENCE YOU ACCEPT THE RISKS INVOLVED.\n");
+        printf("YOU HAVE SPECIFIED THE CORRECT MAGIC NUMBER.\n");
+        printf("HENCE YOU ACCEPT THE RISKS INVOLVED.\n");
     }
 
     // first do the operations for which we don't need a device

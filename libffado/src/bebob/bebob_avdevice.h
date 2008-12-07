@@ -111,6 +111,7 @@ public:
     virtual bool deserialize( std::string basePath, Util::IODeserialize& deser );
 
     virtual uint64_t getConfigurationId();
+    virtual bool needsRediscovery();
 
     std::string getCachePath();
 
@@ -120,6 +121,8 @@ protected:
     virtual uint16_t getConfigurationIdSyncMode();
 
     std::vector<int> m_supported_frequencies;
+    uint64_t         m_last_discovery_config_id;
+
 protected:
     Mixer*             m_Mixer;
 

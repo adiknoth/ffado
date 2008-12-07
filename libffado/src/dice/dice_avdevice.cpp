@@ -55,6 +55,7 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_TCAT,   0x00000021, "TC Electronic", "Konnekt 8"},
     {FW_VENDORID_TCAT,   0x00000023, "TC Electronic", "Konnekt Live"},
     {FW_VENDORID_ALESIS, 0x00000001, "Alesis", "io|14"},
+    {FW_VENDORID_PRESONUS, 0x0000000b, "Presonus", "Firestudio Project"},
 };
 
 DiceAvDevice::DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))

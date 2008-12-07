@@ -91,6 +91,12 @@ Element::unlockControl()
     getLock().Unlock();
 }
 
+bool
+Element::isControlLocked()
+{
+    return getLock().isLocked();
+}
+
 Util::Mutex&
 Element::getLock()
 {
@@ -100,6 +106,12 @@ Element::getLock()
     } else {
         return *m_element_lock;
     }
+}
+
+bool
+Element::canChangeValue()
+{
+    return true;
 }
 
 void

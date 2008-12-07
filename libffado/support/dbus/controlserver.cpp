@@ -63,6 +63,12 @@ DBus::Int32 Element::getVerboseLevel()
     return getDebugLevel();
 }
 
+DBus::Bool
+Element::canChangeValue()
+{
+    return m_Slave.canChangeValue();
+}
+
 void
 Element::Lock()
 {
@@ -80,6 +86,16 @@ Element::Unlock()
         m_Parent->Unlock();
     } else {
         m_UpdateLock->Unlock();
+    }
+}
+
+bool
+Element::isLocked()
+{
+    if(m_Parent) {
+        return m_Parent->isLocked();
+    } else {
+        return m_UpdateLock->isLocked();
     }
 }
 
@@ -340,74 +356,84 @@ Element *
 Container::createHandler(Element *parent, Control::Element& e) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Creating handler for '%s'\n",
                  e.getName().c_str() );
-                 
-    if (dynamic_cast<Control::Container *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Container\n");
+    try {
+        if (dynamic_cast<Control::Container *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Container\n");
+            
+            return new Container(conn(), std::string(path()+"/"+e.getName()), 
+                parent, *dynamic_cast<Control::Container *>(&e));
+        }
         
-        return new Container(conn(), std::string(path()+"/"+e.getName()), 
-            parent, *dynamic_cast<Control::Container *>(&e));
-    }
+        if (dynamic_cast<Control::Continuous *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Continuous\n");
+            
+            return new Continuous(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<Control::Continuous *>(&e));
+        }
+        
+        if (dynamic_cast<Control::Discrete *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Discrete\n");
+            
+            return new Discrete(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<Control::Discrete *>(&e));
+        }
+        
+        if (dynamic_cast<Control::Text *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Text\n");
+            
+            return new Text(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<Control::Text *>(&e));
+        }
     
-    if (dynamic_cast<Control::Continuous *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Continuous\n");
-        
-        return new Continuous(conn(), std::string(path()+"/"+e.getName()),
-            parent, *dynamic_cast<Control::Continuous *>(&e));
-    }
+        if (dynamic_cast<Control::Register *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Register\n");
+            
+            return new Register(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<Control::Register *>(&e));
+        }
     
-    if (dynamic_cast<Control::Discrete *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Discrete\n");
+        // note that we have to check this before checking the Enum,
+        // since Enum is a base class
+        if (dynamic_cast<Control::AttributeEnum *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::AttributeEnum\n");
+            
+            return new AttributeEnum(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<Control::AttributeEnum *>(&e));
+        }
         
-        return new Discrete(conn(), std::string(path()+"/"+e.getName()),
-            parent, *dynamic_cast<Control::Discrete *>(&e));
-    }
-    
-    if (dynamic_cast<Control::Text *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Text\n");
+        if (dynamic_cast<Control::Enum *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Enum\n");
+            
+            return new Enum(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<Control::Enum *>(&e));
+        }
         
-        return new Text(conn(), std::string(path()+"/"+e.getName()),
-            parent, *dynamic_cast<Control::Text *>(&e));
-    }
-
-    if (dynamic_cast<Control::Register *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Register\n");
+        if (dynamic_cast<ConfigRom *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a ConfigRom\n");
+            
+            return new ConfigRomX(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<ConfigRom *>(&e));
+        }
         
-        return new Register(conn(), std::string(path()+"/"+e.getName()),
-            parent, *dynamic_cast<Control::Register *>(&e));
-    }
-
-    // note that we have to check this before checking the Enum,
-    // since Enum is a base class
-    if (dynamic_cast<Control::AttributeEnum *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::AttributeEnum\n");
+        if (dynamic_cast<Control::MatrixMixer *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::MatrixMixer\n");
+            
+            return new MatrixMixer(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<Control::MatrixMixer *>(&e));
+        }
         
-        return new AttributeEnum(conn(), std::string(path()+"/"+e.getName()),
-            parent, *dynamic_cast<Control::AttributeEnum *>(&e));
-    }
-    
-    if (dynamic_cast<Control::Enum *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Enum\n");
-        
-        return new Enum(conn(), std::string(path()+"/"+e.getName()),
-            parent, *dynamic_cast<Control::Enum *>(&e));
-    }
-    
-    if (dynamic_cast<ConfigRom *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a ConfigRom\n");
-        
-        return new ConfigRomX(conn(), std::string(path()+"/"+e.getName()),
-            parent, *dynamic_cast<ConfigRom *>(&e));
-    }
-    
-    if (dynamic_cast<Control::MatrixMixer *>(&e) != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::MatrixMixer\n");
-        
-        return new MatrixMixer(conn(), std::string(path()+"/"+e.getName()),
-            parent, *dynamic_cast<Control::MatrixMixer *>(&e));
-    }
-    
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Element\n");
-    return new Element(conn(), std::string(path()+"/"+e.getName()), parent, e);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Element\n");
+        return new Element(conn(), std::string(path()+"/"+e.getName()), parent, e);
+    } catch (...) {
+        debugWarning("Could not register %s\n", std::string(path()+"/"+e.getName()).c_str());
+        if(e.isControlLocked()) {
+            e.unlockControl();
+        }
+        if(isLocked()) {
+            Unlock();
+        }
+        return NULL;
+    };
 }
 
 // --- Continuous

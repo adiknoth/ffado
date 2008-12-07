@@ -194,6 +194,10 @@ DeviceManager::initialize()
         tmp1394Service->setVerboseLevel( getDebugLevel() );
         m_1394Services.push_back(tmp1394Service);
 
+        if(!tmp1394Service->useConfiguration(m_configuration)) {
+            debugWarning("Could not load config to 1394service\n");
+        }
+
         tmp1394Service->setThreadParameters(m_thread_realtime, m_thread_priority);
         if ( !tmp1394Service->initialize( port ) ) {
             debugFatal( "Could not initialize Ieee1349Service object for port %d\n", port );
@@ -467,6 +471,76 @@ DeviceManager::discover( bool useCache, bool rediscover )
     }
 
     if (!slaveMode) {
+        // for the devices that are still in the list check if they require re-discovery
+        FFADODeviceVector failed_to_rediscover;
+        for ( FFADODeviceVectorIterator it_dev = m_avDevices.begin();
+            it_dev != m_avDevices.end();
+            ++it_dev )
+        {
+            FFADODevice* avDevice = *it_dev;
+            if(avDevice->needsRediscovery()) {
+                debugOutput( DEBUG_LEVEL_NORMAL,
+                             "Device with GUID %s requires rediscovery (state changed)...\n",
+                             avDevice->getConfigRom().getGuidString().c_str());
+
+                bool isFromCache = false;
+                if ( useCache && avDevice->loadFromCache() ) {
+                    debugOutput( DEBUG_LEVEL_VERBOSE, "could load from cache\n" );
+                    isFromCache = true;
+                    // restore the debug level for everything that was loaded
+                    avDevice->setVerboseLevel( getDebugLevel() );
+                } else if ( avDevice->discover() ) {
+                    debugOutput( DEBUG_LEVEL_VERBOSE, "discovery successful\n" );
+                } else {
+                    debugError( "could not discover device\n" );
+                    failed_to_rediscover.push_back(avDevice);
+                    continue;
+                }
+                if ( !isFromCache && !avDevice->saveCache() ) {
+                    debugOutput( DEBUG_LEVEL_VERBOSE, "No cached version of AVC model created\n" );
+                }
+            } else {
+                debugOutput( DEBUG_LEVEL_NORMAL,
+                             "Device with GUID %s does not require rediscovery...\n",
+                             avDevice->getConfigRom().getGuidString().c_str());
+            }
+        }
+        // remove devices that failed to rediscover
+        // FIXME: surely there has to be a better way to do this
+        FFADODeviceVector to_keep;
+        for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+            it != m_avDevices.end();
+            ++it )
+        {
+            bool keep_this_device = true;
+            for ( FFADODeviceVectorIterator it2 = failed_to_rediscover.begin();
+                it2 != failed_to_rediscover.end();
+                ++it2 )
+            {
+                if(*it == *it2) {
+                    debugOutput( DEBUG_LEVEL_NORMAL,
+                                "Removing device with GUID %s due to failed discovery...\n",
+                                (*it)->getConfigRom().getGuidString().c_str());
+                    keep_this_device = false;
+                    break;
+                }
+            }
+            if(keep_this_device) {
+                to_keep.push_back(*it);
+            }
+        }
+        for ( FFADODeviceVectorIterator it2 = failed_to_rediscover.begin();
+            it2 != failed_to_rediscover.end();
+            ++it2 )
+        {
+            if (!deleteElement(*it2)) {
+                debugWarning("failed to remove AvDevice from Control::Container\n");
+            }
+            delete *it2;
+        }
+        m_avDevices = to_keep;
+
+        // pick up new devices
         for ( Ieee1394ServiceVectorIterator it = m_1394Services.begin();
             it != m_1394Services.end();
             ++it )
@@ -498,11 +572,11 @@ DeviceManager::discover( bool useCache, bool rediscover )
                 }
 
                 bool already_in_vector = false;
-                for ( FFADODeviceVectorIterator it = m_avDevices.begin();
-                    it != m_avDevices.end();
-                    ++it )
+                for ( FFADODeviceVectorIterator it_dev = m_avDevices.begin();
+                    it_dev != m_avDevices.end();
+                    ++it_dev )
                 {
-                    if ((*it)->getConfigRom().getGuid() == configRom->getGuid()) {
+                    if ((*it_dev)->getConfigRom().getGuid() == configRom->getGuid()) {
                         already_in_vector = true;
                         break;
                     }
@@ -712,6 +786,7 @@ DeviceManager::initStreaming()
         debugWarning("Could not set processorManager sync source (%p)\n",
             getSyncSource());
     }
+
     return true;
 }
 

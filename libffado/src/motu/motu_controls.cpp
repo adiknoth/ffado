@@ -75,6 +75,11 @@ MotuBinarySwitch::setValue(int v)
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for switch %s (0x%04x) to %d\n", 
       getName().c_str(), m_register, v);
 
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return true;
+    }
+
     // Set the value
     if (m_setenable_mask) {
       val = (v==0)?0:m_value_mask;
@@ -102,6 +107,11 @@ MotuBinarySwitch::getValue()
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for switch %s (0x%04x)\n", 
       getName().c_str(), m_register);
 
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return 0;
+    }
+
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
@@ -125,6 +135,11 @@ ChannelFader::setValue(int v)
     unsigned int val;
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for channel fader 0x%04x to %d\n", m_register, v);
 
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return true;
+    }
+
     val = v<0?0:v;
     if (val > 0x80)
       val = 0x80;
@@ -140,6 +155,12 @@ ChannelFader::getValue()
 {
     unsigned int val;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for channel fader 0x%04x\n", m_register);
+
+    // Silently swallow attempts to read non-existent controls for now
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return 0;
+    }
 
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
@@ -164,6 +185,11 @@ ChannelPan::setValue(int v)
     unsigned int val;
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for channel pan 0x%04x to %d\n", m_register, v);
 
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return true;
+    }
+
     val = ((v<-64?-64:v)+64) & 0xff;
     if (val > 0x80)
       val = 0x80;
@@ -179,6 +205,12 @@ ChannelPan::getValue()
 {
     unsigned int val;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for channel pan 0x%04x\n", m_register);
+
+    // Silently swallow attempts to read non-existent controls for now
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return 0;
+    }
 
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
@@ -221,6 +253,9 @@ void MotuMatrixMixer::addColInfo(std::string name, unsigned int flags,
 
 uint32_t MotuMatrixMixer::getCellRegister(const unsigned int row, const unsigned int col)
 {
+    if (m_RowInfo.at(row).address==MOTU_CTRL_NONE ||
+        m_ColInfo.at(col).address==MOTU_CTRL_NONE)
+        return MOTU_CTRL_NONE;
     return m_RowInfo.at(row).address + m_ColInfo.at(col).address;
 }
 
@@ -261,26 +296,39 @@ ChannelFaderMatrixMixer::ChannelFaderMatrixMixer(MotuDevice &parent, std::string
 
 double ChannelFaderMatrixMixer::setValue(const int row, const int col, const double val)
 {
-    uint32_t v;
+    uint32_t v, reg;
     v = val<0?0:(uint32_t)val;
     if (v > 0x80)
       v = 0x80;
     debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelFader setValue for row %d col %d to %lf (%ld)\n",
       row, col, val, v);
+    reg = getCellRegister(row,col);
 
+    // Silently swallow attempts to set non-existent controls for now
+    if (reg == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "ignoring control marked as non-existent\n");
+        return true;
+    }
     // Bit 30 indicates that the channel fader is being set
     v |= 0x40000000;
-    m_parent.WriteRegister(getCellRegister(row,col), v);
+    m_parent.WriteRegister(reg, v);
 
     return true;
 }
 
 double ChannelFaderMatrixMixer::getValue(const int row, const int col)
 {
-    uint32_t val;
+    uint32_t val, reg;
+    reg = getCellRegister(row,col);
+
+    // Silently swallow attempts to read non-existent controls for now
+    if (reg == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "ignoring control marked as non-existent\n");
+        return 0;
+    }
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
-    val = m_parent.ReadRegister(getCellRegister(row,col)) & 0xff;
+    val = m_parent.ReadRegister(reg) & 0xff;
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelFader getValue for row %d col %d = %lu\n",
       row, col, val);
@@ -299,17 +347,24 @@ ChannelPanMatrixMixer::ChannelPanMatrixMixer(MotuDevice &parent, std::string nam
 
 double ChannelPanMatrixMixer::setValue(const int row, const int col, const double val)
 {
-    uint32_t v;
+    uint32_t v, reg;
     v = ((val<-64?-64:(int32_t)val)+64) & 0xff;
     if (v > 0x80)
       v = 0x80;
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelPan setValue for row %d col %d to %lf (%ld)\n",
       row, col, val, v);
+    reg = getCellRegister(row,col);
+
+    // Silently swallow attempts to set non-existent controls for now
+    if (reg == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "ignoring control marked as non-existent\n");
+        return true;
+    }
 
     // Bit 31 indicates that pan is being set
     v = (v << 8) | 0x80000000;
-    m_parent.WriteRegister(getCellRegister(row,col), v);
+    m_parent.WriteRegister(reg, v);
 
     return true;
 }
@@ -317,9 +372,18 @@ double ChannelPanMatrixMixer::setValue(const int row, const int col, const doubl
 double ChannelPanMatrixMixer::getValue(const int row, const int col)
 {
     int32_t val;
+    uint32_t reg;
+    reg = getCellRegister(row,col);
+
+    // Silently swallow attempts to read non-existent controls for now
+    if (reg == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "ignoring control marked as non-existent\n");
+        return 0;
+    }
+
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
-    val = m_parent.ReadRegister(getCellRegister(row,col));
+    val = m_parent.ReadRegister(reg);
     val = ((val >> 8) & 0xff) - 0x40;
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelPan getValue for row %d col %d = %lu\n",
@@ -347,10 +411,17 @@ ChannelBinSwMatrixMixer::ChannelBinSwMatrixMixer(MotuDevice &parent, std::string
 
 double ChannelBinSwMatrixMixer::setValue(const int row, const int col, const double val)
 {
-    uint32_t v;
+    uint32_t v, reg;
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "BinSw setValue for row %d col %d to %lf (%ld)\n",
       row, col, val, val==0?0:1);
+    reg = getCellRegister(row,col);
+
+    // Silently swallow attempts to set non-existent controls for now
+    if (reg == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "ignoring control marked as non-existent\n");
+        return true;
+    }
 
     // Set the value
     if (m_setenable_mask) {
@@ -361,24 +432,31 @@ double ChannelBinSwMatrixMixer::setValue(const int row, const int col, const dou
       // It would be good to utilise the cached value from the receive
       // processor (if running) later on.  For now we'll just fetch the
       // current register value directly when needed.
-      v = m_parent.ReadRegister(getCellRegister(row,col));
+      v = m_parent.ReadRegister(reg);
       if (v==0)
         v &= ~m_value_mask;
       else
         v |= m_value_mask;
     }
-    m_parent.WriteRegister(getCellRegister(row,col), v);
+    m_parent.WriteRegister(reg, v);
 
     return true;
 }
 
 double ChannelBinSwMatrixMixer::getValue(const int row, const int col)
 {
-    uint32_t val;
+    uint32_t val, reg;
+    reg = getCellRegister(row,col);
+
+    // Silently swallow attempts to read non-existent controls for now
+    if (reg == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "ignoring control marked as non-existent\n");
+        return 0;
+    }
 
     // FIXME: we could just read the appropriate mixer status field from the 
     // receive stream processor once we work out an efficient way to do this.
-    val = m_parent.ReadRegister(getCellRegister(row,col));
+    val = m_parent.ReadRegister(reg);
     val = (val & m_value_mask) != 0;
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "BinSw getValue for row %d col %d = %lu\n",
@@ -404,6 +482,11 @@ MixFader::setValue(int v)
     unsigned int val;
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for mix fader 0x%04x to %d\n", m_register, v);
 
+    // Silently swallow attempts to set non-existent controls for now
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return true;
+    }
     val = v<0?0:v;
     if (val > 0x80)
       val = 0x80;
@@ -419,6 +502,12 @@ MixFader::getValue()
 {
     unsigned int val;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for mix fader 0x%04x\n", m_register);
+
+    // Silently swallow attempts to read non-existent controls for now
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return 0;
+    }
 
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
@@ -443,6 +532,12 @@ MixMute::setValue(int v)
     unsigned int val, dest;
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for mix mute 0x%04x to %d\n", m_register, v);
 
+    // Silently swallow attempts to set non-existent controls for now
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return true;
+    }
+
     // Need to read current destination so we can preserve that when setting
     // mute status (mute and destination are always set together).
     dest = m_parent.ReadRegister(m_register) & 0x00000f00;
@@ -461,6 +556,12 @@ MixMute::getValue()
 {
     unsigned int val;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for mix mute 0x%04x\n", m_register);
+
+    // Silently swallow attempts to read non-existent controls for now
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return 0;
+    }
 
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
@@ -485,6 +586,11 @@ MixDest::setValue(int v)
     unsigned int val, mute;
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for mix destination 0x%04x to %d\n", m_register, v);
 
+    // Silently swallow attempts to set non-existent controls for now
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return true;
+    }
     // Need to get current mute status so we can preserve it
     mute = m_parent.ReadRegister(m_register) & 0x00001000;
     val = v;
@@ -510,6 +616,11 @@ MixDest::getValue()
     unsigned int val;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for mix destination 0x%04x\n", m_register);
 
+    // Silently swallow attempts to read non-existent controls for now
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return true;
+    }
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
@@ -582,7 +693,7 @@ OpticalMode::setValue(int v)
 
     // Set mode as requested.  An invalid setting is effectively ignored.
     if (v>=0 && v<=3) {
-      if (m_register == MOTU_DIR_IN) {
+      if (m_register == MOTU_CTRL_DIR_IN) {
         val = (val & ~0x0300) | ((v & 0x03) << 8);
       } else {
         val = (val & ~0x0c00) | ((v & 0x03) << 10);
@@ -604,7 +715,7 @@ OpticalMode::getValue()
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
-    if (m_register == MOTU_DIR_IN)
+    if (m_register == MOTU_CTRL_DIR_IN)
       val = (val >> 8) & 0x03;
     else
       val = (val >> 10) & 0x03;
@@ -655,6 +766,11 @@ InputGainPad::setValue(int v)
     unsigned int reg, reg_shift;
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for mode %d input pad/trim %d to %d\n", m_mode, m_register, v);
 
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return true;
+    }
+
     reg = dev_register();
     if (reg == 0)
         return false;
@@ -702,6 +818,11 @@ InputGainPad::getValue()
     unsigned int reg, reg_shift;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for mode %d input pad/trim %d\n", m_mode, m_register);
 
+    if (m_register == MOTU_CTRL_NONE) {
+        debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
+        return 0;
+    }
+
     reg = dev_register();
     if (reg == 0)
         return false;
@@ -742,7 +863,7 @@ MeterControl::MeterControl(MotuDevice &parent, unsigned int ctrl_mask, unsigned 
 }
 
 void MeterControl::validate(void) {
-    if (m_register & (1<< m_shift) == 0) {
+    if ((m_register & (1<< m_shift)) == 0) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Inconsistent mask/shift: 0x%08x/%d\n", m_register, m_shift);
     }
 }

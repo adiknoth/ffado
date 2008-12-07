@@ -40,9 +40,7 @@ EdirolFa101Device::EdirolFa101Device( DeviceManager& d,
     m_fixed_clocksource.slipping = false;
     m_fixed_clocksource.description = "Device Controlled";
 
-    if (AVC::AVCCommand::getSleepAfterAVCCommand() < 500) {
-        AVC::AVCCommand::setSleepAfterAVCCommand( 500 );
-    }
+    get1394Service().setFCPResponseFiltering(true);
 }
 
 EdirolFa101Device::~EdirolFa101Device()

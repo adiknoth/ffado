@@ -90,17 +90,6 @@ MotuTransmitStreamProcessor::getMaxPacketSize() {
 }
 
 unsigned int
-MotuTransmitStreamProcessor::getAveragePacketSize()
-{
-    // in one second we have 8000 packets
-    // containing FRAMERATE frames
-    // so on average bytes/packet: (8000 packet headers + FRAMERATE * frame_size) / 8000
-    #warning FIXME
-    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
-    return framerate<=48000?616:(framerate<=96000?1032:1160);
-}
-
-unsigned int
 MotuTransmitStreamProcessor::getNominalFramesPerPacket() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     return framerate<=48000?8:(framerate<=96000?16:32);
@@ -480,10 +469,11 @@ unsigned int MotuTransmitStreamProcessor::fillDataPacketHeader (
     uint32_t ts )
 {
     quadlet_t *quadlet = (quadlet_t *)data;
-    // Size of a single data frame in quadlets.  For data sent by the
+    // Size of a single data frame in quadlets.  For data sent TO the
     // Ultralite this is not strictly true (with m_event_size 52, dbs is set
-    // to 19).  Even so, we'll run with the assumption that a different dbs
-    // will be fine unless proven otherwise.
+    // to 13, even though data sent by the Ultralite uses 19 as one would
+    // expect from a 52-byte event).  Even so, we'll run with the assumption
+    // that a different dbs will be fine unless proven otherwise.
     unsigned dbs = m_event_size / 4;
 
     // The number of events per packet expected by the MOTU is solely
@@ -544,8 +534,14 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
     for ( PortVectorIterator it = m_Ports.begin();
       it != m_Ports.end();
       ++it ) {
-        // If this port is disabled, don't process it
-        if((*it)->isDisabled()) {continue;};
+        // If this port is disabled, unconditionally send it silence.
+        if((*it)->isDisabled()) {
+          if (encodeSilencePortToMotuEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
+            debugWarning("Could not encode silence for disabled port %s to Motu events\n",(*it)->getName().c_str());
+            // Don't treat this as a fatal error at this point
+          }
+          continue;
+        }
 
         Port *port=(*it);
 
@@ -553,13 +549,13 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
 
         case Port::E_Audio:
             if (encodePortToMotuEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not encode port %s to Motu events",(*it)->getName().c_str());
+                debugWarning("Could not encode port %s to Motu events\n",(*it)->getName().c_str());
                 no_problem=false;
             }
             break;
         case Port::E_Midi:
              if (encodePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                 debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
+                 debugWarning("Could not encode port %s to Midi events\n",(*it)->getName().c_str());
                  no_problem=false;
              }
             break;
@@ -585,13 +581,13 @@ MotuTransmitStreamProcessor::transmitSilenceBlock(char *data,
 
         case Port::E_Audio:
             if (encodeSilencePortToMotuEvents(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not encode port %s to MBLA events",(*it)->getName().c_str());
+                debugWarning("Could not encode port %s to MBLA events\n",(*it)->getName().c_str());
                 no_problem = false;
             }
             break;
         case Port::E_Midi:
             if (encodeSilencePortToMotuMidiEvents(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not encode port %s to Midi events",(*it)->getName().c_str());
+                debugWarning("Could not encode port %s to Midi events\n",(*it)->getName().c_str());
                 no_problem = false;
             }
             break;
@@ -726,8 +722,8 @@ int MotuTransmitStreamProcessor::encodePortToMotuMidiEvents(
             midibuffer[mb_head++] = *src;
             mb_head &= MIDIBUFFER_SIZE-1;
             if (unlikely(mb_head == mb_tail)) {
-            /* Buffer overflow - dump oldest byte */
-            /* FIXME: ideally this would dump an entire MIDI message, but this is only
+            /* Buffer overflow - dump oldest byte. */
+            /* Ideally this would dump an entire MIDI message, but this is only
              * feasible if it's possible to determine the message size easily.
              */
                 mb_tail = (mb_tail+1) & (MIDIBUFFER_SIZE-1);

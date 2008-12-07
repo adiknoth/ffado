@@ -32,6 +32,7 @@
 #include "libutil/PosixThread.h"
 #include "libutil/SystemTimeSource.h"
 #include "libutil/Watchdog.h"
+#include "libutil/Configuration.h"
 
 #include <cstring>
 #include <assert.h>
@@ -49,6 +50,7 @@ IsoTask::IsoTask(IsoHandlerManager& manager, enum IsoHandler::EHandlerType t)
     , m_handlerType( t )
     , m_running( false )
     , m_in_busreset( false )
+    , m_activity_wait_timeout_nsec (ISOHANDLERMANAGER_ISO_TASK_WAIT_TIMEOUT_USECS * 1000LL)
 {
 }
 
@@ -343,6 +345,7 @@ IsoTask::Execute()
             handler_died = true;
         }
     }
+
     if(handler_died) {
         m_running = false;
         return false; // one or more handlers have died
@@ -388,14 +391,13 @@ IsoTask::waitForActivity()
                        this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
     struct timespec ts;
     int result;
-    long long int timeout_nsec = ISOHANDLERMANAGER_ISO_TASK_WAIT_TIMEOUT_USECS * 1000LL;
 
     if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
         debugError("clock_gettime failed\n");
         return eAR_Error;
     }
 
-    ts.tv_nsec += timeout_nsec;
+    ts.tv_nsec += m_activity_wait_timeout_nsec;
     while(ts.tv_nsec >= 1000000000LL) {
         ts.tv_sec += 1;
         ts.tv_nsec -= 1000000000LL;
@@ -418,13 +420,13 @@ IsoTask::waitForActivity()
             debugError("(%p) sem_timedwait error (result=%d errno=EINVAL)\n", 
                         this, result);
             debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, timeout_nsec, ts.tv_sec, ts.tv_nsec);
+                       this, m_activity_wait_timeout_nsec, ts.tv_sec, ts.tv_nsec);
             return eAR_Error;
         } else {
             debugError("(%p) sem_timedwait error (result=%d errno=%d)\n", 
                         this, result, errno);
             debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, timeout_nsec, ts.tv_sec, ts.tv_nsec);
+                       this, m_activity_wait_timeout_nsec, ts.tv_sec, ts.tv_nsec);
             return eAR_Error;
         }
     }
@@ -532,14 +534,26 @@ bool
 IsoHandlerManager::setThreadParameters(bool rt, int priority) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);
     if (priority > THREAD_MAX_RTPRIO) priority = THREAD_MAX_RTPRIO; // cap the priority
+    if (priority < THREAD_MIN_RTPRIO) priority = THREAD_MIN_RTPRIO; // cap the priority
     m_realtime = rt;
     m_priority = priority;
+
+    // grab the options from the parent
+    Util::Configuration *config = m_service.getConfiguration();
+    int ihm_iso_prio_increase = ISOHANDLERMANAGER_ISO_PRIO_INCREASE;
+    int ihm_iso_prio_increase_xmit = ISOHANDLERMANAGER_ISO_PRIO_INCREASE_XMIT;
+    int ihm_iso_prio_increase_recv = ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV;
+    if(config) {
+        config->getValueForSetting("ieee1394.isomanager.prio_increase", ihm_iso_prio_increase);
+        config->getValueForSetting("ieee1394.isomanager.prio_increase_xmit", ihm_iso_prio_increase_xmit);
+        config->getValueForSetting("ieee1394.isomanager.prio_increase_recv", ihm_iso_prio_increase_recv);
+    }
 
     if (m_IsoThreadTransmit) {
         if (m_realtime) {
             m_IsoThreadTransmit->AcquireRealTime(m_priority
-                                                 + ISOHANDLERMANAGER_ISO_PRIO_INCREASE
-                                                 + ISOHANDLERMANAGER_ISO_PRIO_INCREASE_XMIT);
+                                                 + ihm_iso_prio_increase
+                                                 + ihm_iso_prio_increase_xmit);
         } else {
             m_IsoThreadTransmit->DropRealTime();
         }
@@ -547,8 +561,8 @@ IsoHandlerManager::setThreadParameters(bool rt, int priority) {
     if (m_IsoThreadReceive) {
         if (m_realtime) {
             m_IsoThreadReceive->AcquireRealTime(m_priority 
-                                                + ISOHANDLERMANAGER_ISO_PRIO_INCREASE
-                                                + ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV);
+                                                + ihm_iso_prio_increase
+                                                + ihm_iso_prio_increase_recv);
         } else {
             m_IsoThreadReceive->DropRealTime();
         }
@@ -566,6 +580,19 @@ bool IsoHandlerManager::init()
         return false;
     }
 
+    // grab the options from the parent
+    Util::Configuration *config = m_service.getConfiguration();
+    int ihm_iso_prio_increase = ISOHANDLERMANAGER_ISO_PRIO_INCREASE;
+    int ihm_iso_prio_increase_xmit = ISOHANDLERMANAGER_ISO_PRIO_INCREASE_XMIT;
+    int ihm_iso_prio_increase_recv = ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV;
+    int64_t isotask_activity_timeout_usecs = ISOHANDLERMANAGER_ISO_TASK_WAIT_TIMEOUT_USECS;
+    if(config) {
+        config->getValueForSetting("ieee1394.isomanager.prio_increase", ihm_iso_prio_increase);
+        config->getValueForSetting("ieee1394.isomanager.prio_increase_xmit", ihm_iso_prio_increase_xmit);
+        config->getValueForSetting("ieee1394.isomanager.prio_increase_recv", ihm_iso_prio_increase_recv);
+        config->getValueForSetting("ieee1394.isomanager.isotask_activity_timeout_usecs", isotask_activity_timeout_usecs);
+    }
+
     // create threads to iterate our ISO handlers
     debugOutput( DEBUG_LEVEL_VERBOSE, "Create iso thread for %p transmit...\n", this);
     m_IsoTaskTransmit = new IsoTask( *this, IsoHandler::eHT_Transmit );
@@ -574,9 +601,10 @@ bool IsoHandlerManager::init()
         return false;
     }
     m_IsoTaskTransmit->setVerboseLevel(getDebugLevel());
+    m_IsoTaskTransmit->m_activity_wait_timeout_nsec = isotask_activity_timeout_usecs * 1000LL;
     m_IsoThreadTransmit = new Util::PosixThread(m_IsoTaskTransmit, "ISOXMT", m_realtime,
-                                                m_priority + ISOHANDLERMANAGER_ISO_PRIO_INCREASE
-                                                + ISOHANDLERMANAGER_ISO_PRIO_INCREASE_XMIT,
+                                                m_priority + ihm_iso_prio_increase
+                                                + ihm_iso_prio_increase_xmit,
                                                 PTHREAD_CANCEL_DEFERRED);
 
     if(!m_IsoThreadTransmit) {
@@ -593,8 +621,8 @@ bool IsoHandlerManager::init()
     }
     m_IsoTaskReceive->setVerboseLevel(getDebugLevel());
     m_IsoThreadReceive = new Util::PosixThread(m_IsoTaskReceive, "ISORCV", m_realtime,
-                                               m_priority + ISOHANDLERMANAGER_ISO_PRIO_INCREASE
-                                               + ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV,
+                                               m_priority + ihm_iso_prio_increase
+                                               + ihm_iso_prio_increase_recv,
                                                PTHREAD_CANCEL_DEFERRED);
 
     if(!m_IsoThreadReceive) {
@@ -758,10 +786,50 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
 
     // allocate a handler for this stream
     if (stream->getType()==StreamProcessor::ePT_Receive) {
+        // grab the options from the parent
+        Util::Configuration *config = m_service.getConfiguration();
+        int receive_mode_setting = DEFAULT_ISO_RECEIVE_MODE;
+        int bufferfill_mode_threshold = BUFFERFILL_MODE_THRESHOLD;
+        int min_interrupts_per_period = MINIMUM_INTERRUPTS_PER_PERIOD;
+        int max_nb_buffers_recv = MAX_RECV_NB_BUFFERS;
+        int min_packetsize_recv = MIN_RECV_PACKET_SIZE;
+        if(config) {
+            config->getValueForSetting("ieee1394.isomanager.iso_receive_mode", receive_mode_setting);
+            config->getValueForSetting("ieee1394.isomanager.bufferfill_mode_threshold", bufferfill_mode_threshold);
+            config->getValueForSetting("ieee1394.isomanager.min_interrupts_per_period", min_interrupts_per_period);
+            config->getValueForSetting("ieee1394.isomanager.max_nb_buffers_recv", max_nb_buffers_recv);
+            config->getValueForSetting("ieee1394.isomanager.min_packetsize_recv", min_packetsize_recv);
+        }
+
         // setup the optimal parameters for the raw1394 ISO buffering
         unsigned int packets_per_period = stream->getPacketsPerPeriod();
-        unsigned int max_packet_size = stream->getMaxPacketSize() + 8; // bufferfill takes another 8 bytes for headers
+        // reserve space for the 1394 header too (might not be necessary)
+        unsigned int max_packet_size = stream->getMaxPacketSize() + 8;
         unsigned int page_size = getpagesize();
+
+        enum raw1394_iso_dma_recv_mode receive_mode;
+        switch(receive_mode_setting) {
+            case 0:
+                if(packets_per_period < (unsigned)bufferfill_mode_threshold) {
+                    debugOutput( DEBUG_LEVEL_VERBOSE, "Using packet-per-buffer mode (auto) [%d, %d]\n",
+                                 packets_per_period, bufferfill_mode_threshold);
+                    receive_mode = RAW1394_DMA_PACKET_PER_BUFFER;
+                } else {
+                    debugOutput( DEBUG_LEVEL_VERBOSE, "Using bufferfill mode (auto) [%d, %d]\n",
+                                 packets_per_period, bufferfill_mode_threshold);
+                    receive_mode = RAW1394_DMA_BUFFERFILL;
+                }
+                break;
+            case 1: 
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Using packet-per-buffer mode (config)\n");
+                receive_mode = RAW1394_DMA_PACKET_PER_BUFFER;
+                break;
+            case 2:
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Using bufferfill mode (config)\n");
+                receive_mode = RAW1394_DMA_BUFFERFILL;
+                break;
+            default: debugWarning("Bogus receive mode setting in config: %d\n", receive_mode_setting);
+        }
 
         // Ensure we don't request a packet size bigger than the
         // kernel-enforced maximum which is currently 1 page.
@@ -770,54 +838,76 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
             debugError("max packet size (%u) > page size (%u)\n", max_packet_size, page_size);
             return false;
         }
+        if (max_packet_size < (unsigned)min_packetsize_recv) {
+            debugError("min packet size (%u) < MIN_RECV_PACKET_SIZE (%u), using min value\n",
+                       max_packet_size, min_packetsize_recv);
+            max_packet_size = min_packetsize_recv;
+        }
 
         // the interrupt/wakeup interval prediction of raw1394 is a mess...
-        int irq_interval = (packets_per_period-1) / MINIMUM_INTERRUPTS_PER_PERIOD;
+        int irq_interval = (packets_per_period-1) / min_interrupts_per_period;
         if(irq_interval <= 0) irq_interval=1;
 
         // the receive buffer size doesn't matter for the latency,
-        // but it has a minimal value in order for libraw to operate correctly (300)
-        int buffers=400;
+        // it does seem to be confined to a certain region for correct
+        // operation. However it is not clear how many.
+        int buffers = max_nb_buffers_recv;
+
+        // ensure at least 2 hardware interrupts per ISO buffer wraparound
+        if(irq_interval > buffers/2) {
+            irq_interval = buffers/2;
+        }
 
         // create the actual handler
+        debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoRecvHandler\n");
         h = new IsoHandler(*this, IsoHandler::eHT_Receive,
                            buffers, max_packet_size, irq_interval);
-
-        debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoRecvHandler\n");
 
         if(!h) {
             debugFatal("Could not create IsoRecvHandler\n");
             return false;
         }
 
-    } else if (stream->getType()==StreamProcessor::ePT_Transmit) {
-        // setup the optimal parameters for the raw1394 ISO buffering
-//        unsigned int packets_per_period = stream->getPacketsPerPeriod();
-        unsigned int max_packet_size = stream->getMaxPacketSize();
-//         unsigned int page_size = getpagesize();
+        h->setReceiveMode(receive_mode);
 
-        // Ensure we don't request a packet size bigger than the
-        // kernel-enforced maximum which is currently 1 page.
-//         if (max_packet_size > page_size) {
-//             debugError("max packet size (%u) > page size (%u)\n", max_packet_size, page_size);
-//             return false;
-//         }
-        if (max_packet_size > MAX_XMIT_PACKET_SIZE) {
+    } else if (stream->getType()==StreamProcessor::ePT_Transmit) {
+        // grab the options from the parent
+        Util::Configuration *config = m_service.getConfiguration();
+        int min_interrupts_per_period = MINIMUM_INTERRUPTS_PER_PERIOD;
+        int max_nb_buffers_xmit = MAX_XMIT_NB_BUFFERS;
+        int max_packetsize_xmit = MAX_XMIT_PACKET_SIZE;
+        int min_packetsize_xmit = MIN_XMIT_PACKET_SIZE;
+        if(config) {
+            config->getValueForSetting("ieee1394.isomanager.min_interrupts_per_period", min_interrupts_per_period);
+            config->getValueForSetting("ieee1394.isomanager.max_nb_buffers_xmit", max_nb_buffers_xmit);
+            config->getValueForSetting("ieee1394.isomanager.max_packetsize_xmit", max_packetsize_xmit);
+            config->getValueForSetting("ieee1394.isomanager.min_packetsize_xmit", min_packetsize_xmit);
+        }
+
+        // setup the optimal parameters for the raw1394 ISO buffering
+        // reserve space for the 1394 header too (might not be necessary)
+        unsigned int max_packet_size = stream->getMaxPacketSize() + 8;
+
+        if (max_packet_size > (unsigned)max_packetsize_xmit) {
             debugError("max packet size (%u) > MAX_XMIT_PACKET_SIZE (%u)\n",
-                       max_packet_size, MAX_XMIT_PACKET_SIZE);
+                       max_packet_size, max_packetsize_xmit);
             return false;
         }
-
-        // the SP specifies how many packets to ISO-buffer
-        int buffers = stream->getNbPacketsIsoXmitBuffer();
-        if (buffers > MAX_XMIT_NB_BUFFERS) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "nb buffers (%u) > MAX_XMIT_NB_BUFFERS (%u)\n",
-                        buffers, MAX_XMIT_NB_BUFFERS);
-            buffers = MAX_XMIT_NB_BUFFERS;
+        if (max_packet_size < (unsigned)min_packetsize_xmit) {
+            debugError("min packet size (%u) < MIN_XMIT_PACKET_SIZE (%u), using min value\n",
+                       max_packet_size, min_packetsize_xmit);
+            max_packet_size = min_packetsize_xmit;
         }
-        unsigned int irq_interval = buffers / MINIMUM_INTERRUPTS_PER_PERIOD;
+
+        int buffers = max_nb_buffers_xmit;
+        unsigned int packets_per_period = stream->getPacketsPerPeriod();
+
+        int irq_interval = (packets_per_period-1) / min_interrupts_per_period;
         if(irq_interval <= 0) irq_interval=1;
+        // ensure at least 2 hardware interrupts per ISO buffer wraparound
+        if(irq_interval > buffers/2) {
+            irq_interval = buffers/2;
+        }
 
         debugOutput( DEBUG_LEVEL_VERBOSE, " creating IsoXmitHandler\n");
 

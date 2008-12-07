@@ -82,6 +82,7 @@ public:
     void operator() () {
         printf("hello from the functor (%p)\n", this);
     };
+    virtual bool matchCallee(void *) {return false;};
 };
 
 class CtrThread : public Util::RunnableInterface

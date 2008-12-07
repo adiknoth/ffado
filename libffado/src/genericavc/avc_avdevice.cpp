@@ -165,6 +165,41 @@ AvDevice::setVerboseLevel(int l)
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
+#include <libieee1394/IEC61883.h>
+enum FFADODevice::eStreamingState
+AvDevice::getStreamingState()
+{
+    // check the IEC plug control registers to see if the device is streaming
+    // a bit of a hack, but will do until we come up with something better
+    struct iec61883_oPCR oPCR0;
+    struct iec61883_iPCR iPCR0;
+    
+    quadlet_t *oPCR0q = (quadlet_t *)&oPCR0;
+    quadlet_t *iPCR0q = (quadlet_t *)&iPCR0;
+    
+    if(!get1394Service().read(getNodeId() | 0xFFC0, CSR_REGISTER_BASE + CSR_O_PCR_0, 1, oPCR0q)) {
+        debugWarning("Could not read oPCR0 register\n");
+    }
+    if(!get1394Service().read(getNodeId() | 0xFFC0, CSR_REGISTER_BASE + CSR_I_PCR_0, 1, iPCR0q)) {
+        debugWarning("Could not read iPCR0 register\n");
+    }
+
+    *oPCR0q = CondSwapFromBus32(*oPCR0q);
+    *iPCR0q = CondSwapFromBus32(*iPCR0q);
+
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "iPCR0: %08X, oPCR0: %08X\n", *iPCR0q, *oPCR0q);
+
+    if(iPCR0.n_p2p_connections > 0 && oPCR0.n_p2p_connections > 0) {
+        return eSS_Both;
+    } else if (iPCR0.n_p2p_connections > 0) {
+        return eSS_Receiving;
+    } else if (oPCR0.n_p2p_connections > 0) {
+        return eSS_Sending;
+    } else {
+        return eSS_Idle;
+    }
+}
+
 int
 AvDevice::getSamplingFrequency( ) {
     AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );

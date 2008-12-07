@@ -82,10 +82,14 @@ public:
     uint64_t getId()
         {return m_id;};
 
+    // can the value of this element change?
+    virtual bool canChangeValue();
+
     // these allow to prevent external access to the control elements
     // e.g. when the config tree is rebuilt
     virtual void lockControl();
     virtual void unlockControl();
+    virtual bool isControlLocked();
 
     /**
      * Update signal handler

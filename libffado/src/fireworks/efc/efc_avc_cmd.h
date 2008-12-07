@@ -28,8 +28,6 @@
 #include "libutil/cmd_serialize.h"
 #include "libavc/general/avc_vendor_dependent_cmd.h"
 
-#include <libavc1394/avc1394.h>
-
 #include "efc_cmd.h"
 
 namespace FireWorks {

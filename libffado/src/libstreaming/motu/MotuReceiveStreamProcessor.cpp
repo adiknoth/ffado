@@ -95,17 +95,6 @@ MotuReceiveStreamProcessor::getMaxPacketSize() {
 }
 
 unsigned int
-MotuReceiveStreamProcessor::getAveragePacketSize()
-{
-    // in one second we have 8000 packets
-    // containing FRAMERATE frames
-    // so on average bytes/packet: (8000 packet headers + FRAMERATE * frame_size) / 8000
-    #warning FIXME
-    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
-    return framerate<=48000?616:(framerate<=96000?1032:1160);
-}
-
-unsigned int
 MotuReceiveStreamProcessor::getNominalFramesPerPacket() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     return framerate<=48000?8:(framerate<=96000?16:32);
@@ -234,13 +223,13 @@ bool MotuReceiveStreamProcessor::processReadBlock(char *data,
 
         case Port::E_Audio:
             if(decodeMotuEventsToPort(static_cast<MotuAudioPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                debugWarning("Could not decode packet data to port %s",(*it)->getName().c_str());
+                debugWarning("Could not decode packet data to port %s\n",(*it)->getName().c_str());
                 no_problem=false;
             }
             break;
         case Port::E_Midi:
              if(decodeMotuMidiEventsToPort(static_cast<MotuMidiPort *>(*it), (quadlet_t *)data, offset, nevents)) {
-                 debugWarning("Could not decode packet midi data to port %s",(*it)->getName().c_str());
+                 debugWarning("Could not decode packet midi data to port %s\n",(*it)->getName().c_str());
                  no_problem=false;
              }
             break;
@@ -283,7 +272,7 @@ signed int MotuReceiveStreamProcessor::decodeMotuEventsToPort(MotuAudioPort *p,
                 for(j = 0; j < nevents; j += 1) { // Decode nsamples
                     *buffer = (*src_data<<16)+(*(src_data+1)<<8)+*(src_data+2);
                     // Sign-extend highest bit of 24-bit int.
-                    // FIXME: this isn't strictly needed since E_Int24 is a 24-bit,
+                    // This isn't strictly needed since E_Int24 is a 24-bit,
                     // but doing so shouldn't break anything and makes the data
                     // easier to deal with during debugging.
                     if (*src_data & 0x80)

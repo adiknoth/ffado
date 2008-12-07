@@ -7,7 +7,7 @@
 // not lose debug output. should be enabled though.
 #define DEBUG_USE_MESSAGE_BUFFER             1
 // max message length in the debug messagebuffer
-#define DEBUG_MAX_MESSAGE_LENGTH           512
+#define DEBUG_MAX_MESSAGE_LENGTH          2048
 // number of messages in the debug messagebuffer (power of two)
 #define DEBUG_MB_BUFFERS                  1024
 
@@ -21,7 +21,6 @@
 // should it retry, and wait how long between retries?
 #define DEBUG_MESSAGE_BUFFER_COLLISION_WAIT_NTRIES      2
 #define DEBUG_MESSAGE_BUFFER_COLLISION_WAIT_NSEC    50000
-
 
 // support a debug backlog
 // note that this does not influence non-debug builds

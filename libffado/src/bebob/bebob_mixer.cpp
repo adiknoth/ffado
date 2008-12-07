@@ -78,7 +78,7 @@ Mixer::~Mixer() {
       it != m_Children.end();
       ++it )
     {
-        debugOutput(DEBUG_LEVEL_NORMAL,"deleting %s...\n", (*it)->getName().c_str());
+        debugOutput(DEBUG_LEVEL_VERBOSE,"deleting %s...\n", (*it)->getName().c_str());
         delete *it;
     }
 }
@@ -123,7 +123,7 @@ Mixer::addElementForFunctionBlock(FBType& b)
 
 bool
 Mixer::addElementForAllFunctionBlocks() {
-    debugOutput(DEBUG_LEVEL_NORMAL,"Adding elements for functionblocks...\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Adding elements for functionblocks...\n");
 
     bool retval = true;
 

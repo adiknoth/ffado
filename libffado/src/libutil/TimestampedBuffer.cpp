@@ -958,10 +958,7 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
 
 #ifdef DEBUG
     // check whether the update is within the allowed bounds
-/*    const float max_deviation = (50.0/100.0); // maximal relative difference considered normal
-    ffado_timestamp_t one_update_step = nbframes * getRate();
-    ffado_timestamp_t max_abs_diff = one_update_step * (1.0 + max_deviation);*/
-    ffado_timestamp_t max_abs_diff = 200;
+    ffado_timestamp_t max_abs_diff = 3072/2; // half a cycle is what we consider 'normal'
 
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                        " nbframes: %d, m_update_period: %d \n",

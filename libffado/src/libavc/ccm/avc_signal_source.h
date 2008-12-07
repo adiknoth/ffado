@@ -27,8 +27,6 @@
 #include "../general/avc_generic.h"
 #include "../avc_definitions.h"
 
-#include <libavc1394/avc1394.h>
-
 namespace AVC {
 
 

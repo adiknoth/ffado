@@ -40,11 +40,16 @@
 #include <string>
 
 class ARMHandler;
+
+#define MAX_FCP_BLOCK_SIZE_BYTES (512)
+#define MAX_FCP_BLOCK_SIZE_QUADS (MAX_FCP_BLOCK_SIZE_BYTES / 4)
+
 class IsoHandlerManager;
 class CycleTimerHelper;
 
 namespace Util {
     class Watchdog;
+    class Configuration;
 }
 
 class Ieee1394Service : public IEC61883 {
@@ -226,17 +231,33 @@ public:
      *
      * @return true if succesful, false otherwise
      */
-    bool lockCompareSwap64(  fb_nodeid_t nodeId,
-                        fb_nodeaddr_t addr,
-                        fb_octlet_t  compare_value,
-                        fb_octlet_t  swap_value,
-                        fb_octlet_t* result );
+    bool lockCompareSwap64( fb_nodeid_t nodeId,
+                            fb_nodeaddr_t addr,
+                            fb_octlet_t  compare_value,
+                            fb_octlet_t  swap_value,
+                            fb_octlet_t* result );
 
+    /**
+     * initiate AV/C transaction
+     * @param nodeId 
+     * @param buf 
+     * @param len 
+     * @param resp_len 
+     * @return 
+     */
     fb_quadlet_t* transactionBlock( fb_nodeid_t nodeId,
                                     fb_quadlet_t* buf,
                                     int len,
-                    unsigned int* resp_len );
+                                    unsigned int* resp_len );
 
+    /**
+     * close AV/C transaction.
+     * @param nodeId 
+     * @param buf 
+     * @param len 
+     * @param resp_len 
+     * @return 
+     */
     bool transactionBlockClose();
 
     int getVerboseLevel();
@@ -246,16 +267,6 @@ public:
 
     void doBusReset();
     bool waitForBusResetStormToEnd( int nb_tries, int sleep_time_ms );
-
-    /**
-     * @brief get the current generation
-     *
-     * @return the current generation
-     **/
-    unsigned int getGeneration() {
-        Util::MutexLockHelper lock(*m_handle_lock);
-        return raw1394_get_generation( m_handle );
-    }
 
     /**
      * @brief register an AddressRangeMapping Handler
@@ -274,6 +285,71 @@ public:
     bool unregisterARMHandler( ARMHandler *h );
 
     nodeaddr_t findFreeARMBlock( nodeaddr_t start, size_t length, size_t step );
+
+    /**
+     * @brief get the current generation
+     *
+     * @return the current generation
+     **/
+    unsigned int getGeneration() {
+        Util::MutexLockHelper lock(*m_handle_lock);
+        return raw1394_get_generation( m_handle );
+    }
+
+    /**
+     * @brief update the current generation
+     *
+     * @return the current generation
+     **/
+    void updateGeneration() {
+        Util::MutexLockHelper lock(*m_handle_lock);
+        raw1394_update_generation( m_handle, getGeneration());
+    }
+
+    /**
+     * @brief sets the SPLIT_TIMEOUT_HI and SPLIT_TIMEOUT_LO CSR registers
+     *
+     * sets the SPLIT_TIMEOUT_HI and SPLIT_TIMEOUT_LO CSR registers on node
+     * nodeId such that the timeout is equal to timeout
+     *
+     * @param nodeId node to set CSR registers on
+     * @param timeout timeout in usecs
+     * @return true if successful
+     */
+    bool setSplitTimeoutUsecs(fb_nodeid_t nodeId, unsigned int timeout);
+
+    /**
+     * @brief gets the SPLIT_TIMEOUT_X timeout value
+     *
+     * gets the SPLIT_TIMEOUT_HI and SPLIT_TIMEOUT_LO CSR registers on node
+     * nodeId and recombine them into one usec value
+     *
+     * @param nodeId node to get CSR registers from
+     * @return timeout in usecs if successful, 0 else
+     */
+    int getSplitTimeoutUsecs(fb_nodeid_t nodeId);
+
+    /**
+     * @brief use the provided configuration for this service
+     *
+     * only update the config once, before init. not thread safe,
+     * and no effect when things are already running.
+     *
+     * @param c configuration to use
+     * @return bool if this config is ok.
+     */
+    bool useConfiguration(Util::Configuration *c);
+
+    Util::Configuration *getConfiguration() {return m_configuration;};
+
+    /**
+     * @brief enable or disable FCP response doublicate filtering
+     *
+     * this is use only for devices (e.g. edirol fa101) which have a 
+     * buggy FCP implementation and send more then one FCP response 
+     * for one request. 
+     */
+    void setFCPResponseFiltering(bool enable);
 
 // ISO channel stuff
 public:
@@ -311,7 +387,12 @@ public:
 // FIXME: should be private, but is used to do the PCR control in GenericAVC::AvDevice
     raw1394handle_t getHandle() {return m_handle;};
 
+protected:
+    Util::Configuration     *m_configuration;
+
 private:
+    bool configurationUpdated();
+
     bool startRHThread();
     void stopRHThread();
     static void* rHThread( void* arg );
@@ -348,6 +429,8 @@ private:
     CycleTimerHelper*       m_pCTRHelper;
     bool                    m_have_new_ctr_read;
 
+    bool            m_filterFCPResponse;
+
     // the RT watchdog
     Util::Watchdog*     m_pWatchdog;
 
@@ -359,6 +442,44 @@ private:
 
     typedef std::vector< ARMHandler * > arm_handler_vec_t;
     arm_handler_vec_t m_armHandlers;
+
+    // unprotected variants
+    bool writeNoLock( fb_nodeid_t nodeId,
+        fb_nodeaddr_t addr,
+        size_t length,
+        fb_quadlet_t* data );
+    bool readNoLock( fb_nodeid_t nodeId,
+           fb_nodeaddr_t addr,
+           size_t length,
+           fb_quadlet_t* buffer );
+
+    // FCP transaction support
+    static int _avc_fcp_handler(raw1394handle_t handle, nodeid_t nodeid, 
+                                int response, size_t length,
+                                unsigned char *data);
+    int handleFcpResponse(nodeid_t nodeid,
+                          int response, size_t length,
+                          unsigned char *data);
+
+    enum eFcpStatus {
+        eFS_Empty,
+        eFS_Waiting,
+        eFS_Responded,
+        eFS_Error,
+    };
+
+    struct sFcpBlock {
+        enum eFcpStatus status;
+        nodeid_t target_nodeid;
+        unsigned int request_length;
+        quadlet_t request[MAX_FCP_BLOCK_SIZE_QUADS];
+        unsigned int response_length;
+        quadlet_t response[MAX_FCP_BLOCK_SIZE_QUADS];
+    };
+    struct sFcpBlock m_fcp_block;
+
+    bool doFcpTransaction();
+    bool doFcpTransactionTry();
 
 public:
     void setVerboseLevel(int l);

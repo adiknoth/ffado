@@ -34,8 +34,7 @@ if env.has_key('PYUIC'):
                        'saffireprolarge', 'saffireprosmall',
                        'saffirelelarge', 'saffirelesmall',
                        'audiofire_strip', 'audiofire_settings',
-                       'bcoaudio5',
-                       'edirolfa66','edirolfa101',
+                       'bcoaudio5', 'edirolfa66', 'edirolfa101',
                        'mackie_generic', 'quatafire', 'motu',
                        'global', 'dummy'
                      ]
@@ -44,8 +43,7 @@ if env.has_key('PYUIC'):
                        'saffirepro',
                        'saffirele',
                        'audiofire',
-                       'bcoaudio5',
-                       'edirolfa66','edirolfa101',
+                       'bcoaudio5', 'edirolfa66', 'edirolfa101',
                        'mackie_generic', 'quatafire', 'motu',
                        'global', 'dummy'
                      ]

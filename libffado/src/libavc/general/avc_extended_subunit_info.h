@@ -26,10 +26,10 @@
 
 #include "avc_generic.h"
 
-#include <libavc1394/avc1394.h>
-
 #include <string>
 #include <vector>
+
+#define AVC1394_CMD_SUBUNIT_INFO 0x31
 
 namespace AVC {
 

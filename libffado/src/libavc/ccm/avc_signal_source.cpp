@@ -67,7 +67,7 @@ SignalUnitAddress::clone() const
 ////////////////////////////////////////
 
 SignalSubunitAddress::SignalSubunitAddress()
-    : m_subunitType( AVC1394_SUBUNIT_RESERVED )
+    : m_subunitType( eST_Reserved )
     , m_subunitId( AVC1394_SUBUNIT_ID_RESERVED )
     , m_plugId( ePI_Invalid )
 {

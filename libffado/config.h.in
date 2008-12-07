@@ -43,13 +43,19 @@
 #define IEEE1394SERVICE_USE_CYCLETIMER_DLL                         1
 #define IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC   200000
 #define IEEE1394SERVICE_MAX_FIREWIRE_PORTS                         4
+#define IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS              1000000
 
 #define IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME       1
-#define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO_INCREASE    -10
+#define IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO               1
 
 // config rom read wait interval
 #define IEEE1394SERVICE_CONFIGROM_READ_WAIT_USECS         1000
 
+// FCP defines
+#define IEEE1394SERVICE_FCP_MAX_TRIES                       20
+#define IEEE1394SERVICE_FCP_SLEEP_BETWEEN_FAILURES_USECS  1000
+#define IEEE1394SERVICE_FCP_POLL_TIMEOUT_MSEC              200
+#define IEEE1394SERVICE_FCP_RESPONSE_TIMEOUT_USEC      2000000
 
 // The current version of libiec61883 doesn't seem to calculate
 // the bandwidth correctly. Defining this to non-zero skips
@@ -61,16 +67,30 @@
 // These are the result of a lot of trial and error
 // due to weirdness in the kernel layer
 #define MAX_XMIT_PACKET_SIZE                         (2048-16)
-#define MAX_XMIT_NB_BUFFERS                                200
+#define MIN_XMIT_PACKET_SIZE                                72
+#define MAX_XMIT_NB_BUFFERS                                128
+#define MAX_RECV_NB_BUFFERS                                 64
+#define MIN_RECV_PACKET_SIZE                               130
 
-// should be PAGE_SIZE (4096) for unpatched kernels
-#define RAW1394_RCV_MIN_BUF_STRIDE                        4096
+// the default ISO receive mode. 
+// 0 = auto, 1 = packet-per-buffer, 2 = bufferfill. 
+// 'auto' will automatically choose the mode that is expected 
+// to perform best for the given situation. For large periods 
+// this is 'bufferfill' mode, for small periods this is 
+// 'packet-per-buffer' mode. The 'BUFFERFILL_MODE_THRESHOLD' 
+// defines what a 'large period' is.
+#define DEFAULT_ISO_RECEIVE_MODE                             0
+
+// the number of packets required to fill one period from which
+// the bufferfill mode is to be used
+#define BUFFERFILL_MODE_THRESHOLD                           64
+
 
 #define ISOHANDLER_FLUSH_BEFORE_ITERATE                      0
 
 #define ISOHANDLER_DEATH_DETECT_TIMEOUT_USECS        1000000LL
 
-#define ISOHANDLER_CHECK_CTR_RECONSTRUCTION                  0
+#define ISOHANDLER_CHECK_CTR_RECONSTRUCTION                  1
 
 #define ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT         16
 #define ISOHANDLERMANAGER_MAX_STREAMS_PER_ISOTHREAD         16
@@ -84,7 +104,7 @@
 // At this moment, the jack backend uses base+5 to init ffado
 // prio
 #define ISOHANDLERMANAGER_ISO_PRIO_INCREASE                  0
-#define ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV            -6
+#define ISOHANDLERMANAGER_ISO_PRIO_INCREASE_RECV            -1
 #define ISOHANDLERMANAGER_ISO_PRIO_INCREASE_XMIT             1
 
 // the timeout for ISO activity on any thread
@@ -114,8 +134,8 @@
 #define STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_RECV     0
 #define STREAMPROCESSORMANAGER_SYNCSTART_TRIES              10
 #define STREAMPROCESSORMANAGER_SYNC_WAIT_TIME_MSEC          200
-#define STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC      400
 #define STREAMPROCESSORMANAGER_NB_ALIGN_TRIES               40
+#define STREAMPROCESSORMANAGER_ALIGN_AVERAGE_TIME_MSEC      400
 
 #define STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY           0
 

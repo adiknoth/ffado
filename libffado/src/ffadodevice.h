@@ -104,6 +104,16 @@ public:
     virtual bool saveCache();
 
     /**
+     * @brief Called by DeviceManager to check whether a device requires rediscovery
+     *
+     * This function is called to figure out if the device has to be rediscovered
+     * e.g. after a bus reset where the device internal structure changed.
+     *
+     * @returns true if device requires rediscovery
+     */
+    virtual bool needsRediscovery();
+
+    /**
      * @brief This is called by the DeviceManager to create an instance of the device
      *
      * This function enables the FFADODevice to return a subclass of itself should that
@@ -248,6 +258,22 @@ public:
      * @returns the active ClockSource
      */
     virtual ClockSource getActiveClockSource() = 0;
+
+    /**
+     * @brief stream states
+     */
+    enum eStreamingState {
+        eSS_Idle = 0,        ///> not streaming
+        eSS_Sending = 1,     ///> the device is sending a stream
+        eSS_Receiving = 2,   ///> the device is receiving a stream
+        eSS_Both = 3,        ///> the device is sending and receiving a stream
+    };
+
+    /**
+     * @brief gets the devices current synchronization state
+     * @return the device's sync state
+     */
+    virtual enum eStreamingState getStreamingState();
 
     /**
      * @brief This is called by the device manager to give the device a unique ID.
@@ -435,6 +461,13 @@ public:
      * @return true if successful
      */
     virtual bool setNickname(std::string name);
+
+    /**
+     * @brief return whether the nick name of this device can be changed
+     *
+     * @return true if the nick can be changed
+     */
+    virtual bool canChangeNickname();
 
     /**
      * @brief handle a bus reset

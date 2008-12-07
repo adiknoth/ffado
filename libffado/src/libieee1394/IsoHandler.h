@@ -167,6 +167,13 @@ public:
      */
     uint32_t getLastPacketTime() {return m_last_packet_handled_at;};
 
+    /**
+     * @brief set iso receive mode. doesn't have any effect if the stream is running
+     * @param m receive mode
+     */
+    void setReceiveMode(enum raw1394_iso_dma_recv_mode m)
+        {m_receive_mode = m;}
+
     void notifyOfDeath();
     bool handleBusReset();
 
@@ -180,6 +187,7 @@ private:
     int             m_last_cycle;
     uint32_t        m_last_now;
     uint32_t        m_last_packet_handled_at;
+    enum raw1394_iso_dma_recv_mode m_receive_mode;
 
     Streaming::StreamProcessor *m_Client; // FIXME: implement with functors
 

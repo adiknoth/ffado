@@ -356,11 +356,12 @@ CycleTimerHelper::Execute()
     uint32_t cycle_timer;
     uint64_t local_time;
     int64_t usecs_late;
-    int ntries=4;
+    int ntries=10;
     uint64_t cycle_timer_ticks;
-    double diff_ticks;
+    int64_t err_ticks;
+    bool not_good;
 
-    // if the difference between the predicted value and the
+    // if the difference between the predicted value at readout time and the
     // actual value seems to be too large, retry reading the cycle timer
     // some host controllers return bogus values on some reads
     // (looks like a non-atomic update of the register)
@@ -372,23 +373,34 @@ CycleTimerHelper::Execute()
         }
         usecs_late = local_time - m_sleep_until;
         cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
-        diff_ticks = diffTicks(cycle_timer_ticks, (int64_t)m_next_time_ticks);
+
+        // calculate the CTR_TICKS we expect to read at "local_time"
+        // then calculate the difference with what we actually read,
+        // taking wraparound into account. If these deviate too much
+        // from eachother then read the register again (bogus read).
+        int64_t expected_ticks = getCycleTimerTicks(local_time);
+        err_ticks = diffTicks(cycle_timer_ticks, expected_ticks);
 
         // check for unrealistic CTR reads (NEC controller does that sometimes)
-        if(diff_ticks < -((double)TICKS_PER_HALFCYCLE)) {
-            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, 
-                        "(%p) have to retry CTR read, diff unrealistic: diff: %f, max: %f (try: %d)\n", 
-                        this, diff_ticks, -((double)TICKS_PER_HALFCYCLE), ntries);
+        not_good = (-err_ticks > 1*TICKS_PER_HALFCYCLE || err_ticks > 1*TICKS_PER_HALFCYCLE);
+        if(not_good) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, 
+                        "(%p) have to retry CTR read, diff unrealistic: diff: %lld, max: +/- %ld (try: %d) %lld\n", 
+                        this, err_ticks, 1*TICKS_PER_CYCLE, ntries, expected_ticks);
+            // sleep half a cycle to make sure the hardware moved on
+            Util::SystemTimeSource::SleepUsecRelative(USECS_PER_CYCLE/2);
         }
 
-    } while( diff_ticks < -((double)TICKS_PER_HALFCYCLE) 
-             && --ntries && !m_first_run && !m_unhandled_busreset);
+    } while(not_good && --ntries && !m_first_run && !m_unhandled_busreset);
 
     // grab the lock after sleeping, otherwise we can't be interrupted by
     // the busreset thread (lower prio)
     // also grab it after reading the CTR register such that the jitter between
     // wakeup and read is as small as possible
     Util::MutexLockHelper lock(*m_update_lock);
+
+    // the difference between the measured and the expected time
+    int64_t diff_ticks = diffTicks(cycle_timer_ticks, (int64_t)m_next_time_ticks);
 
     // // simulate a random scheduling delay between (0-10ms)
     // ffado_microsecs_t tmp = Util::SystemTimeSource::SleepUsecRandom(10000);
@@ -417,10 +429,10 @@ CycleTimerHelper::Execute()
             return false;
         }
         m_first_run = false;
-    } else if (diff_ticks > 20.0*m_ticks_per_update) {
+    } else if (diff_ticks > m_ticks_per_update * 20) {
         debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "re-init dll due to too large tick diff: %f >> %f\n",
-                    diff_ticks, (float)(20.0*m_ticks_per_update));
+                    "re-init dll due to too large tick diff: %lld >> %f\n",
+                    diff_ticks, (float)(m_ticks_per_update * 20));
         if(!initDLL()) {
             debugError("(%p) Could not init DLL\n", this);
             return false;
@@ -441,11 +453,11 @@ CycleTimerHelper::Execute()
         int64_t ticks_late = (usecs_late * TICKS_PER_SECOND) / 1000000LL;
         // the corrected difference between predicted and actual ctr
         // i.e. DLL error signal
-        double diff_ticks_corr;
+        int64_t diff_ticks_corr;
         if (ticks_late > 0) {
             diff_ticks_corr = diff_ticks - ticks_late;
             debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                               "diff_ticks_corr=%f, diff_ticks = %f, ticks_late = %lld\n",
+                               "diff_ticks_corr=%lld, diff_ticks = %lld, ticks_late = %lld\n",
                                diff_ticks_corr, diff_ticks, ticks_late);
         } else {
             debugError("Early wakeup, should not happen!\n");
@@ -486,10 +498,11 @@ CycleTimerHelper::Execute()
         //  than the wrapping interval.)
         // and coeff_b < 1, hence tmp is not near wrapping
 
-        double step_ticks = (coeff_b * diff_ticks_corr);
+        double diff_ticks_corr_d =  (double)diff_ticks_corr;
+        double step_ticks = (coeff_b * diff_ticks_corr_d);
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                            "diff_ticks_corr=%f, step_ticks=%f\n",
-                           diff_ticks_corr, step_ticks);
+                           diff_ticks_corr_d, step_ticks);
 
         // the same goes for m_dll_e2, which should be approx equal
         // to the ticks/usec rate (= 24.576) hence also not near
@@ -514,7 +527,7 @@ CycleTimerHelper::Execute()
         m_next_time_ticks = (double)(addTicks((uint64_t)m_current_time_ticks, (uint64_t)step_ticks));
 
         // update the DLL state
-        m_dll_e2 += coeff_c * diff_ticks_corr;
+        m_dll_e2 += coeff_c * diff_ticks_corr_d;
 
         // update the y-axis values
         m_current_time_usecs = m_next_time_usecs;
@@ -524,7 +537,7 @@ CycleTimerHelper::Execute()
                            " usecs: current: %f next: %f usecs_late=%lld ticks_late=%lld\n",
                            m_current_time_usecs, m_next_time_usecs, usecs_late, ticks_late);
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                           " ticks: current: %f next: %f diff=%f\n",
+                           " ticks: current: %f next: %f diff=%lld\n",
                            m_current_time_ticks, m_next_time_ticks, diff_ticks);
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                            " ticks: current: %011llu (%03us %04ucy %04uticks)\n",

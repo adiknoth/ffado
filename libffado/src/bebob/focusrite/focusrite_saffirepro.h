@@ -157,7 +157,7 @@
 #define FR_SAFFIREPRO_CMD_SWITCH_CONFIG_MUTE78   (1<<7)
 #define FR_SAFFIREPRO_CMD_SWITCH_CONFIG_MUTE910  (1<<8)
 
-#define FR_SAFFIREPRO_CMD_ID_FRONT_DIAL             86
+#define FR_SAFFIREPRO_CMD_ID_MONITOR_DIAL           86
 #define FR_SAFFIREPRO_CMD_ID_DIM_INDICATOR          87
 #define FR_SAFFIREPRO_CMD_ID_MUTE_INDICATOR         88
 
@@ -167,6 +167,8 @@
 #define FR_SAFFIREPRO_CMD_ID_USE_HIGHVOLTAGE_RAIL   91
 #define FR_SAFFIREPRO_CMD_ID_USING_HIGHVOLTAGE_RAIL 92
 
+#define FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG_MASK  0x000000FF
+#define FR_SAFFIREPRO_CMD_ID_SYNC_LOCK_MASK    0x0000FF00
 #define FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG            93
 #define FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL       0
 #define FR_SAFFIREPRO_CMD_SYNC_CONFIG_SPDIF          2
@@ -362,16 +364,19 @@ public:
 
     virtual bool setSamplingFrequency( int );
     virtual int getSamplingFrequency( );
+    virtual std::vector<int> getSupportedSamplingFrequencies();
 
     virtual bool buildMixer();
     virtual bool destroyMixer();
 
     virtual std::string getNickname();
     virtual bool setNickname(std::string name);
+    virtual bool canChangeNickname();
 protected:
     void rebootDevice();
     void flashLed();
     bool isAudioOn();
+    bool isMidiEnabled();
     bool isExtClockLocked();
     uint32_t getCount32();
     void exitStandalone();
@@ -408,6 +413,7 @@ public:
 
 protected:
     virtual uint16_t getConfigurationIdSyncMode();
+    virtual uint64_t getConfigurationId();
 
 private:
     virtual bool setSamplingFrequencyDo( uint32_t );

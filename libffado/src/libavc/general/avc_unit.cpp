@@ -47,7 +47,6 @@ IMPL_DEBUG_MODULE( Unit, Unit, DEBUG_LEVEL_NORMAL );
 
 Unit::Unit( )
     : m_pPlugManager( new PlugManager( ) )
-    , m_activeSyncInfo( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Unit\n" );
     m_pPlugManager->setVerboseLevel( getDebugLevel() );
@@ -162,15 +161,13 @@ Unit::clean()
 
     m_syncInfos.clear();
 
-    m_activeSyncInfo = NULL;
-
     return true;
 }
 
 bool
 Unit::discover()
 {
-
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Discovering AVC::Unit...\n");
     if( !clean() ) {
         debugError( "Could not clean unit data structures\n" );
         return false;
@@ -186,6 +183,37 @@ Unit::discover()
         return false;
     }
 
+    if ( !rediscoverConnections() ) {
+        debugError( "Detecting connections failed\n" );
+        return false;
+    }
+
+    if ( !discoverSyncModes() ) {
+        debugError( "Detecting sync modes failed\n" );
+        return false;
+    }
+
+    if ( !propagatePlugInfo() ) {
+        debugError( "Failed to propagate plug info\n" );
+        return false;
+    }
+
+    return true;
+}
+
+bool
+Unit::rediscoverConnections() {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Re-discovering plug connections...\n");
+
+    // clear the previous connections
+    for ( PlugConnectionVector::iterator it = m_plugConnections.begin();
+          it != m_plugConnections.end();
+          ++it )
+    {
+        delete *it;
+    }
+    m_plugConnections.clear();
+
     if ( !discoverPlugConnections() ) {
         debugError( "Detecting plug connections failed\n" );
         return false;
@@ -200,17 +228,6 @@ Unit::discover()
         debugError( "Tidying of plug connnections failed\n" );
         return false;
     }
-
-    if ( !discoverSyncModes() ) {
-        debugError( "Detecting sync modes failed\n" );
-        return false;
-    }
-
-    if ( !propagatePlugInfo() ) {
-        debugError( "Failed to propagate plug info\n" );
-        return false;
-    }
-
     return true;
 }
 
@@ -716,6 +733,7 @@ Unit::discoverSyncModes()
     debugOutput( DEBUG_LEVEL_VERBOSE, "MSU Sync Output Plugs:\n" );
     showPlugs( syncMSUOutputPlugs );
 
+    m_syncInfos.clear();
     // Currently there is no usable setup for sync streams.
     // There is no point in wasting time here. Let's skip
     // 'sync stream input' and 'sync stream output'.
@@ -744,12 +762,13 @@ Unit::discoverSyncModes()
                                       syncMSUInputPlugs,
                                       "Digital Input Sync" );
 
-    return updateActiveSyncInfo();
+    return true;
 }
 
-bool
-Unit::updateActiveSyncInfo()
+const Unit::SyncInfo*
+Unit::getActiveSyncInfo()
 {
+    SyncInfo* activeSyncInfo = NULL;
     PlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
         eST_Music,
         0,
@@ -784,20 +803,20 @@ Unit::updateActiveSyncInfo()
                 if ( ( pSyncInfo->m_source == plug )
                      && ( pSyncInfo->m_destination == msuPlug ) )
                 {
-                    m_activeSyncInfo = pSyncInfo;
+                    activeSyncInfo = pSyncInfo;
                     break;
                 }
             }
-            if(m_activeSyncInfo) {
+            if(activeSyncInfo) {
                 debugOutput( DEBUG_LEVEL_NORMAL,
                             "Active Sync Connection: %s, '%s' -> '%s'\n",
-                            m_activeSyncInfo->m_description.c_str(),
+                            activeSyncInfo->m_description.c_str(),
                             plug->getName(),
                             msuPlug->getName() );
             }
         }
     }
-    return true;
+    return activeSyncInfo;
 }
 
 bool
@@ -830,14 +849,25 @@ Unit::checkSyncConnectionsAndAddToList( PlugVector& plhs,
 
 bool Unit::setActiveSync(const SyncInfo& syncInfo)
 {
-    bool result = true;
+    bool retval = true;
 
-    if(!syncInfo.m_source->setConnection( *syncInfo.m_destination )) {
-        debugWarning("Could not set sync source connection.\n");
+    if ( ! syncInfo.m_source->inquireConnnection( *syncInfo.m_destination ) ) {
+        // this should not happen
+        debugError("Sync connection '%s' -> '%s' not possible. This might be a bug.\n",
+                   syncInfo.m_source->getName(), syncInfo.m_destination->getName());
     }
 
-    result &= updateActiveSyncInfo();
-    return result;
+    if(!syncInfo.m_source->setConnection( *syncInfo.m_destination )) {
+        debugError("Could not set sync source connection while device reported it as possible.\n");
+        retval = false; // proceed to rediscovery anyway
+    }
+
+    // we now have to rediscover the connections
+    if ( !rediscoverConnections() ) {
+        debugError( "Re-discovery of plug connections failed\n" );
+        return false;
+    }
+    return retval;
 }
 
 void
@@ -984,19 +1014,6 @@ Unit::serialize( std::string basePath,
     result &= m_pPlugManager->serialize( basePath + "Plug", ser ); // serialize all av plugs
     result &= serializeSyncInfoVector( basePath + "SyncInfo", ser, m_syncInfos );
 
-    int i = 0;
-    for ( SyncInfoVector::const_iterator it = m_syncInfos.begin();
-          it != m_syncInfos.end();
-          ++it )
-    {
-        const SyncInfo& info = *it;
-        if ( m_activeSyncInfo == &info ) {
-            result &= ser.write( basePath + "m_activeSyncInfo",  i );
-            break;
-        }
-        i++;
-    }
-
     return result;
 }
 
@@ -1041,17 +1058,12 @@ Unit::deserialize( std::string basePath,
     // and plug.m_outputConnnections list)
     m_pPlugManager->deserializeUpdate( basePath, deser );
 
-    if ( deser.isExisting(basePath + "m_activeSyncInfo" ) ) {
-        // the sync info doesn't have to be there.
-
-        unsigned int i;
-        result &= deser.read( basePath + "m_activeSyncInfo", i );
-        if ( i < m_syncInfos.size() ) {
-            m_activeSyncInfo = &m_syncInfos[i];
-            // but if it is we want it selected
-            result &= setActiveSync(*m_activeSyncInfo);
-        }
+    // this might have changed since the cache was saved
+    // if the config ID doesn't account for the clock source
+    if(!rediscoverConnections()) {
+        debugError("Could not rediscover plug connections\n");
     }
+
     return result;
 }
 

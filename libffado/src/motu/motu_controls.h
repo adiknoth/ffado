@@ -80,6 +80,10 @@ class MotuDevice;
 #define MOTU_CTRL_METER_AESEBU_SRC         0x00000004
 #define MOTU_CTRL_METER_PROG_SRC           0x00000008
 
+#define MOTU_CTRL_DIR_IN                   0x00000001
+#define MOTU_CTRL_DIR_OUT                  0x00000002
+#define MOTU_CTRL_DIR_INOUT                (MOTU_CTRL_DIR_IN | MOTU_CTRL_DIR_OUT)
+
 #define MOTU_INFO_MODEL                    0x00000001
 #define MOTU_INFO_IS_STREAMING             0x00000002
 #define MOTU_INFO_SAMPLE_RATE		   0x00000003
@@ -89,6 +93,11 @@ class MotuDevice;
 #define MOTU_INFO_HAS_OPTICAL_SPDIF        0x00000007
 
 #define MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL  3
+
+/* A "register" value used to signify that a particular control in a matrix
+ * mixer is not available on the current interface.
+ */
+#define MOTU_CTRL_NONE                     0xffffffff
 
 class MotuDiscreteCtrl
     : public Control::Discrete

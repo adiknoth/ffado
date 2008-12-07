@@ -39,8 +39,10 @@
 #include <assert.h>
 #include <cstring>
 
-#define AMDTP_FLOAT_MULTIPLIER 2147483392.0
+#define likely(x)   __builtin_expect((x),1)
+#define unlikely(x) __builtin_expect((x),0)
 
+#define AMDTP_FLOAT_MULTIPLIER (1.0f * ((1<<23) - 1))
 namespace Streaming
 {
 
@@ -407,16 +409,6 @@ AmdtpTransmitStreamProcessor::getSytInterval() {
 }
 
 unsigned int
-AmdtpTransmitStreamProcessor::getAveragePacketSize()
-{
-    // in one second we have 8000 packets
-    // containing FRAMERATE frames of m_dimension quadlets
-    // so 8000 packet headers + FRAMERATE*m_dimension quadlets
-    unsigned int one_second = 8000 * 2 * sizeof(quadlet_t) + m_StreamProcessorManager.getNominalRate() * m_dimension * sizeof(quadlet_t);
-    return one_second / 8000;
-}
-
-unsigned int
 AmdtpTransmitStreamProcessor::getFDF() {
     switch (m_StreamProcessorManager.getNominalRate()) {
         case 32000: return IEC61883_FDF_SFC_32KHZ;
@@ -516,7 +508,6 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsSilence(quadlet_t *data,
 }
 
 #ifdef __SSE2__
-//#if 0
 #include <emmintrin.h>
 #warning SSE2 build
 
@@ -544,6 +535,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
     memset(m_scratch_buffer, 0, nevents * 4);
 
     const __m128i label = _mm_set_epi32 (0x40000000, 0x40000000, 0x40000000, 0x40000000);
+    const __m128i mask = _mm_set_epi32 (0x00FFFFFF, 0x00FFFFFF, 0x00FFFFFF, 0x00FFFFFF);
     const __m128 mult = _mm_set_ps(AMDTP_FLOAT_MULTIPLIER, AMDTP_FLOAT_MULTIPLIER, AMDTP_FLOAT_MULTIPLIER, AMDTP_FLOAT_MULTIPLIER);
 
 #if AMDTP_CLIP_FLOATS
@@ -559,7 +551,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
         // get the port buffers
         for (j=0; j<4; j++) {
             p = &(m_audio_ports.at(i+j));
-            if(p->buffer && p->enabled) {
+            if(likely(p->buffer && p->enabled)) {
                 client_buffers[j] = (float *) p->buffer;
                 client_buffers[j] += offset;
             } else {
@@ -571,7 +563,6 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
 
         // the base event for this position
         target_event = (quadlet_t *)(data + i);
-
         // process the events
         for (j=0;j < nevents; j += 1)
         {
@@ -597,8 +588,8 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
             v_float = _mm_mul_ps(v_float, mult);
             // convert to signed integer
             v_int = _mm_cvttps_epi32( v_float );
-            // shift right 8 bits
-            v_int = _mm_srli_epi32( v_int, 8 );
+            // mask
+            v_int = _mm_and_si128( v_int, mask );
             // label it
             v_int = _mm_or_si128( v_int, label );
 
@@ -607,7 +598,6 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
             v_int = _mm_or_si128( _mm_slli_epi16( v_int, 8 ), _mm_srli_epi16( v_int, 8 ) );
             // do second swap
             v_int = _mm_or_si128( _mm_slli_epi32( v_int, 16 ), _mm_srli_epi32( v_int, 16 ) );
-
             // store the packed int
             // (target misalignment is assumed since we don't know the m_dimension)
             _mm_storeu_si128 (target, v_int);
@@ -630,7 +620,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
-        if(p.buffer && p.enabled) {
+        if(likely(p.buffer && p.enabled)) {
             float *buffer = (float *)(p.buffer);
             buffer += offset;
     
@@ -655,13 +645,12 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
                 v_float = _mm_max_ps(v_float, v_min);
                 v_float = _mm_min_ps(v_float, v_max);
 #endif
-
                 // multiply
                 v_float = _mm_mul_ps(v_float, mult);
                 // convert to signed integer
                 v_int = _mm_cvttps_epi32( v_float );
-                // shift right 8 bits
-                v_int = _mm_srli_epi32( v_int, 8 );
+                // mask
+                v_int = _mm_and_si128( v_int, mask );
                 // label it
                 v_int = _mm_or_si128( v_int, label );
     
@@ -689,13 +678,23 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
             for(;j < nevents; j += 1) {
                 float *in = (float *)buffer;
 #if AMDTP_CLIP_FLOATS
-                if(*in > 1.0) *in=1.0;
-                if(*in < -1.0) *in=-1.0;
-#endif
+                // clip directly to the value of a maxed event
+                if(unlikely(*in > 1.0)) {
+                    *target_event = CONDSWAPTOBUS32_CONST(0x407FFFFF);
+                } else if(unlikely(*in < -1.0)) {
+                    *target_event = CONDSWAPTOBUS32_CONST(0x40800001);
+                } else {
+                    float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
+                    unsigned int tmp = ((int) v);
+                    tmp = ( tmp & 0x00FFFFFF ) | 0x40000000;
+                    *target_event = CondSwapToBus32((quadlet_t)tmp);
+                }
+#else
                 float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
                 unsigned int tmp = ((int) v);
-                tmp = ( tmp >> 8 ) | 0x40000000;
+                tmp = ( tmp & 0x00FFFFFF ) | 0x40000000;
                 *target_event = CondSwapToBus32((quadlet_t)tmp);
+#endif
                 buffer++;
                 target_event += m_dimension;
             }
@@ -745,7 +744,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
         // get the port buffers
         for (j=0; j<4; j++) {
             p = &(m_audio_ports.at(i+j));
-            if(p->buffer && p->enabled) {
+            if(likely(p->buffer && p->enabled)) {
                 client_buffers[j] = (uint32_t *) p->buffer;
                 client_buffers[j] += offset;
             } else {
@@ -804,7 +803,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
-        if(p.buffer && p.enabled) {
+        if(likely(p.buffer && p.enabled)) {
             uint32_t *buffer = (uint32_t *)(p.buffer);
             buffer += offset;
     
@@ -889,7 +888,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsInt24(quadlet_t *data,
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
-        if(p.buffer && p.enabled) {
+        if(likely(p.buffer && p.enabled)) {
             quadlet_t *buffer = (quadlet_t *)(p.buffer);
             buffer += offset;
     
@@ -930,7 +929,7 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
         target_event = (quadlet_t *)(data + i);
         assert(nevents + offset <= p.buffer_size );
 
-        if(p.buffer && p.enabled) {
+        if(likely(p.buffer && p.enabled)) {
             quadlet_t *buffer = (quadlet_t *)(p.buffer);
             buffer += offset;
     
@@ -938,14 +937,23 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsFloat(quadlet_t *data,
             {
                 float *in = (float *)buffer;
 #if AMDTP_CLIP_FLOATS
-                if(*in > 1.0) *in=1.0;
-                if(*in < -1.0) *in=-1.0;
-#endif
+                // clip directly to the value of a maxed event
+                if(unlikely(*in > 1.0)) {
+                    *target_event = CONDSWAPTOBUS32_CONST(0x407FFFFF);
+                } else if(unlikely(*in < -1.0)) {
+                    *target_event = CONDSWAPTOBUS32_CONST(0x40800001);
+                } else {
+                    float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
+                    unsigned int tmp = ((int) v);
+                    tmp = ( tmp & 0x00FFFFFF ) | 0x40000000;
+                    *target_event = CondSwapToBus32((quadlet_t)tmp);
+                }
+#else
                 float v = (*in) * AMDTP_FLOAT_MULTIPLIER;
-                unsigned int tmp = ((int) lrintf(v));
-
-                tmp = ( tmp >> 8 ) | 0x40000000;
+                unsigned int tmp = ((int) v);
+                tmp = ( tmp & 0x00FFFFFF ) | 0x40000000;
                 *target_event = CondSwapToBus32((quadlet_t)tmp);
+#endif
                 buffer++;
                 target_event += m_dimension;
             }

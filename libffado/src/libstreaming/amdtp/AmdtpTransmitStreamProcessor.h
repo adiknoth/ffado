@@ -104,7 +104,6 @@ public:
                     {return 4;};
     virtual unsigned int getMaxPacketSize()
                     {return 4 * (2 + getSytInterval() * m_dimension);};
-    virtual unsigned int getAveragePacketSize();
     virtual unsigned int getEventsPerFrame()
                     { return m_dimension; };
     virtual unsigned int getNominalFramesPerPacket()

@@ -26,6 +26,7 @@
 
 #include "Port.h"
 
+#include "libutil/Functors.h"
 #include "debugmodule/debugmodule.h"
 
 #include <vector>
@@ -60,11 +61,17 @@ public:
     virtual bool initPorts();
     virtual bool preparePorts();
 
-     virtual void setVerboseLevel(int l);
+    virtual void setVerboseLevel(int l);
+
+    bool addPortManagerUpdateHandler( Util::Functor* functor );
+    bool remPortManagerUpdateHandler( Util::Functor* functor );
+    Util::Functor* getUpdateHandlerForPtr(void *ptr); // ugly!!
 
 protected:
+    void callUpdateHandlers();
     PortVector m_Ports;
 
+    Util::FunctorVector m_UpdateHandlers;
     DECLARE_DEBUG_MODULE;
 };
 

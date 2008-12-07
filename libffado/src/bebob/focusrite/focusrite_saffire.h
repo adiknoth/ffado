@@ -277,6 +277,7 @@ public:
 
     virtual bool buildMixer();
     virtual bool destroyMixer();
+    virtual std::vector<int> getSupportedSamplingFrequencies();
 
 private:
     Control::Container *m_MixerContainer;

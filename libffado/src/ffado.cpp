@@ -75,13 +75,6 @@ ffado_get_api_version() {
     return FFADO_API_VERSION;
 }
 
-// FIXME: this should be cleaned up
-#include "libavc/general/avc_generic.h"
-void ffado_sleep_after_avc_command( int time )
-{
-    AVC::AVCCommand::setSleepAfterAVCCommand( time );
-}
-
 struct _ffado_device
 {
     DeviceManager * m_deviceManager;
@@ -119,6 +112,14 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t device_info, ffado_opt
     }
 
     dev->m_deviceManager->setVerboseLevel(dev->options.verbose);
+
+    if(dev->options.realtime) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "Starting with realtime scheduling, base priority %d\n", 
+                    dev->options.packetizer_priority);
+    } else {
+        debugWarning("Realtime scheduling is not enabled. This will cause significant reliability issues.\n");
+    }
     dev->m_deviceManager->setThreadParameters(dev->options.realtime, dev->options.packetizer_priority);
 
     for (i = 0; i < device_info.nb_device_spec_strings; i++) {

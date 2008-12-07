@@ -289,7 +289,6 @@ public:
     virtual unsigned int getNbPacketsIsoXmitBuffer();
     virtual unsigned int getPacketsPerPeriod();
     virtual unsigned int getMaxPacketSize() = 0;
-    virtual unsigned int getAveragePacketSize() = 0;
 private:
     int m_channel;
 

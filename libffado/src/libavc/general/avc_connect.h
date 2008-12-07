@@ -26,7 +26,8 @@
 
 #include "avc_generic.h"
 
-#include <libavc1394/avc1394.h>
+#define AVC1394_CMD_CONNECT 0x24
+
 namespace AVC {
 
 class ConnectCmd: public AVCCommand

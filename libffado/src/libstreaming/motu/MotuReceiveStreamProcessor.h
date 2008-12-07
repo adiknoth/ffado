@@ -151,9 +151,8 @@ public:
     virtual unsigned int getEventSize() 
                 {return m_event_size;};
     virtual unsigned int getMaxPacketSize();
-    virtual unsigned int getAveragePacketSize();
     virtual unsigned int getEventsPerFrame() 
-                    { return 1; }; // FIXME: check
+                    { return 1; };
     virtual unsigned int getNominalFramesPerPacket();
 
 protected:

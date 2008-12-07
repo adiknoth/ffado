@@ -26,7 +26,6 @@
 
 #include "avc_generic.h"
 
-#include <libavc1394/avc1394.h>
 namespace AVC {
 
 class VendorDependentCmd: public AVCCommand

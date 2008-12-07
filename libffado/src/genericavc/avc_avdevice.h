@@ -73,6 +73,8 @@ public:
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
+    virtual enum eStreamingState getStreamingState();
+
     virtual bool prepare();
     virtual bool lock();
     virtual bool unlock();
