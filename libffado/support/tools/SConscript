@@ -1,0 +1,43 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2007-2008 Arnold Krille
+# Copyright (C) 2007-2008 Pieter Palmers
+#
+# This file is part of FFADO
+# FFADO = Free Firewire (pro-)audio drivers for linux
+#
+# FFADO is based upon FreeBoB.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+import os
+from string import Template
+
+Import( 'env' )
+
+e = env.Clone()
+
+#
+# For the the ffado-diag tools
+e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substitute( e )
+# For the installation of the stuff
+e['pythondir'] = Template( os.path.join( e['sharedir'], 'python' ) ).safe_substitute( e )
+
+e.ScanReplace( "ffado-diag.in" )
+
+e.Install( "$bindir", "ffado-diag" )
+e.Install( "$pythondir", "helpstrings.py" )
+e.Install( "$pythondir", "listirqinfo.py" )
+
+
