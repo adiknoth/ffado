@@ -158,6 +158,13 @@ device_definitions = (
     driver      = 1; # BeBoB
 },
  {
+   vendorid = 0x0000000A;
+   modelid = 0x00030000;
+   vendorname = "CME";
+   modelname = "Matrix K FW";
+   driver = 1; # BeBoB
+ }, 
+ {
     vendorid = 0x1486;
     modelid = 0xAF2;
     vendorname = "Echo";
