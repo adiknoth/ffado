@@ -609,7 +609,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.mix2_tab.setTabText(1, "Mic inputs");
             self.mix3_tab.setTabText(1, "Mic inputs");
             self.mix4_tab.setTabText(1, "Mic inputs");
-            # FIXME: when implmented, will mic channels just reuse the AES/EBU
+            # FIXME: when implemented, will mic channels just reuse the AES/EBU
             # dbus path?  If not we'll have to reset the respective values in
             # the control arrays (self.ChannelFaders etc).
         else:
@@ -642,12 +642,15 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.mix4_dest.setItemText(7, "AES/EBU")
             self.phones_src.setItemText(7, "AES/EBU")
 
-        # The Ultralite doesn't have ADAT channels
+        # The Ultralite doesn't have ADAT channels (or any optical ports at
+        # all)
         if (self.model == MOTU_MODEL_ULTRALITE):
             self.mix1_tab.setTabEnabled(3, False)  # ADAT page
             self.mix2_tab.setTabEnabled(3, False)  # ADAT page
             self.mix3_tab.setTabEnabled(3, False)  # ADAT page
             self.mix4_tab.setTabEnabled(3, False)  # ADAT page
+            self.optical_in_mode.setEnabled(False)
+            self.optical_out_mode.setEnabled(False)
 
         # Some devices don't have the option of selecting an optical SPDIF
         # mode.
@@ -749,6 +752,14 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.disable_hide(self.ana6_pad)
             self.disable_hide(self.ana7_pad)
             self.disable_hide(self.ana8_pad)
+        # Only the Ultralite has digital trim controls over the SPDIF channels
+        if (not(self.model == MOTU_MODEL_ULTRALITE)):
+            self.disable_hide(self.spdif1_trimgain);
+            self.disable_hide(self.spdif1_trimgain_label);
+            self.disable_hide(self.spdif1ctrl);
+            self.disable_hide(self.spdif2_trimgain);
+            self.disable_hide(self.spdif2_trimgain_label);
+            self.disable_hide(self.spdif2ctrl);
 
         # Now fetch the current values into the respective controls.  Don't
         # bother fetching controls which are disabled.

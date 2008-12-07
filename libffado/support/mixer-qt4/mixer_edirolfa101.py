@@ -32,31 +32,6 @@ class EdirolFa101Control(QWidget, Ui_EdirolFa101ControlUI):
         QWidget.__init__(self, parent)
         self.setupUi(self)
 
-        self.VolumeControls = {
-            #          feature name, channel, qt slider
-            'vol1'  :   ['/Mixer/Feature_Volume_5', 1, self.sldInput1],
-            'vol2'  :   ['/Mixer/Feature_Volume_5', 2, self.sldInput2],
-            'vol3'  :   ['/Mixer/Feature_Volume_1', 1, self.sldInput3],
-            'vol4'  :   ['/Mixer/Feature_Volume_1', 2, self.sldInput4],
-            'vol5'  :   ['/Mixer/Feature_Volume_2', 1, self.sldInput5],
-            'vol6'  :   ['/Mixer/Feature_Volume_2', 2, self.sldInput6],
-            'vol7'  :   ['/Mixer/Feature_Volume_3', 1, self.sldInput7],
-            'vol8'  :   ['/Mixer/Feature_Volume_3', 2, self.sldInput8],
-            'vol9'  :   ['/Mixer/Feature_Volume_4', 1, self.sldInput9],
-            'vol10' :   ['/Mixer/Feature_Volume_4', 2, self.sldInput10],
-
-            'bal1'  :   ['/Mixer/Feature_LRBalance_5', 1, self.sldBal1],
-            'bal2'  :   ['/Mixer/Feature_LRBalance_5', 2, self.sldBal2],
-            'bal3'  :   ['/Mixer/Feature_LRBalance_1', 1, self.sldBal3],
-            'bal4'  :   ['/Mixer/Feature_LRBalance_1', 2, self.sldBal4],
-            'bal5'  :   ['/Mixer/Feature_LRBalance_2', 1, self.sldBal5],
-            'bal6'  :   ['/Mixer/Feature_LRBalance_2', 2, self.sldBal6],
-            'bal7'  :   ['/Mixer/Feature_LRBalance_3', 1, self.sldBal7],
-            'bal8'  :   ['/Mixer/Feature_LRBalance_3', 2, self.sldBal8],
-            'bal9'  :   ['/Mixer/Feature_LRBalance_4', 1, self.sldBal9],
-            'bal10' :   ['/Mixer/Feature_LRBalance_4', 2, self.sldBal10],
-            }
-
     def setVolumeIn1(self, vol):
         self.setValue('vol1', vol)
 
@@ -117,25 +92,82 @@ class EdirolFa101Control(QWidget, Ui_EdirolFa101ControlUI):
     def setBalanceIn10(self,bal):
         self.setValue('bal10', bal)
 
+    def getIndexByName(self, name):
+        index = int(name.lstrip('volba')) - 1
+        streamingMap    = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+        nonStreamingMap = [ 9, 10, 1, 2, 3, 4, 5, 6, 7, 8 ]
+
+        if self.is_streaming:
+            index = streamingMap[index]
+        else:
+            index = nonStreamingMap[index]
+        return index
+        
+    def getWidgetByName(self, name):
+        index = self.getIndexByName(name)
+        widgetName = ''
+        if name[0:3] == 'vol':
+            widgetName = 'sldInput%d' % (index)
+        else:
+            widgetName = 'sldBal%d' % (index)
+        return getattr(self, widgetName)
+            
+    def getFeatureByName(self, name):
+        index = self.getIndexByName(name)
+        featureName = ''
+        if name[0:3] == 'vol':
+            featureName = '/Mixer/Feature_Volume_%d' % ((index + 1) / 2)
+        else:
+            featureName = '/Mixer/Feature_LRBalance_%d' % ((index + 1) / 2)
+        return featureName
+
+    def getChannelIndexByName(self, name):
+        index = self.getIndexByName(name)
+        return ((index - 1) % 2) + 1
+
     def setValue(self, name, val):
-        val = -val
-        ctrl = self.VolumeControls[name]
         log.debug("setting %s to %d" % (name, val))
-        self.hw.setContignuous(ctrl[0], val, idx = ctrl[1])
+        self.updateStreamingState()
+        feature = self.getFeatureByName(name)
+        widget = self.getWidgetByName(name)
+        channel = self.getChannelIndexByName(name)
+        self.hw.setContignuous(feature, val, idx = channel)
 
+    def updateStreamingState(self):
+        ss = self.streamingstatus.selected()
+        ss_txt = self.streamingstatus.getEnumLabel(ss)
+        if ss_txt != 'Idle':
+            self.is_streaming = True
+        else:
+            self.is_streaming = False
+        
     def initValues(self):
-        for name, ctrl in self.VolumeControls.iteritems():
-            val = self.hw.getContignuous(ctrl[0], idx = ctrl[1])
-            log.debug("%s value is %d" % (name , val))
+        self.updateStreamingState()
+        
+        for i in range(1, 11):
+            name = 'vol%d' % i
+            feature = self.getFeatureByName(name)
+            widget = self.getWidgetByName(name)
+            channel = self.getChannelIndexByName(name)
 
+            val = self.hw.getContignuous(feature, idx = channel)
+            log.debug("%s value is %d" % (name , val))
+            widget.setValue(val)
+            
+        for i in range(1, 11):
+            name = 'bal%d' % i
+            feature = self.getFeatureByName(name)
+            widget = self.getWidgetByName(name)
+            channel = self.getChannelIndexByName(name)
+
+            val = self.hw.getContignuous(feature, idx = channel)
             # Workaround: The current value is not properly initialized
             # on the device and returns after bootup always 0.
             # Though we happen to know what the correct value should
             # be therefore we overwrite the 0 
-            if name[0:3] == 'bal' and val == 0:
-                if ctrl[1] == 1:
-                    val = 32512
-                else:
-                    val = -32768
-
-            ctrl[2].setValue(-val)
+            if channel == 1:
+                val = 32512
+            else:
+                val = -32768
+            log.debug("%s value is %d" % (name , val))
+            widget.setValue(val)

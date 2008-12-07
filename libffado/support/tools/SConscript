@@ -39,5 +39,3 @@ e.ScanReplace( "ffado-diag.in" )
 e.Install( "$bindir", "ffado-diag" )
 e.Install( "$pythondir", "helpstrings.py" )
 e.Install( "$pythondir", "listirqinfo.py" )
-
-

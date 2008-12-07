@@ -297,6 +297,7 @@ class PanelManager(QWidget):
             hw = ControlInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+'/DeviceManager/'+path)
             clockselect = ClockSelectInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path )
             samplerateselect = SamplerateSelectInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path )
+            streamingstatus = StreamingStatusInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path )
             nickname = TextInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path+"/Generic/Nickname" )
 
             #
@@ -306,6 +307,7 @@ class PanelManager(QWidget):
             globalmixer.configrom = cfgrom
             globalmixer.clockselect = clockselect
             globalmixer.samplerateselect = samplerateselect
+            globalmixer.streamingstatus = streamingstatus
             globalmixer.nickname = nickname
             globalmixer.hw = hw
             globalmixer.initValues()
@@ -333,6 +335,7 @@ class PanelManager(QWidget):
             mixerwidget.configrom = cfgrom
             mixerwidget.clockselect = clockselect
             mixerwidget.samplerateselect = samplerateselect
+            mixerwidget.streamingstatus = streamingstatus
             mixerwidget.nickname = nickname
             mixerwidget.hw = hw
             if 'buildMixer' in dir(mixerwidget):
@@ -368,8 +371,5 @@ class PanelManager(QWidget):
                 w = GenericMixer( devmgr.bus, FFADO_DBUS_SERVER, mw )
                 self.tabs.addTab( w, "Generic Mixer" )
                 self.panels[GUID_GENERIC_MIXER] = w
-
-    def busreset( self ):
-        QMessageBox.information( self, "Not supported", "Triggering bus resets from the mixer (via dbus) isn't yet supported." )
 
 # vim: et

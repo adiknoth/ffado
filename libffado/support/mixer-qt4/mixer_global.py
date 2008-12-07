@@ -118,3 +118,18 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
         self.samplerate.setEnabled(self.samplerateselect.canChangeValue())
         self.clocksource.setEnabled(self.clockselect.canChangeValue())
         self.txtNickname.setEnabled(self.nickname.canChangeValue())
+        ss = self.streamingstatus.selected()
+        ss_txt = self.streamingstatus.getEnumLabel(ss)
+        if ss_txt == 'Idle':
+            self.chkStreamIn.setChecked(False)
+            self.chkStreamOut.setChecked(False)
+        elif ss_txt == 'Sending':
+            self.chkStreamIn.setChecked(False)
+            self.chkStreamOut.setChecked(True)
+        elif ss_txt == 'Receiving':
+            self.chkStreamIn.setChecked(True)
+            self.chkStreamOut.setChecked(False)
+        elif ss_txt == 'Both':
+            self.chkStreamIn.setChecked(True)
+            self.chkStreamOut.setChecked(True)
+
