@@ -22,8 +22,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>700</width>
-    <height>80</height>
+    <width>591</width>
+    <height>79</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -35,160 +35,54 @@
   <property name="windowTitle" >
    <string>Global Mixer Options</string>
   </property>
-  <layout class="QHBoxLayout" >
-   <property name="leftMargin" >
-    <number>3</number>
-   </property>
-   <property name="topMargin" >
-    <number>3</number>
-   </property>
-   <property name="rightMargin" >
-    <number>3</number>
-   </property>
-   <property name="bottomMargin" >
-    <number>3</number>
-   </property>
-   <item>
-    <layout class="QGridLayout" >
-     <property name="horizontalSpacing" >
-      <number>9</number>
+  <layout class="QGridLayout" name="gridLayout" >
+   <item row="0" column="0" colspan="2" >
+    <widget class="QLabel" name="lblName" >
+     <property name="font" >
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
      </property>
-     <item row="0" column="0" colspan="2" >
-      <widget class="QLabel" name="lblName" >
-       <property name="font" >
-        <font>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
-       <property name="text" >
-        <string>TextLabel</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0" >
-      <widget class="QLabel" name="textLabel1" >
-       <property name="text" >
-        <string>Nickname:</string>
-       </property>
-       <property name="wordWrap" >
-        <bool>false</bool>
-       </property>
-       <property name="buddy" >
-        <cstring>txtNickname</cstring>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1" >
-      <widget class="QLineEdit" name="txtNickname" >
-       <property name="minimumSize" >
-        <size>
-         <width>100</width>
-         <height>0</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QGridLayout" >
-     <property name="horizontalSpacing" >
-      <number>9</number>
+     <property name="text" >
+      <string>TextLabel</string>
      </property>
-     <item row="0" column="1" >
-      <widget class="QComboBox" name="clocksource" >
-       <property name="sizePolicy" >
-        <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
-         <horstretch>1</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0" >
-      <widget class="QLabel" name="textLabel2_2" >
-       <property name="text" >
-        <string>Sample Rate:</string>
-       </property>
-       <property name="wordWrap" >
-        <bool>false</bool>
-       </property>
-       <property name="buddy" >
-        <cstring>samplerate</cstring>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1" >
-      <widget class="QComboBox" name="samplerate" >
-       <property name="enabled" >
-        <bool>true</bool>
-       </property>
-       <property name="sizePolicy" >
-        <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
-         <horstretch>1</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0" >
-      <widget class="QLabel" name="textLabel2" >
-       <property name="text" >
-        <string>Clock Source:</string>
-       </property>
-       <property name="wordWrap" >
-        <bool>false</bool>
-       </property>
-       <property name="buddy" >
-        <cstring>clocksource</cstring>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    </widget>
    </item>
-   <item>
-    <widget class="QGroupBox" name="grpStatus" >
+   <item row="0" column="2" >
+    <widget class="QLabel" name="textLabel2" >
+     <property name="text" >
+      <string>Clock Source:</string>
+     </property>
+     <property name="wordWrap" >
+      <bool>false</bool>
+     </property>
+     <property name="buddy" >
+      <cstring>clocksource</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3" >
+    <widget class="QComboBox" name="clocksource" >
      <property name="sizePolicy" >
-      <sizepolicy vsizetype="Preferred" hsizetype="Maximum" >
-       <horstretch>0</horstretch>
+      <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+       <horstretch>1</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="title" >
-      <string>Stream Status</string>
-     </property>
-     <layout class="QVBoxLayout" >
-      <item>
-       <widget class="QCheckBox" name="chkStreamOut" >
-        <property name="enabled" >
-         <bool>false</bool>
-        </property>
-        <property name="layoutDirection" >
-         <enum>Qt::RightToLeft</enum>
-        </property>
-        <property name="text" >
-         <string>Outgoing</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="chkStreamIn" >
-        <property name="enabled" >
-         <bool>false</bool>
-        </property>
-        <property name="layoutDirection" >
-         <enum>Qt::RightToLeft</enum>
-        </property>
-        <property name="text" >
-         <string>Incoming</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
     </widget>
    </item>
-   <item>
+   <item row="0" column="4" colspan="2" >
+    <widget class="QLabel" name="label" >
+     <property name="text" >
+      <string>Stream Status</string>
+     </property>
+     <property name="alignment" >
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item rowspan="2" row="0" column="6" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Horizontal</enum>
@@ -196,13 +90,88 @@
      <property name="sizeType" >
       <enum>QSizePolicy::Expanding</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0" >
       <size>
        <width>330</width>
        <height>10</height>
       </size>
      </property>
     </spacer>
+   </item>
+   <item row="1" column="0" >
+    <widget class="QLabel" name="textLabel1" >
+     <property name="text" >
+      <string>Nickname:</string>
+     </property>
+     <property name="wordWrap" >
+      <bool>false</bool>
+     </property>
+     <property name="buddy" >
+      <cstring>txtNickname</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1" >
+    <widget class="QLineEdit" name="txtNickname" >
+     <property name="minimumSize" >
+      <size>
+       <width>100</width>
+       <height>0</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2" >
+    <widget class="QLabel" name="textLabel2_2" >
+     <property name="text" >
+      <string>Sample Rate:</string>
+     </property>
+     <property name="wordWrap" >
+      <bool>false</bool>
+     </property>
+     <property name="buddy" >
+      <cstring>samplerate</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="3" >
+    <widget class="QComboBox" name="samplerate" >
+     <property name="enabled" >
+      <bool>true</bool>
+     </property>
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+       <horstretch>1</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="4" >
+    <widget class="QCheckBox" name="chkStreamOut" >
+     <property name="enabled" >
+      <bool>false</bool>
+     </property>
+     <property name="layoutDirection" >
+      <enum>Qt::RightToLeft</enum>
+     </property>
+     <property name="text" >
+      <string>Outgoing</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="5" >
+    <widget class="QCheckBox" name="chkStreamIn" >
+     <property name="enabled" >
+      <bool>false</bool>
+     </property>
+     <property name="layoutDirection" >
+      <enum>Qt::RightToLeft</enum>
+     </property>
+     <property name="text" >
+      <string>Incoming</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
