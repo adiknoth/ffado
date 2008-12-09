@@ -2,7 +2,7 @@ Notes on the firewire protocol used by MOTU audio devices
 =========================================================
 
 Author: Jonathan Woithe
-Document version: 20081110-1
+Document version: 20081207-1
 
 
 Audio/MIDI data
@@ -450,6 +450,9 @@ MOTU registers currently known.  The base address is 0xfffff0000000.
 0x0c64 - ASCII name of current clock source (characters 4-7)
 0x0c68 - ASCII name of current clock source (characters 8-11)
 0x0c6c - ASCII name of current clock source (characters 12-15)
+0x0c70 - gain trim / phase invert (Ultralite only, analog channels 1-4)
+0x0c74 - gain trim / phase invert (Ultralite only, analog channels 5-8)
+0x0c78 - gain trim / phase invert (Ultralite only, SPDIF 1 and 2)
 0x4000 - mix1 gain/pan/solo/mute, analog channel 1
 0x4004 - mix1 gain/pan/solo/mute, analog channel 2
 0x4008 - mix1 gain/pan/solo/mute, analog channel 3
@@ -928,6 +931,48 @@ One would have thought the Motu would be smart enough to provide the display
 string by itself given that it seems to manage to set the string fine by
 itself when there's no PC connected and the front panel is used to change
 the clock source.
+
+
+0x0c70 - gain trim / phase invert (Ultralite only, analog channels 1-4)
+
+On the Ultralite, gain trim is controlled using a different register than
+with the other MOTU devices.  This register controls gain trim and phase
+inversion for analog channels 1-4.  Byte 0 (the least significant byte)
+controls analog channel 1.  Bytes 1-3 are for analog channels 2-4
+respectively.
+
+Bit 7 in each byte appears to always be set to 1 when changing the
+corresponding channel's setting.  It therefore seems that bit 7 is a
+write-enable bit for the channel's setting.
+
+Bit 6 of a byte controls the phase inversion setting.  When set (ie: equal
+to 1) phase inversion is active.  When bit 6 is zero phase inversion is not
+enagaged.
+
+Bits 0-5 set the gain trim value; 0 sets a gain of 0dB (the default).  The
+maximum gain available is determined by the type of channel.  For analog
+channels 1-2 (the mic inputs), the maximum effective setting is 0x18 (24).
+For analog channels 3-8 the maximum is 0x12 (18) while for SPDIF channels
+the maximum is 0x0c (12).  The value written is in dB - thus each gain trim
+control operates in steps of 1 dB.
+
+Setting a channel's byte to zero causes its settings to remain unchanged. 
+This allows any combination of the 4 channels to be changed without
+interference to those not being changed.
+
+
+0x0c74 - gain trim / phase invert (Ultralite only, analog channels 5-8)
+
+This register operates as described for 0x0c70 except it controls analog
+channes 5 to 8.  The least significant byte corresponds to analog channel 5.
+
+
+0x0c78 - gain trim / phase invert (Ultralite only, SPDIF 1 and 2)
+
+This register operates as described for 0x0c70 except it controls SPDIF 1
+and SPDIF 2.  The least significant byte corresponds to SPDIF 1.  Bytes 2
+and 3 are currently unused and should always be set to zero when writing to
+this register.
 
 
 0x4y00-0x4y4c (y=0-3) - gain/pan/solo/mute registers
