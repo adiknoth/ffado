@@ -500,6 +500,16 @@ GNU General Public License for more details.
              </widget>
             </item>
             <item>
+             <widget class="QToolButton" name="ana1_invert" >
+              <property name="text" >
+               <string>Invert</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QToolButton" name="ana1_boost" >
               <property name="enabled" >
                <bool>true</bool>
@@ -605,6 +615,16 @@ GNU General Public License for more details.
               </property>
               <property name="text" >
                <string>Pad</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="ana2_invert" >
+              <property name="text" >
+               <string>Invert</string>
               </property>
               <property name="checkable" >
                <bool>true</bool>
@@ -724,6 +744,16 @@ GNU General Public License for more details.
              </widget>
             </item>
             <item>
+             <widget class="QToolButton" name="ana3_invert" >
+              <property name="text" >
+               <string>Invert</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QToolButton" name="ana3_boost" >
               <property name="enabled" >
                <bool>true</bool>
@@ -829,6 +859,16 @@ GNU General Public License for more details.
               </property>
               <property name="text" >
                <string>Pad</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="ana4_invert" >
+              <property name="text" >
+               <string>Invert</string>
               </property>
               <property name="checkable" >
                <bool>true</bool>
@@ -948,6 +988,16 @@ GNU General Public License for more details.
              </widget>
             </item>
             <item>
+             <widget class="QToolButton" name="ana5_invert" >
+              <property name="text" >
+               <string>Invert</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QToolButton" name="ana5_boost" >
               <property name="enabled" >
                <bool>true</bool>
@@ -1053,6 +1103,16 @@ GNU General Public License for more details.
               </property>
               <property name="text" >
                <string>Pad</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="ana6_invert" >
+              <property name="text" >
+               <string>Invert</string>
               </property>
               <property name="checkable" >
                <bool>true</bool>
@@ -1172,6 +1232,19 @@ GNU General Public License for more details.
              </widget>
             </item>
             <item>
+             <widget class="QToolButton" name="ana7_invert" >
+              <property name="text" >
+               <string>Invert</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
+              </property>
+              <property name="checked" >
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QToolButton" name="ana7_boost" >
               <property name="enabled" >
                <bool>true</bool>
@@ -1284,6 +1357,16 @@ GNU General Public License for more details.
              </widget>
             </item>
             <item>
+             <widget class="QToolButton" name="ana8_invert" >
+              <property name="text" >
+               <string>Invert</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QToolButton" name="ana8_boost" >
               <property name="enabled" >
                <bool>true</bool>
@@ -1381,6 +1464,16 @@ GNU General Public License for more details.
              </widget>
             </item>
             <item>
+             <widget class="QToolButton" name="spdif1_invert" >
+              <property name="text" >
+               <string>Invert</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
              <spacer name="verticalSpacer" >
               <property name="orientation" >
                <enum>Qt::Vertical</enum>
@@ -1457,6 +1550,16 @@ GNU General Public License for more details.
               </property>
               <property name="wordWrap" >
                <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="spdif2_invert" >
+              <property name="text" >
+               <string>Invert</string>
+              </property>
+              <property name="checkable" >
+               <bool>true</bool>
               </property>
              </widget>
             </item>

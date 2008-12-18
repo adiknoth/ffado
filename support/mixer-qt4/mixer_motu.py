@@ -235,6 +235,12 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.ana2_trimgain:  ['/Mixer/Control/Ana2_trimgain'],
             self.ana3_trimgain:  ['/Mixer/Control/Ana3_trimgain'],
             self.ana4_trimgain:  ['/Mixer/Control/Ana4_trimgain'],
+            self.ana5_trimgain:  ['/Mixer/Control/Ana5_trimgain'],
+            self.ana6_trimgain:  ['/Mixer/Control/Ana6_trimgain'],
+            self.ana7_trimgain:  ['/Mixer/Control/Ana7_trimgain'],
+            self.ana8_trimgain:  ['/Mixer/Control/Ana8_trimgain'],
+            self.spdif1_trimgain:  ['/Mixer/Control/Spdif1_trimgain'],
+            self.spdif2_trimgain:  ['/Mixer/Control/Spdif2_trimgain'],
         }
 
         self.ChannelBinarySwitches={
@@ -413,25 +419,36 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.ana2_pad:       ['/Mixer/Control/Ana2_pad'],
             self.ana3_pad:       ['/Mixer/Control/Ana3_pad'],
             self.ana4_pad:       ['/Mixer/Control/Ana4_pad'],
-            self.ana5_level:     ['/Mixer/Control/Ana5_level'],
-            self.ana6_level:     ['/Mixer/Control/Ana6_level'],
-            self.ana7_level:     ['/Mixer/Control/Ana7_level'],
-            self.ana8_level:     ['/Mixer/Control/Ana8_level'],
-            self.ana5_boost:     ['/Mixer/Control/Ana5_boost'],
-            self.ana6_boost:     ['/Mixer/Control/Ana6_boost'],
-            self.ana7_boost:     ['/Mixer/Control/Ana7_boost'],
-            self.ana8_boost:     ['/Mixer/Control/Ana8_boost'],
-
-            # Some interfaces have level/boost on analog 1-4 in place of trimgain/pad
+            self.ana5_pad:       ['/Mixer/Control/Ana5_pad'],
+            self.ana6_pad:       ['/Mixer/Control/Ana6_pad'],
+            self.ana7_pad:       ['/Mixer/Control/Ana7_pad'],
+            self.ana8_pad:       ['/Mixer/Control/Ana8_pad'],
+            self.ana1_invert:    ['/Mixer/Control/Ana1_invert'],
+            self.ana2_invert:    ['/Mixer/Control/Ana2_invert'],
+            self.ana3_invert:    ['/Mixer/Control/Ana3_invert'],
+            self.ana4_invert:    ['/Mixer/Control/Ana4_invert'],
+            self.ana5_invert:    ['/Mixer/Control/Ana5_invert'],
+            self.ana6_invert:    ['/Mixer/Control/Ana6_invert'],
+            self.ana7_invert:    ['/Mixer/Control/Ana7_invert'],
+            self.ana8_invert:    ['/Mixer/Control/Ana8_invert'],
+            self.spdif1_invert:  ['/Mixer/Control/Spdif1_invert'],
+            self.spdif2_invert:  ['/Mixer/Control/Spdif2_invert'],
             self.ana1_level:     ['/Mixer/Control/Ana1_level'],
             self.ana2_level:     ['/Mixer/Control/Ana2_level'],
             self.ana3_level:     ['/Mixer/Control/Ana3_level'],
             self.ana4_level:     ['/Mixer/Control/Ana4_level'],
+            self.ana5_level:     ['/Mixer/Control/Ana5_level'],
+            self.ana6_level:     ['/Mixer/Control/Ana6_level'],
+            self.ana7_level:     ['/Mixer/Control/Ana7_level'],
+            self.ana8_level:     ['/Mixer/Control/Ana8_level'],
             self.ana1_boost:     ['/Mixer/Control/Ana1_boost'],
             self.ana2_boost:     ['/Mixer/Control/Ana2_boost'],
             self.ana3_boost:     ['/Mixer/Control/Ana3_boost'],
             self.ana4_boost:     ['/Mixer/Control/Ana4_boost'],
-
+            self.ana5_boost:     ['/Mixer/Control/Ana5_boost'],
+            self.ana6_boost:     ['/Mixer/Control/Ana6_boost'],
+            self.ana7_boost:     ['/Mixer/Control/Ana7_boost'],
+            self.ana8_boost:     ['/Mixer/Control/Ana8_boost'],
         }
 
         # Ultimately these may be rolled into the BinarySwitches controls,
@@ -705,8 +722,33 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.mix4_adat7.setEnabled(False)
             self.mix4_adat8.setEnabled(False)
 
-        # Ensure the correct input controls are active for a given interface
-        if (self.model == MOTU_MODEL_TRAVELER):
+        # Ensure the correct input controls are active for a given interface.
+        # Only the Ultralite has phase inversion switches.
+        if (not(self.model == MOTU_MODEL_ULTRALITE)):
+            self.disable_hide(self.ana1_invert)
+            self.disable_hide(self.ana2_invert)
+            self.disable_hide(self.ana3_invert)
+            self.disable_hide(self.ana4_invert)
+            self.disable_hide(self.ana5_invert)
+            self.disable_hide(self.ana6_invert)
+            self.disable_hide(self.ana7_invert)
+            self.disable_hide(self.ana8_invert)
+            self.disable_hide(self.spdif1_invert)
+            self.disable_hide(self.spdif2_invert)
+        # The Traveler has pad switches for analog 1-4 only; other interfaces
+        # don't have pad switches at all.
+        if (not(self.model == MOTU_MODEL_TRAVELER)):
+            self.disable_hide(self.ana1_pad)
+            self.disable_hide(self.ana2_pad)
+            self.disable_hide(self.ana3_pad)
+            self.disable_hide(self.ana4_pad)
+        self.disable_hide(self.ana5_pad)
+        self.disable_hide(self.ana6_pad)
+        self.disable_hide(self.ana7_pad)
+        self.disable_hide(self.ana8_pad)
+        # The Traveler has level and boost switchs for analog 5-8.  The Ultralite
+        # doesn't implement them.  All other interfaces have them over analog 1-8.
+        if (self.model==MOTU_MODEL_TRAVELER or self.model==MOTU_MODEL_ULTRALITE):
             self.disable_hide(self.ana1_level)
             self.disable_hide(self.ana2_level)
             self.disable_hide(self.ana3_level)
@@ -715,40 +757,18 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.disable_hide(self.ana2_boost)
             self.disable_hide(self.ana3_boost)
             self.disable_hide(self.ana4_boost)
-            self.disable_hide(self.ana5_trimgain)
-            self.disable_hide(self.ana5_trimgain_label)
-            self.disable_hide(self.ana6_trimgain)
-            self.disable_hide(self.ana6_trimgain_label)
-            self.disable_hide(self.ana7_trimgain)
-            self.disable_hide(self.ana7_trimgain_label)
-            self.disable_hide(self.ana8_trimgain)
-            self.disable_hide(self.ana8_trimgain_label)
-            self.disable_hide(self.ana5_pad)
-            self.disable_hide(self.ana6_pad)
-            self.disable_hide(self.ana7_pad)
-            self.disable_hide(self.ana8_pad)
-        elif (self.model == MOTU_MODEL_ULTRALITE):
-            self.disable_hide(self.ana1_level)
-            self.disable_hide(self.ana2_level)
-            self.disable_hide(self.ana3_level)
-            self.disable_hide(self.ana4_level)
+        if (self.model == MOTU_MODEL_ULTRALITE):
             self.disable_hide(self.ana5_level)
             self.disable_hide(self.ana6_level)
             self.disable_hide(self.ana7_level)
             self.disable_hide(self.ana8_level)
-            self.disable_hide(self.ana1_boost)
-            self.disable_hide(self.ana2_boost)
-            self.disable_hide(self.ana3_boost)
-            self.disable_hide(self.ana4_boost)
             self.disable_hide(self.ana5_boost)
             self.disable_hide(self.ana6_boost)
             self.disable_hide(self.ana7_boost)
             self.disable_hide(self.ana8_boost)
-
-            # FIXME: Need to set the label of the pad controls to "Phase Inv" or
-            # something similar
-
-        else:
+        # The Traveler has trimgain for analog 1-4.  The Ultralite has trimgain for
+        # analog 1-8 and SPDIF 1-2.  All other interfaces don't have trimgain.
+        if (not(self.model==MOTU_MODEL_TRAVELER or self.model==MOTU_MODEL_ULTRALITE)):
             self.disable_hide(self.ana1_trimgain)
             self.disable_hide(self.ana1_trimgain_label)
             self.disable_hide(self.ana2_trimgain)
@@ -757,10 +777,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.disable_hide(self.ana3_trimgain_label)
             self.disable_hide(self.ana4_trimgain)
             self.disable_hide(self.ana4_trimgain_label)
-            self.disable_hide(self.ana1_pad)
-            self.disable_hide(self.ana2_pad)
-            self.disable_hide(self.ana3_pad)
-            self.disable_hide(self.ana4_pad)
+        if (not(self.model == MOTU_MODEL_ULTRALITE)):
             self.disable_hide(self.ana5_trimgain)
             self.disable_hide(self.ana5_trimgain_label)
             self.disable_hide(self.ana6_trimgain)
@@ -769,12 +786,6 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.disable_hide(self.ana7_trimgain_label)
             self.disable_hide(self.ana8_trimgain)
             self.disable_hide(self.ana8_trimgain_label)
-            self.disable_hide(self.ana5_pad)
-            self.disable_hide(self.ana6_pad)
-            self.disable_hide(self.ana7_pad)
-            self.disable_hide(self.ana8_pad)
-        # Only the Ultralite has digital trim controls over the SPDIF channels
-        if (not(self.model == MOTU_MODEL_ULTRALITE)):
             self.disable_hide(self.spdif1_trimgain);
             self.disable_hide(self.spdif1_trimgain_label);
             self.disable_hide(self.spdif1ctrl);

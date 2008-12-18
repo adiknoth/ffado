@@ -655,8 +655,8 @@ MotuDevice::buildMixerAudioControls(void) {
             type &= ~MOTU_CTRL_INPUT_UL_GAIN;
         }
         if (type & MOTU_CTRL_INPUT_PHASE_INV) {
-            snprintf(name, 100, "%s%s", ctrl->name, "phaseinv");
-            snprintf(label,100, "%s%s", ctrl->label,"phaseinv");
+            snprintf(name, 100, "%s%s", ctrl->name, "invert");
+            snprintf(label,100, "%s%s", ctrl->label,"invert");
             result &= m_MixerContainer->addElement(
                 new InputGainPadInv(*this, ctrl->dev_register, MOTU_CTRL_MODE_PHASE_INV,
                     name, label, ctrl->desc));
