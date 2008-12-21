@@ -731,6 +731,8 @@ StreamProcessorManager::alignReceivedStreams()
         debugOutput( DEBUG_LEVEL_VERBOSE, " Average offsets:\n");
         int diff_between_streams_frames[nb_rcv_sp];
         aligned = true;
+
+        // first find whether the streams are aligned and what their offset is
         for ( i = 0; i < nb_rcv_sp; i++) {
             StreamProcessor *s = m_ReceiveProcessors.at(i);
 
@@ -740,13 +742,41 @@ StreamProcessorManager::alignReceivedStreams()
                 m_SyncSource, s, diff_between_streams[i], diff_between_streams_frames[i]);
 
             aligned &= (diff_between_streams_frames[i] == 0);
+        }
 
-            // reposition the stream
-            if(!s->shiftStream(diff_between_streams_frames[i])) {
-                debugError("Could not shift SP %p %d frames\n", s, diff_between_streams_frames[i]);
-                return false;
+        // if required, align the streams
+        int frames_to_shift_stream[nb_rcv_sp];
+        int min_shift = 9999;
+        if (!aligned) {
+            // find the minimum value (= earliest stream)
+            for ( i = 0; i < nb_rcv_sp; i++) {
+                if (diff_between_streams_frames[i] < min_shift) {
+                    min_shift = diff_between_streams_frames[i];
+                }
+            }
+            debugOutput( DEBUG_LEVEL_VERBOSE, " correcting shift with %d frames\n", min_shift);
+            // ensure that the streams are shifted only in the 'positive' direction
+            // i.e. that frames are only dropped, not added since that results
+            // in multiple writers for the data ringbuffer
+            // this also results in 'minimal shift' (not that it's required since the
+            // sync SP is part of the SP set)
+            for ( i = 0; i < nb_rcv_sp; i++) {
+                frames_to_shift_stream[i] = diff_between_streams_frames[i] - min_shift;
+                debugOutput(DEBUG_LEVEL_VERBOSE,
+                            "  going to drop %03d frames from stream %d\n",
+                            frames_to_shift_stream[i], i);
+            }
+            // perform the actual shift
+            for ( i = 0; i < nb_rcv_sp; i++) {
+                StreamProcessor *s = m_ReceiveProcessors.at(i);
+                // reposition the stream
+                if(!s->shiftStream(frames_to_shift_stream[i])) {
+                    debugError("Could not shift SP %p %d frames\n", s, frames_to_shift_stream[i]);
+                    return false;
+                }
             }
         }
+
         if (!aligned) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Streams not aligned, doing new round...\n");
         }
