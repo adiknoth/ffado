@@ -524,7 +524,10 @@ env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
 
 env.Install( env['sharedir'], 'configuration' )
 
-subdirs=['external','src','libffado','tests','support','doc']
+subdirs=['external','src','libffado','support','doc']
+if env['BUILD_TESTS']:
+	subdirs.append('tests')
+
 if build_base:
 	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
 else:
