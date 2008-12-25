@@ -293,19 +293,11 @@ I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
 this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffado-mixer".
 """
 
-if conf.CheckForApp( "xdg-desktop-menu --help" ):
-	env['XDG_TOOLS'] = True
-else:
-	print """
-I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
-this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffadomixer".
-"""
-
 if not build_mixer and not env.GetOption('clean'):
 	print """
 I couldn't find all the prerequisites ('pyuic' / 'pyuic4' and the python-modules 'dbus' and
-'qt', the packages could be named like dbus-python and PyQt) to build the mixer.
-Therefor the mixer won't get installed.
+'qt' / 'PyQt4', the packages could be named like dbus-python and PyQt) to build the mixer.
+Therefor neither the qt3 nor the qt4 mixer will get installed.
 """
 
 # ALSA checks
@@ -560,7 +552,10 @@ env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
 
 env.Install( env['sharedir'], 'configuration' )
 
-subdirs=['external','src','libffado','tests','support','doc']
+subdirs=['external','src','libffado','support','doc']
+if env['BUILD_TESTS']:
+	subdirs.append('tests')
+
 if build_base:
 	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
 else:
