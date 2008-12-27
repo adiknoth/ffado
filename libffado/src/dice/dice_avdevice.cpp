@@ -57,6 +57,10 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_ALESIS, 0x00000001, "Alesis", "io|14"},
     {FW_VENDORID_PRESONUS, 0x0000000b, "Presonus", "Firestudio Project"},
     {FW_VENDORID_FOCUSRITE, 0x00000005, "Focusrite", "Saffire PRO 40"},
+    {FW_VENDORID_WEISS, 0x00000001, "Weiss Engineering Ltd.", "ADC 2"},
+    {FW_VENDORID_WEISS, 0x00000002, "Weiss Engineering Ltd.", "Vesta"},
+    {FW_VENDORID_WEISS, 0x00000003, "Weiss Engineering Ltd.", "Minerva"},
+    {FW_VENDORID_WEISS, 0x00000004, "Weiss Engineering Ltd.", "AFI 1"},
 };
 
 DiceAvDevice::DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
