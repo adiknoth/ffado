@@ -55,6 +55,7 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_TCAT,   0x00000021, "TC Electronic", "Konnekt 8"},
     {FW_VENDORID_TCAT,   0x00000023, "TC Electronic", "Konnekt Live"},
     {FW_VENDORID_ALESIS, 0x00000001, "Alesis", "io|14"},
+    {FW_VENDORID_ALESIS, 0x00000000, "Alesis", "Multimix16 Firewire"},
     {FW_VENDORID_PRESONUS, 0x0000000b, "Presonus", "Firestudio Project"},
     {FW_VENDORID_FOCUSRITE, 0x00000005, "Focusrite", "Saffire PRO 40"},
     {FW_VENDORID_WEISS, 0x00000001, "Weiss Engineering Ltd.", "ADC 2"},
@@ -791,13 +792,18 @@ DiceAvDevice::prepare() {
         }
 
         /* Vendor-specific hacks */
+        if (FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) {
+            /* Alesis io14 RX0 claims to have six audio channels. Ignore
+             * it, just use 8 for Bus1-L+R .. Bus4-L+R.
+             */
+            if (0x00000001 == getConfigRom().getModelId()) {
+                nb_audio = 8;
+            }
 
-        /* Alesis io14 RX0 claims to have six audio channels. Ignore it, just 
-         * use 8 for Bus1-L+R .. Bus4-L+R.
-         */
-        if ((FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) &&
-            (0x00000001 == getConfigRom().getModelId())) {
-            nb_audio=8;
+            /* Alesis Multimix16 RX0 only has two channels, Main-Out L+R */
+            if (0x00000000 == getConfigRom().getModelId()) {
+                nb_audio = 2;
+            }
         }
 
         // request the channel names
@@ -1467,12 +1473,15 @@ DiceAvDevice::initIoFunctions() {
     }
 
     // FIXME: verify this and clean it up.
-    /* special case for io14, which announces two receive transmitters,
-     * but only has one
+    /* special case for Alesis io14, which announces two receive transmitters,
+     * but only has one. Same is true for Alesis Multimix16.
      */
-    if ((FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) &&
-            (0x00000001 == getConfigRom().getModelId())) {
-        m_nb_rx = 1;
+    if (FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) {
+        /* we may want to use a switch-case-statement some day... */
+        if ((0x00000001 == getConfigRom().getModelId()) ||
+            (0x00000000 == getConfigRom().getModelId())) {
+            m_nb_rx = 1;
+        }
     }
 
     if(!readReg(m_tx_reg_offset + DICE_REGISTER_RX_SZ_RX, &m_rx_size)) {
