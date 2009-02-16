@@ -419,6 +419,8 @@ const MatrixMixChannel MixerChannels_896HD[] = {
     {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
     {"AES/EBU 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
     {"AES/EBU 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
+    {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0048, },
+    {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x004c, },
     {"ADAT 1", MOTU_CTRL_STD_CHANNEL, 0x0028, },
     {"ADAT 2", MOTU_CTRL_STD_CHANNEL, 0x002c, },
     {"ADAT 3", MOTU_CTRL_STD_CHANNEL, 0x0030, },
@@ -427,8 +429,6 @@ const MatrixMixChannel MixerChannels_896HD[] = {
     {"ADAT 6", MOTU_CTRL_STD_CHANNEL, 0x003c, },
     {"ADAT 7", MOTU_CTRL_STD_CHANNEL, 0x0040, },
     {"ADAT 8", MOTU_CTRL_STD_CHANNEL, 0x0044, },
-    {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0048, },
-    {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x004c, },
 };
 
 const MixerCtrl MixerCtrls_896HD[] = {
