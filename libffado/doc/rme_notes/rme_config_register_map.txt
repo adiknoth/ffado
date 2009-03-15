@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.4
+Version: 0.5
 Author: Jonathan Woithe
-Date: 27 November 2008
+Date: 15 March 2009
 
 
 Definitions
@@ -56,14 +56,16 @@ Configuration registers 1, 2 and 3
 Most RME device configuration is done using configuration registers 1, 2
 and 3.  For the ff800 these are:
 
-  config1 = configuration register 1 (FF800: 0xfc88f014)
-  config2 = configuration register 2 (FF800: 0xfc88f018)
-  config3 = configuration register 3 (FF800: 0xfc88f01c)
+  config1 = configuration register 1 (FF800: 0xfc88f014, FF400: 0x80100514)
+  config2 = configuration register 2 (FF800: 0xfc88f018, FF400: 0x80100518)
+  config3 = configuration register 3 (FF800: 0xfc88f01c, FF400: 0x8010051c)
+
+In essence the configuration registers start at CBA+5*4 for both interfaces.
 
 When making a configuration change these registers are always written in a
 block of 12 bytes starting at 0xfc88f014 with a block write operation.
 
-Configuration register 1 (FF800: 0xfc88f014):
+Configuration register 1 (FF800: 0xfc88f014, FF400: 0x8010014):
 
   bits 31-18: unknown, set to 0
   bits 17-16: Phones level:
@@ -89,7 +91,7 @@ Configuration register 1 (FF800: 0xfc88f014):
   bit 1: Phantom power, mic 9 (active = 1)
   bit 0: Phantom power, mic 7 (active = 1)
 
-Configuration register 2 (FF800: 0xfc88f018):
+Configuration register 2 (FF800: 0xfc88f018, FF400: 0x80100518):
 
   bits 31-12: unknown, set to 0
   bit 11: Input #1 front switch (active = 1)
@@ -111,7 +113,7 @@ Configuration register 2 (FF800: 0xfc88f018):
     10 = +4dBU
     11 = -10dbV
 
-Configuration register 3 (FF800: 0xfc88f01c):
+Configuration register 3 (FF800: 0xfc88f01c, FF400: 0x8010051c):
   bit 31: "Drop and stop": always set to 1
   bit 30: Unit option: TMS (active = 1)
   bits 29-27: set to 0
@@ -154,7 +156,7 @@ On the FF800 is part of the quadlet register at 0x801c0004 (part of the
 read-only status register block beginning at 0x801c0000).  The device is
 ready to accept another command when bit 30 is set.
 
-On the FF400 the wait state is found by reading a quadlet from CBR+8*4.
+On the FF400 the wait state is found by reading a quadlet from CBA+8*4.
 If this quadlet is zero the FF400 is ready to accept another command.
 
 Most device flash operations have a minimum time to complete.  There's no
