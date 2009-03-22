@@ -21,8 +21,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from PyQt4.QtCore import SIGNAL, SLOT, QObject
-from PyQt4.QtGui import QWidget
+from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
+from PyQt4.QtGui import QWidget, QApplication
 from mixer_motuui import *
 
 import logging
@@ -49,92 +49,94 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
         # For matrix mixer controls (channel faders, pans, solos, mutes) the
         # first index (the row) is the zero-based mix number while the
         # second index (the column) is the zero-based channel number.  The
-        # order of the channel enumeration must agree with that used when
-        # creating the dbus controls within motu_avdevice.cpp.
+        # third index gives the control of the stereo pair of the control
+        # used as the key.  The order of the channel enumeration must agree
+        # with that used when creating the dbus controls within
+        # motu_avdevice.cpp.
         self.ChannelFaders={
-            self.mix1ana1_fader: ['/Mixer/fader', 0, 0],
-            self.mix1ana2_fader: ['/Mixer/fader', 0, 1],
-            self.mix1ana3_fader: ['/Mixer/fader', 0, 2],
-            self.mix1ana4_fader: ['/Mixer/fader', 0, 3],
-            self.mix1ana5_fader: ['/Mixer/fader', 0, 4],
-            self.mix1ana6_fader: ['/Mixer/fader', 0, 5],
-            self.mix1ana7_fader: ['/Mixer/fader', 0, 6],
-            self.mix1ana8_fader: ['/Mixer/fader', 0, 7],
-            self.mix1aes1_fader: ['/Mixer/fader', 0, 8],
-            self.mix1aes2_fader: ['/Mixer/fader', 0, 9],
-            self.mix1spdif1_fader: ['/Mixer/fader', 0, 10],
-            self.mix1spdif2_fader: ['/Mixer/fader', 0, 11],
-            self.mix1adat1_fader: ['/Mixer/fader', 0, 12],
-            self.mix1adat2_fader: ['/Mixer/fader', 0, 13],
-            self.mix1adat3_fader: ['/Mixer/fader', 0, 14],
-            self.mix1adat4_fader: ['/Mixer/fader', 0, 15],
-            self.mix1adat5_fader: ['/Mixer/fader', 0, 16],
-            self.mix1adat6_fader: ['/Mixer/fader', 0, 17],
-            self.mix1adat7_fader: ['/Mixer/fader', 0, 18],
-            self.mix1adat8_fader: ['/Mixer/fader', 0, 19],
+            self.mix1ana1_fader: ['/Mixer/fader', 0, 0, self.mix1ana2_fader],
+            self.mix1ana2_fader: ['/Mixer/fader', 0, 1, self.mix1ana1_fader],
+            self.mix1ana3_fader: ['/Mixer/fader', 0, 2, self.mix1ana4_fader],
+            self.mix1ana4_fader: ['/Mixer/fader', 0, 3, self.mix1ana3_fader],
+            self.mix1ana5_fader: ['/Mixer/fader', 0, 4, self.mix1ana6_fader],
+            self.mix1ana6_fader: ['/Mixer/fader', 0, 5, self.mix1ana5_fader],
+            self.mix1ana7_fader: ['/Mixer/fader', 0, 6, self.mix1ana8_fader],
+            self.mix1ana8_fader: ['/Mixer/fader', 0, 7, self.mix1ana7_fader],
+            self.mix1aes1_fader: ['/Mixer/fader', 0, 8, self.mix1aes2_fader],
+            self.mix1aes2_fader: ['/Mixer/fader', 0, 9, self.mix1aes1_fader],
+            self.mix1spdif1_fader: ['/Mixer/fader', 0, 10, self.mix1spdif2_fader],
+            self.mix1spdif2_fader: ['/Mixer/fader', 0, 11, self.mix1spdif1_fader],
+            self.mix1adat1_fader: ['/Mixer/fader', 0, 12, self.mix1adat2_fader],
+            self.mix1adat2_fader: ['/Mixer/fader', 0, 13, self.mix1adat1_fader],
+            self.mix1adat3_fader: ['/Mixer/fader', 0, 14, self.mix1adat4_fader],
+            self.mix1adat4_fader: ['/Mixer/fader', 0, 15, self.mix1adat3_fader],
+            self.mix1adat5_fader: ['/Mixer/fader', 0, 16, self.mix1adat6_fader],
+            self.mix1adat6_fader: ['/Mixer/fader', 0, 17, self.mix1adat5_fader],
+            self.mix1adat7_fader: ['/Mixer/fader', 0, 18, self.mix1adat8_fader],
+            self.mix1adat8_fader: ['/Mixer/fader', 0, 19, self.mix1adat7_fader],
 
-            self.mix2ana1_fader: ['/Mixer/fader', 1, 0],
-            self.mix2ana2_fader: ['/Mixer/fader', 1, 1],
-            self.mix2ana3_fader: ['/Mixer/fader', 1, 2],
-            self.mix2ana4_fader: ['/Mixer/fader', 1, 3],
-            self.mix2ana5_fader: ['/Mixer/fader', 1, 4],
-            self.mix2ana6_fader: ['/Mixer/fader', 1, 5],
-            self.mix2ana7_fader: ['/Mixer/fader', 1, 6],
-            self.mix2ana8_fader: ['/Mixer/fader', 1, 7],
-            self.mix2aes1_fader: ['/Mixer/fader', 1, 8],
-            self.mix2aes2_fader: ['/Mixer/fader', 1, 9],
-            self.mix2spdif1_fader: ['/Mixer/fader', 1, 10],
-            self.mix2spdif2_fader: ['/Mixer/fader', 1, 11],
-            self.mix2adat1_fader: ['/Mixer/fader', 1, 12],
-            self.mix2adat2_fader: ['/Mixer/fader', 1, 13],
-            self.mix2adat3_fader: ['/Mixer/fader', 1, 14],
-            self.mix2adat4_fader: ['/Mixer/fader', 1, 15],
-            self.mix2adat5_fader: ['/Mixer/fader', 1, 16],
-            self.mix2adat6_fader: ['/Mixer/fader', 1, 17],
-            self.mix2adat7_fader: ['/Mixer/fader', 1, 18],
-            self.mix2adat8_fader: ['/Mixer/fader', 1, 19],
+            self.mix2ana1_fader: ['/Mixer/fader', 1, 0, self.mix2ana2_fader],
+            self.mix2ana2_fader: ['/Mixer/fader', 1, 1, self.mix2ana1_fader],
+            self.mix2ana3_fader: ['/Mixer/fader', 1, 2, self.mix2ana4_fader],
+            self.mix2ana4_fader: ['/Mixer/fader', 1, 3, self.mix2ana3_fader],
+            self.mix2ana5_fader: ['/Mixer/fader', 1, 4, self.mix2ana6_fader],
+            self.mix2ana6_fader: ['/Mixer/fader', 1, 5, self.mix2ana5_fader],
+            self.mix2ana7_fader: ['/Mixer/fader', 1, 6, self.mix2ana8_fader],
+            self.mix2ana8_fader: ['/Mixer/fader', 1, 7, self.mix2ana7_fader],
+            self.mix2aes1_fader: ['/Mixer/fader', 1, 8, self.mix2aes2_fader],
+            self.mix2aes2_fader: ['/Mixer/fader', 1, 9, self.mix2aes1_fader],
+            self.mix2spdif1_fader: ['/Mixer/fader', 1, 10, self.mix2spdif2_fader],
+            self.mix2spdif2_fader: ['/Mixer/fader', 1, 11, self.mix2spdif1_fader],
+            self.mix2adat1_fader: ['/Mixer/fader', 1, 12, self.mix2adat2_fader],
+            self.mix2adat2_fader: ['/Mixer/fader', 1, 13, self.mix2adat1_fader],
+            self.mix2adat3_fader: ['/Mixer/fader', 1, 14, self.mix2adat4_fader],
+            self.mix2adat4_fader: ['/Mixer/fader', 1, 15, self.mix2adat3_fader],
+            self.mix2adat5_fader: ['/Mixer/fader', 1, 16, self.mix2adat6_fader],
+            self.mix2adat6_fader: ['/Mixer/fader', 1, 17, self.mix2adat5_fader],
+            self.mix2adat7_fader: ['/Mixer/fader', 1, 18, self.mix2adat8_fader],
+            self.mix2adat8_fader: ['/Mixer/fader', 1, 19, self.mix2adat7_fader],
 
-            self.mix3ana1_fader: ['/Mixer/fader', 2, 0],
-            self.mix3ana2_fader: ['/Mixer/fader', 2, 1],
-            self.mix3ana3_fader: ['/Mixer/fader', 2, 2],
-            self.mix3ana4_fader: ['/Mixer/fader', 2, 3],
-            self.mix3ana5_fader: ['/Mixer/fader', 2, 4],
-            self.mix3ana6_fader: ['/Mixer/fader', 2, 5],
-            self.mix3ana7_fader: ['/Mixer/fader', 2, 6],
-            self.mix3ana8_fader: ['/Mixer/fader', 2, 7],
-            self.mix3aes1_fader: ['/Mixer/fader', 2, 8],
-            self.mix3aes2_fader: ['/Mixer/fader', 2, 9],
-            self.mix3spdif1_fader: ['/Mixer/fader', 2, 10],
-            self.mix3spdif2_fader: ['/Mixer/fader', 2, 11],
-            self.mix3adat1_fader: ['/Mixer/fader', 2, 12],
-            self.mix3adat2_fader: ['/Mixer/fader', 2, 13],
-            self.mix3adat3_fader: ['/Mixer/fader', 2, 14],
-            self.mix3adat4_fader: ['/Mixer/fader', 2, 15],
-            self.mix3adat5_fader: ['/Mixer/fader', 2, 16],
-            self.mix3adat6_fader: ['/Mixer/fader', 2, 17],
-            self.mix3adat7_fader: ['/Mixer/fader', 2, 18],
-            self.mix3adat8_fader: ['/Mixer/fader', 2, 19],
+            self.mix3ana1_fader: ['/Mixer/fader', 2, 0, self.mix3ana2_fader],
+            self.mix3ana2_fader: ['/Mixer/fader', 2, 1, self.mix3ana1_fader],
+            self.mix3ana3_fader: ['/Mixer/fader', 2, 2, self.mix3ana4_fader],
+            self.mix3ana4_fader: ['/Mixer/fader', 2, 3, self.mix3ana3_fader],
+            self.mix3ana5_fader: ['/Mixer/fader', 2, 4, self.mix3ana6_fader],
+            self.mix3ana6_fader: ['/Mixer/fader', 2, 5, self.mix3ana5_fader],
+            self.mix3ana7_fader: ['/Mixer/fader', 2, 6, self.mix3ana8_fader],
+            self.mix3ana8_fader: ['/Mixer/fader', 2, 7, self.mix3ana7_fader],
+            self.mix3aes1_fader: ['/Mixer/fader', 2, 8, self.mix3aes2_fader],
+            self.mix3aes2_fader: ['/Mixer/fader', 2, 9, self.mix3aes1_fader],
+            self.mix3spdif1_fader: ['/Mixer/fader', 2, 10, self.mix3spdif2_fader],
+            self.mix3spdif2_fader: ['/Mixer/fader', 2, 11, self.mix3spdif1_fader],
+            self.mix3adat1_fader: ['/Mixer/fader', 2, 12, self.mix3adat2_fader],
+            self.mix3adat2_fader: ['/Mixer/fader', 2, 13, self.mix3adat1_fader],
+            self.mix3adat3_fader: ['/Mixer/fader', 2, 14, self.mix3adat4_fader],
+            self.mix3adat4_fader: ['/Mixer/fader', 2, 15, self.mix3adat3_fader],
+            self.mix3adat5_fader: ['/Mixer/fader', 2, 16, self.mix3adat6_fader],
+            self.mix3adat6_fader: ['/Mixer/fader', 2, 17, self.mix3adat5_fader],
+            self.mix3adat7_fader: ['/Mixer/fader', 2, 18, self.mix3adat8_fader],
+            self.mix3adat8_fader: ['/Mixer/fader', 2, 19, self.mix3adat7_fader],
 
-            self.mix4ana1_fader: ['/Mixer/fader', 3, 0],
-            self.mix4ana2_fader: ['/Mixer/fader', 3, 1],
-            self.mix4ana3_fader: ['/Mixer/fader', 3, 2],
-            self.mix4ana4_fader: ['/Mixer/fader', 3, 3],
-            self.mix4ana5_fader: ['/Mixer/fader', 3, 4],
-            self.mix4ana6_fader: ['/Mixer/fader', 3, 5],
-            self.mix4ana7_fader: ['/Mixer/fader', 3, 6],
-            self.mix4ana8_fader: ['/Mixer/fader', 3, 7],
-            self.mix4aes1_fader: ['/Mixer/fader', 3, 8],
-            self.mix4aes2_fader: ['/Mixer/fader', 3, 9],
-            self.mix4spdif1_fader: ['/Mixer/fader', 3, 10],
-            self.mix4spdif2_fader: ['/Mixer/fader', 3, 11],
-            self.mix4adat1_fader: ['/Mixer/fader', 3, 12],
-            self.mix4adat2_fader: ['/Mixer/fader', 3, 13],
-            self.mix4adat3_fader: ['/Mixer/fader', 3, 14],
-            self.mix4adat4_fader: ['/Mixer/fader', 3, 15],
-            self.mix4adat5_fader: ['/Mixer/fader', 3, 16],
-            self.mix4adat6_fader: ['/Mixer/fader', 3, 17],
-            self.mix4adat7_fader: ['/Mixer/fader', 3, 18],
-            self.mix4adat8_fader: ['/Mixer/fader', 3, 19],
+            self.mix4ana1_fader: ['/Mixer/fader', 3, 0, self.mix4ana2_fader],
+            self.mix4ana2_fader: ['/Mixer/fader', 3, 1, self.mix4ana1_fader],
+            self.mix4ana3_fader: ['/Mixer/fader', 3, 2, self.mix4ana4_fader],
+            self.mix4ana4_fader: ['/Mixer/fader', 3, 3, self.mix4ana3_fader],
+            self.mix4ana5_fader: ['/Mixer/fader', 3, 4, self.mix4ana6_fader],
+            self.mix4ana6_fader: ['/Mixer/fader', 3, 5, self.mix4ana5_fader],
+            self.mix4ana7_fader: ['/Mixer/fader', 3, 6, self.mix4ana8_fader],
+            self.mix4ana8_fader: ['/Mixer/fader', 3, 7, self.mix4ana7_fader],
+            self.mix4aes1_fader: ['/Mixer/fader', 3, 8, self.mix4aes2_fader],
+            self.mix4aes2_fader: ['/Mixer/fader', 3, 9, self.mix4aes1_fader],
+            self.mix4spdif1_fader: ['/Mixer/fader', 3, 10, self.mix4spdif2_fader],
+            self.mix4spdif2_fader: ['/Mixer/fader', 3, 11, self.mix4spdif1_fader],
+            self.mix4adat1_fader: ['/Mixer/fader', 3, 12, self.mix4adat2_fader],
+            self.mix4adat2_fader: ['/Mixer/fader', 3, 13, self.mix4adat1_fader],
+            self.mix4adat3_fader: ['/Mixer/fader', 3, 14, self.mix4adat4_fader],
+            self.mix4adat4_fader: ['/Mixer/fader', 3, 15, self.mix4adat3_fader],
+            self.mix4adat5_fader: ['/Mixer/fader', 3, 16, self.mix4adat6_fader],
+            self.mix4adat6_fader: ['/Mixer/fader', 3, 17, self.mix4adat5_fader],
+            self.mix4adat7_fader: ['/Mixer/fader', 3, 18, self.mix4adat8_fader],
+            self.mix4adat8_fader: ['/Mixer/fader', 3, 19, self.mix4adat7_fader],
         }
 
         self.Faders={
@@ -453,57 +455,6 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.ana8_boost:     ['/Mixer/Control/Ana8_boost'],
         }
 
-        # Ultimately these may be rolled into the BinarySwitches controls,
-        # but since they aren't implemented and therefore need to be
-        # disabled it's easier to keep them separate for the moment.  The
-        # dbus path for these is yet to be finalised too - for example we
-        # may end up using a matrix mixer.
-        self.PairSwitches={
-#            self.mix1ana1_2_pair:   ['Mixer/Mix1/Ana1_2_pair'],
-#            self.mix1ana3_4_pair:   ['Mixer/Mix1/Ana3_4_pair'],
-#            self.mix1ana5_6_pair:   ['Mixer/Mix1/Ana5_6_pair'],
-#            self.mix1ana7_8_pair:   ['Mixer/Mix1/Ana7_8_pair'],
-#            self.mix1aes1_2_pair:   ['Mixer/Mix1/Aes1_2_pair'],
-#            self.mix1adat1_2_pair:  ['Mixer/Mix1/Adat1_2_pair'],
-#            self.mix1adat3_4_pair:  ['Mixer/Mix1/Adat3_4_pair'],
-#            self.mix1adat5_6_pair:  ['Mixer/Mix1/Adat5_6_pair'],
-#            self.mix1adat7_8_pair:  ['Mixer/Mix1/Adat7_8_pair'],
-#            self.mix1spdif1_2_pair: ['Mixer/Mix1/Spdif1_2_pair'],
-
-#            self.mix2ana1_2_pair:   ['Mixer/Mix2/Ana1_2_pair'],
-#            self.mix2ana3_4_pair:   ['Mixer/Mix2/Ana3_4_pair'],
-#            self.mix2ana5_6_pair:   ['Mixer/Mix2/Ana5_6_pair'],
-#            self.mix2ana7_8_pair:   ['Mixer/Mix2/Ana7_8_pair'],
-#            self.mix2aes1_2_pair:   ['Mixer/Mix2/Aes1_2_pair'],
-#            self.mix2adat1_2_pair:  ['Mixer/Mix2/Adat1_2_pair'],
-#            self.mix2adat3_4_pair:  ['Mixer/Mix2/Adat3_4_pair'],
-#            self.mix2adat5_6_pair:  ['Mixer/Mix2/Adat5_6_pair'],
-#            self.mix2adat7_8_pair:  ['Mixer/Mix2/Adat7_8_pair'],
-#            self.mix2spdif1_2_pair: ['Mixer/Mix2/Spdif1_2_pair'],
-
-#            self.mix3ana1_2_pair:   ['Mixer/Mix3/Ana1_2_pair'],
-#            self.mix3ana3_4_pair:   ['Mixer/Mix3/Ana3_4_pair'],
-#            self.mix3ana5_6_pair:   ['Mixer/Mix3/Ana5_6_pair'],
-#            self.mix3ana7_8_pair:   ['Mixer/Mix3/Ana7_8_pair'],
-#            self.mix3aes1_2_pair:   ['Mixer/Mix3/Aes1_2_pair'],
-#            self.mix3adat1_2_pair:  ['Mixer/Mix3/Adat1_2_pair'],
-#            self.mix3adat3_4_pair:  ['Mixer/Mix3/Adat3_4_pair'],
-#            self.mix3adat5_6_pair:  ['Mixer/Mix3/Adat5_6_pair'],
-#            self.mix3adat7_8_pair:  ['Mixer/Mix3/Adat7_8_pair'],
-#            self.mix3spdif1_2_pair: ['Mixer/Mix3/Spdif1_2_pair'],
-
-#            self.mix4ana1_2_pair:   ['Mixer/Mix4/Ana1_2_pair'],
-#            self.mix4ana3_4_pair:   ['Mixer/Mix4/Ana3_4_pair'],
-#            self.mix4ana5_6_pair:   ['Mixer/Mix4/Ana5_6_pair'],
-#            self.mix4ana7_8_pair:   ['Mixer/Mix4/Ana7_8_pair'],
-#            self.mix4aes1_2_pair:   ['Mixer/Mix4/Aes1_2_pair'],
-#            self.mix4adat1_2_pair:  ['Mixer/Mix4/Adat1_2_pair'],
-#            self.mix4adat3_4_pair:  ['Mixer/Mix4/Adat3_4_pair'],
-#            self.mix4adat5_6_pair:  ['Mixer/Mix4/Adat5_6_pair'],
-#            self.mix4adat7_8_pair:  ['Mixer/Mix4/Adat7_8_pair'],
-#            self.mix4spdif1_2_pair: ['Mixer/Mix4/Spdif1_2_pair'],
-        }
-
         self.Selectors={
             self.mix1_dest:      ['/Mixer/Mix1/Mix_dest'],
             self.mix2_dest:      ['/Mixer/Mix2/Mix_dest'],
@@ -535,6 +486,10 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.ChannelFaders[sender][1], self.ChannelFaders[sender][2], vol))
         self.hw.setMatrixMixerValue(self.ChannelFaders[sender][0],
             self.ChannelFaders[sender][1], self.ChannelFaders[sender][2], vol)
+        # Using the ctrl modifier key makes stereo pairs move in unison
+        if (QApplication.keyboardModifiers() == Qt.ControlModifier):
+            pair = self.ChannelFaders[sender][3]
+            pair.setValue(vol)
 
     # public slot: a multivalue control within a matrix mixer
     def updateChannelControl(self, a0):
@@ -672,8 +627,6 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.optical_in_mode.setEnabled(False)
             self.optical_out_mode.setEnabled(False)
 
-        # Some devices don't have the option of selecting an optical SPDIF
-        # mode.
         # The 896HD doesn't have optical SPDIF (aka Toslink) capability
         if (self.model == MOTU_MODEL_896HD):
             self.optical_in_mode.removeItem(2)
@@ -830,11 +783,6 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             log.debug("%s control is %d" % (info[0] , pan))
             ctrl.setValue(pan)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateControl)
-
-        # Disable the channel pair controls since they aren't yet implemented
-        for ctrl, info in self.PairSwitches.iteritems():
-            log.debug("%s control is not implemented yet: disabling" % (info[0]))
-            ctrl.setEnabled(False)
 
         for ctrl, info in self.ChannelBinarySwitches.iteritems():
             if (not(ctrl.isEnabled())):
