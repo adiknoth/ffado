@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2005-2008 by Pieter Palmers
- * Copyright (C) 2008 by Jonathan Woithe
+ * Copyright (C) 2008-2009 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -983,37 +983,6 @@ InfoElement::getValue()
         case MOTU_INFO_SAMPLE_RATE:
             res = m_parent.getSamplingFrequency();
             debugOutput(DEBUG_LEVEL_VERBOSE, "SampleRate: %d\n", res);
-            break;
-        case MOTU_INFO_HAS_MIC_INPUTS:
-            /* Only the 828Mk2 has separate mic inputs.  In time this may be
-             * deduced by walking the port info array within the parent.
-             */
-            res = m_parent.m_motu_model == MOTU_MODEL_828mkII ? 1:0;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Has mic inputs: %d\n", res);
-            break;
-        case MOTU_INFO_HAS_AESEBU_INPUTS:
-            /* AES/EBU inputs are currently present on the Traveler and
-             * 896HD.  In time this may be deduced by walking the port info
-             * array within the parent.
-             */
-            val = m_parent.m_motu_model;
-            res = (val==MOTU_MODEL_TRAVELER || val==MOTU_MODEL_896HD);
-            debugOutput(DEBUG_LEVEL_VERBOSE, "HasAESEBUInputs: %d\n", res);
-            break;
-        case MOTU_INFO_HAS_SPDIF_INPUTS:
-            /* SPDIF inputs are present on all supported models except the
-             * 896HD and the 8pre.  In time this may be deduced by walking
-             * the port info array within the parent.
-             */
-            val = m_parent.m_motu_model;
-            res = (val!=MOTU_MODEL_8PRE && val!=MOTU_MODEL_896HD);
-            debugOutput(DEBUG_LEVEL_VERBOSE, "HasSPDIFInputs: %d\n", res);
-            break;
-        case MOTU_INFO_HAS_OPTICAL_SPDIF:
-            /* THe 896HD doesn't have optical SPDIF capability */
-            val = m_parent.m_motu_model;
-            res = (val != MOTU_MODEL_896HD);
-            debugOutput(DEBUG_LEVEL_VERBOSE, "HasOpticalSPDIF: %d\n", res);
             break;
     }
     return res;

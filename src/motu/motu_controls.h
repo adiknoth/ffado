@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 by Daniel Wagner
  * Copyright (C) 2005-2008 by Pieter Palmers
- * Copyright (C) 2008 by Jonathan Woithe
+ * Copyright (C) 2008-2009 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -94,10 +94,6 @@ class MotuDevice;
 #define MOTU_INFO_MODEL                    0x00000001
 #define MOTU_INFO_IS_STREAMING             0x00000002
 #define MOTU_INFO_SAMPLE_RATE		   0x00000003
-#define MOTU_INFO_HAS_MIC_INPUTS           0x00000004
-#define MOTU_INFO_HAS_AESEBU_INPUTS        0x00000005
-#define MOTU_INFO_HAS_SPDIF_INPUTS         0x00000006
-#define MOTU_INFO_HAS_OPTICAL_SPDIF        0x00000007
 
 #define MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL  3
 #define MOTU_CTRL_GAINPHASEINV_MAX_CHANNEL 9

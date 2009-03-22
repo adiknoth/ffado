@@ -604,54 +604,59 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
         self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
         log.debug("device streaming flag: %d" % (self.is_streaming))
 
-        # Retrieve other device settings as needed
+        # Retrieve other device settings as needed and customise the UI
+        # based on these options.
         self.model = self.hw.getDiscrete('/Mixer/Info/Model')
         log.debug("device model identifier: %d" % (self.model))
         self.sample_rate = self.hw.getDiscrete('/Mixer/Info/SampleRate')
         log.debug("device sample rate: %d" % (self.sample_rate))
-        self.has_mic_inputs = self.hw.getDiscrete('/Mixer/Info/HasMicInputs')
-        log.debug("device has mic inputs: %d" % (self.has_mic_inputs))
-        self.has_aesebu_inputs = self.hw.getDiscrete('/Mixer/Info/HasAESEBUInputs')
-        log.debug("device has AES/EBU inputs: %d" % (self.has_aesebu_inputs))
-        self.has_spdif_inputs = self.hw.getDiscrete('/Mixer/Info/HasSPDIFInputs')
-        log.debug("device has SPDIF inputs: %d" % (self.has_spdif_inputs))
-        self.has_optical_spdif = self.hw.getDiscrete('/Mixer/Info/HasOpticalSPDIF')
-        log.debug("device has optical SPDIF: %d" % (self.has_optical_spdif))
 
-        # Customise the UI based on device options retrieved
-        if (self.has_mic_inputs):
-            # Mic input controls displace AES/EBU since no current device
-            # has both.
+        # The 828Mk2 has separate Mic inputs but no AES/EBU, so use the
+        # AES/EBU mixer controls as "Mic" controls.  If a device comes along
+        # with both mic and AES inputs this approach will have to be
+        # re-thought.
+        # Doing this means that on the 828Mk2, the mixer matrix elements
+        # used for AES/EBU on other models are used for the Mic channels. 
+        # So long as the MixerChannels_828Mk2 definition in
+        # motu_avdevice.cpp defines the mic channels immediately after the 8
+        # analog channels we'll be right.  Note that we don't need to change
+        # the matrix lookup tables (self.ChannelFaders etc) because the QT
+        # controls are still named *aesebu*.
+        if (self.model == MOTU_MODEL_828mkII):
             self.mix1_tab.setTabText(1, "Mic inputs");
             self.mix2_tab.setTabText(1, "Mic inputs");
             self.mix3_tab.setTabText(1, "Mic inputs");
             self.mix4_tab.setTabText(1, "Mic inputs");
-            # FIXME: when implemented, will mic channels just reuse the AES/EBU
-            # dbus path?  If not we'll have to reset the respective values in
-            # the control arrays (self.ChannelFaders etc).
         else:
-            if (not(self.has_aesebu_inputs)):
+            # Only the Traveler and 896HD have AES/EBU inputs, so disable the AES/EBU
+            # tab for all other models.
+            if (self.model!=MOTU_MODEL_TRAVELER and self.model!=MOTU_MODEL_896HD):
                 self.mix1_tab.setTabEnabled(1, False)
                 self.mix2_tab.setTabEnabled(1, False)
                 self.mix3_tab.setTabEnabled(1, False)
                 self.mix4_tab.setTabEnabled(1, False)
-        if (not(self.has_spdif_inputs)):
+
+        # All models except the 896HD and 8pre have SPDIF inputs.
+        if (self.model==MOTU_MODEL_8PRE or self.model==MOTU_MODEL_896HD):
             self.mix1_tab.setTabEnabled(2, False);
             self.mix2_tab.setTabEnabled(2, False);
             self.mix3_tab.setTabEnabled(2, False);
             self.mix4_tab.setTabEnabled(2, False);
 
-        # Devices without AES/EBU inputs/outputs (normally ID 6 in the
-        # destination lists) have dedicated "MainOut" outputs instead.  The
-        # 896HD is an exception: it uses ID 6 for MainOut and ID 7
-        # (nominally SPDIF) for AES/EBU.
-        if (not(self.has_aesebu_inputs) or self.model==MOTU_MODEL_896HD):
+        # Devices without AES/EBU inputs/outputs (currently all except the
+        # Traveler and 896HD) have dedicated "MainOut" outputs instead. 
+        # AES/EBU is normally ID 6 in the destination lists and "MainOut"
+        # displaces it on non-AES/EBU models.  The 896HD has both AES/EBU
+        # and MainOut which complicates this; it uses ID 6 for MainOut and
+        # ID 7 (nominally SPDIF) for AES/EBU.  Therefore change ID 6 to
+        # "MainOut" for everything but the Traveler, and set ID 7 (nominally
+        # SPDIF) to AES/EBU for the 896HD.
+        if (self.model != MOTU_MODEL_TRAVELER):
             self.mix1_dest.setItemText(6, "MainOut")
             self.mix2_dest.setItemText(6, "MainOut")
             self.mix3_dest.setItemText(6, "MainOut")
             self.mix4_dest.setItemText(6, "MainOut")
             self.phones_src.setItemText(6, "MainOut")
-        # Change the SPDIF destination to AES/EBU for the 896HD.
         if (self.model == MOTU_MODEL_896HD):
             self.mix1_dest.setItemText(7, "AES/EBU")
             self.mix2_dest.setItemText(7, "AES/EBU")
@@ -671,7 +676,8 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
 
         # Some devices don't have the option of selecting an optical SPDIF
         # mode.
-        if (not(self.has_optical_spdif)):
+        # The 896HD doesn't have optical SPDIF (aka Toslink) capability
+        if (self.model == MOTU_MODEL_896HD):
             self.optical_in_mode.removeItem(2)
             self.optical_out_mode.removeItem(2)
 

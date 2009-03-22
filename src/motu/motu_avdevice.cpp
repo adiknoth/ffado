@@ -412,6 +412,13 @@ const MixerCtrl MixerCtrls_Ultralite[] = {
     {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
 };
 
+const MatrixMixBus MixerBuses_896HD[] = {
+    {"Mix 1", 0x4000, },
+    {"Mix 2", 0x4100, },
+    {"Mix 3", 0x4200, },
+    {"Mix 4", 0x4300, },
+};
+
 const MatrixMixChannel MixerChannels_896HD[] = {
     {"Analog 1", MOTU_CTRL_STD_CHANNEL, 0x0000, },
     {"Analog 2", MOTU_CTRL_STD_CHANNEL, 0x0004, },
@@ -454,6 +461,36 @@ const MixerCtrl MixerCtrls_896HD[] = {
       MOTU_CTRL_METER_PROG_SRC},
 };
 
+const MatrixMixBus MixerBuses_828Mk2[] = {
+    {"Mix 1", 0x4000, },
+    {"Mix 2", 0x4100, },
+    {"Mix 3", 0x4200, },
+    {"Mix 4", 0x4300, },
+};
+
+const MatrixMixChannel MixerChannels_828Mk2[] = {
+    {"Analog 1", MOTU_CTRL_STD_CHANNEL, 0x0000, },
+    {"Analog 2", MOTU_CTRL_STD_CHANNEL, 0x0004, },
+    {"Analog 3", MOTU_CTRL_STD_CHANNEL, 0x0008, },
+    {"Analog 4", MOTU_CTRL_STD_CHANNEL, 0x000c, },
+    {"Analog 5", MOTU_CTRL_STD_CHANNEL, 0x0010, },
+    {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
+    {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
+    {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    {"Mic 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
+    {"Mic 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
+    {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0028, },
+    {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x002c, },
+    {"ADAT 1", MOTU_CTRL_STD_CHANNEL, 0x0030, },
+    {"ADAT 2", MOTU_CTRL_STD_CHANNEL, 0x0034, },
+    {"ADAT 3", MOTU_CTRL_STD_CHANNEL, 0x0038, },
+    {"ADAT 4", MOTU_CTRL_STD_CHANNEL, 0x003c, },
+    {"ADAT 5", MOTU_CTRL_STD_CHANNEL, 0x0040, },
+    {"ADAT 6", MOTU_CTRL_STD_CHANNEL, 0x0044, },
+    {"ADAT 7", MOTU_CTRL_STD_CHANNEL, 0x0048, },
+    {"ADAT 8", MOTU_CTRL_STD_CHANNEL, 0x004c, },
+};
+
 const MixerCtrl MixerCtrls_828Mk2[] = {
     {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
@@ -485,10 +522,10 @@ const MotuMixer Mixer_Ultralite = MOTUMIXER(
     MixerCtrls_Ultralite, MixerBuses_Ultralite, MixerChannels_Ultralite);
 
 const MotuMixer Mixer_828Mk2 = MOTUMIXER(
-    MixerCtrls_828Mk2, MixerBuses_Traveler, MixerChannels_Traveler);
+    MixerCtrls_828Mk2, MixerBuses_828Mk2, MixerChannels_828Mk2);
 
 const MotuMixer Mixer_896HD = MOTUMIXER(
-    MixerCtrls_896HD, MixerBuses_Traveler, MixerChannels_896HD);
+    MixerCtrls_896HD, MixerBuses_896HD, MixerChannels_896HD);
 
 /* The order of DevicesProperty entries must match the numeric order of the
  * MOTU model enumeration (EMotuModel).
@@ -800,14 +837,6 @@ MotuDevice::buildMixer() {
         new InfoElement(*this, MOTU_INFO_IS_STREAMING, "Info/IsStreaming", "Is device streaming", ""));
     result &= m_MixerContainer->addElement(
         new InfoElement(*this, MOTU_INFO_SAMPLE_RATE, "Info/SampleRate", "Device sample rate", ""));
-    result &= m_MixerContainer->addElement(
-        new InfoElement(*this, MOTU_INFO_HAS_MIC_INPUTS, "Info/HasMicInputs", "Device has mic inputs", ""));
-    result &= m_MixerContainer->addElement(
-        new InfoElement(*this, MOTU_INFO_HAS_AESEBU_INPUTS, "Info/HasAESEBUInputs", "Device has AES/EBU inputs", ""));
-    result &= m_MixerContainer->addElement(
-        new InfoElement(*this, MOTU_INFO_HAS_SPDIF_INPUTS, "Info/HasSPDIFInputs", "Device has SPDIF inputs", ""));
-    result &= m_MixerContainer->addElement(
-        new InfoElement(*this, MOTU_INFO_HAS_OPTICAL_SPDIF, "Info/HasOpticalSPDIF", "Device has Optical SPDIF", ""));
 
     if (!addElement(m_MixerContainer)) {
         debugWarning("Could not register mixer to device\n");
