@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2005-2008 by Pieter Palmers
- * Copyright (C) 2005-2008 by Jonathan Woithe
+ * Copyright (C) 2005-2009 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -337,6 +337,8 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
     {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
     {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+    {"Mainout_",  "MainOut ", "", MOTU_CTRL_MIX_FADER, 0x0c0c, },
+    {"Phones_",   "Phones ",  "", MOTU_CTRL_MIX_FADER, 0x0c10, },
 
     /* For mic/line input controls, the "register" is the zero-based channel number */
     {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 0},
@@ -391,6 +393,8 @@ const MixerCtrl MixerCtrls_Ultralite[] = {
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
     {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
     {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+    {"Mainout_",  "MainOut ", "", MOTU_CTRL_MIX_FADER, 0x0c0c, },
+    {"Phones_",   "Phones ",  "", MOTU_CTRL_MIX_FADER, 0x0c10, },
 
     /* For mic/line input controls, the "register" is the zero-based channel number */
     {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 0},
@@ -447,6 +451,8 @@ const MixerCtrl MixerCtrls_896HD[] = {
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
     {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
     {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+    {"Mainout_",  "MainOut ", "", MOTU_CTRL_MIX_FADER, 0x0c0c, },
+    {"Phones_",   "Phones ",  "", MOTU_CTRL_MIX_FADER, 0x0c10, },
 
     /* For phones source control, "register" is currently unused */
     {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
@@ -496,6 +502,8 @@ const MixerCtrl MixerCtrls_828Mk2[] = {
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
     {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
     {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+    {"Mainout_",  "MainOut ", "", MOTU_CTRL_MIX_FADER, 0x0c0c, },
+    {"Phones_",   "Phones ",  "", MOTU_CTRL_MIX_FADER, 0x0c10, },
 
     /* For mic/line input controls, the "register" is the zero-based channel number */
     {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 0},

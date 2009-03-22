@@ -142,6 +142,8 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.mix2_fader: ['/Mixer/Mix2/Mix_fader'],
             self.mix3_fader: ['/Mixer/Mix3/Mix_fader'],
             self.mix4_fader: ['/Mixer/Mix4/Mix_fader'],
+            self.mainout_fader: ['/Mixer/Mainout_fader'],
+            self.phones_fader:  ['/Mixer/Phones_fader'],
         }
 
         self.ChannelControls={
@@ -502,7 +504,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
 #            self.mix4spdif1_2_pair: ['Mixer/Mix4/Spdif1_2_pair'],
         }
 
-        self.MixDests={
+        self.Selectors={
             self.mix1_dest:      ['/Mixer/Mix1/Mix_dest'],
             self.mix2_dest:      ['/Mixer/Mix2/Mix_dest'],
             self.mix3_dest:      ['/Mixer/Mix3/Mix_dest'],
@@ -517,10 +519,6 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.aesebu_meter_ctrl: ['/Mixer/Control/Meter_aesebu_src'],
             self.peakhold_time_ctrl:['/Mixer/Control/Meter_peakhold_time'],
             self.cliphold_time_ctrl:['/Mixer/Control/Meter_cliphold_time'],
-        }
-
-        self.SelectorControls={
-
         }
 
         # Other mixer variables
@@ -577,12 +575,12 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
         log.debug("setting %s mix fader to %d" % (self.Faders[sender][0], vol))
         self.hw.setDiscrete(self.Faders[sender][0], vol)
 
-    # public slot: mix destination control
-    def updateMixDest(self, a0):
+    # public slot: selectors (eg: mix destination controls)
+    def updateSelector(self, a0):
         sender = self.sender()
         dest=a0
-        log.debug("setting %s mix destination to %d" % (self.MixDests[sender][0], dest))
-        self.hw.setDiscrete(self.MixDests[sender][0], dest)
+        log.debug("setting %s selector to %d" % (self.Selectors[sender][0], dest))
+        self.hw.setDiscrete(self.Selectors[sender][0], dest)
 
     # public slots: mix output controls
     def set_mix1_dest(self,a0):
@@ -860,20 +858,17 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
                 ctrl.setChecked(False)
             QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateBinarySwitch)
 
-        for ctrl, info in self.MixDests.iteritems():
+        for ctrl, info in self.Selectors.iteritems():
             if (not(ctrl.isEnabled())):
                 continue
             dest = self.hw.getDiscrete(info[0])
-            log.debug("%s mix destination is %d" % (info[0] , dest))
+            log.debug("%s selector is %d" % (info[0] , dest))
             ctrl.setCurrentIndex(dest)
-            QObject.connect(ctrl, SIGNAL('activated(int)'), self.updateMixDest)
+            QObject.connect(ctrl, SIGNAL('activated(int)'), self.updateSelector)
 
-        for name, ctrl in self.SelectorControls.iteritems():
-            state = self.hw.getDiscrete(ctrl[0])
-            log.debug("%s state is %d" % (name , state))
-            ctrl[1].setCurrentIndex(state)
-
-        # FIXME: If optical mode is not ADAT, disable ADAT controls here. 
-        # It can't be done earlier because we need the current values of the
-        # ADAT channel controls in case the user goes ahead and enables the
-        # ADAT optical mode.
+        # We could enable/disable ADAT controls here depending on whether
+        # the optical port is set to ADAT or something else.  A disable
+        # can't be done earlier since we have to read the ADAT mixer
+        # settings (which won't happen if they're disabled).  However, on
+        # the other hand it may be more convenient to leave all controls
+        # active at all times.  We'll see.
