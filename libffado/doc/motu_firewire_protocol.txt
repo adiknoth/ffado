@@ -2,7 +2,7 @@ Notes on the firewire protocol used by MOTU audio devices
 =========================================================
 
 Author: Jonathan Woithe
-Document version: 20081207-1
+Document version: 20090321-1
 
 
 Audio/MIDI data
@@ -439,6 +439,8 @@ MOTU registers currently known.  The base address is 0xfffff0000000.
 0x0c00 - firmware programming control
 0x0c04 - routing / port configuration
 0x0c08 - input level (for analog channels 5-8 only)
+0x0c0c - "Main out" volume control
+0x0c10 - Phones volume control
 0x0c14 - boost controls (for analog channels 5-8 only)
 0x0c18 - something related to selections in mixer application
 0x0c1c - gain trim / 20 dB pad controls (for analog channels 1-4 only)
@@ -840,6 +842,18 @@ If "Cuemix input includes computer output" is selected:
 When "Cuemix input includes computer output" is turned off:
   0xc00 is written to register 0x0b2c
   0x000 is written to register 0x0c18
+
+
+0x0c0c - "Main out" volume control
+
+Bits 7-0 of this register control the device's "main out" volume (0x80 = 0 dB, 
+0x00 = -inf).  Bits 31-8 appear unused at present.
+
+
+0x0c10 - phones volume control
+
+Bits 7-0 of this register control the device's phones volume (0x80 = 0 dB, 
+0x00 = -inf).  Bits 31-8 appear unused at present.
 
 
 0x0c1c - gain trim / 20 dB pad controls (for analog channels 1-4 only)
