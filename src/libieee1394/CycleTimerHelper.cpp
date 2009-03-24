@@ -454,7 +454,7 @@ CycleTimerHelper::Execute()
         // the corrected difference between predicted and actual ctr
         // i.e. DLL error signal
         int64_t diff_ticks_corr;
-        if (ticks_late > 0) {
+        if (ticks_late >= 0) {
             diff_ticks_corr = diff_ticks - ticks_late;
             debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                                "diff_ticks_corr=%lld, diff_ticks = %lld, ticks_late = %lld\n",

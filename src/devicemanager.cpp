@@ -947,6 +947,7 @@ DeviceManager::getDriverForDevice( ConfigRom *configRom,
     FFADODevice* dev = getDriverForDeviceDo(configRom, id, false);
     if(dev) {
         debugOutput( DEBUG_LEVEL_VERBOSE, " found supported device...\n" );
+        dev->setVerboseLevel(getDebugLevel());
         return dev;
     }
 
@@ -954,16 +955,17 @@ DeviceManager::getDriverForDevice( ConfigRom *configRom,
     dev = getDriverForDeviceDo(configRom, id, true);
     if(dev) {
         debugOutput( DEBUG_LEVEL_VERBOSE, " found generic support for device...\n" );
+        dev->setVerboseLevel(getDebugLevel());
         return dev;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, " device not supported...\n" );
-    return 0;
+    return NULL;
 }
 
 FFADODevice*
 DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) )
 {
-    return 0;
+    return NULL;
 }
 
 bool

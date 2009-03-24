@@ -52,7 +52,7 @@ opts.Add( "BUILDDIR", "Path to place the built files in", "")
 opts.AddOptions(
 	BoolOption( "DEBUG", """\
 Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
-  \"-O2\" to optimise.""", True ),
+  \"-O2\" to optimize.""", True ),
 	BoolOption( "PROFILE", "Build with symbols and other profiling info", False ),
 	PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local", PathOption.PathAccept ),
 	PathOption( "BINDIR", "Overwrite the directory where apps are installed to.", "$PREFIX/bin", PathOption.PathAccept ),

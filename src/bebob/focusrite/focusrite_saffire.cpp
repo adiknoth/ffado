@@ -24,6 +24,8 @@
 #include "focusrite_saffire.h"
 #include "focusrite_cmd.h"
 
+#include "devicemanager.h"
+
 namespace BeBoB {
 namespace Focusrite {
 
@@ -38,6 +40,19 @@ SaffireDevice::SaffireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( config
         m_isSaffireLE = false;
     } else {
         m_isSaffireLE = true;
+    }
+
+    // find the configured delay time for this device
+    Util::Configuration &config = d.getConfiguration();
+    int delaytime = 0;
+    if(config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "cmd_interval_time", delaytime)) {
+        m_cmd_time_interval = delaytime;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Setting command interval time to %llu\n",
+                     m_cmd_time_interval );
+    } else {
+        m_cmd_time_interval = 10000;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "No command interval time setting found, defaulting to %llu\n",
+                     m_cmd_time_interval );
     }
 }
 

@@ -105,6 +105,7 @@ device_definitions = (
     modelname   = "Saffire (LE)";
     driver      = 1; # BeBoB
     mixer       = "SaffireMixer";
+    cmd_interval_time = 10000;
 },
 {
     vendorid    = 0x0040ab;
@@ -230,6 +231,13 @@ device_definitions = (
     vendorname = "Mackie";
     modelname = "Onyx 1200F";
     driver = 2;
+  },
+  {
+    vendorid = 0x00001260;
+    modelid = 0x00001000;
+    vendorname = "Stanton DJ";
+    modelname = "SCS.1m";
+    driver = 3;
   },
   { # added by arnonym from ffado-mixers list
     vendorid = 0x0001f2;

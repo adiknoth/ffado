@@ -288,9 +288,42 @@ Configuration::getSetting( std::string path )
     return NULL;
 }
 
+bool
+Configuration::getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, int32_t &ref)
+{
+    libconfig::Setting *s = getDeviceSetting( vendor_id, model_id );
+    if(s) {
+        try {
+            return s->lookupValue(setting, ref);
+        } catch (...) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Setting %s not found\n", setting.c_str());
+            return false;
+        }
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "device %X/%X not found\n", vendor_id, model_id);
+        return false;
+    }
+}
 
-Configuration::VendorModelEntry
-Configuration::findDeviceVME( unsigned int vendor_id, unsigned model_id )
+bool
+Configuration::getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, int64_t &ref)
+{
+    libconfig::Setting *s = getDeviceSetting( vendor_id, model_id );
+    if(s) {
+        try {
+            return s->lookupValue(setting, ref);
+        } catch (...) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Setting %s not found\n", setting.c_str());
+            return false;
+        }
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "device %X/%X not found\n", vendor_id, model_id);
+        return false;
+    }
+}
+
+libconfig::Setting *
+Configuration::getDeviceSetting( unsigned int vendor_id, unsigned model_id )
 {
     for ( std::vector<ConfigFile *>::iterator it = m_ConfigFiles.begin();
       it != m_ConfigFiles.end();
@@ -308,20 +341,11 @@ Configuration::findDeviceVME( unsigned int vendor_id, unsigned model_id )
                     uint32_t vid = vendorid;
                     uint32_t mid = modelid;
                     if (vendor_id == vid && model_id == mid) {
-                        struct VendorModelEntry vme;
-                        vme.vendor_id = vendorid;
-                        vme.model_id = modelid;
-
-                        const char *tmp = s["vendorname"];
-                        vme.vendor_name = tmp;
-                        tmp = s["modelname"];
-                        vme.model_name = tmp;
-                        vme.driver = s["driver"];
                         debugOutput(DEBUG_LEVEL_VERBOSE,
                                     "  device VME for %X:%x found in %s\n",
                                     vendor_id, model_id, c->getName().c_str());
                         c->showSetting(s);
-                        return vme;
+                        return &s;
                     }
                 } catch (...) {
                     debugWarning("Bogus format\n");
@@ -329,6 +353,43 @@ Configuration::findDeviceVME( unsigned int vendor_id, unsigned model_id )
             }
         } catch (...) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "  %s has no device definitions\n", c->getName().c_str());
+        }
+    }
+    return NULL;
+}
+
+
+
+Configuration::VendorModelEntry
+Configuration::findDeviceVME( unsigned int vendor_id, unsigned model_id )
+{
+
+    // FIXME: clean this pointer/reference mess please
+    Setting *ps = getDeviceSetting(vendor_id, model_id);
+
+    if(ps) {
+        Setting &s = *ps;
+        try {
+            Setting &vendorid = s["vendorid"];
+            Setting &modelid = s["modelid"];
+            uint32_t vid = vendorid;
+            uint32_t mid = modelid;
+            if (vendor_id == vid && model_id == mid) {
+                struct VendorModelEntry vme;
+                vme.vendor_id = vendorid;
+                vme.model_id = modelid;
+
+                const char *tmp = s["vendorname"];
+                vme.vendor_name = tmp;
+                tmp = s["modelname"];
+                vme.model_name = tmp;
+                vme.driver = s["driver"];
+                return vme;
+            } else {
+                debugError("BUG: vendor/model found but not found?\n");
+            }
+        } catch (...) {
+            debugWarning("Bogus format\n");
         }
     }
     struct VendorModelEntry invalid;
