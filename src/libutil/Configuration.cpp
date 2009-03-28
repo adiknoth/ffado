@@ -269,6 +269,27 @@ Configuration::getValueForSetting(std::string path, int64_t &ref)
     }
 }
 
+bool
+Configuration::getValueForSetting(std::string path, float &ref)
+{
+    libconfig::Setting *s = getSetting( path );
+    if(s) {
+        // FIXME: this can be done using the libconfig methods
+        Setting::Type t = s->getType();
+        if(t == Setting::TypeFloat) {
+            ref = *s;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has value %f\n", path.c_str(), ref);
+            return true;
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has wrong type\n", path.c_str());
+            return false;
+        }
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' not found\n", path.c_str());
+        return false;
+    }
+}
+
 libconfig::Setting *
 Configuration::getSetting( std::string path )
 {
@@ -307,6 +328,23 @@ Configuration::getValueForDeviceSetting(unsigned int vendor_id, unsigned model_i
 
 bool
 Configuration::getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, int64_t &ref)
+{
+    libconfig::Setting *s = getDeviceSetting( vendor_id, model_id );
+    if(s) {
+        try {
+            return s->lookupValue(setting, ref);
+        } catch (...) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Setting %s not found\n", setting.c_str());
+            return false;
+        }
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "device %X/%X not found\n", vendor_id, model_id);
+        return false;
+    }
+}
+
+bool
+Configuration::getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, float &ref)
 {
     libconfig::Setting *s = getDeviceSetting( vendor_id, model_id );
     if(s) {

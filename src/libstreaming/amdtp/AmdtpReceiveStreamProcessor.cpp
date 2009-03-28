@@ -103,6 +103,7 @@ AmdtpReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned i
               (length >= 2*sizeof(quadlet_t));
     if(ok) {
         m_last_timestamp = sytRecvToFullTicks2((uint32_t)CondSwapFromBus16(packet->syt), pkt_ctr);
+
         //#ifdef DEBUG
         #if 0
         uint32_t now = m_1394service.getCycleTimer();

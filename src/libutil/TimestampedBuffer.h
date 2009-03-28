@@ -135,6 +135,8 @@ class TimestampedBuffer
         ffado_timestamp_t getTimestampFromHead ( int nframes );
 
         // dll stuff
+        bool setBandwidth(double bw);
+        double getBandwidth();
         bool setNominalRate ( float r );
         float getNominalRate() {return m_nominal_rate;};
         float getRate();

@@ -404,6 +404,8 @@ protected:
         float getTicksPerFrame();
         void setTicksPerFrame(float tpf);
 
+        bool setDllBandwidth(float bw);
+
         int getBufferFill();
 
         // Child implementation interface
@@ -450,6 +452,7 @@ protected:
 
     protected:
         float m_ticks_per_frame;
+        float m_dll_bandwidth_hz;
         unsigned int m_sync_delay;
     private:
         bool m_in_xrun;

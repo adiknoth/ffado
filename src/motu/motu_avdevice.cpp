@@ -24,6 +24,8 @@
 
 #include "motu/motu_avdevice.h"
 
+#include "devicemanager.h"
+
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
@@ -1396,7 +1398,22 @@ MotuDevice::prepare() {
         return false;
     }
 
+    // get the device specific and/or global SP configuration
+    Util::Configuration &config = getDeviceManager().getConfiguration();
+    // base value is the config.h value
+    float recv_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+    float xmit_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+
+    // we can override that globally
+    config.getValueForSetting("streaming.spm.recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForSetting("streaming.spm.xmit_sp_dll_bw", xmit_sp_dll_bw);
+
+    // or override in the device section
+    config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "xmit_sp_dll_bw", xmit_sp_dll_bw);
+
     m_receiveProcessor=new Streaming::MotuReceiveStreamProcessor(*this, event_size_in);
+    m_receiveProcessor->setVerboseLevel(getDebugLevel());
 
     // The first thing is to initialize the processor.  This creates the
     // data structures.
@@ -1404,7 +1421,13 @@ MotuDevice::prepare() {
         debugFatal("Could not initialize receive processor!\n");
         return false;
     }
-    m_receiveProcessor->setVerboseLevel(getDebugLevel());
+
+    if(!m_receiveProcessor->setDllBandwidth(recv_sp_dll_bw)) {
+        debugFatal("Could not set DLL bandwidth\n");
+        delete m_receiveProcessor;
+        m_receiveProcessor = NULL;
+        return false;
+    }
 
     // Now we add ports to the processor
     debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to receive processor\n");
@@ -1463,6 +1486,13 @@ MotuDevice::prepare() {
 
     if(!m_transmitProcessor->init()) {
         debugFatal("Could not initialize transmit processor!\n");
+        return false;
+    }
+
+    if(!m_transmitProcessor->setDllBandwidth(xmit_sp_dll_bw)) {
+        debugFatal("Could not set DLL bandwidth\n");
+        delete m_transmitProcessor;
+        m_transmitProcessor = NULL;
         return false;
     }
 

@@ -35,7 +35,10 @@
 
 #define DLL_PI        (3.141592653589793238)
 #define DLL_SQRT2     (1.414213562373095049)
-#define DLL_OMEGA     (2.0*DLL_PI*TIMESTAMPEDBUFFER_DLL_BANDWIDTH)
+#define DLL_2PI       (2.0 * DLL_PI)
+
+// these are the defaults
+#define DLL_OMEGA     (DLL_2PI * 0.01)
 #define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
 #define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
 
@@ -83,9 +86,46 @@ TimestampedBuffer::~TimestampedBuffer() {
 }
 
 /**
- * \brief Set the nominal rate in frames/timeunit
+ * \brief Set the bandwidth of the DLL
  *
- * Sets the nominal rate in frames per time unit. This rate is used
+ * Sets the bandwith of the DLL in absolute frequency
+ *
+ * @param bw bandwidth in absolute frequency
+ * @return true if successful
+ */
+bool TimestampedBuffer::setBandwidth(double bw) {
+    double curr_bw = getBandwidth();
+    debugOutput(DEBUG_LEVEL_VERBOSE," bandwidth %e => %e\n",
+                                    curr_bw, bw);
+    double tupdate = m_nominal_rate * (float)m_update_period;
+    double bw_rel = bw * tupdate;
+    if(bw_rel >= 0.5) {
+        debugError("Requested bandwidth out of range: %f > %f\n", bw, 0.5*tupdate);
+        return false;
+    }
+    m_dll_b = bw_rel * (DLL_SQRT2 * DLL_2PI);
+    m_dll_c = bw_rel * bw_rel * DLL_2PI * DLL_2PI;
+    return true;
+}
+
+/**
+ * \brief Returns the current bandwidth of the DLL
+ *
+ * Returns the current bandwith of the DLL in absolute frequency
+ *
+ * @return bandwidth in absolute frequency
+ */
+double TimestampedBuffer::getBandwidth() {
+    double tupdate = m_nominal_rate * (float)m_update_period;
+    double curr_bw = m_dll_b / (DLL_SQRT2 * DLL_2PI * tupdate);
+    return curr_bw;
+}
+
+
+/**
+ * \brief Set the nominal rate in timeunits/frame
+ *
+ * Sets the nominal rate in time units per frame. This rate is used
  * to initialize the DLL that will extract the effective rate based
  * upon the timestamps it gets fed.
  *
@@ -93,9 +133,9 @@ TimestampedBuffer::~TimestampedBuffer() {
  * @return true if successful
  */
 bool TimestampedBuffer::setNominalRate(float r) {
-    m_nominal_rate=r;
-    debugOutput(DEBUG_LEVEL_VERBOSE," nominal rate=%e set to %e\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE," nominal rate %e => %e\n",
                                     m_nominal_rate, r);
+    m_nominal_rate=r;
     return true;
 }
 
@@ -361,9 +401,6 @@ bool TimestampedBuffer::prepare() {
     // init the DLL
     m_dll_e2=m_nominal_rate * (float)m_update_period;
 
-    m_dll_b=((float)(DLL_COEFF_B));
-    m_dll_c=((float)(DLL_COEFF_C));
-    
     // this will init the internal timestamps to a sensible value
     setBufferTailTimestamp(m_buffer_tail_timestamp);
 
@@ -957,6 +994,7 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
     ffado_timestamp_t diff = new_timestamp - m_buffer_next_tail_timestamp;
 
 #ifdef DEBUG
+
     // check whether the update is within the allowed bounds
     ffado_timestamp_t max_abs_diff = 3072/2; // half a cycle is what we consider 'normal'
 

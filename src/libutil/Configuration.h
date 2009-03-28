@@ -125,6 +125,7 @@ public:
      */
     bool getValueForSetting(std::string path, int32_t &ref);
     bool getValueForSetting(std::string path, int64_t &ref);
+    bool getValueForSetting(std::string path, float &ref);
 
     /**
      * @brief retrieves a setting for a given device
@@ -140,6 +141,7 @@ public:
      */
     bool getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, int32_t &ref);
     bool getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, int64_t &ref);
+    bool getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, float &ref);
 
     virtual void setVerboseLevel(int l) {setDebugLevel(l);};
     virtual void show();

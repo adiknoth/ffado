@@ -75,6 +75,7 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_scratch_buffer( NULL )
     , m_scratch_buffer_size_bytes( 0 )
     , m_ticks_per_frame( 0 )
+    , m_dll_bandwidth_hz ( STREAMPROCESSOR_DLL_BW_HZ )
     , m_sync_delay( 0 )
     , m_in_xrun( false )
 {
@@ -135,11 +136,7 @@ uint64_t StreamProcessor::getTimeNow() {
 }
 
 int StreamProcessor::getMaxFrameLatency() {
-    if (getType() == ePT_Receive) {
-        return (int)(m_IsoHandlerManager.getPacketLatencyForStream( this ) * TICKS_PER_CYCLE);
-    } else {
-        return (int)(m_IsoHandlerManager.getPacketLatencyForStream( this ) * TICKS_PER_CYCLE);
-    }
+    return (int)(m_IsoHandlerManager.getPacketLatencyForStream( this ) * TICKS_PER_CYCLE);
 }
 
 unsigned int
@@ -281,6 +278,13 @@ StreamProcessor::setTicksPerFrame(float tpf)
 }
 
 bool
+StreamProcessor::setDllBandwidth(float bw)
+{
+    m_dll_bandwidth_hz = bw;
+    return true;
+}
+
+bool
 StreamProcessor::canClientTransferFrames(unsigned int nbframes)
 {
     bool can_transfer;
@@ -396,6 +400,25 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
     }
 
     if (result == eCRV_OK) {
+        #ifdef DEBUG
+        if (m_last_timestamp > 0 && m_last_timestamp2 > 0) {
+            int64_t tsp_diff = diffTicks(m_last_timestamp, m_last_timestamp2);
+            debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "TSP diff: %lld\n", tsp_diff);
+            double tsp_diff_d = tsp_diff;
+            double fs_syt = 1.0/tsp_diff_d;
+            fs_syt *= (double)getNominalFramesPerPacket() * (double)TICKS_PER_USEC * 1e6;
+            double fs_nom = (double)m_StreamProcessorManager.getNominalRate();
+            double fs_diff = fs_nom - fs_syt;
+            double fs_diff_norm = fs_diff/fs_nom;
+            debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)\n",
+                        fs_nom, fs_syt, fs_diff, fs_diff_norm);
+            if (fs_diff_norm > 0.01 || fs_diff_norm < -0.01) {
+                debugWarning( "Instantanous samplerate more than 1%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
+                        fs_nom, fs_syt, fs_diff, fs_diff_norm);
+            }
+        }
+        #endif
+
 //         #ifdef DEBUG
         int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
         int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
@@ -701,6 +724,23 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 goto send_empty_packet;
             }
             #ifdef DEBUG
+            if (m_last_timestamp > 0 && m_last_timestamp2 > 0) {
+                int64_t tsp_diff = diffTicks(m_last_timestamp, m_last_timestamp2);
+                debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "TSP diff: %lld\n", tsp_diff);
+                double tsp_diff_d = tsp_diff;
+                double fs_syt = 1.0/tsp_diff_d;
+                fs_syt *= (double)getNominalFramesPerPacket() * (double)TICKS_PER_USEC * 1e6;
+                double fs_nom = (double)m_StreamProcessorManager.getNominalRate();
+                double fs_diff = fs_nom - fs_syt;
+                double fs_diff_norm = fs_diff/fs_nom;
+                debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)\n",
+                           fs_nom, fs_syt, fs_diff, fs_diff_norm);
+                if (fs_diff_norm > 0.01 || fs_diff_norm < -0.01) {
+                    debugWarning( "Instantanous samplerate more than 1%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
+                           fs_nom, fs_syt, fs_diff, fs_diff_norm);
+                }
+            }
+
             int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
             int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
             // display message if the difference between two successive tick
@@ -1096,8 +1136,8 @@ bool StreamProcessor::prepare()
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prepared for:\n");
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d\n",
-             m_StreamProcessorManager.getNominalRate());
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Samplerate: %d  [DLL Bandwidth: %f Hz]\n",
+             m_StreamProcessorManager.getNominalRate(), m_dll_bandwidth_hz);
     debugOutput( DEBUG_LEVEL_VERBOSE, " PeriodSize: %d, NbBuffers: %d\n",
              m_StreamProcessorManager.getPeriodSize(), m_StreamProcessorManager.getNbBuffers());
     debugOutput( DEBUG_LEVEL_VERBOSE, " Port: %d, Channel: %d\n",
@@ -1357,7 +1397,7 @@ StreamProcessor::doStop()
             m_local_node_id= m_1394service.getLocalNodeId() & 0x3f;
             m_correct_last_timestamp = false;
 
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Initializing remote ticks/frame to %f\n", ticks_per_frame);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Initializing remote ticks/frame to %f\n", ticks_per_frame);
 
             // initialize internal buffer
             result &= m_data_buffer->setBufferSize(ringbuffer_size_frames);
@@ -1371,7 +1411,11 @@ StreamProcessor::doStop()
             }
             result &= m_data_buffer->setNominalRate(ticks_per_frame);
             result &= m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
+            result &= m_data_buffer->setBandwidth(m_dll_bandwidth_hz / (double)TICKS_PER_SECOND);
             result &= m_data_buffer->prepare(); // FIXME: the name
+
+            debugOutput(DEBUG_LEVEL_VERBOSE, "DLL info: nominal tpf: %f, update period: %d, bandwidth: %e 1/ticks (%e Hz)\n", 
+                        m_data_buffer->getNominalRate(), m_data_buffer->getUpdatePeriod(), m_data_buffer->getBandwidth(), m_data_buffer->getBandwidth() * TICKS_PER_SECOND);
 
             break;
         case ePS_DryRunning:
