@@ -213,11 +213,6 @@ public:
      */
     bool shiftStream(int nframes);
 
-    /**
-     * @brief tries to fill/sink the stream as far as possible
-     */
-    void flush();
-
 protected: // the helper receive/transmit functions
     enum eChildReturnValue {
         eCRV_OK,

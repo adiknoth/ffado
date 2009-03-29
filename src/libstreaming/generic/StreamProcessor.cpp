@@ -171,9 +171,6 @@ StreamProcessor::getNbPacketsIsoXmitBuffer()
 /***********************************************
  * Buffer management and manipulation          *
  ***********************************************/
-void StreamProcessor::flush() {
-    m_IsoHandlerManager.flushHandlerForStream(this);
-}
 
 int StreamProcessor::getBufferFill() {
     return m_data_buffer->getBufferFill();
