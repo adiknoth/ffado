@@ -498,57 +498,6 @@ class MotuMixer(MotuMixerUI):
 
         }
 
-        # Ultimately these may be rolled into the BinarySwitches controls,
-        # but since they aren't implemented and therefore need to be
-        # disabled it's easier to keep them separate for the moment.  The
-        # dbus path for these is yet to be finalised too - for example we
-        # may end up using a matrix mixer.
-        self.PairSwitches={
-#            self.mix1ana1_2_pair:   ['Mixer/Mix1/Ana1_2_pair'],
-#            self.mix1ana3_4_pair:   ['Mixer/Mix1/Ana3_4_pair'],
-#            self.mix1ana5_6_pair:   ['Mixer/Mix1/Ana5_6_pair'],
-#            self.mix1ana7_8_pair:   ['Mixer/Mix1/Ana7_8_pair'],
-#            self.mix1aes1_2_pair:   ['Mixer/Mix1/Aes1_2_pair'],
-#            self.mix1adat1_2_pair:  ['Mixer/Mix1/Adat1_2_pair'],
-#            self.mix1adat3_4_pair:  ['Mixer/Mix1/Adat3_4_pair'],
-#            self.mix1adat5_6_pair:  ['Mixer/Mix1/Adat5_6_pair'],
-#            self.mix1adat7_8_pair:  ['Mixer/Mix1/Adat7_8_pair'],
-#            self.mix1spdif1_2_pair: ['Mixer/Mix1/Spdif1_2_pair'],
-
-#            self.mix2ana1_2_pair:   ['Mixer/Mix2/Ana1_2_pair'],
-#            self.mix2ana3_4_pair:   ['Mixer/Mix2/Ana3_4_pair'],
-#            self.mix2ana5_6_pair:   ['Mixer/Mix2/Ana5_6_pair'],
-#            self.mix2ana7_8_pair:   ['Mixer/Mix2/Ana7_8_pair'],
-#            self.mix2aes1_2_pair:   ['Mixer/Mix2/Aes1_2_pair'],
-#            self.mix2adat1_2_pair:  ['Mixer/Mix2/Adat1_2_pair'],
-#            self.mix2adat3_4_pair:  ['Mixer/Mix2/Adat3_4_pair'],
-#            self.mix2adat5_6_pair:  ['Mixer/Mix2/Adat5_6_pair'],
-#            self.mix2adat7_8_pair:  ['Mixer/Mix2/Adat7_8_pair'],
-#            self.mix2spdif1_2_pair: ['Mixer/Mix2/Spdif1_2_pair'],
-
-#            self.mix3ana1_2_pair:   ['Mixer/Mix3/Ana1_2_pair'],
-#            self.mix3ana3_4_pair:   ['Mixer/Mix3/Ana3_4_pair'],
-#            self.mix3ana5_6_pair:   ['Mixer/Mix3/Ana5_6_pair'],
-#            self.mix3ana7_8_pair:   ['Mixer/Mix3/Ana7_8_pair'],
-#            self.mix3aes1_2_pair:   ['Mixer/Mix3/Aes1_2_pair'],
-#            self.mix3adat1_2_pair:  ['Mixer/Mix3/Adat1_2_pair'],
-#            self.mix3adat3_4_pair:  ['Mixer/Mix3/Adat3_4_pair'],
-#            self.mix3adat5_6_pair:  ['Mixer/Mix3/Adat5_6_pair'],
-#            self.mix3adat7_8_pair:  ['Mixer/Mix3/Adat7_8_pair'],
-#            self.mix3spdif1_2_pair: ['Mixer/Mix3/Spdif1_2_pair'],
-
-#            self.mix4ana1_2_pair:   ['Mixer/Mix4/Ana1_2_pair'],
-#            self.mix4ana3_4_pair:   ['Mixer/Mix4/Ana3_4_pair'],
-#            self.mix4ana5_6_pair:   ['Mixer/Mix4/Ana5_6_pair'],
-#            self.mix4ana7_8_pair:   ['Mixer/Mix4/Ana7_8_pair'],
-#            self.mix4aes1_2_pair:   ['Mixer/Mix4/Aes1_2_pair'],
-#            self.mix4adat1_2_pair:  ['Mixer/Mix4/Adat1_2_pair'],
-#            self.mix4adat3_4_pair:  ['Mixer/Mix4/Adat3_4_pair'],
-#            self.mix4adat5_6_pair:  ['Mixer/Mix4/Adat5_6_pair'],
-#            self.mix4adat7_8_pair:  ['Mixer/Mix4/Adat7_8_pair'],
-#            self.mix4spdif1_2_pair: ['Mixer/Mix4/Spdif1_2_pair'],
-        }
-
         self.MixDests={
             self.mix1_dest:      ['/Mixer/Mix1/Mix_dest'],
             self.mix2_dest:      ['/Mixer/Mix2/Mix_dest'],
@@ -580,22 +529,25 @@ class MotuMixer(MotuMixerUI):
         self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
         print "device streaming flag: %d" % (self.is_streaming)
 
-        # Retrieve other device settings as needed
+        # Retrieve other device settings as needed and customise the UI
+        # based on these options.
         self.model = self.hw.getDiscrete('/Mixer/Info/Model')
         print "device model identifier: %d" % (self.model)
         self.sample_rate = self.hw.getDiscrete('/Mixer/Info/SampleRate')
         print "device sample rate: %d" % (self.sample_rate)
-        self.has_mic_inputs = self.hw.getDiscrete('/Mixer/Info/HasMicInputs')
-        print "device has mic inputs: %d" % (self.has_mic_inputs)
-        self.has_aesebu_inputs = self.hw.getDiscrete('/Mixer/Info/HasAESEBUInputs')
-        print "device has AES/EBU inputs: %d" % (self.has_aesebu_inputs)
-        self.has_spdif_inputs = self.hw.getDiscrete('/Mixer/Info/HasSPDIFInputs')
-        print "device has SPDIF inputs: %d" % (self.has_spdif_inputs)
-        self.has_optical_spdif = self.hw.getDiscrete('/Mixer/Info/HasOpticalSPDIF')
-        print "device has optical SPDIF: %d" % (self.has_optical_spdif)
 
-        # Customise the UI based on device options retrieved
-        if (self.has_mic_inputs):
+        # The 828Mk2 has separate Mic inputs but no AES/EBU, so use the
+        # AES/EBU mixer controls as "Mic" controls.  If a device comes along
+        # with both mic and AES inputs this approach will have to be
+        # re-thought.
+        # Doing this means that on the 828Mk2, the mixer matrix elements
+        # used for AES/EBU on other models are used for the Mic channels. 
+        # So long as the MixerChannels_828Mk2 definition in
+        # motu_avdevice.cpp defines the mic channels immediately after the 8
+        # analog channels we'll be right.  Note that we don't need to change
+        # the matrix lookup tables (self.ChannelFaders etc) because the QT
+        # controls are still named *aesebu*.
+        if (self.model == MOTU_MODEL_828mkII):
             # Mic input controls displace AES/EBU since no current device
             # has both.
             self.mix1_tab.setTabLabel(self.mix1_tab.page(1), "Mic inputs");
@@ -606,28 +558,35 @@ class MotuMixer(MotuMixerUI):
             # dbus path?  If not we'll have to reset the respective values in
             # the control arrays (self.ChannelFaders etc).
         else:
-            if (not(self.has_aesebu_inputs)):
+            # Only the Traveler and 896HD have AES/EBU inputs, so disable the AES/EBU
+            # tab for all other models.
+            if (self.model!=MOTU_MODEL_TRAVELER and self.model!=MOTU_MODEL_896HD):
                 self.mix1_tab.page(1).setEnabled(False)
                 self.mix2_tab.page(1).setEnabled(False)
                 self.mix3_tab.page(1).setEnabled(False)
                 self.mix4_tab.page(1).setEnabled(False)
-        if (not(self.has_spdif_inputs)):
+
+        # All models except the 896HD and 8pre have SPDIF inputs.
+        if (self.model==MOTU_MODEL_8PRE or self.model==MOTU_MODEL_896HD):
             self.mix1_tab.page(2).setEnabled(False);
             self.mix2_tab.page(2).setEnabled(False);
             self.mix3_tab.page(2).setEnabled(False);
             self.mix4_tab.page(2).setEnabled(False);
 
-        # Devices without AES/EBU inputs/outputs (normally ID 6 in the
-        # destination lists) have dedicated "MainOut" outputs instead.  The
-        # 896HD is an exception: it uses ID 6 for MainOut and ID 7
-        # (nominally SPDIF) for AES/EBU.
-        if (not(self.has_aesebu_inputs) or self.model==MOTU_MODEL_896HD):
+        # Devices without AES/EBU inputs/outputs (currently all except the
+        # Traveler and 896HD) have dedicated "MainOut" outputs instead. 
+        # AES/EBU is normally ID 6 in the destination lists and "MainOut"
+        # displaces it on non-AES/EBU models.  The 896HD has both AES/EBU
+        # and MainOut which complicates this; it uses ID 6 for MainOut and
+        # ID 7 (nominally SPDIF) for AES/EBU.  Therefore change ID 6 to
+        # "MainOut" for everything but the Traveler, and set ID 7 (nominally
+        # SPDIF) to AES/EBU for the 896HD.
+        if (self.model != MOTU_MODEL_TRAVELER):
             self.mix1_dest.changeItem("MainOut", 6)
             self.mix2_dest.changeItem("MainOut", 6)
             self.mix3_dest.changeItem("MainOut", 6)
             self.mix4_dest.changeItem("MainOut", 6)
             self.phones_src.changeItem("MainOut", 6)
-        # Change the SPDIF destination to AES/EBU for the 896HD.
         if (self.model == MOTU_MODEL_896HD):
             self.mix1_dest.changeItem("AES/EBU", 7)
             self.mix2_dest.changeItem("AES/EBU", 7)
@@ -645,9 +604,8 @@ class MotuMixer(MotuMixerUI):
             self.optical_in_mode.setEnabled(False)
             self.optical_out_mode.setEnabled(False)
 
-        # Some devices don't have the option of selecting an optical SPDIF
-        # mode.
-        if (not(self.has_optical_spdif)):
+        # The 896HD doesn't have optical SPDIF (aka Toslink) capability
+        if (self.model == MOTU_MODEL_896HD):
             self.optical_in_mode.removeItem(2)
             self.optical_out_mode.removeItem(2)
 
@@ -779,11 +737,6 @@ class MotuMixer(MotuMixerUI):
             print "%s control is %d" % (info[0] , pan)
             ctrl.setValue(pan)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateControl)
-
-        # Disable the channel pair controls since they aren't yet implemented
-        for ctrl, info in self.PairSwitches.iteritems():
-            print "%s control is not implemented yet: disabling" % (info[0])
-            ctrl.setEnabled(False)
 
         for ctrl, info in self.ChannelBinarySwitches.iteritems():
             if (not(ctrl.isEnabled())):

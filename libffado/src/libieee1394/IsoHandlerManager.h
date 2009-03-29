@@ -69,7 +69,7 @@ class IsoTask : public Util::RunnableInterface
         /**
          * @brief requests the thread to sync it's stream map with the manager
          */
-        bool requestShadowMapUpdate();
+        void requestShadowMapUpdate();
         enum eActivityResult {
             eAR_Activity,
             eAR_Timeout,
@@ -164,9 +164,6 @@ class IsoHandlerManager
         bool reset(); ///< reset the ISO manager and all streams
         bool init();
 
-        bool disable(IsoHandler *); ///< disables a handler
-        bool enable(IsoHandler *); ///< enables a handler
-
         /**
          * @brief signals that something happened in one of the clients
          */
@@ -188,7 +185,6 @@ class IsoHandlerManager
          */
         int getPacketLatencyForStream(Streaming::StreamProcessor *);
 
-        void flushHandlerForStream(Streaming::StreamProcessor *stream);
         IsoHandler * getHandlerForStream(Streaming::StreamProcessor *stream);
 
         Ieee1394Service& get1394Service() {return m_service;};

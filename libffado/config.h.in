@@ -42,6 +42,7 @@
 // 1394 service constants 
 #define IEEE1394SERVICE_USE_CYCLETIMER_DLL                         1
 #define IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC   200000
+#define IEEE1394SERVICE_CYCLETIMER_DLL_BANDWIDTH_HZ              0.5
 #define IEEE1394SERVICE_MAX_FIREWIRE_PORTS                         4
 #define IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS              1000000
 
@@ -139,9 +140,10 @@
 
 #define STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY           0
 
-// FIXME: note that it will probably be better to use a DLL bandwidth that is 
-//        dependant on the sample rate
-#define TIMESTAMPEDBUFFER_DLL_BANDWIDTH                     (0.01)
+// the default bandwidth of the stream processor timestamp DLL when synchronizing (should be fast)
+#define STREAMPROCESSOR_DLL_FAST_BW_HZ                      5.0
+// the default bandwidth of the stream processor timestamp DLL when streaming
+#define STREAMPROCESSOR_DLL_BW_HZ                           0.1
 
 // -- AMDTP options -- //
 

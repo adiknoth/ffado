@@ -31,6 +31,8 @@ namespace Focusrite {
 
 FocusriteDevice::FocusriteDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : BeBoB::AvDevice( d, configRom)
+    , m_cmd_time_interval( 0 )
+    , m_earliest_next_cmd_time( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Focusrite::FocusriteDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -59,8 +61,18 @@ FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
         id, id, v);
     bool use_avc = false;
     if(!getOption("useAvcForParameters", use_avc)) {
-        debugWarning("Could not retrieve useAvcForParameters parameter, defauling to false\n");
+        debugWarning("Could not retrieve useAvcForParameters parameter, defaulting to false\n");
     }
+
+    // rate control
+    ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
+    if(m_cmd_time_interval && (m_earliest_next_cmd_time > now)) {
+        ffado_microsecs_t wait = m_earliest_next_cmd_time - now;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %llu\n", wait );
+        Util::SystemTimeSource::SleepUsecRelative(wait);
+    }
+    m_earliest_next_cmd_time = now + m_cmd_time_interval;
+
     if (use_avc) {
         return setSpecificValueAvc(id, v);
     } else {
@@ -74,8 +86,19 @@ FocusriteDevice::getSpecificValue(uint32_t id, uint32_t *v)
     bool retval;
     bool use_avc = false;
     if(!getOption("useAvcForParameters", use_avc)) {
-        debugWarning("Could not retrieve useAvcForParameters parameter, defauling to false\n");
+        debugWarning("Could not retrieve useAvcForParameters parameter, defaulting to false\n");
     }
+
+    // rate control
+    ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
+    if(m_cmd_time_interval && (m_earliest_next_cmd_time > now)) {
+        ffado_microsecs_t wait = m_earliest_next_cmd_time - now;
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %llu\n", wait );
+        Util::SystemTimeSource::SleepUsecRelative(wait);
+    }
+    m_earliest_next_cmd_time = now + m_cmd_time_interval;
+
+    // execute
     if (use_avc) {
         retval = getSpecificValueAvc(id, v);
     } else {

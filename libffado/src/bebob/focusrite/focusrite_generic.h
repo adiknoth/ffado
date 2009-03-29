@@ -31,6 +31,8 @@
 #include "libcontrol/BasicElements.h"
 #include "libcontrol/MatrixMixer.h"
 
+#include "libutil/SystemTimeSource.h"
+
 #define FR_PARAM_SPACE_START 0x000100000000LL
 
 namespace BeBoB {
@@ -235,6 +237,10 @@ private:
 
     bool setSpecificValueARM(uint32_t id, uint32_t v);
     bool getSpecificValueARM(uint32_t id, uint32_t *v);
+
+protected:
+    ffado_microsecs_t m_cmd_time_interval;
+    ffado_microsecs_t m_earliest_next_cmd_time;
 };
 
 } // namespace Focusrite

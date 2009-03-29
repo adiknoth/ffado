@@ -125,12 +125,30 @@ public:
      */
     bool getValueForSetting(std::string path, int32_t &ref);
     bool getValueForSetting(std::string path, int64_t &ref);
+    bool getValueForSetting(std::string path, float &ref);
+
+    /**
+     * @brief retrieves a setting for a given device
+     * 
+     * the value in the ref parameter is not changed if
+     * the function returns false.
+     * 
+     * @param vendor_id vendor id for the device
+     * @param model_id  model id for the device
+     * @param setting name of the setting
+     * @param ref reference to the integer that will hold the value.
+     * @return true if successful, false if not
+     */
+    bool getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, int32_t &ref);
+    bool getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, int64_t &ref);
+    bool getValueForDeviceSetting(unsigned int vendor_id, unsigned model_id, std::string setting, float &ref);
 
     virtual void setVerboseLevel(int l) {setDebugLevel(l);};
     virtual void show();
 
 private:
     libconfig::Setting *getSetting( std::string path );
+    libconfig::Setting *getDeviceSetting( unsigned int vendor_id, unsigned model_id );
 
     int findFileName(std::string s);
 

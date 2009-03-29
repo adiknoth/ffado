@@ -81,7 +81,7 @@ IsoTask::Init()
     return true;
 }
 
-bool
+void
 IsoTask::requestShadowMapUpdate()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) enter\n", this);
@@ -89,18 +89,7 @@ IsoTask::requestShadowMapUpdate()
 
     // get the thread going again
     signalActivity();
-
-    if (m_running) {
-        int timeout = 1000;
-        while(request_update && timeout--) {
-            Util::SystemTimeSource::SleepUsecRelative(1000);
-        }
-        if(timeout == 0) {
-            debugError("timeout waiting for shadow map update\n");
-        }
-    }
     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) exit\n", this);
-    return true;
 }
 
 bool
@@ -161,6 +150,14 @@ IsoTask::updateShadowMapHelper()
         // skip the handlers not intended for us
         if(h->getType() != m_handlerType) continue;
 
+        // update the state of the handler
+        // FIXME: maybe this is not the best place to do this
+        // it might be better to eliminate the 'requestShadowMapUpdate'
+        // entirely and replace it with a mechanism that implements all
+        // actions on the m_manager.m_IsoHandlers in the loop
+        h->updateState();
+
+        // rebuild the map
         if (h->isEnabled()) {
             m_IsoHandler_map_shadow[cnt] = h;
             m_poll_fds_shadow[cnt].fd = h->getFileDescriptor();
@@ -656,56 +653,6 @@ bool IsoHandlerManager::init()
     return true;
 }
 
-bool
-IsoHandlerManager::disable(IsoHandler *h) {
-    bool result;
-    int i=0;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Disable on IsoHandler %p\n", h);
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-        it != m_IsoHandlers.end();
-        ++it )
-    {
-        if ((*it) == h) {
-            result = h->disable();
-            if(h->getType() == IsoHandler::eHT_Transmit) {
-                result &= m_IsoTaskTransmit->requestShadowMapUpdate();
-            } else {
-                result &= m_IsoTaskReceive->requestShadowMapUpdate();
-            }
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " disabled\n");
-            return result;
-        }
-        i++;
-    }
-    debugError("Handler not found\n");
-    return false;
-}
-
-bool
-IsoHandlerManager::enable(IsoHandler *h) {
-    bool result;
-    int i=0;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Enable on IsoHandler %p\n", h);
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-        it != m_IsoHandlers.end();
-        ++it )
-    {
-        if ((*it) == h) {
-            result = h->enable();
-            if(h->getType() == IsoHandler::eHT_Transmit) {
-                result &= m_IsoTaskTransmit->requestShadowMapUpdate();
-            } else {
-                result &= m_IsoTaskReceive->requestShadowMapUpdate();
-            }
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " enabled\n");
-            return result;
-        }
-        i++;
-    }
-    debugError("Handler not found\n");
-    return false;
-}
-
 void
 IsoHandlerManager::signalActivityTransmit()
 {
@@ -927,12 +874,6 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
 
     h->setVerboseLevel(getDebugLevel());
 
-    // init the handler
-    if(!h->init()) {
-        debugFatal("Could not initialize receive handler\n");
-        return false;
-    }
-
     // register the stream with the handler
     if(!h->registerStream(stream)) {
         debugFatal("Could not register receive stream with handler\n");
@@ -1027,40 +968,6 @@ void IsoHandlerManager::pruneHandlers() {
     }
 }
 
-bool
-IsoHandlerManager::stopHandlerForStream(Streaming::StreamProcessor *stream) {
-    // check state
-    if(m_State != E_Running) {
-        debugError("Incorrect state, expected E_Running, got %s\n", eHSToString(m_State));
-        return false;
-    }
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-      it != m_IsoHandlers.end();
-      ++it )
-    {
-        if((*it)->isStreamRegistered(stream)) {
-            debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler %p for stream %p\n", *it, stream);
-            if(!(*it)->disable()) {
-                debugOutput( DEBUG_LEVEL_VERBOSE, " could not disable handler (%p)\n",*it);
-                return false;
-            }
-            bool result;
-            if((*it)->getType() == IsoHandler::eHT_Transmit) {
-                result = m_IsoTaskTransmit->requestShadowMapUpdate();
-            } else {
-                result = m_IsoTaskReceive->requestShadowMapUpdate();
-            }
-            if(!result) {
-                debugOutput( DEBUG_LEVEL_VERBOSE, " could not update shadow map for handler (%p)\n",*it);
-                return false;
-            }
-            return true;
-        }
-    }
-    debugError("Stream %p has no attached handler\n", stream);
-    return false;
-}
-
 int
 IsoHandlerManager::getPacketLatencyForStream(Streaming::StreamProcessor *stream) {
     for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
@@ -1073,20 +980,6 @@ IsoHandlerManager::getPacketLatencyForStream(Streaming::StreamProcessor *stream)
     }
     debugError("Stream %p has no attached handler\n", stream);
     return 0;
-}
-
-void
-IsoHandlerManager::flushHandlerForStream(Streaming::StreamProcessor *stream) {
-    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
-      it != m_IsoHandlers.end();
-      ++it )
-    {
-        if((*it)->isStreamRegistered(stream)) {
-            (*it)->flush();
-        }
-    }
-    debugError("Stream %p has no attached handler\n", stream);
-    return;
 }
 
 IsoHandler *
@@ -1121,20 +1014,50 @@ IsoHandlerManager::startHandlerForStream(Streaming::StreamProcessor *stream, int
     {
         if((*it)->isStreamRegistered(stream)) {
             debugOutput( DEBUG_LEVEL_VERBOSE, " starting handler %p for stream %p\n", *it, stream);
-            if(!(*it)->enable(cycle)) {
-                debugOutput( DEBUG_LEVEL_VERBOSE, " could not enable handler (%p)\n",*it);
+            if(!(*it)->requestEnable(cycle)) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, " could not request enable for handler %p)\n",*it);
                 return false;
             }
-            bool result;
+
             if((*it)->getType() == IsoHandler::eHT_Transmit) {
-                result = m_IsoTaskTransmit->requestShadowMapUpdate();
+                m_IsoTaskTransmit->requestShadowMapUpdate();
             } else {
-                result = m_IsoTaskReceive->requestShadowMapUpdate();
+                m_IsoTaskReceive->requestShadowMapUpdate();
             }
-            if(!result) {
-                debugOutput( DEBUG_LEVEL_VERBOSE, " could not update shadow map for handler (%p)\n",*it);
+
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, " requested enable for handler %p\n", *it);
+            return true;
+        }
+    }
+    debugError("Stream %p has no attached handler\n", stream);
+    return false;
+}
+
+bool
+IsoHandlerManager::stopHandlerForStream(Streaming::StreamProcessor *stream) {
+    // check state
+    if(m_State != E_Running) {
+        debugError("Incorrect state, expected E_Running, got %s\n", eHSToString(m_State));
+        return false;
+    }
+    for ( IsoHandlerVectorIterator it = m_IsoHandlers.begin();
+      it != m_IsoHandlers.end();
+      ++it )
+    {
+        if((*it)->isStreamRegistered(stream)) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " stopping handler %p for stream %p\n", *it, stream);
+            if(!(*it)->requestDisable()) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, " could not request disable for handler %p\n",*it);
                 return false;
             }
+
+            if((*it)->getType() == IsoHandler::eHT_Transmit) {
+                m_IsoTaskTransmit->requestShadowMapUpdate();
+            } else {
+                m_IsoTaskReceive->requestShadowMapUpdate();
+            }
+
+            debugOutput(DEBUG_LEVEL_VERBOSE, " requested disable for handler %p\n", *it);
             return true;
         }
     }
@@ -1158,20 +1081,19 @@ bool IsoHandlerManager::stopHandlers() {
         ++it )
     {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Stopping handler (%p)\n",*it);
-        if(!(*it)->disable()){
-            debugOutput( DEBUG_LEVEL_VERBOSE, " could not stop handler (%p)\n",*it);
-            retval=false;
-        }
-        bool result;
-        if((*it)->getType() == IsoHandler::eHT_Transmit) {
-            result = m_IsoTaskTransmit->requestShadowMapUpdate();
-        } else {
-            result = m_IsoTaskReceive->requestShadowMapUpdate();
-        }
-        if(!result) {
-            debugOutput( DEBUG_LEVEL_VERBOSE, " could not update shadow map for handler (%p)\n",*it);
+
+        if(!(*it)->requestDisable()) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, " could not request disable for handler %p\n",*it);
             return false;
         }
+
+        if((*it)->getType() == IsoHandler::eHT_Transmit) {
+            m_IsoTaskTransmit->requestShadowMapUpdate();
+        } else {
+            m_IsoTaskReceive->requestShadowMapUpdate();
+        }
+
+        debugOutput(DEBUG_LEVEL_VERBOSE, " requested disable for handler %p\n", *it);
     }
 
     if (retval) {

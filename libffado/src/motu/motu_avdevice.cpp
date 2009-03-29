@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2005-2008 by Pieter Palmers
- * Copyright (C) 2005-2008 by Jonathan Woithe
+ * Copyright (C) 2005-2009 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -22,7 +22,11 @@
  *
  */
 
+#include "config.h"
+
 #include "motu/motu_avdevice.h"
+
+#include "devicemanager.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -109,18 +113,22 @@ const PortEntry Ports_896HD[] =
     {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 28},
     {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 37},
     {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 31},
-    {"MainOut-L", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
-    {"MainOut-R", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
-    {"AES/EBU1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 46},
-    {"AES/EBU2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 49},
-    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
-    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
-    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 58},
-    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 61},
-    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
-    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
-    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
-    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
+    {"MainOut-L", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
+    {"MainOut-R", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
+    {"unknown-1", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
+    {"unknown-2", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
+    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 46},
+    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 49},
+    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
+    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
+    {"AES/EBU1", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ANY, 70},
+    {"AES/EBU2", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ANY, 73},
+    {"AES/EBU1", MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ANY, 58},
+    {"AES/EBU2", MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ANY, 61},
 };
 
 const PortEntry Ports_828MKII[] =
@@ -333,6 +341,8 @@ const MixerCtrl MixerCtrls_Traveler[] = {
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
     {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
     {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+    {"Mainout_",  "MainOut ", "", MOTU_CTRL_MIX_FADER, 0x0c0c, },
+    {"Phones_",   "Phones ",  "", MOTU_CTRL_MIX_FADER, 0x0c10, },
 
     /* For mic/line input controls, the "register" is the zero-based channel number */
     {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_MIC_INPUT_CTRLS, 0},
@@ -387,16 +397,20 @@ const MixerCtrl MixerCtrls_Ultralite[] = {
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
     {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
     {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+    {"Mainout_",  "MainOut ", "", MOTU_CTRL_MIX_FADER, 0x0c0c, },
+    {"Phones_",   "Phones ",  "", MOTU_CTRL_MIX_FADER, 0x0c10, },
 
     /* For mic/line input controls, the "register" is the zero-based channel number */
-    {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 0},
-    {"Control/Ana2_", "Analog 2 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 1},
-    {"Control/Ana3_", "Analog 3 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 2},
-    {"Control/Ana4_", "Analog 4 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 3},
-    {"Control/Ana5_", "Analog 5 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 4},
-    {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 5},
-    {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 6},
-    {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 7},
+    {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 0},
+    {"Control/Ana2_", "Analog 2 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 1},
+    {"Control/Ana3_", "Analog 3 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 2},
+    {"Control/Ana4_", "Analog 4 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 3},
+    {"Control/Ana5_", "Analog 5 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 4},
+    {"Control/Ana6_", "Analog 6 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 5},
+    {"Control/Ana7_", "Analog 7 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 6},
+    {"Control/Ana8_", "Analog 8 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 7},
+    {"Control/Spdif1_", "SPDIF 1 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 6},
+    {"Control/Spdif2_", "SPDIF 2 input ", "", MOTU_CTRL_ULTRALITE_INPUT_CTRLS, 7},
 
     /* For phones source control, "register" is currently unused */
     {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
@@ -406,11 +420,43 @@ const MixerCtrl MixerCtrls_Ultralite[] = {
     {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
 };
 
+const MatrixMixBus MixerBuses_896HD[] = {
+    {"Mix 1", 0x4000, },
+    {"Mix 2", 0x4100, },
+    {"Mix 3", 0x4200, },
+    {"Mix 4", 0x4300, },
+};
+
+const MatrixMixChannel MixerChannels_896HD[] = {
+    {"Analog 1", MOTU_CTRL_STD_CHANNEL, 0x0000, },
+    {"Analog 2", MOTU_CTRL_STD_CHANNEL, 0x0004, },
+    {"Analog 3", MOTU_CTRL_STD_CHANNEL, 0x0008, },
+    {"Analog 4", MOTU_CTRL_STD_CHANNEL, 0x000c, },
+    {"Analog 5", MOTU_CTRL_STD_CHANNEL, 0x0010, },
+    {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
+    {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
+    {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    {"AES/EBU 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
+    {"AES/EBU 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
+    {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0048, },
+    {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x004c, },
+    {"ADAT 1", MOTU_CTRL_STD_CHANNEL, 0x0028, },
+    {"ADAT 2", MOTU_CTRL_STD_CHANNEL, 0x002c, },
+    {"ADAT 3", MOTU_CTRL_STD_CHANNEL, 0x0030, },
+    {"ADAT 4", MOTU_CTRL_STD_CHANNEL, 0x0034, },
+    {"ADAT 5", MOTU_CTRL_STD_CHANNEL, 0x0038, },
+    {"ADAT 6", MOTU_CTRL_STD_CHANNEL, 0x003c, },
+    {"ADAT 7", MOTU_CTRL_STD_CHANNEL, 0x0040, },
+    {"ADAT 8", MOTU_CTRL_STD_CHANNEL, 0x0044, },
+};
+
 const MixerCtrl MixerCtrls_896HD[] = {
     {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
     {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
     {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+    {"Mainout_",  "MainOut ", "", MOTU_CTRL_MIX_FADER, 0x0c0c, },
+    {"Phones_",   "Phones ",  "", MOTU_CTRL_MIX_FADER, 0x0c10, },
 
     /* For phones source control, "register" is currently unused */
     {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
@@ -425,11 +471,43 @@ const MixerCtrl MixerCtrls_896HD[] = {
       MOTU_CTRL_METER_PROG_SRC},
 };
 
+const MatrixMixBus MixerBuses_828Mk2[] = {
+    {"Mix 1", 0x4000, },
+    {"Mix 2", 0x4100, },
+    {"Mix 3", 0x4200, },
+    {"Mix 4", 0x4300, },
+};
+
+const MatrixMixChannel MixerChannels_828Mk2[] = {
+    {"Analog 1", MOTU_CTRL_STD_CHANNEL, 0x0000, },
+    {"Analog 2", MOTU_CTRL_STD_CHANNEL, 0x0004, },
+    {"Analog 3", MOTU_CTRL_STD_CHANNEL, 0x0008, },
+    {"Analog 4", MOTU_CTRL_STD_CHANNEL, 0x000c, },
+    {"Analog 5", MOTU_CTRL_STD_CHANNEL, 0x0010, },
+    {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
+    {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
+    {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    {"Mic 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
+    {"Mic 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
+    {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, 0x0028, },
+    {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, 0x002c, },
+    {"ADAT 1", MOTU_CTRL_STD_CHANNEL, 0x0030, },
+    {"ADAT 2", MOTU_CTRL_STD_CHANNEL, 0x0034, },
+    {"ADAT 3", MOTU_CTRL_STD_CHANNEL, 0x0038, },
+    {"ADAT 4", MOTU_CTRL_STD_CHANNEL, 0x003c, },
+    {"ADAT 5", MOTU_CTRL_STD_CHANNEL, 0x0040, },
+    {"ADAT 6", MOTU_CTRL_STD_CHANNEL, 0x0044, },
+    {"ADAT 7", MOTU_CTRL_STD_CHANNEL, 0x0048, },
+    {"ADAT 8", MOTU_CTRL_STD_CHANNEL, 0x004c, },
+};
+
 const MixerCtrl MixerCtrls_828Mk2[] = {
     {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
     {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
     {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
     {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+    {"Mainout_",  "MainOut ", "", MOTU_CTRL_MIX_FADER, 0x0c0c, },
+    {"Phones_",   "Phones ",  "", MOTU_CTRL_MIX_FADER, 0x0c10, },
 
     /* For mic/line input controls, the "register" is the zero-based channel number */
     {"Control/Ana1_", "Analog 1 input ", "", MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS, 0},
@@ -456,10 +534,10 @@ const MotuMixer Mixer_Ultralite = MOTUMIXER(
     MixerCtrls_Ultralite, MixerBuses_Ultralite, MixerChannels_Ultralite);
 
 const MotuMixer Mixer_828Mk2 = MOTUMIXER(
-    MixerCtrls_828Mk2, MixerBuses_Traveler, MixerChannels_Traveler);
+    MixerCtrls_828Mk2, MixerBuses_828Mk2, MixerChannels_828Mk2);
 
 const MotuMixer Mixer_896HD = MOTUMIXER(
-    MixerCtrls_896HD, MixerBuses_Traveler, MixerChannels_Traveler);
+    MixerCtrls_896HD, MixerBuses_896HD, MixerChannels_896HD);
 
 /* The order of DevicesProperty entries must match the numeric order of the
  * MOTU model enumeration (EMotuModel).
@@ -644,11 +722,27 @@ MotuDevice::buildMixerAudioControls(void) {
             type &= ~MOTU_CTRL_MIX_DEST;
         }
 
+        if (type & MOTU_CTRL_INPUT_UL_GAIN) {
+            snprintf(name, 100, "%s%s", ctrl->name, "trimgain");
+            snprintf(label,100, "%s%s", ctrl->label,"trimgain");
+            result &= m_MixerContainer->addElement(
+                new InputGainPadInv(*this, ctrl->dev_register, MOTU_CTRL_MODE_UL_GAIN,
+                    name, label, ctrl->desc));
+            type &= ~MOTU_CTRL_INPUT_UL_GAIN;
+        }
+        if (type & MOTU_CTRL_INPUT_PHASE_INV) {
+            snprintf(name, 100, "%s%s", ctrl->name, "invert");
+            snprintf(label,100, "%s%s", ctrl->label,"invert");
+            result &= m_MixerContainer->addElement(
+                new InputGainPadInv(*this, ctrl->dev_register, MOTU_CTRL_MODE_PHASE_INV,
+                    name, label, ctrl->desc));
+            type &= ~MOTU_CTRL_INPUT_PHASE_INV;
+        }
         if (type & MOTU_CTRL_INPUT_TRIMGAIN) {
             snprintf(name, 100, "%s%s", ctrl->name, "trimgain");
             snprintf(label,100, "%s%s", ctrl->label,"trimgain");
             result &= m_MixerContainer->addElement(
-                new InputGainPad(*this, ctrl->dev_register, MOTU_CTRL_MODE_TRIMGAIN,
+                new InputGainPadInv(*this, ctrl->dev_register, MOTU_CTRL_MODE_TRIMGAIN,
                     name, label, ctrl->desc));
             type &= ~MOTU_CTRL_INPUT_TRIMGAIN;
         }
@@ -656,7 +750,7 @@ MotuDevice::buildMixerAudioControls(void) {
             snprintf(name, 100, "%s%s", ctrl->name, "pad");
             snprintf(label,100, "%s%s", ctrl->label,"pad");
             result &= m_MixerContainer->addElement(
-                new InputGainPad(*this, ctrl->dev_register, MOTU_CTRL_MODE_PAD,
+                new InputGainPadInv(*this, ctrl->dev_register, MOTU_CTRL_MODE_PAD,
                     name, label, ctrl->desc));
             type &= ~MOTU_CTRL_INPUT_PAD;
         }
@@ -755,14 +849,6 @@ MotuDevice::buildMixer() {
         new InfoElement(*this, MOTU_INFO_IS_STREAMING, "Info/IsStreaming", "Is device streaming", ""));
     result &= m_MixerContainer->addElement(
         new InfoElement(*this, MOTU_INFO_SAMPLE_RATE, "Info/SampleRate", "Device sample rate", ""));
-    result &= m_MixerContainer->addElement(
-        new InfoElement(*this, MOTU_INFO_HAS_MIC_INPUTS, "Info/HasMicInputs", "Device has mic inputs", ""));
-    result &= m_MixerContainer->addElement(
-        new InfoElement(*this, MOTU_INFO_HAS_AESEBU_INPUTS, "Info/HasAESEBUInputs", "Device has AES/EBU inputs", ""));
-    result &= m_MixerContainer->addElement(
-        new InfoElement(*this, MOTU_INFO_HAS_SPDIF_INPUTS, "Info/HasSPDIFInputs", "Device has SPDIF inputs", ""));
-    result &= m_MixerContainer->addElement(
-        new InfoElement(*this, MOTU_INFO_HAS_OPTICAL_SPDIF, "Info/HasOpticalSPDIF", "Device has Optical SPDIF", ""));
 
     if (!addElement(m_MixerContainer)) {
         debugWarning("Could not register mixer to device\n");
@@ -1314,7 +1400,22 @@ MotuDevice::prepare() {
         return false;
     }
 
+    // get the device specific and/or global SP configuration
+    Util::Configuration &config = getDeviceManager().getConfiguration();
+    // base value is the config.h value
+    float recv_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+    float xmit_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+
+    // we can override that globally
+    config.getValueForSetting("streaming.spm.recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForSetting("streaming.spm.xmit_sp_dll_bw", xmit_sp_dll_bw);
+
+    // or override in the device section
+    config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "xmit_sp_dll_bw", xmit_sp_dll_bw);
+
     m_receiveProcessor=new Streaming::MotuReceiveStreamProcessor(*this, event_size_in);
+    m_receiveProcessor->setVerboseLevel(getDebugLevel());
 
     // The first thing is to initialize the processor.  This creates the
     // data structures.
@@ -1322,7 +1423,13 @@ MotuDevice::prepare() {
         debugFatal("Could not initialize receive processor!\n");
         return false;
     }
-    m_receiveProcessor->setVerboseLevel(getDebugLevel());
+
+    if(!m_receiveProcessor->setDllBandwidth(recv_sp_dll_bw)) {
+        debugFatal("Could not set DLL bandwidth\n");
+        delete m_receiveProcessor;
+        m_receiveProcessor = NULL;
+        return false;
+    }
 
     // Now we add ports to the processor
     debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to receive processor\n");
@@ -1381,6 +1488,13 @@ MotuDevice::prepare() {
 
     if(!m_transmitProcessor->init()) {
         debugFatal("Could not initialize transmit processor!\n");
+        return false;
+    }
+
+    if(!m_transmitProcessor->setDllBandwidth(xmit_sp_dll_bw)) {
+        debugFatal("Could not set DLL bandwidth\n");
+        delete m_transmitProcessor;
+        m_transmitProcessor = NULL;
         return false;
     }
 

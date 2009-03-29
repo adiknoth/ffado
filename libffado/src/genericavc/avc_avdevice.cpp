@@ -529,6 +529,33 @@ AvDevice::prepare() {
         return false;
     }
 
+    // get the device specific and/or global SP configuration
+    Util::Configuration &config = getDeviceManager().getConfiguration();
+    // base value is the config.h value
+    float recv_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+    float xmit_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+
+    int xmit_max_cycles_early_transmit = AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY;
+    int xmit_transfer_delay = AMDTP_TRANSMIT_TRANSFER_DELAY;
+    int xmit_min_cycles_before_presentation = AMDTP_MIN_CYCLES_BEFORE_PRESENTATION;
+
+    // we can override that globally
+    config.getValueForSetting("streaming.common.recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForSetting("streaming.common.xmit_sp_dll_bw", xmit_sp_dll_bw);
+    config.getValueForSetting("streaming.amdtp.xmit_max_cycles_early_transmit", xmit_max_cycles_early_transmit);
+    config.getValueForSetting("streaming.amdtp.xmit_transfer_delay", xmit_transfer_delay);
+    config.getValueForSetting("streaming.amdtp.xmit_min_cycles_before_presentation", xmit_min_cycles_before_presentation);
+
+    // or override in the device section
+    uint32_t vendorid = getConfigRom().getNodeVendorId();
+    uint32_t modelid = getConfigRom().getModelId();
+    config.getValueForDeviceSetting(vendorid, modelid, "recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForDeviceSetting(vendorid, modelid, "xmit_sp_dll_bw", xmit_sp_dll_bw);
+    config.getValueForDeviceSetting(vendorid, modelid, "xmit_max_cycles_early_transmit", xmit_max_cycles_early_transmit);
+    config.getValueForDeviceSetting(vendorid, modelid, "xmit_transfer_delay", xmit_transfer_delay);
+    config.getValueForDeviceSetting(vendorid, modelid, "xmit_min_cycles_before_presentation", xmit_min_cycles_before_presentation);
+
+    // initialize the SP's
     debugOutput( DEBUG_LEVEL_VERBOSE, "Initializing receive processor...\n");
     // create & add streamprocessors
     Streaming::StreamProcessor *p;
@@ -553,6 +580,12 @@ AvDevice::prepare() {
         return false;
     }
 
+    if(!p->setDllBandwidth(recv_sp_dll_bw)) {
+        debugFatal("Could not set DLL bandwidth\n");
+        delete p;
+        return false;
+    }
+
     m_receiveProcessors.push_back(p);
 
     // do the transmit processor
@@ -568,8 +601,15 @@ AvDevice::prepare() {
                                 inputPlug->getNrOfChannels());
         #if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
             // FIXME: it seems that some BeBoB devices can't handle NO-DATA without payload
+            // FIXME: make this a config value too
             t->sendPayloadForNoDataPackets(true);
         #endif
+
+        // transmit control parameters
+        t->setMaxCyclesToTransmitEarly(xmit_max_cycles_early_transmit);
+        t->setTransferDelay(xmit_transfer_delay);
+        t->setMinCyclesBeforePresentation(xmit_min_cycles_before_presentation);
+
         p=t;
     }
 
@@ -586,10 +626,20 @@ AvDevice::prepare() {
             debugFatal("Could not add plug to processor!\n");
             return false;
         }
+        if(!p->setDllBandwidth(recv_sp_dll_bw)) {
+            debugFatal("Could not set DLL bandwidth\n");
+            delete p;
+            return false;
+        }
     } else {
         if (!addPlugToProcessor(*inputPlug, p,
             Streaming::Port::E_Playback)) {
             debugFatal("Could not add plug to processor!\n");
+            return false;
+        }
+        if(!p->setDllBandwidth(xmit_sp_dll_bw)) {
+            debugFatal("Could not set DLL bandwidth\n");
+            delete p;
             return false;
         }
     }

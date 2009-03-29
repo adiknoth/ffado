@@ -31,25 +31,8 @@
 #include "libutil/Watchdog.h"
 
 #define DLL_PI        (3.141592653589793238)
+#define DLL_2PI       (2 * DLL_PI)
 #define DLL_SQRT2     (1.414213562373095049)
-
-// the high-bandwidth coefficients are used
-// to speed up inital tracking
-#define DLL_BANDWIDTH_HIGH (0.1)
-#define DLL_OMEGA_HIGH     (2.0*DLL_PI*DLL_BANDWIDTH_HIGH)
-#define DLL_COEFF_B_HIGH   (DLL_SQRT2 * DLL_OMEGA_HIGH)
-#define DLL_COEFF_C_HIGH   (DLL_OMEGA_HIGH * DLL_OMEGA_HIGH)
-
-// the low-bandwidth coefficients are used once we have a
-// good estimate of the internal parameters
-#define DLL_BANDWIDTH (0.1)
-#define DLL_OMEGA     (2.0*DLL_PI*DLL_BANDWIDTH)
-#define DLL_COEFF_B   (DLL_SQRT2 * DLL_OMEGA)
-#define DLL_COEFF_C   (DLL_OMEGA * DLL_OMEGA)
-
-// is 1 sec
-#define UPDATES_WITH_HIGH_BANDWIDTH \
-         (1000000 / IEEE1394SERVICE_CYCLETIMER_DLL_UPDATE_INTERVAL_USEC)
 
 IMPL_DEBUG_MODULE( CycleTimerHelper, CycleTimerHelper, DEBUG_LEVEL_NORMAL );
 
@@ -67,7 +50,6 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_sleep_until ( 0 )
     , m_cycle_timer_prev ( 0 )
     , m_cycle_timer_ticks_prev ( 0 )
-    , m_high_bw_updates ( UPDATES_WITH_HIGH_BANDWIDTH )
     , m_current_shadow_idx ( 0 )
     , m_Thread ( NULL )
     , m_realtime ( false )
@@ -77,6 +59,11 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_unhandled_busreset ( false )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Create %p...\n", this);
+
+    double bw_rel = IEEE1394SERVICE_CYCLETIMER_DLL_BANDWIDTH_HZ*((double)update_period_us)/1e6;
+    m_dll_coeff_b = bw_rel * (DLL_SQRT2 * DLL_2PI);
+    m_dll_coeff_c = bw_rel * bw_rel * DLL_2PI * DLL_2PI;
+
 }
 
 CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_period_us, bool rt, int prio)
@@ -93,7 +80,6 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_sleep_until ( 0 )
     , m_cycle_timer_prev ( 0 )
     , m_cycle_timer_ticks_prev ( 0 )
-    , m_high_bw_updates ( UPDATES_WITH_HIGH_BANDWIDTH )
     , m_current_shadow_idx ( 0 )
     , m_Thread ( NULL )
     , m_realtime ( rt )
@@ -103,6 +89,10 @@ CycleTimerHelper::CycleTimerHelper(Ieee1394Service &parent, unsigned int update_
     , m_unhandled_busreset ( false )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Create %p...\n", this);
+
+    double bw_rel = IEEE1394SERVICE_CYCLETIMER_DLL_BANDWIDTH_HZ*((double)update_period_us)/1e6;
+    m_dll_coeff_b = bw_rel * (DLL_SQRT2 * DLL_2PI);
+    m_dll_coeff_c = bw_rel * bw_rel * DLL_2PI * DLL_2PI;
 }
 
 CycleTimerHelper::~CycleTimerHelper()
@@ -188,7 +178,6 @@ CycleTimerHelper::initValues()
 #if IEEE1394SERVICE_USE_CYCLETIMER_DLL
     debugOutput( DEBUG_LEVEL_VERBOSE, "requesting DLL re-init...\n" );
     Util::SystemTimeSource::SleepUsecRelative(1000); // some time to settle
-    m_high_bw_updates = UPDATES_WITH_HIGH_BANDWIDTH;
     if(!initDLL()) {
         debugError("(%p) Could not init DLL\n", this);
         return false;
@@ -282,6 +271,19 @@ CycleTimerHelper::initDLL() {
     uint64_t local_time;
     uint64_t cycle_timer_ticks;
 
+    double bw_rel = m_dll_coeff_b / (DLL_SQRT2 * DLL_2PI);
+    double bw_abs = bw_rel / (m_usecs_per_update / 1e6);
+    if (bw_rel > 0.5) {
+        double bw_max = 0.5 / (m_usecs_per_update / 1e6);
+        debugWarning("Specified DLL bandwidth too high (%f > %f), reducing to max."
+                     " Increase the DLL update rate to increase the max DLL bandwidth\n", bw_abs, bw_max);
+
+        bw_rel = 0.49;
+        bw_abs = bw_rel / (m_usecs_per_update / 1e6);
+        m_dll_coeff_b = bw_rel * (DLL_SQRT2 * DLL_2PI);
+        m_dll_coeff_c = bw_rel * bw_rel * DLL_2PI * DLL_2PI;
+    }
+
     if(!readCycleTimerWithRetry(&cycle_timer, &local_time, 10)) {
         debugError("Could not read cycle timer register\n");
         return false;
@@ -304,6 +306,8 @@ CycleTimerHelper::initDLL() {
     m_current_time_ticks = CYCLE_TIMER_TO_TICKS( cycle_timer );
     m_next_time_ticks = addTicks( (uint64_t)m_current_time_ticks, (uint64_t)m_dll_e2);
     debugOutput(DEBUG_LEVEL_VERBOSE, " (%p) First run\n", this);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  DLL bandwidth: %f Hz (rel: %f)\n", 
+                bw_abs, bw_rel);
     debugOutput(DEBUG_LEVEL_VERBOSE,
                 "  usecs/update: %lu, ticks/update: %lu, m_dll_e2: %f\n",
                 m_usecs_per_update, m_ticks_per_update, m_dll_e2);
@@ -382,13 +386,13 @@ CycleTimerHelper::Execute()
         err_ticks = diffTicks(cycle_timer_ticks, expected_ticks);
 
         // check for unrealistic CTR reads (NEC controller does that sometimes)
-        not_good = (-err_ticks > 1*TICKS_PER_HALFCYCLE || err_ticks > 1*TICKS_PER_HALFCYCLE);
+        not_good = (-err_ticks > 1*TICKS_PER_CYCLE || err_ticks > 1*TICKS_PER_CYCLE);
         if(not_good) {
             debugOutput(DEBUG_LEVEL_VERBOSE, 
                         "(%p) have to retry CTR read, diff unrealistic: diff: %lld, max: +/- %ld (try: %d) %lld\n", 
                         this, err_ticks, 1*TICKS_PER_CYCLE, ntries, expected_ticks);
             // sleep half a cycle to make sure the hardware moved on
-            Util::SystemTimeSource::SleepUsecRelative(USECS_PER_CYCLE/2);
+            Util::SystemTimeSource::SleepUsecRelative(USECS_PER_CYCLE);
         }
 
     } while(not_good && --ntries && !m_first_run && !m_unhandled_busreset);
@@ -454,7 +458,7 @@ CycleTimerHelper::Execute()
         // the corrected difference between predicted and actual ctr
         // i.e. DLL error signal
         int64_t diff_ticks_corr;
-        if (ticks_late > 0) {
+        if (ticks_late >= 0) {
             diff_ticks_corr = diff_ticks - ticks_late;
             debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
                                "diff_ticks_corr=%lld, diff_ticks = %lld, ticks_late = %lld\n",
@@ -476,19 +480,6 @@ CycleTimerHelper::Execute()
         m_current_time_ticks = m_next_time_ticks;
 
         // decide what coefficients to use
-        double coeff_b, coeff_c;
-        if (m_high_bw_updates > 0) {
-            coeff_b = DLL_COEFF_B_HIGH;
-            coeff_c = DLL_COEFF_C_HIGH;
-            m_high_bw_updates--;
-            if (m_high_bw_updates == 0) {
-                debugOutput(DEBUG_LEVEL_VERBOSE,
-                            "Switching to low-bandwidth coefficients\n");
-            }
-        } else {
-            coeff_b = DLL_COEFF_B;
-            coeff_c = DLL_COEFF_C;
-        }
 
         // it should be ok to not do this in tick space 
         // since diff_ticks_corr should not be near wrapping
@@ -499,7 +490,7 @@ CycleTimerHelper::Execute()
         // and coeff_b < 1, hence tmp is not near wrapping
 
         double diff_ticks_corr_d =  (double)diff_ticks_corr;
-        double step_ticks = (coeff_b * diff_ticks_corr_d);
+        double step_ticks = (m_dll_coeff_b * diff_ticks_corr_d);
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                            "diff_ticks_corr=%f, step_ticks=%f\n",
                            diff_ticks_corr_d, step_ticks);
@@ -527,7 +518,7 @@ CycleTimerHelper::Execute()
         m_next_time_ticks = (double)(addTicks((uint64_t)m_current_time_ticks, (uint64_t)step_ticks));
 
         // update the DLL state
-        m_dll_e2 += coeff_c * diff_ticks_corr_d;
+        m_dll_e2 += m_dll_coeff_c * diff_ticks_corr_d;
 
         // update the y-axis values
         m_current_time_usecs = m_next_time_usecs;

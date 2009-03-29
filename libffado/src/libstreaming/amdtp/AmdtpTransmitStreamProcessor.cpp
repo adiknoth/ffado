@@ -54,6 +54,9 @@ AmdtpTransmitStreamProcessor::AmdtpTransmitStreamProcessor(FFADODevice &parent, 
 #if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
         , m_send_nodata_payload ( AMDTP_SEND_PAYLOAD_IN_NODATA_XMIT_BY_DEFAULT )
 #endif
+        , m_max_cycles_to_transmit_early ( AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY )
+        , m_transmit_transfer_delay ( AMDTP_TRANSMIT_TRANSFER_DELAY )
+        , m_min_cycles_before_presentation ( AMDTP_MIN_CYCLES_BEFORE_PRESENTATION )
         , m_nb_audio_ports( 0 )
         , m_nb_midi_ports( 0 )
 {}
@@ -103,7 +106,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     presentation_time = ( uint64_t ) ts_head_tmp;
 
     // now we calculate the time when we have to transmit the sample block
-    transmit_at_time = substractTicks( presentation_time, AMDTP_TRANSMIT_TRANSFER_DELAY );
+    transmit_at_time = substractTicks( presentation_time, m_transmit_transfer_delay );
 
     // calculate the cycle this block should be presented in
     // (this is just a virtual calculation since at that time it should
@@ -135,7 +138,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
 
         // we can still postpone the queueing of the packets
         // if we are far enough ahead of the presentation time
-        if ( cycles_until_presentation <= AMDTP_MIN_CYCLES_BEFORE_PRESENTATION )
+        if ( cycles_until_presentation <= m_min_cycles_before_presentation )
         {
             debugOutput( DEBUG_LEVEL_NORMAL,
                          "Insufficient frames (P): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
@@ -206,7 +209,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
             // time, it could be harmless.
             // NOTE: dangerous since the device has no way of reporting that it didn't get
             //       this packet on time.
-            if(cycles_until_presentation >= AMDTP_MIN_CYCLES_BEFORE_PRESENTATION)
+            if(cycles_until_presentation >= m_min_cycles_before_presentation)
             {
                 // we are not that late and can still try to transmit the packet
                 m_dbc += fillDataPacketHeader(packet, length, presentation_time);
@@ -218,7 +221,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
                 return eCRV_XRun;
             }
         }
-        else if(cycles_until_transmit <= AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY)
+        else if(cycles_until_transmit <= m_max_cycles_to_transmit_early)
         {
             // it's time send the packet
             m_dbc += fillDataPacketHeader(packet, length, presentation_time);
@@ -242,7 +245,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
                                transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
                                presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time));
 #ifdef DEBUG
-            if ( cycles_until_transmit > AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY + 1 )
+            if ( cycles_until_transmit > m_max_cycles_to_transmit_early + 1 )
             {
                 debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                                    "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
@@ -429,6 +432,14 @@ bool AmdtpTransmitStreamProcessor::prepareChild()
     debugOutput ( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this );
     m_syt_interval = getSytInterval();
     m_fdf = getFDF();
+
+    debugOutput ( DEBUG_LEVEL_VERBOSE, " SYT interval / FDF             : %d / %d\n", m_syt_interval, m_fdf );
+#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+    debugOutput ( DEBUG_LEVEL_VERBOSE, " Send payload in No-Data packets: %s \n", m_send_nodata_payload?"Yes":"No" );
+#endif
+    debugOutput ( DEBUG_LEVEL_VERBOSE, " Max early transmit cycles      : %d\n", m_max_cycles_to_transmit_early );
+    debugOutput ( DEBUG_LEVEL_VERBOSE, " Transfer delay                 : %d\n", m_transmit_transfer_delay );
+    debugOutput ( DEBUG_LEVEL_VERBOSE, " Min cycles before presentation : %d\n", m_min_cycles_before_presentation );
 
     iec61883_cip_init (
         &m_cip_status,

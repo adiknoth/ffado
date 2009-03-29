@@ -84,6 +84,9 @@
 #define MOTU_REG_INPUT_BOOST       0x0c14
 #define MOTU_REG_INPUT_GAIN_PAD_0  0x0c1c
 #define MOTU_REG_CLKSRC_NAME0      0x0c60
+#define MOTU_REG_INPUT_GAIN_PHINV0 0x0c70
+#define MOTU_REG_INPUT_GAIN_PHINV1 0x0c74
+#define MOTU_REG_INPUT_GAIN_PHINV2 0x0c78
 
 /* Port Active Flags (ports declaration) */
 #define MOTU_PA_RATE_1x          0x0001    /* 44k1 or 48k */

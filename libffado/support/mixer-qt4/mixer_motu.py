@@ -21,8 +21,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from PyQt4.QtCore import SIGNAL, SLOT, QObject
-from PyQt4.QtGui import QWidget
+from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
+from PyQt4.QtGui import QWidget, QApplication
 from mixer_motuui import *
 
 import logging
@@ -49,92 +49,94 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
         # For matrix mixer controls (channel faders, pans, solos, mutes) the
         # first index (the row) is the zero-based mix number while the
         # second index (the column) is the zero-based channel number.  The
-        # order of the channel enumeration must agree with that used when
-        # creating the dbus controls within motu_avdevice.cpp.
+        # third index gives the control of the stereo pair of the control
+        # used as the key.  The order of the channel enumeration must agree
+        # with that used when creating the dbus controls within
+        # motu_avdevice.cpp.
         self.ChannelFaders={
-            self.mix1ana1_fader: ['/Mixer/fader', 0, 0],
-            self.mix1ana2_fader: ['/Mixer/fader', 0, 1],
-            self.mix1ana3_fader: ['/Mixer/fader', 0, 2],
-            self.mix1ana4_fader: ['/Mixer/fader', 0, 3],
-            self.mix1ana5_fader: ['/Mixer/fader', 0, 4],
-            self.mix1ana6_fader: ['/Mixer/fader', 0, 5],
-            self.mix1ana7_fader: ['/Mixer/fader', 0, 6],
-            self.mix1ana8_fader: ['/Mixer/fader', 0, 7],
-            self.mix1aes1_fader: ['/Mixer/fader', 0, 8],
-            self.mix1aes2_fader: ['/Mixer/fader', 0, 9],
-            self.mix1spdif1_fader: ['/Mixer/fader', 0, 10],
-            self.mix1spdif2_fader: ['/Mixer/fader', 0, 11],
-            self.mix1adat1_fader: ['/Mixer/fader', 0, 12],
-            self.mix1adat2_fader: ['/Mixer/fader', 0, 13],
-            self.mix1adat3_fader: ['/Mixer/fader', 0, 14],
-            self.mix1adat4_fader: ['/Mixer/fader', 0, 15],
-            self.mix1adat5_fader: ['/Mixer/fader', 0, 16],
-            self.mix1adat6_fader: ['/Mixer/fader', 0, 17],
-            self.mix1adat7_fader: ['/Mixer/fader', 0, 18],
-            self.mix1adat8_fader: ['/Mixer/fader', 0, 19],
+            self.mix1ana1_fader: ['/Mixer/fader', 0, 0, self.mix1ana2_fader],
+            self.mix1ana2_fader: ['/Mixer/fader', 0, 1, self.mix1ana1_fader],
+            self.mix1ana3_fader: ['/Mixer/fader', 0, 2, self.mix1ana4_fader],
+            self.mix1ana4_fader: ['/Mixer/fader', 0, 3, self.mix1ana3_fader],
+            self.mix1ana5_fader: ['/Mixer/fader', 0, 4, self.mix1ana6_fader],
+            self.mix1ana6_fader: ['/Mixer/fader', 0, 5, self.mix1ana5_fader],
+            self.mix1ana7_fader: ['/Mixer/fader', 0, 6, self.mix1ana8_fader],
+            self.mix1ana8_fader: ['/Mixer/fader', 0, 7, self.mix1ana7_fader],
+            self.mix1aes1_fader: ['/Mixer/fader', 0, 8, self.mix1aes2_fader],
+            self.mix1aes2_fader: ['/Mixer/fader', 0, 9, self.mix1aes1_fader],
+            self.mix1spdif1_fader: ['/Mixer/fader', 0, 10, self.mix1spdif2_fader],
+            self.mix1spdif2_fader: ['/Mixer/fader', 0, 11, self.mix1spdif1_fader],
+            self.mix1adat1_fader: ['/Mixer/fader', 0, 12, self.mix1adat2_fader],
+            self.mix1adat2_fader: ['/Mixer/fader', 0, 13, self.mix1adat1_fader],
+            self.mix1adat3_fader: ['/Mixer/fader', 0, 14, self.mix1adat4_fader],
+            self.mix1adat4_fader: ['/Mixer/fader', 0, 15, self.mix1adat3_fader],
+            self.mix1adat5_fader: ['/Mixer/fader', 0, 16, self.mix1adat6_fader],
+            self.mix1adat6_fader: ['/Mixer/fader', 0, 17, self.mix1adat5_fader],
+            self.mix1adat7_fader: ['/Mixer/fader', 0, 18, self.mix1adat8_fader],
+            self.mix1adat8_fader: ['/Mixer/fader', 0, 19, self.mix1adat7_fader],
 
-            self.mix2ana1_fader: ['/Mixer/fader', 1, 0],
-            self.mix2ana2_fader: ['/Mixer/fader', 1, 1],
-            self.mix2ana3_fader: ['/Mixer/fader', 1, 2],
-            self.mix2ana4_fader: ['/Mixer/fader', 1, 3],
-            self.mix2ana5_fader: ['/Mixer/fader', 1, 4],
-            self.mix2ana6_fader: ['/Mixer/fader', 1, 5],
-            self.mix2ana7_fader: ['/Mixer/fader', 1, 6],
-            self.mix2ana8_fader: ['/Mixer/fader', 1, 7],
-            self.mix2aes1_fader: ['/Mixer/fader', 1, 8],
-            self.mix2aes2_fader: ['/Mixer/fader', 1, 9],
-            self.mix2spdif1_fader: ['/Mixer/fader', 1, 10],
-            self.mix2spdif2_fader: ['/Mixer/fader', 1, 11],
-            self.mix2adat1_fader: ['/Mixer/fader', 1, 12],
-            self.mix2adat2_fader: ['/Mixer/fader', 1, 13],
-            self.mix2adat3_fader: ['/Mixer/fader', 1, 14],
-            self.mix2adat4_fader: ['/Mixer/fader', 1, 15],
-            self.mix2adat5_fader: ['/Mixer/fader', 1, 16],
-            self.mix2adat6_fader: ['/Mixer/fader', 1, 17],
-            self.mix2adat7_fader: ['/Mixer/fader', 1, 18],
-            self.mix2adat8_fader: ['/Mixer/fader', 1, 19],
+            self.mix2ana1_fader: ['/Mixer/fader', 1, 0, self.mix2ana2_fader],
+            self.mix2ana2_fader: ['/Mixer/fader', 1, 1, self.mix2ana1_fader],
+            self.mix2ana3_fader: ['/Mixer/fader', 1, 2, self.mix2ana4_fader],
+            self.mix2ana4_fader: ['/Mixer/fader', 1, 3, self.mix2ana3_fader],
+            self.mix2ana5_fader: ['/Mixer/fader', 1, 4, self.mix2ana6_fader],
+            self.mix2ana6_fader: ['/Mixer/fader', 1, 5, self.mix2ana5_fader],
+            self.mix2ana7_fader: ['/Mixer/fader', 1, 6, self.mix2ana8_fader],
+            self.mix2ana8_fader: ['/Mixer/fader', 1, 7, self.mix2ana7_fader],
+            self.mix2aes1_fader: ['/Mixer/fader', 1, 8, self.mix2aes2_fader],
+            self.mix2aes2_fader: ['/Mixer/fader', 1, 9, self.mix2aes1_fader],
+            self.mix2spdif1_fader: ['/Mixer/fader', 1, 10, self.mix2spdif2_fader],
+            self.mix2spdif2_fader: ['/Mixer/fader', 1, 11, self.mix2spdif1_fader],
+            self.mix2adat1_fader: ['/Mixer/fader', 1, 12, self.mix2adat2_fader],
+            self.mix2adat2_fader: ['/Mixer/fader', 1, 13, self.mix2adat1_fader],
+            self.mix2adat3_fader: ['/Mixer/fader', 1, 14, self.mix2adat4_fader],
+            self.mix2adat4_fader: ['/Mixer/fader', 1, 15, self.mix2adat3_fader],
+            self.mix2adat5_fader: ['/Mixer/fader', 1, 16, self.mix2adat6_fader],
+            self.mix2adat6_fader: ['/Mixer/fader', 1, 17, self.mix2adat5_fader],
+            self.mix2adat7_fader: ['/Mixer/fader', 1, 18, self.mix2adat8_fader],
+            self.mix2adat8_fader: ['/Mixer/fader', 1, 19, self.mix2adat7_fader],
 
-            self.mix3ana1_fader: ['/Mixer/fader', 2, 0],
-            self.mix3ana2_fader: ['/Mixer/fader', 2, 1],
-            self.mix3ana3_fader: ['/Mixer/fader', 2, 2],
-            self.mix3ana4_fader: ['/Mixer/fader', 2, 3],
-            self.mix3ana5_fader: ['/Mixer/fader', 2, 4],
-            self.mix3ana6_fader: ['/Mixer/fader', 2, 5],
-            self.mix3ana7_fader: ['/Mixer/fader', 2, 6],
-            self.mix3ana8_fader: ['/Mixer/fader', 2, 7],
-            self.mix3aes1_fader: ['/Mixer/fader', 2, 8],
-            self.mix3aes2_fader: ['/Mixer/fader', 2, 9],
-            self.mix3spdif1_fader: ['/Mixer/fader', 2, 10],
-            self.mix3spdif2_fader: ['/Mixer/fader', 2, 11],
-            self.mix3adat1_fader: ['/Mixer/fader', 2, 12],
-            self.mix3adat2_fader: ['/Mixer/fader', 2, 13],
-            self.mix3adat3_fader: ['/Mixer/fader', 2, 14],
-            self.mix3adat4_fader: ['/Mixer/fader', 2, 15],
-            self.mix3adat5_fader: ['/Mixer/fader', 2, 16],
-            self.mix3adat6_fader: ['/Mixer/fader', 2, 17],
-            self.mix3adat7_fader: ['/Mixer/fader', 2, 18],
-            self.mix3adat8_fader: ['/Mixer/fader', 2, 19],
+            self.mix3ana1_fader: ['/Mixer/fader', 2, 0, self.mix3ana2_fader],
+            self.mix3ana2_fader: ['/Mixer/fader', 2, 1, self.mix3ana1_fader],
+            self.mix3ana3_fader: ['/Mixer/fader', 2, 2, self.mix3ana4_fader],
+            self.mix3ana4_fader: ['/Mixer/fader', 2, 3, self.mix3ana3_fader],
+            self.mix3ana5_fader: ['/Mixer/fader', 2, 4, self.mix3ana6_fader],
+            self.mix3ana6_fader: ['/Mixer/fader', 2, 5, self.mix3ana5_fader],
+            self.mix3ana7_fader: ['/Mixer/fader', 2, 6, self.mix3ana8_fader],
+            self.mix3ana8_fader: ['/Mixer/fader', 2, 7, self.mix3ana7_fader],
+            self.mix3aes1_fader: ['/Mixer/fader', 2, 8, self.mix3aes2_fader],
+            self.mix3aes2_fader: ['/Mixer/fader', 2, 9, self.mix3aes1_fader],
+            self.mix3spdif1_fader: ['/Mixer/fader', 2, 10, self.mix3spdif2_fader],
+            self.mix3spdif2_fader: ['/Mixer/fader', 2, 11, self.mix3spdif1_fader],
+            self.mix3adat1_fader: ['/Mixer/fader', 2, 12, self.mix3adat2_fader],
+            self.mix3adat2_fader: ['/Mixer/fader', 2, 13, self.mix3adat1_fader],
+            self.mix3adat3_fader: ['/Mixer/fader', 2, 14, self.mix3adat4_fader],
+            self.mix3adat4_fader: ['/Mixer/fader', 2, 15, self.mix3adat3_fader],
+            self.mix3adat5_fader: ['/Mixer/fader', 2, 16, self.mix3adat6_fader],
+            self.mix3adat6_fader: ['/Mixer/fader', 2, 17, self.mix3adat5_fader],
+            self.mix3adat7_fader: ['/Mixer/fader', 2, 18, self.mix3adat8_fader],
+            self.mix3adat8_fader: ['/Mixer/fader', 2, 19, self.mix3adat7_fader],
 
-            self.mix4ana1_fader: ['/Mixer/fader', 3, 0],
-            self.mix4ana2_fader: ['/Mixer/fader', 3, 1],
-            self.mix4ana3_fader: ['/Mixer/fader', 3, 2],
-            self.mix4ana4_fader: ['/Mixer/fader', 3, 3],
-            self.mix4ana5_fader: ['/Mixer/fader', 3, 4],
-            self.mix4ana6_fader: ['/Mixer/fader', 3, 5],
-            self.mix4ana7_fader: ['/Mixer/fader', 3, 6],
-            self.mix4ana8_fader: ['/Mixer/fader', 3, 7],
-            self.mix4aes1_fader: ['/Mixer/fader', 3, 8],
-            self.mix4aes2_fader: ['/Mixer/fader', 3, 9],
-            self.mix4spdif1_fader: ['/Mixer/fader', 3, 10],
-            self.mix4spdif2_fader: ['/Mixer/fader', 3, 11],
-            self.mix4adat1_fader: ['/Mixer/fader', 3, 12],
-            self.mix4adat2_fader: ['/Mixer/fader', 3, 13],
-            self.mix4adat3_fader: ['/Mixer/fader', 3, 14],
-            self.mix4adat4_fader: ['/Mixer/fader', 3, 15],
-            self.mix4adat5_fader: ['/Mixer/fader', 3, 16],
-            self.mix4adat6_fader: ['/Mixer/fader', 3, 17],
-            self.mix4adat7_fader: ['/Mixer/fader', 3, 18],
-            self.mix4adat8_fader: ['/Mixer/fader', 3, 19],
+            self.mix4ana1_fader: ['/Mixer/fader', 3, 0, self.mix4ana2_fader],
+            self.mix4ana2_fader: ['/Mixer/fader', 3, 1, self.mix4ana1_fader],
+            self.mix4ana3_fader: ['/Mixer/fader', 3, 2, self.mix4ana4_fader],
+            self.mix4ana4_fader: ['/Mixer/fader', 3, 3, self.mix4ana3_fader],
+            self.mix4ana5_fader: ['/Mixer/fader', 3, 4, self.mix4ana6_fader],
+            self.mix4ana6_fader: ['/Mixer/fader', 3, 5, self.mix4ana5_fader],
+            self.mix4ana7_fader: ['/Mixer/fader', 3, 6, self.mix4ana8_fader],
+            self.mix4ana8_fader: ['/Mixer/fader', 3, 7, self.mix4ana7_fader],
+            self.mix4aes1_fader: ['/Mixer/fader', 3, 8, self.mix4aes2_fader],
+            self.mix4aes2_fader: ['/Mixer/fader', 3, 9, self.mix4aes1_fader],
+            self.mix4spdif1_fader: ['/Mixer/fader', 3, 10, self.mix4spdif2_fader],
+            self.mix4spdif2_fader: ['/Mixer/fader', 3, 11, self.mix4spdif1_fader],
+            self.mix4adat1_fader: ['/Mixer/fader', 3, 12, self.mix4adat2_fader],
+            self.mix4adat2_fader: ['/Mixer/fader', 3, 13, self.mix4adat1_fader],
+            self.mix4adat3_fader: ['/Mixer/fader', 3, 14, self.mix4adat4_fader],
+            self.mix4adat4_fader: ['/Mixer/fader', 3, 15, self.mix4adat3_fader],
+            self.mix4adat5_fader: ['/Mixer/fader', 3, 16, self.mix4adat6_fader],
+            self.mix4adat6_fader: ['/Mixer/fader', 3, 17, self.mix4adat5_fader],
+            self.mix4adat7_fader: ['/Mixer/fader', 3, 18, self.mix4adat8_fader],
+            self.mix4adat8_fader: ['/Mixer/fader', 3, 19, self.mix4adat7_fader],
         }
 
         self.Faders={
@@ -142,6 +144,8 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.mix2_fader: ['/Mixer/Mix2/Mix_fader'],
             self.mix3_fader: ['/Mixer/Mix3/Mix_fader'],
             self.mix4_fader: ['/Mixer/Mix4/Mix_fader'],
+            self.mainout_fader: ['/Mixer/Mainout_fader'],
+            self.phones_fader:  ['/Mixer/Phones_fader'],
         }
 
         self.ChannelControls={
@@ -235,6 +239,12 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.ana2_trimgain:  ['/Mixer/Control/Ana2_trimgain'],
             self.ana3_trimgain:  ['/Mixer/Control/Ana3_trimgain'],
             self.ana4_trimgain:  ['/Mixer/Control/Ana4_trimgain'],
+            self.ana5_trimgain:  ['/Mixer/Control/Ana5_trimgain'],
+            self.ana6_trimgain:  ['/Mixer/Control/Ana6_trimgain'],
+            self.ana7_trimgain:  ['/Mixer/Control/Ana7_trimgain'],
+            self.ana8_trimgain:  ['/Mixer/Control/Ana8_trimgain'],
+            self.spdif1_trimgain:  ['/Mixer/Control/Spdif1_trimgain'],
+            self.spdif2_trimgain:  ['/Mixer/Control/Spdif2_trimgain'],
         }
 
         self.ChannelBinarySwitches={
@@ -413,79 +423,39 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.ana2_pad:       ['/Mixer/Control/Ana2_pad'],
             self.ana3_pad:       ['/Mixer/Control/Ana3_pad'],
             self.ana4_pad:       ['/Mixer/Control/Ana4_pad'],
-            self.ana5_level:     ['/Mixer/Control/Ana5_level'],
-            self.ana6_level:     ['/Mixer/Control/Ana6_level'],
-            self.ana7_level:     ['/Mixer/Control/Ana7_level'],
-            self.ana8_level:     ['/Mixer/Control/Ana8_level'],
-            self.ana5_boost:     ['/Mixer/Control/Ana5_boost'],
-            self.ana6_boost:     ['/Mixer/Control/Ana6_boost'],
-            self.ana7_boost:     ['/Mixer/Control/Ana7_boost'],
-            self.ana8_boost:     ['/Mixer/Control/Ana8_boost'],
-
-            # Some interfaces have level/boost on analog 1-4 in place of trimgain/pad
+            self.ana5_pad:       ['/Mixer/Control/Ana5_pad'],
+            self.ana6_pad:       ['/Mixer/Control/Ana6_pad'],
+            self.ana7_pad:       ['/Mixer/Control/Ana7_pad'],
+            self.ana8_pad:       ['/Mixer/Control/Ana8_pad'],
+            self.ana1_invert:    ['/Mixer/Control/Ana1_invert'],
+            self.ana2_invert:    ['/Mixer/Control/Ana2_invert'],
+            self.ana3_invert:    ['/Mixer/Control/Ana3_invert'],
+            self.ana4_invert:    ['/Mixer/Control/Ana4_invert'],
+            self.ana5_invert:    ['/Mixer/Control/Ana5_invert'],
+            self.ana6_invert:    ['/Mixer/Control/Ana6_invert'],
+            self.ana7_invert:    ['/Mixer/Control/Ana7_invert'],
+            self.ana8_invert:    ['/Mixer/Control/Ana8_invert'],
+            self.spdif1_invert:  ['/Mixer/Control/Spdif1_invert'],
+            self.spdif2_invert:  ['/Mixer/Control/Spdif2_invert'],
             self.ana1_level:     ['/Mixer/Control/Ana1_level'],
             self.ana2_level:     ['/Mixer/Control/Ana2_level'],
             self.ana3_level:     ['/Mixer/Control/Ana3_level'],
             self.ana4_level:     ['/Mixer/Control/Ana4_level'],
+            self.ana5_level:     ['/Mixer/Control/Ana5_level'],
+            self.ana6_level:     ['/Mixer/Control/Ana6_level'],
+            self.ana7_level:     ['/Mixer/Control/Ana7_level'],
+            self.ana8_level:     ['/Mixer/Control/Ana8_level'],
             self.ana1_boost:     ['/Mixer/Control/Ana1_boost'],
             self.ana2_boost:     ['/Mixer/Control/Ana2_boost'],
             self.ana3_boost:     ['/Mixer/Control/Ana3_boost'],
             self.ana4_boost:     ['/Mixer/Control/Ana4_boost'],
-
+            self.ana5_boost:     ['/Mixer/Control/Ana5_boost'],
+            self.ana6_boost:     ['/Mixer/Control/Ana6_boost'],
+            self.ana7_boost:     ['/Mixer/Control/Ana7_boost'],
+            self.ana8_boost:     ['/Mixer/Control/Ana8_boost'],
         }
 
-        # Ultimately these may be rolled into the BinarySwitches controls,
-        # but since they aren't implemented and therefore need to be
-        # disabled it's easier to keep them separate for the moment.  The
-        # dbus path for these is yet to be finalised too - for example we
-        # may end up using a matrix mixer.
-        self.PairSwitches={
-#            self.mix1ana1_2_pair:   ['Mixer/Mix1/Ana1_2_pair'],
-#            self.mix1ana3_4_pair:   ['Mixer/Mix1/Ana3_4_pair'],
-#            self.mix1ana5_6_pair:   ['Mixer/Mix1/Ana5_6_pair'],
-#            self.mix1ana7_8_pair:   ['Mixer/Mix1/Ana7_8_pair'],
-#            self.mix1aes1_2_pair:   ['Mixer/Mix1/Aes1_2_pair'],
-#            self.mix1adat1_2_pair:  ['Mixer/Mix1/Adat1_2_pair'],
-#            self.mix1adat3_4_pair:  ['Mixer/Mix1/Adat3_4_pair'],
-#            self.mix1adat5_6_pair:  ['Mixer/Mix1/Adat5_6_pair'],
-#            self.mix1adat7_8_pair:  ['Mixer/Mix1/Adat7_8_pair'],
-#            self.mix1spdif1_2_pair: ['Mixer/Mix1/Spdif1_2_pair'],
-
-#            self.mix2ana1_2_pair:   ['Mixer/Mix2/Ana1_2_pair'],
-#            self.mix2ana3_4_pair:   ['Mixer/Mix2/Ana3_4_pair'],
-#            self.mix2ana5_6_pair:   ['Mixer/Mix2/Ana5_6_pair'],
-#            self.mix2ana7_8_pair:   ['Mixer/Mix2/Ana7_8_pair'],
-#            self.mix2aes1_2_pair:   ['Mixer/Mix2/Aes1_2_pair'],
-#            self.mix2adat1_2_pair:  ['Mixer/Mix2/Adat1_2_pair'],
-#            self.mix2adat3_4_pair:  ['Mixer/Mix2/Adat3_4_pair'],
-#            self.mix2adat5_6_pair:  ['Mixer/Mix2/Adat5_6_pair'],
-#            self.mix2adat7_8_pair:  ['Mixer/Mix2/Adat7_8_pair'],
-#            self.mix2spdif1_2_pair: ['Mixer/Mix2/Spdif1_2_pair'],
-
-#            self.mix3ana1_2_pair:   ['Mixer/Mix3/Ana1_2_pair'],
-#            self.mix3ana3_4_pair:   ['Mixer/Mix3/Ana3_4_pair'],
-#            self.mix3ana5_6_pair:   ['Mixer/Mix3/Ana5_6_pair'],
-#            self.mix3ana7_8_pair:   ['Mixer/Mix3/Ana7_8_pair'],
-#            self.mix3aes1_2_pair:   ['Mixer/Mix3/Aes1_2_pair'],
-#            self.mix3adat1_2_pair:  ['Mixer/Mix3/Adat1_2_pair'],
-#            self.mix3adat3_4_pair:  ['Mixer/Mix3/Adat3_4_pair'],
-#            self.mix3adat5_6_pair:  ['Mixer/Mix3/Adat5_6_pair'],
-#            self.mix3adat7_8_pair:  ['Mixer/Mix3/Adat7_8_pair'],
-#            self.mix3spdif1_2_pair: ['Mixer/Mix3/Spdif1_2_pair'],
-
-#            self.mix4ana1_2_pair:   ['Mixer/Mix4/Ana1_2_pair'],
-#            self.mix4ana3_4_pair:   ['Mixer/Mix4/Ana3_4_pair'],
-#            self.mix4ana5_6_pair:   ['Mixer/Mix4/Ana5_6_pair'],
-#            self.mix4ana7_8_pair:   ['Mixer/Mix4/Ana7_8_pair'],
-#            self.mix4aes1_2_pair:   ['Mixer/Mix4/Aes1_2_pair'],
-#            self.mix4adat1_2_pair:  ['Mixer/Mix4/Adat1_2_pair'],
-#            self.mix4adat3_4_pair:  ['Mixer/Mix4/Adat3_4_pair'],
-#            self.mix4adat5_6_pair:  ['Mixer/Mix4/Adat5_6_pair'],
-#            self.mix4adat7_8_pair:  ['Mixer/Mix4/Adat7_8_pair'],
-#            self.mix4spdif1_2_pair: ['Mixer/Mix4/Spdif1_2_pair'],
-        }
-
-        self.MixDests={
+        self.Selectors={
             self.mix1_dest:      ['/Mixer/Mix1/Mix_dest'],
             self.mix2_dest:      ['/Mixer/Mix2/Mix_dest'],
             self.mix3_dest:      ['/Mixer/Mix3/Mix_dest'],
@@ -502,10 +472,6 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.cliphold_time_ctrl:['/Mixer/Control/Meter_cliphold_time'],
         }
 
-        self.SelectorControls={
-
-        }
-
         # Other mixer variables
         self.is_streaming = 0
         self.sample_rate = 0
@@ -520,6 +486,10 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.ChannelFaders[sender][1], self.ChannelFaders[sender][2], vol))
         self.hw.setMatrixMixerValue(self.ChannelFaders[sender][0],
             self.ChannelFaders[sender][1], self.ChannelFaders[sender][2], vol)
+        # Using the ctrl modifier key makes stereo pairs move in unison
+        if (QApplication.keyboardModifiers() == Qt.ControlModifier):
+            pair = self.ChannelFaders[sender][3]
+            pair.setValue(vol)
 
     # public slot: a multivalue control within a matrix mixer
     def updateChannelControl(self, a0):
@@ -560,12 +530,12 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
         log.debug("setting %s mix fader to %d" % (self.Faders[sender][0], vol))
         self.hw.setDiscrete(self.Faders[sender][0], vol)
 
-    # public slot: mix destination control
-    def updateMixDest(self, a0):
+    # public slot: selectors (eg: mix destination controls)
+    def updateSelector(self, a0):
         sender = self.sender()
         dest=a0
-        log.debug("setting %s mix destination to %d" % (self.MixDests[sender][0], dest))
-        self.hw.setDiscrete(self.MixDests[sender][0], dest)
+        log.debug("setting %s selector to %d" % (self.Selectors[sender][0], dest))
+        self.hw.setDiscrete(self.Selectors[sender][0], dest)
 
     # public slots: mix output controls
     def set_mix1_dest(self,a0):
@@ -587,54 +557,59 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
         self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
         log.debug("device streaming flag: %d" % (self.is_streaming))
 
-        # Retrieve other device settings as needed
+        # Retrieve other device settings as needed and customise the UI
+        # based on these options.
         self.model = self.hw.getDiscrete('/Mixer/Info/Model')
         log.debug("device model identifier: %d" % (self.model))
         self.sample_rate = self.hw.getDiscrete('/Mixer/Info/SampleRate')
         log.debug("device sample rate: %d" % (self.sample_rate))
-        self.has_mic_inputs = self.hw.getDiscrete('/Mixer/Info/HasMicInputs')
-        log.debug("device has mic inputs: %d" % (self.has_mic_inputs))
-        self.has_aesebu_inputs = self.hw.getDiscrete('/Mixer/Info/HasAESEBUInputs')
-        log.debug("device has AES/EBU inputs: %d" % (self.has_aesebu_inputs))
-        self.has_spdif_inputs = self.hw.getDiscrete('/Mixer/Info/HasSPDIFInputs')
-        log.debug("device has SPDIF inputs: %d" % (self.has_spdif_inputs))
-        self.has_optical_spdif = self.hw.getDiscrete('/Mixer/Info/HasOpticalSPDIF')
-        log.debug("device has optical SPDIF: %d" % (self.has_optical_spdif))
 
-        # Customise the UI based on device options retrieved
-        if (self.has_mic_inputs):
-            # Mic input controls displace AES/EBU since no current device
-            # has both.
+        # The 828Mk2 has separate Mic inputs but no AES/EBU, so use the
+        # AES/EBU mixer controls as "Mic" controls.  If a device comes along
+        # with both mic and AES inputs this approach will have to be
+        # re-thought.
+        # Doing this means that on the 828Mk2, the mixer matrix elements
+        # used for AES/EBU on other models are used for the Mic channels. 
+        # So long as the MixerChannels_828Mk2 definition in
+        # motu_avdevice.cpp defines the mic channels immediately after the 8
+        # analog channels we'll be right.  Note that we don't need to change
+        # the matrix lookup tables (self.ChannelFaders etc) because the QT
+        # controls are still named *aesebu*.
+        if (self.model == MOTU_MODEL_828mkII):
             self.mix1_tab.setTabText(1, "Mic inputs");
             self.mix2_tab.setTabText(1, "Mic inputs");
             self.mix3_tab.setTabText(1, "Mic inputs");
             self.mix4_tab.setTabText(1, "Mic inputs");
-            # FIXME: when implemented, will mic channels just reuse the AES/EBU
-            # dbus path?  If not we'll have to reset the respective values in
-            # the control arrays (self.ChannelFaders etc).
         else:
-            if (not(self.has_aesebu_inputs)):
+            # Only the Traveler and 896HD have AES/EBU inputs, so disable the AES/EBU
+            # tab for all other models.
+            if (self.model!=MOTU_MODEL_TRAVELER and self.model!=MOTU_MODEL_896HD):
                 self.mix1_tab.setTabEnabled(1, False)
                 self.mix2_tab.setTabEnabled(1, False)
                 self.mix3_tab.setTabEnabled(1, False)
                 self.mix4_tab.setTabEnabled(1, False)
-        if (not(self.has_spdif_inputs)):
+
+        # All models except the 896HD and 8pre have SPDIF inputs.
+        if (self.model==MOTU_MODEL_8PRE or self.model==MOTU_MODEL_896HD):
             self.mix1_tab.setTabEnabled(2, False);
             self.mix2_tab.setTabEnabled(2, False);
             self.mix3_tab.setTabEnabled(2, False);
             self.mix4_tab.setTabEnabled(2, False);
 
-        # Devices without AES/EBU inputs/outputs (normally ID 6 in the
-        # destination lists) have dedicated "MainOut" outputs instead.  The
-        # 896HD is an exception: it uses ID 6 for MainOut and ID 7
-        # (nominally SPDIF) for AES/EBU.
-        if (not(self.has_aesebu_inputs) or self.model==MOTU_MODEL_896HD):
+        # Devices without AES/EBU inputs/outputs (currently all except the
+        # Traveler and 896HD) have dedicated "MainOut" outputs instead. 
+        # AES/EBU is normally ID 6 in the destination lists and "MainOut"
+        # displaces it on non-AES/EBU models.  The 896HD has both AES/EBU
+        # and MainOut which complicates this; it uses ID 6 for MainOut and
+        # ID 7 (nominally SPDIF) for AES/EBU.  Therefore change ID 6 to
+        # "MainOut" for everything but the Traveler, and set ID 7 (nominally
+        # SPDIF) to AES/EBU for the 896HD.
+        if (self.model != MOTU_MODEL_TRAVELER):
             self.mix1_dest.setItemText(6, "MainOut")
             self.mix2_dest.setItemText(6, "MainOut")
             self.mix3_dest.setItemText(6, "MainOut")
             self.mix4_dest.setItemText(6, "MainOut")
             self.phones_src.setItemText(6, "MainOut")
-        # Change the SPDIF destination to AES/EBU for the 896HD.
         if (self.model == MOTU_MODEL_896HD):
             self.mix1_dest.setItemText(7, "AES/EBU")
             self.mix2_dest.setItemText(7, "AES/EBU")
@@ -652,9 +627,8 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.optical_in_mode.setEnabled(False)
             self.optical_out_mode.setEnabled(False)
 
-        # Some devices don't have the option of selecting an optical SPDIF
-        # mode.
-        if (not(self.has_optical_spdif)):
+        # The 896HD doesn't have optical SPDIF (aka Toslink) capability
+        if (self.model == MOTU_MODEL_896HD):
             self.optical_in_mode.removeItem(2)
             self.optical_out_mode.removeItem(2)
 
@@ -705,8 +679,33 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.mix4_adat7.setEnabled(False)
             self.mix4_adat8.setEnabled(False)
 
-        # Ensure the correct input controls are active for a given interface
-        if (self.model == MOTU_MODEL_TRAVELER):
+        # Ensure the correct input controls are active for a given interface.
+        # Only the Ultralite has phase inversion switches.
+        if (not(self.model == MOTU_MODEL_ULTRALITE)):
+            self.disable_hide(self.ana1_invert)
+            self.disable_hide(self.ana2_invert)
+            self.disable_hide(self.ana3_invert)
+            self.disable_hide(self.ana4_invert)
+            self.disable_hide(self.ana5_invert)
+            self.disable_hide(self.ana6_invert)
+            self.disable_hide(self.ana7_invert)
+            self.disable_hide(self.ana8_invert)
+            self.disable_hide(self.spdif1_invert)
+            self.disable_hide(self.spdif2_invert)
+        # The Traveler has pad switches for analog 1-4 only; other interfaces
+        # don't have pad switches at all.
+        if (not(self.model == MOTU_MODEL_TRAVELER)):
+            self.disable_hide(self.ana1_pad)
+            self.disable_hide(self.ana2_pad)
+            self.disable_hide(self.ana3_pad)
+            self.disable_hide(self.ana4_pad)
+        self.disable_hide(self.ana5_pad)
+        self.disable_hide(self.ana6_pad)
+        self.disable_hide(self.ana7_pad)
+        self.disable_hide(self.ana8_pad)
+        # The Traveler has level and boost switchs for analog 5-8.  The Ultralite
+        # doesn't implement them.  All other interfaces have them over analog 1-8.
+        if (self.model==MOTU_MODEL_TRAVELER or self.model==MOTU_MODEL_ULTRALITE):
             self.disable_hide(self.ana1_level)
             self.disable_hide(self.ana2_level)
             self.disable_hide(self.ana3_level)
@@ -715,19 +714,18 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.disable_hide(self.ana2_boost)
             self.disable_hide(self.ana3_boost)
             self.disable_hide(self.ana4_boost)
-            self.disable_hide(self.ana5_trimgain)
-            self.disable_hide(self.ana5_trimgain_label)
-            self.disable_hide(self.ana6_trimgain)
-            self.disable_hide(self.ana6_trimgain_label)
-            self.disable_hide(self.ana7_trimgain)
-            self.disable_hide(self.ana7_trimgain_label)
-            self.disable_hide(self.ana8_trimgain)
-            self.disable_hide(self.ana8_trimgain_label)
-            self.disable_hide(self.ana5_pad)
-            self.disable_hide(self.ana6_pad)
-            self.disable_hide(self.ana7_pad)
-            self.disable_hide(self.ana8_pad)
-        else:
+        if (self.model == MOTU_MODEL_ULTRALITE):
+            self.disable_hide(self.ana5_level)
+            self.disable_hide(self.ana6_level)
+            self.disable_hide(self.ana7_level)
+            self.disable_hide(self.ana8_level)
+            self.disable_hide(self.ana5_boost)
+            self.disable_hide(self.ana6_boost)
+            self.disable_hide(self.ana7_boost)
+            self.disable_hide(self.ana8_boost)
+        # The Traveler has trimgain for analog 1-4.  The Ultralite has trimgain for
+        # analog 1-8 and SPDIF 1-2.  All other interfaces don't have trimgain.
+        if (not(self.model==MOTU_MODEL_TRAVELER or self.model==MOTU_MODEL_ULTRALITE)):
             self.disable_hide(self.ana1_trimgain)
             self.disable_hide(self.ana1_trimgain_label)
             self.disable_hide(self.ana2_trimgain)
@@ -736,10 +734,7 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.disable_hide(self.ana3_trimgain_label)
             self.disable_hide(self.ana4_trimgain)
             self.disable_hide(self.ana4_trimgain_label)
-            self.disable_hide(self.ana1_pad)
-            self.disable_hide(self.ana2_pad)
-            self.disable_hide(self.ana3_pad)
-            self.disable_hide(self.ana4_pad)
+        if (not(self.model == MOTU_MODEL_ULTRALITE)):
             self.disable_hide(self.ana5_trimgain)
             self.disable_hide(self.ana5_trimgain_label)
             self.disable_hide(self.ana6_trimgain)
@@ -748,12 +743,6 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             self.disable_hide(self.ana7_trimgain_label)
             self.disable_hide(self.ana8_trimgain)
             self.disable_hide(self.ana8_trimgain_label)
-            self.disable_hide(self.ana5_pad)
-            self.disable_hide(self.ana6_pad)
-            self.disable_hide(self.ana7_pad)
-            self.disable_hide(self.ana8_pad)
-        # Only the Ultralite has digital trim controls over the SPDIF channels
-        if (not(self.model == MOTU_MODEL_ULTRALITE)):
             self.disable_hide(self.spdif1_trimgain);
             self.disable_hide(self.spdif1_trimgain_label);
             self.disable_hide(self.spdif1ctrl);
@@ -795,11 +784,6 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
             ctrl.setValue(pan)
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateControl)
 
-        # Disable the channel pair controls since they aren't yet implemented
-        for ctrl, info in self.PairSwitches.iteritems():
-            log.debug("%s control is not implemented yet: disabling" % (info[0]))
-            ctrl.setEnabled(False)
-
         for ctrl, info in self.ChannelBinarySwitches.iteritems():
             if (not(ctrl.isEnabled())):
                 continue
@@ -822,20 +806,17 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
                 ctrl.setChecked(False)
             QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateBinarySwitch)
 
-        for ctrl, info in self.MixDests.iteritems():
+        for ctrl, info in self.Selectors.iteritems():
             if (not(ctrl.isEnabled())):
                 continue
             dest = self.hw.getDiscrete(info[0])
-            log.debug("%s mix destination is %d" % (info[0] , dest))
+            log.debug("%s selector is %d" % (info[0] , dest))
             ctrl.setCurrentIndex(dest)
-            QObject.connect(ctrl, SIGNAL('activated(int)'), self.updateMixDest)
+            QObject.connect(ctrl, SIGNAL('activated(int)'), self.updateSelector)
 
-        for name, ctrl in self.SelectorControls.iteritems():
-            state = self.hw.getDiscrete(ctrl[0])
-            log.debug("%s state is %d" % (name , state))
-            ctrl[1].setCurrentIndex(state)
-
-        # FIXME: If optical mode is not ADAT, disable ADAT controls here. 
-        # It can't be done earlier because we need the current values of the
-        # ADAT channel controls in case the user goes ahead and enables the
-        # ADAT optical mode.
+        # We could enable/disable ADAT controls here depending on whether
+        # the optical port is set to ADAT or something else.  A disable
+        # can't be done earlier since we have to read the ADAT mixer
+        # settings (which won't happen if they're disabled).  However, on
+        # the other hand it may be more convenient to leave all controls
+        # active at all times.  We'll see.

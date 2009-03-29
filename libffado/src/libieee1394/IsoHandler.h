@@ -97,15 +97,24 @@ public:
     int getFileDescriptor() { return raw1394_get_fd(m_handle);};
 
     bool init();
-    bool prepare();
-
     void setVerboseLevel(int l);
 
+    // the enable/disable functions should only be used from within the loop that iterates()
+    // but not from within the iterate callback. use the requestEnable / requestDisable functions
+    // for that
     bool enable() {return enable(-1);};
     bool enable(int cycle);
     bool disable();
 
-    void flush();
+    // functions to request enable or disable at the next opportunity
+    bool requestEnable(int cycle = -1);
+    bool requestDisable();
+
+    /**
+     * updates the internal state if required
+     */
+    void updateState();
+
     enum EHandlerType getType() {return m_type;};
     const char *getTypeString() {return eHTToString(m_type); };
 
@@ -113,7 +122,7 @@ public:
     const char *eHTToString(enum EHandlerType);
 
     bool isEnabled()
-        {return m_State == E_Running;};
+        {return m_State == eHS_Running;};
 
     // no setter functions, because those would require a re-init
     unsigned int getMaxPacketSize() { return m_max_packet_size;};
@@ -197,13 +206,13 @@ private:
 
     // the state machine
     enum EHandlerStates {
-        E_Created,
-        E_Initialized,
-        E_Prepared,
-        E_Running,
-        E_Error,
+        eHS_Stopped,
+        eHS_Running,
+        eHS_Error,
     };
     enum EHandlerStates m_State;
+    enum EHandlerStates m_NextState;
+    int m_switch_on_cycle;
 
 public:
     unsigned int    m_packets;

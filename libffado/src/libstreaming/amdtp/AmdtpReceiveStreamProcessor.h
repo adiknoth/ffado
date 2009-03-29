@@ -51,6 +51,8 @@
 #define IEC61883_AM824_LABEL_MIDI_2X          0x82
 #define IEC61883_AM824_LABEL_MIDI_3X          0x83
 
+#define IEC61883_AM824_HAS_LABEL(x, lbl)         (((x) & 0xFF000000) == (((quadlet_t)(lbl))<<24))
+
 namespace Streaming {
 
 class Port;

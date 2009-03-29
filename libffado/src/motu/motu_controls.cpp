@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2005-2008 by Pieter Palmers
- * Copyright (C) 2008 by Jonathan Woithe
+ * Copyright (C) 2008-2009 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -722,14 +722,14 @@ OpticalMode::getValue()
     return val;
 }
 
-InputGainPad::InputGainPad(MotuDevice &parent, unsigned int channel, unsigned int mode)
+InputGainPadInv::InputGainPadInv(MotuDevice &parent, unsigned int channel, unsigned int mode)
 : MotuDiscreteCtrl(parent, channel)
 {
     m_mode = mode;
     validate();
 }
 
-InputGainPad::InputGainPad(MotuDevice &parent, unsigned int channel, unsigned int mode,
+InputGainPadInv::InputGainPadInv(MotuDevice &parent, unsigned int channel, unsigned int mode,
              std::string name, std::string label, std::string descr)
 : MotuDiscreteCtrl(parent, channel, name, label, descr)
 {
@@ -737,30 +737,53 @@ InputGainPad::InputGainPad(MotuDevice &parent, unsigned int channel, unsigned in
     validate();
 }
 
-void InputGainPad::validate(void) {
-    if (m_register > MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL) {
+void InputGainPadInv::validate(void) {
+    if ((m_mode==MOTU_CTRL_MODE_PAD || m_mode==MOTU_CTRL_MODE_TRIMGAIN) &&
+        m_register>MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Invalid channel %d: max supported is %d, assuming 0\n", 
             m_register, MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL);
         m_register = 0;
     }
-    if (m_mode!=MOTU_CTRL_MODE_PAD && m_mode!=MOTU_CTRL_MODE_TRIMGAIN) {
+    if ((m_mode==MOTU_CTRL_MODE_UL_GAIN || m_mode==MOTU_CTRL_MODE_PHASE_INV) &&
+        m_register>MOTU_CTRL_GAINPHASEINV_MAX_CHANNEL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Invalid ultralite channel %d: max supported is %d, assuming 0\n", 
+            m_register, MOTU_CTRL_GAINPHASEINV_MAX_CHANNEL);
+        m_register = 0;
+    }
+    if (m_mode!=MOTU_CTRL_MODE_PAD && m_mode!=MOTU_CTRL_MODE_TRIMGAIN &&
+        m_mode!=MOTU_CTRL_MODE_UL_GAIN && m_mode!=MOTU_CTRL_MODE_PHASE_INV) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Invalid mode %d, assuming %d\n", m_mode, MOTU_CTRL_MODE_PAD);
         m_mode = MOTU_CTRL_MODE_PAD;
     }
 }
 
-unsigned int InputGainPad::dev_register(void) {
+unsigned int InputGainPadInv::dev_register(void) {
     /* Work out the device register to use for the associated channel */
-    if (m_register>=0 && m_register<=3) {
-      return MOTU_REG_INPUT_GAIN_PAD_0;      
+    /* Registers for gain/phase inversion controls on the Ultralite differ from those
+     * of other devices.
+     */
+    if (m_mode==MOTU_CTRL_MODE_PAD || m_mode==MOTU_CTRL_MODE_TRIMGAIN) {
+       if (m_register>=0 && m_register<=3) {
+          return MOTU_REG_INPUT_GAIN_PAD_0;      
+       } else {
+          debugOutput(DEBUG_LEVEL_VERBOSE, "unsupported channel %d\n", m_register);
+       }
     } else {
-      debugOutput(DEBUG_LEVEL_VERBOSE, "unsupported channel %d\n", m_register);
+       if (m_register>=0 && m_register<=3)
+          return MOTU_REG_INPUT_GAIN_PHINV0;
+       else if (m_register>=4 && m_register<=7)
+          return MOTU_REG_INPUT_GAIN_PHINV1;
+       else if (m_register>=8 && m_register<=11)
+          return MOTU_REG_INPUT_GAIN_PHINV2;
+       else {
+          debugOutput(DEBUG_LEVEL_VERBOSE, "unsupported ultralite channel %d\n", m_register);
+       }
     }
     return 0;
 }
              
 bool
-InputGainPad::setValue(int v)
+InputGainPadInv::setValue(int v)
 {
     unsigned int val;
     unsigned int reg, reg_shift;
@@ -784,7 +807,8 @@ InputGainPad::setValue(int v)
 
     switch (m_mode) {
         case MOTU_CTRL_MODE_PAD:
-            // Set pad bit (bit 6 of relevant channel's byte)
+        case MOTU_CTRL_MODE_PHASE_INV:
+            // Set pad/phase inversion bit (bit 6 of relevant channel's byte)
             if (v == 0) {
                 val &= ~(0x40 << reg_shift);
             } else {
@@ -792,10 +816,18 @@ InputGainPad::setValue(int v)
             }
             break;
       case MOTU_CTRL_MODE_TRIMGAIN:
+      case MOTU_CTRL_MODE_UL_GAIN:
             // Set the gain trim (bits 0-5 of the channel's byte).  Maximum
-            // gain is 53 dB.
-            if (v > 0x35)
-                v = 0x35;
+            // gain is 53 dB for trimgain on non-ultralite devices.  For
+            // ultralites, mic inputs max out at 0x18, line inputs at 0x12
+            // and spdif inputs at 0x0c.  We just clip at 0x18 for now.
+            if (m_mode==MOTU_CTRL_MODE_TRIMGAIN) {
+               if (v > 0x35)
+                  v = 0x35;
+            } else {
+               if (v > 0x18)
+                  v = 0x18;
+            }
             val = (val & ~(0x3f << reg_shift)) | (v << reg_shift);
             break;
       default:
@@ -812,7 +844,7 @@ InputGainPad::setValue(int v)
 }
 
 int
-InputGainPad::getValue()
+InputGainPadInv::getValue()
 {
     unsigned int val;
     unsigned int reg, reg_shift;
@@ -828,20 +860,23 @@ InputGainPad::getValue()
         return false;
     reg_shift = (m_register & 0x03) * 8;
 
-    // The pad status is in bit 6 of the channel's respective byte with the
-    // trim in bits 0-5.  Bit 7 is the write enable bit for the channel.
+    // The pad/phase inversion status is in bit 6 of the channel's
+    // respective byte with the trim in bits 0-5.  Bit 7 is the write enable
+    // bit for the channel.
     val = m_parent.ReadRegister(reg);
 
     switch (m_mode) {
-        case MOTU_CTRL_MODE_PAD:
-            val = ((val >> reg_shift) & 0x40) != 0;
-            break;
-      case MOTU_CTRL_MODE_TRIMGAIN:
-            val = ((val >> reg_shift) & 0x3f);
-            break;
-      default:
-        debugOutput(DEBUG_LEVEL_VERBOSE, "unsupported mode %d\n", m_mode);
-        return 0;
+       case MOTU_CTRL_MODE_PAD:
+       case MOTU_CTRL_MODE_PHASE_INV:
+          val = ((val >> reg_shift) & 0x40) != 0;
+          break;
+       case MOTU_CTRL_MODE_TRIMGAIN:
+       case MOTU_CTRL_MODE_UL_GAIN:
+          val = ((val >> reg_shift) & 0x3f);
+          break;
+       default:
+          debugOutput(DEBUG_LEVEL_VERBOSE, "unsupported mode %d\n", m_mode);
+          return 0;
     }
 
     return val;
@@ -948,37 +983,6 @@ InfoElement::getValue()
         case MOTU_INFO_SAMPLE_RATE:
             res = m_parent.getSamplingFrequency();
             debugOutput(DEBUG_LEVEL_VERBOSE, "SampleRate: %d\n", res);
-            break;
-        case MOTU_INFO_HAS_MIC_INPUTS:
-            /* Only the 828Mk2 has separate mic inputs.  In time this may be
-             * deduced by walking the port info array within the parent.
-             */
-            res = m_parent.m_motu_model == MOTU_MODEL_828mkII ? 1:0;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Has mic inputs: %d\n", res);
-            break;
-        case MOTU_INFO_HAS_AESEBU_INPUTS:
-            /* AES/EBU inputs are currently present on the Traveler and
-             * 896HD.  In time this may be deduced by walking the port info
-             * array within the parent.
-             */
-            val = m_parent.m_motu_model;
-            res = (val==MOTU_MODEL_TRAVELER || val==MOTU_MODEL_896HD);
-            debugOutput(DEBUG_LEVEL_VERBOSE, "HasAESEBUInputs: %d\n", res);
-            break;
-        case MOTU_INFO_HAS_SPDIF_INPUTS:
-            /* SPDIF inputs are present on all supported models except the
-             * 896HD and the 8pre.  In time this may be deduced by walking
-             * the port info array within the parent.
-             */
-            val = m_parent.m_motu_model;
-            res = (val!=MOTU_MODEL_8PRE && val!=MOTU_MODEL_896HD);
-            debugOutput(DEBUG_LEVEL_VERBOSE, "HasSPDIFInputs: %d\n", res);
-            break;
-        case MOTU_INFO_HAS_OPTICAL_SPDIF:
-            /* THe 896HD doesn't have optical SPDIF capability */
-            val = m_parent.m_motu_model;
-            res = (val != MOTU_MODEL_896HD);
-            debugOutput(DEBUG_LEVEL_VERBOSE, "HasOpticalSPDIF: %d\n", res);
             break;
     }
     return res;

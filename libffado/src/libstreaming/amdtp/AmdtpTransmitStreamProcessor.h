@@ -52,6 +52,8 @@
 #define IEC61883_AM824_LABEL_MIDI_2X          0x82
 #define IEC61883_AM824_LABEL_MIDI_3X          0x83
 
+#define IEC61883_AM824_HAS_LABEL(x, lbl)         (((x) & 0xFF000000) == (((quadlet_t)(lbl))<<24))
+
 namespace Streaming {
 
 class Port;
@@ -108,6 +110,19 @@ public:
                     { return m_dimension; };
     virtual unsigned int getNominalFramesPerPacket()
                     {return getSytInterval();};
+    // transmit control parameters
+    virtual int getMaxCyclesToTransmitEarly()
+                    {return m_max_cycles_to_transmit_early;};
+    virtual void setMaxCyclesToTransmitEarly(int x)
+                    {m_max_cycles_to_transmit_early = x;};
+    virtual unsigned int getTransferDelay()
+                    {return m_transmit_transfer_delay;};
+    virtual void setTransferDelay(unsigned int x)
+                    {m_transmit_transfer_delay = x;};
+    virtual int getMinCyclesBeforePresentation()
+                    {return m_min_cycles_before_presentation;};
+    virtual void setMinCyclesBeforePresentation(int x)
+                    {m_min_cycles_before_presentation = x;};
 
 protected:
     bool processWriteBlock(char *data, unsigned int nevents, unsigned int offset);
@@ -139,6 +154,9 @@ private:
 private:
     bool m_send_nodata_payload;
 #endif
+    int m_max_cycles_to_transmit_early;
+    unsigned int m_transmit_transfer_delay;
+    int m_min_cycles_before_presentation;
 
 private: // local port caching for performance
     struct _MBLA_port_cache {

@@ -118,17 +118,7 @@ static inline int64_t wrapAtMinTicks(int64_t x) {
 #ifdef DEBUG
         if (x < 0) {
             debugWarning("insufficient wrapping: %lld\n",x);
-
-            debugWarning("correcting...\n");
-            while (x < 0) {
-                x += TICKS_PER_SECOND * 128L;
-
-                if (x < 0) {
-                    debugWarning(" insufficient wrapping: %lld\n",x);
-                }
-            }
         }
-
 #endif
 
     return (int64_t)x;

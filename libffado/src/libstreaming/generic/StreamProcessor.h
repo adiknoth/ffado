@@ -214,11 +214,6 @@ public:
      */
     bool shiftStream(int nframes);
 
-    /**
-     * @brief tries to fill/sink the stream as far as possible
-     */
-    void flush();
-
 protected: // the helper receive/transmit functions
     enum eChildReturnValue {
         eCRV_OK,
@@ -377,13 +372,16 @@ protected:
          * delays a period signal, e.g. to cope with buffering.
          * @return the sync delay (in ticks)
          */
-        unsigned int getSyncDelay() {return m_sync_delay;};
+        unsigned int getSyncDelay();
         unsigned int getSyncDelayFrames();
         /**
          * sets the sync delay
+         * 
+         * note: will be rounded to an integer number of packets
+         * 
          * @param d sync delay
          */
-        void setSyncDelay(unsigned int d);
+        void setSyncDelay(unsigned int ticks);
 
         /**
          * @brief get the maximal frame latency
@@ -404,6 +402,8 @@ protected:
 
         float getTicksPerFrame();
         void setTicksPerFrame(float tpf);
+
+        bool setDllBandwidth(float bw);
 
         int getBufferFill();
 
@@ -451,7 +451,8 @@ protected:
 
     protected:
         float m_ticks_per_frame;
-        unsigned int m_sync_delay;
+        float m_dll_bandwidth_hz;
+        unsigned int m_sync_delay_frames;
     private:
         bool m_in_xrun;
 

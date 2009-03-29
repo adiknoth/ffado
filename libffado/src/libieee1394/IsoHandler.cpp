@@ -73,7 +73,7 @@ IsoHandler::iso_receive_handler(raw1394handle_t handle, unsigned char *data,
 IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    : m_manager( manager )
    , m_type ( t )
-   , m_handle( 0 )
+   , m_handle( NULL )
    , m_buf_packets( 400 )
    , m_max_packet_size( 1024 )
    , m_irq_interval( -1 )
@@ -85,7 +85,9 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
    , m_dont_exit_iterate_loop( true )
-   , m_State( E_Created )
+   , m_State( eHS_Stopped )
+   , m_NextState( eHS_Stopped )
+   , m_switch_on_cycle(0)
 #ifdef DEBUG
    , m_packets ( 0 )
    , m_dropped( 0 )
@@ -99,7 +101,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
                        unsigned int buf_packets, unsigned int max_packet_size, int irq)
    : m_manager( manager )
    , m_type ( t )
-   , m_handle( 0 )
+   , m_handle( NULL )
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
@@ -110,7 +112,9 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
-   , m_State( E_Created )
+   , m_State( eHS_Stopped )
+   , m_NextState( eHS_Stopped )
+   , m_switch_on_cycle(0)
 #ifdef DEBUG
    , m_packets ( 0 )
    , m_dropped( 0 )
@@ -125,7 +129,7 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
                        enum raw1394_iso_speed speed)
    : m_manager( manager )
    , m_type ( t )
-   , m_handle( 0 )
+   , m_handle( NULL )
    , m_buf_packets( buf_packets )
    , m_max_packet_size( max_packet_size )
    , m_irq_interval( irq )
@@ -136,7 +140,9 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned
    , m_Client( 0 )
    , m_speed( speed )
    , m_prebuffers( 0 )
-   , m_State( E_Created )
+   , m_State( eHS_Stopped )
+   , m_NextState( eHS_Stopped )
+   , m_switch_on_cycle(0)
 #ifdef DEBUG
    , m_packets( 0 )
    , m_dropped( 0 )
@@ -153,10 +159,10 @@ IsoHandler::~IsoHandler() {
 // raw1394_destroy_handle() will do any iso system shutdown required.
 //     raw1394_iso_shutdown(m_handle);
     if(m_handle) {
-        if (m_State == E_Running) {
+        if (m_State == eHS_Running) {
+            debugError("BUG: Handler still running!\n");
             disable();
         }
-        raw1394_destroy_handle(m_handle);
     }
 }
 
@@ -173,7 +179,7 @@ IsoHandler::canIterateClient()
             result = m_Client->canConsumePacket();
         }
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
-        return result && (m_State != E_Error);
+        return result && (m_State != eHS_Error);
     } else {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");
     }
@@ -190,10 +196,19 @@ IsoHandler::iterate(uint32_t cycle_timer_now) {
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "(%p, %s) Iterating ISO handler at %08X...\n",
                        this, getTypeString(), cycle_timer_now);
     m_last_now = cycle_timer_now;
-    if(m_State == E_Running) {
-#if ISOHANDLER_FLUSH_BEFORE_ITERATE
-        flush();
-#endif
+    if(m_State == eHS_Running) {
+        assert(m_handle);
+
+        #if ISOHANDLER_FLUSH_BEFORE_ITERATE
+        // this flushes all packets received since the poll() returned
+        // from kernel to userspace such that they are processed by this
+        // iterate. Doing so might result in lower latency capability
+        // and/or better reliability
+        if(m_type == eHT_Receive) {
+            raw1394_iso_recv_flush(m_handle);
+        }
+        #endif
+
         if(raw1394_loop_iterate(m_handle)) {
             debugError( "IsoHandler (%p): Failed to iterate handler: %s\n",
                         this, strerror(errno));
@@ -207,65 +222,6 @@ IsoHandler::iterate(uint32_t cycle_timer_now) {
                     this, getTypeString());
         return false;
     }
-}
-
-bool
-IsoHandler::init()
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "IsoHandler (%p) enter...\n",this);
-    // check the state
-    if(m_State != E_Created) {
-        debugError("Incorrect state, expected E_Created, got %d\n",(int)m_State);
-        return false;
-    }
-
-    // the main handle for the ISO traffic
-    m_handle = raw1394_new_handle_on_port( m_manager.get1394Service().getPort() );
-    if ( !m_handle ) {
-        if ( !errno ) {
-            debugError("libraw1394 not compatible\n");
-        } else {
-            debugError("Could not get 1394 handle: %s\n", strerror(errno) );
-            debugError("Are ieee1394 and raw1394 drivers loaded?\n");
-        }
-        return false;
-    }
-    raw1394_set_userdata(m_handle, static_cast<void *>(this));
-
-    // update the internal state
-    m_State=E_Initialized;
-    return true;
-}
-
-bool IsoHandler::disable()
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) enter...\n", 
-                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
-
-    // check state
-    if(m_State == E_Prepared) return true;
-    if(m_State != E_Running) {
-        debugError("Incorrect state, expected E_Running, got %d\n",(int)m_State);
-        return false;
-    }
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) wake up handle...\n", 
-                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
-
-    // wake up any waiting reads/polls
-    raw1394_wake_up(m_handle);
-
-    // this is put here to try and avoid the
-    // Runaway context problem
-    // don't know if it will help though.
-/*    if(m_State != E_Error) { // if the handler is dead, this might block forever
-        raw1394_iso_xmit_sync(m_handle);
-    }*/
-    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) stop...\n", 
-                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
-    raw1394_iso_stop(m_handle);
-    m_State = E_Prepared;
-    return true;
 }
 
 /**
@@ -298,7 +254,8 @@ IsoHandler::handleBusReset()
 void
 IsoHandler::notifyOfDeath()
 {
-    m_State = E_Error;
+    m_State = eHS_Error;
+    m_NextState = eHS_Error;
 
     // notify the client of the fact that we have died
     m_Client->handlerDied();
@@ -362,15 +319,6 @@ bool IsoHandler::unregisterStream(StreamProcessor *stream)
     }
     m_Client=0;
     return true;
-}
-
-void IsoHandler::flush()
-{
-    if(m_type == eHT_Receive) {
-        raw1394_iso_recv_flush(m_handle);
-    } else {
-        // do nothing
-    }
 }
 
 // ISO packet interface
@@ -539,7 +487,7 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
         uint32_t pkt_ctr_ref = cycle << 12;
         pkt_ctr_ref |= (now_secs_ref & 0x7F) << 25;
 
-        if((pkt_ctr & ~0x0FFFL) != pkt_ctr_ref) {
+        if(((pkt_ctr & ~0x0FFFL) != pkt_ctr_ref) && (m_packets > m_buf_packets)) {
             debugWarning("reconstructed CTR counter discrepancy\n");
             debugWarning(" ingredients: %X, %lX, %lX, %lX, %lX, %ld, %ld, %ld, %lld\n",
                         cycle, pkt_ctr_ref, pkt_ctr, now, m_last_now, now_secs_ref, CYCLE_TIMER_GET_SECS(now), CYCLE_TIMER_GET_SECS(m_last_now), tmp);
@@ -574,7 +522,7 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
 
         #ifdef DEBUG
         if(skipped) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                         "(%p) skipped %d cycles, cycle: %d, last_cycle: %d, dropped: %d\n", 
                         this, skipped, cycle, m_last_cycle, dropped);
             m_skipped += skipped;
@@ -639,20 +587,33 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
     return RAW1394_ISO_OK;
 }
 
-bool IsoHandler::prepare()
+bool
+IsoHandler::enable(int cycle)
 {
+    debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d\n", cycle);
+
     // check the state
-    if(m_State != E_Initialized) {
-        debugError("Incorrect state, expected E_Initialized, got %d\n",(int)m_State);
+    if(m_State != eHS_Stopped) {
+        debugError("Incorrect state, expected eHS_Stopped, got %d\n",(int)m_State);
         return false;
     }
 
-    // Don't call until libraw1394's raw1394_new_handle() function has been
-    // fixed to correctly initialise the iso_packet_infos field.  Bug is
-    // confirmed present in libraw1394 1.2.1.
-    //     raw1394_iso_shutdown(m_handle);
-    m_State = E_Prepared;
+    assert(m_handle == NULL);
 
+    // create a handle for the ISO traffic
+    m_handle = raw1394_new_handle_on_port( m_manager.get1394Service().getPort() );
+    if ( !m_handle ) {
+        if ( !errno ) {
+            debugError("libraw1394 not compatible\n");
+        } else {
+            debugError("Could not get 1394 handle: %s\n", strerror(errno) );
+            debugError("Are ieee1394 and raw1394 drivers loaded?\n");
+        }
+        return false;
+    }
+    raw1394_set_userdata(m_handle, static_cast<void *>(this));
+
+    // prepare the handler, allocate the resources
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso handler (%p, client=%p)\n", this, m_Client);
     dumpInfo();
     if (getType() == eHT_Receive) {
@@ -667,7 +628,12 @@ bool IsoHandler::prepare()
             debugFatal("  %s\n",strerror(errno));
             return false;
         }
-        return true;
+
+        if(raw1394_iso_recv_start(m_handle, cycle, -1, 0)) {
+            debugFatal("Could not start receive handler (%s)\n",strerror(errno));
+            dumpInfo();
+            return false;
+        }
     } else {
         if(raw1394_iso_xmit_init(m_handle,
                                 iso_transmit_handler,
@@ -679,28 +645,7 @@ bool IsoHandler::prepare()
             debugFatal("Could not do xmit initialisation!\n" );
             return false;
         }
-        return true;
-    }
-}
 
-bool IsoHandler::enable(int cycle)
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "start on cycle %d\n", cycle);
-    // check the state
-    if(m_State != E_Prepared) {
-        if(!prepare()) {
-            debugFatal("Could not prepare handler\n");
-            return false;
-        }
-    }
-
-    if (getType() == eHT_Receive) {
-        if(raw1394_iso_recv_start(m_handle, cycle, -1, 0)) {
-            debugFatal("Could not start receive handler (%s)\n",strerror(errno));
-            dumpInfo();
-            return false;
-        }
-    } else {
         if(raw1394_iso_xmit_start(m_handle, cycle, m_prebuffers)) {
             debugFatal("Could not start xmit handler (%s)\n",strerror(errno));
             dumpInfo();
@@ -712,12 +657,109 @@ bool IsoHandler::enable(int cycle)
     m_min_ahead = 7999;
 #endif
 
+    m_packets = 0;
+
     // indicate that the first iterate() still has to occur.
     m_last_now = 0xFFFFFFFF;
     m_last_packet_handled_at = 0xFFFFFFFF;
 
-    m_State = E_Running;
+    m_State = eHS_Running;
+    m_NextState = eHS_Running;
     return true;
+}
+
+bool
+IsoHandler::disable()
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) enter...\n", 
+                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
+
+    // check state
+    if(m_State != eHS_Running) {
+        debugError("Incorrect state, expected eHS_Running, got %d\n",(int)m_State);
+        return false;
+    }
+
+    assert(m_handle != NULL);
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) wake up handle...\n", 
+                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
+
+    // wake up any waiting reads/polls
+    raw1394_wake_up(m_handle);
+
+    // this is put here to try and avoid the
+    // Runaway context problem
+    // don't know if it will help though.
+/*    if(m_State != eHS_Error) { // if the handler is dead, this might block forever
+        raw1394_iso_xmit_sync(m_handle);
+    }*/
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) stop...\n", 
+                 this, (m_type==eHT_Receive?"Receive":"Transmit"));
+    // stop iso traffic
+    raw1394_iso_stop(m_handle);
+    // deallocate resources
+
+    // Don't call until libraw1394's raw1394_new_handle() function has been
+    // fixed to correctly initialise the iso_packet_infos field.  Bug is
+    // confirmed present in libraw1394 1.2.1.
+    raw1394_iso_shutdown(m_handle);
+
+    raw1394_destroy_handle(m_handle);
+    m_handle = NULL;
+
+    m_State = eHS_Stopped;
+    m_NextState = eHS_Stopped;
+    return true;
+}
+
+// functions to request enable or disable at the next opportunity
+bool
+IsoHandler::requestEnable(int cycle)
+{
+    if (m_State == eHS_Running) {
+        debugError("Enable requested on enabled stream\n");
+        return false;
+    }
+    if (m_State != eHS_Stopped) {
+        debugError("Enable requested on stream with state: %d\n", m_State);
+        return false;
+    }
+    m_NextState = eHS_Running;
+    return true;
+}
+
+bool
+IsoHandler::requestDisable()
+{
+    if (m_State == eHS_Stopped) {
+        debugError("Disable requested on disabled stream\n");
+        return false;
+    }
+    if (m_State != eHS_Running) {
+        debugError("Disable requested on stream with state=%d\n", m_State);
+        return false;
+    }
+    m_NextState = eHS_Stopped;
+    return true;
+}
+
+void
+IsoHandler::updateState()
+{
+    // execute state changes requested
+    if(m_State != m_NextState) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) handler needs state update from %d => %d\n", this, m_State, m_NextState);
+        if(m_State == eHS_Stopped && m_NextState == eHS_Running) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "handler has to be enabled\n");
+            enable(m_switch_on_cycle);
+        } else if(m_State == eHS_Running && m_NextState == eHS_Stopped) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "handler has to be disabled\n");
+            disable();
+        } else {
+            debugError("Unknown state transition\n");
+        }
+    }
 }
 
 /**

@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2005-2008 by Daniel Wagner
  * Copyright (C) 2005-2008 by Pieter Palmers
- * Copyright (C) 2008 by Jonathan Woithe
+ * Copyright (C) 2008-2009 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -42,6 +42,8 @@ class MotuDevice;
 
 #define MOTU_CTRL_METER           0x00001000
 
+#define MOTU_CTRL_INPUT_UL_GAIN   0x00400000  /* Gain on Ultralite channels */
+#define MOTU_CTRL_INPUT_PHASE_INV 0x00800000
 #define MOTU_CTRL_INPUT_TRIMGAIN  0x01000000
 #define MOTU_CTRL_INPUT_PAD       0x02000000
 #define MOTU_CTRL_INPUT_LEVEL     0x04000000
@@ -62,6 +64,9 @@ class MotuDevice;
 #define MOTU_CTRL_TRAVELER_LINE_INPUT_CTRLS \
     (MOTU_CTRL_INPUT_LEVEL|MOTU_CTRL_INPUT_BOOST)
 
+#define MOTU_CTRL_ULTRALITE_INPUT_CTRLS \
+    (MOTU_CTRL_INPUT_UL_GAIN|MOTU_CTRL_INPUT_PHASE_INV)
+
 #define MOTU_CTRL_MASK_MUTE_VALUE          0x00010000
 #define MOTU_CTRL_MASK_MUTE_SETENABLE      0x01000000
 #define MOTU_CTRL_MASK_SOLO_VALUE          0x00020000
@@ -74,6 +79,8 @@ class MotuDevice;
 
 #define MOTU_CTRL_MODE_PAD                 0x00000000
 #define MOTU_CTRL_MODE_TRIMGAIN            0x00000001
+#define MOTU_CTRL_MODE_UL_GAIN             0x00000002
+#define MOTU_CTRL_MODE_PHASE_INV           0x00000003
 
 #define MOTU_CTRL_METER_PEAKHOLD           0x00000001
 #define MOTU_CTRL_METER_CLIPHOLD           0x00000002
@@ -87,12 +94,9 @@ class MotuDevice;
 #define MOTU_INFO_MODEL                    0x00000001
 #define MOTU_INFO_IS_STREAMING             0x00000002
 #define MOTU_INFO_SAMPLE_RATE		   0x00000003
-#define MOTU_INFO_HAS_MIC_INPUTS           0x00000004
-#define MOTU_INFO_HAS_AESEBU_INPUTS        0x00000005
-#define MOTU_INFO_HAS_SPDIF_INPUTS         0x00000006
-#define MOTU_INFO_HAS_OPTICAL_SPDIF        0x00000007
 
 #define MOTU_CTRL_TRIMGAINPAD_MAX_CHANNEL  3
+#define MOTU_CTRL_GAINPHASEINV_MAX_CHANNEL 9
 
 /* A "register" value used to signify that a particular control in a matrix
  * mixer is not available on the current interface.
@@ -292,12 +296,12 @@ public:
     virtual int getValue();
 };
 
-class InputGainPad
+class InputGainPadInv
     : public MotuDiscreteCtrl
 {
 public:
-    InputGainPad(MotuDevice &parent, unsigned int channel, unsigned int mode);
-    InputGainPad(MotuDevice &parent, unsigned int channel, unsigned int mode, 
+    InputGainPadInv(MotuDevice &parent, unsigned int channel, unsigned int mode);
+    InputGainPadInv(MotuDevice &parent, unsigned int channel, unsigned int mode, 
           std::string name, std::string label, std::string descr);
 
     virtual bool setValue(int v);

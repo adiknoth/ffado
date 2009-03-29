@@ -44,7 +44,6 @@ AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(FFADODevice &parent, in
     , m_dimension( dimension )
     , m_nb_audio_ports( 0 )
     , m_nb_midi_ports( 0 )
-
 {}
 
 unsigned int
@@ -180,7 +179,7 @@ bool AmdtpReceiveStreamProcessor::processReadBlock(char *data,
 {
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, 
                         "(%p)->processReadBlock(%u, %u)\n",
-                        this,nevents,offset);
+                        this, nevents, offset);
 
     // update the variable parts of the cache
     updatePortCache();
@@ -365,20 +364,22 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
 
     for (i = 0; i < m_nb_midi_ports; i++) {
         struct _MIDI_port_cache &p = m_midi_ports.at(i);
-        if (p.buffer && p.enabled) {
+        if (p.buffer && p.enabled) { 
             uint32_t *buffer = (quadlet_t *)(p.buffer);
             buffer += offset;
-
             for (j = p.location;j < nevents; j += 8) {
                 target_event = (quadlet_t *) (data + ((j * m_dimension) + p.position));
-                sample_int=CondSwapFromBus32(*target_event);
+                sample_int = CondSwapFromBus32(*target_event);
+
                 // FIXME: this assumes that 2X and 3X speed isn't used,
                 // because only the 1X slot is put into the ringbuffer
-                if(IEC61883_AM824_GET_LABEL(sample_int) != IEC61883_AM824_LABEL_MIDI_NO_DATA) {
+                if(IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_1X)) {
                     sample_int=(sample_int >> 16) & 0x000000FF;
                     sample_int |= 0x01000000; // flag that there is a midi event present
                     *buffer = sample_int;
-                    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Received midi byte %08X on port %p index %d\n", sample_int, p, j-p.location);
+                } else if(IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_2X)
+                       || IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_3X) ) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "Midi mode %X not supported.\n", IEC61883_AM824_GET_LABEL(sample_int));
                 } else {
                     // make sure no event is received
                     *buffer = 0;

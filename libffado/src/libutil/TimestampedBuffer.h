@@ -30,8 +30,11 @@
 
 //typedef float ffado_timestamp_t;
 //#define TIMESTAMP_FORMAT_SPEC "%14.3f"
+
 typedef double ffado_timestamp_t;
 #define TIMESTAMP_FORMAT_SPEC "%14.3f"
+#define TIMESTAMP_MAX 3145728000.0
+
 // typedef int64_t ffado_timestamp_t;
 // #define TIMESTAMP_FORMAT_SPEC "%012lld"
 
@@ -135,6 +138,8 @@ class TimestampedBuffer
         ffado_timestamp_t getTimestampFromHead ( int nframes );
 
         // dll stuff
+        bool setBandwidth(double bw);
+        double getBandwidth();
         bool setNominalRate ( float r );
         float getNominalRate() {return m_nominal_rate;};
         float getRate();
