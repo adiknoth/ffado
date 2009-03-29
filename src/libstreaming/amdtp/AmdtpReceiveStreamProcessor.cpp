@@ -44,7 +44,6 @@ AmdtpReceiveStreamProcessor::AmdtpReceiveStreamProcessor(FFADODevice &parent, in
     , m_dimension( dimension )
     , m_nb_audio_ports( 0 )
     , m_nb_midi_ports( 0 )
-
 {}
 
 unsigned int

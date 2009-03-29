@@ -522,7 +522,7 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
 
         #ifdef DEBUG
         if(skipped) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                         "(%p) skipped %d cycles, cycle: %d, last_cycle: %d, dropped: %d\n", 
                         this, skipped, cycle, m_last_cycle, dropped);
             m_skipped += skipped;

@@ -63,11 +63,11 @@ Configuration::openFile(std::string filename, enum eFileMode mode)
                 delete c;
                 return false;
             } catch (ParseException& e) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Could not parse file: %s\n", filename.c_str());
+                debugWarning("Could not parse file: %s\n", filename.c_str());
                 delete c;
                 return false;
             } catch (...) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown exception when opening file: %s\n", filename.c_str());
+                debugWarning("Unknown exception when opening file: %s\n", filename.c_str());
                 delete c;
                 return false;
             }

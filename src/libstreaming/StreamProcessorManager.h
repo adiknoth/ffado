@@ -140,6 +140,9 @@ private:
     // usually this is in the past, but it is needed as a timestamp
     // for the transmit SP's
     uint64_t m_time_of_transfer;
+    #ifdef DEBUG
+    uint64_t m_time_of_transfer2;
+    #endif
 
 public:
     bool handleXrun(); ///< reset the streams & buffers after xrun

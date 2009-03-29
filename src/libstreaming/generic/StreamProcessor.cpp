@@ -736,23 +736,22 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                     debugWarning( "Instantanous samplerate more than 1%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
                            fs_nom, fs_syt, fs_diff, fs_diff_norm);
                 }
+                int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
+                int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
+                // display message if the difference between two successive tick
+                // values is more than 50 ticks. 1 sample at 48k is 512 ticks
+                // so 50 ticks = 10%, which is a rather large jitter value.
+                if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE,
+                                "cy %04d, rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                                CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                                m_last_timestamp, diff, ticks_per_packet);
+                }
+                debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                                "%04d %011llu %011llu %d %d\n",
+                                CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                                m_last_timestamp, diff, ticks_per_packet);
             }
-
-            int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
-            int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
-            // display message if the difference between two successive tick
-            // values is more than 50 ticks. 1 sample at 48k is 512 ticks
-            // so 50 ticks = 10%, which is a rather large jitter value.
-            if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
-                debugOutput(DEBUG_LEVEL_VERBOSE,
-                            "cy %04d, rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                            CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
-                            m_last_timestamp, diff, ticks_per_packet);
-            }
-            debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                               "%04d %011llu %011llu %d %d\n",
-                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
-                               m_last_timestamp, diff, ticks_per_packet);
             #endif
 
             // skip queueing packets if we detect that there are not enough frames
@@ -1606,6 +1605,7 @@ StreamProcessor::doRunning()
             m_in_xrun = false;
             m_local_node_id = m_1394service.getLocalNodeId() & 0x3f;
             m_data_buffer->setTransparent(false);
+            m_last_timestamp2 = 0; // NOTE: no use in checking if we just started running
             break;
         default:
             debugError("Entry from invalid state: %s\n", ePSToString(m_state));

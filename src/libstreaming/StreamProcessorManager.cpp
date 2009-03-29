@@ -40,7 +40,11 @@ namespace Streaming {
 IMPL_DEBUG_MODULE( StreamProcessorManager, StreamProcessorManager, DEBUG_LEVEL_VERBOSE );
 
 StreamProcessorManager::StreamProcessorManager(DeviceManager &p)
-    : m_is_slave( false )
+    : m_time_of_transfer ( 0 )
+    #ifdef DEBUG
+    , m_time_of_transfer2 ( 0 )
+    #endif
+    , m_is_slave( false )
     , m_SyncSource(NULL)
     , m_parent( p )
     , m_xrun_happened( false )
@@ -60,7 +64,11 @@ StreamProcessorManager::StreamProcessorManager(DeviceManager &p)
 
 StreamProcessorManager::StreamProcessorManager(DeviceManager &p, unsigned int period,
                                                unsigned int framerate, unsigned int nb_buffers)
-    : m_is_slave( false )
+    : m_time_of_transfer ( 0 )
+    #ifdef DEBUG
+    , m_time_of_transfer2 ( 0 )
+    #endif
+    , m_is_slave( false )
     , m_SyncSource(NULL)
     , m_parent( p )
     , m_xrun_happened( false )
@@ -532,6 +540,15 @@ bool StreamProcessorManager::syncStartAll() {
     // FIXME: in the SPM it would be nice to have system time instead of
     //        1394 time
 
+    float syncrate = 0.0;
+    float tpf = m_SyncSource->getTicksPerFrame();
+    if (tpf > 0.0) {
+        syncrate = 24576000.0/tpf;
+    } else {
+        debugWarning("tpf <= 0? %f\n", tpf);
+    }
+    debugOutput( DEBUG_LEVEL_VERBOSE, " sync source frame rate: %f fps (%f tpf)\n", syncrate, tpf);
+
     // we now should have decent sync info on the sync source
     // determine a point in time where the system should start
     // figure out where we are now
@@ -554,9 +571,16 @@ bool StreamProcessorManager::syncStartAll() {
         (unsigned int)TICKS_TO_CYCLES(time_of_first_sample),
         (unsigned int)TICKS_TO_OFFSET(time_of_first_sample));
 
+    #ifdef DEBUG
+    // the time at which the previous period would have passed is the
+    // time of the first sample received, minus one frame.
+    //m_time_of_transfer2 = substractTicks(time_of_first_sample, (uint64_t)m_SyncSource->getTicksPerFrame());
+    m_time_of_transfer2 = time_of_first_sample;
+    #endif
+
     // we should start wet-running the transmit SP's some cycles in advance
     // such that we know it is wet-running when it should output its first sample
-    uint64_t time_to_start_xmit = substractTicks(time_of_first_sample, 
+    uint64_t time_to_start_xmit = substractTicks(time_of_first_sample,
                                                  prestart_cycles_for_xmit * TICKS_PER_CYCLE);
 
     uint64_t time_to_start_recv = substractTicks(time_of_first_sample,
@@ -619,7 +643,9 @@ bool StreamProcessorManager::syncStartAll() {
     // that will block the waitForPeriod call until everyone has started (theoretically)
     // note: the SP's are scheduled to start in STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP cycles,
     // so a 20 times this value should be a good timeout
-    int cnt = cycles_for_startup * 20; // by then it should have started
+    //int cnt = cycles_for_startup * 20; // by then it should have started
+    // or maybe we just have to use 1 second, as this wraps the cycle counter
+    int cnt = 8000;
     while (!m_SyncSource->isRunning() && cnt) {
         SleepRelativeUsec(125);
         cnt--;
@@ -634,11 +660,12 @@ bool StreamProcessorManager::syncStartAll() {
 
     // and a (still very rough) approximation of the rate
     float rate = m_SyncSource->getTicksPerFrame();
-    int64_t delay_in_ticks=(int64_t)(((float)((m_nb_buffers-1) * m_period)) * rate);
+    int64_t delay_in_ticks = (int64_t)(((float)((m_nb_buffers-1) * m_period)) * rate);
     // also add the sync delay
-    delay_in_ticks += m_SyncSource->getSyncDelay();
+    delay_in_ticks = addTicks(delay_in_ticks, m_SyncSource->getSyncDelay());
     debugOutput( DEBUG_LEVEL_VERBOSE, "  initial time of transfer %010lld, rate %f...\n",
                 m_time_of_transfer, rate);
+
 
     // then use this information to initialize the xmit handlers
 
@@ -1089,10 +1116,9 @@ bool StreamProcessorManager::waitForPeriod() {
     m_time_of_transfer = m_SyncSource->getTimeAtPeriod();
     
     #ifdef DEBUG
-    static uint64_t m_time_of_transfer2 = m_time_of_transfer;
-    
     int ticks_per_period = (int)(m_SyncSource->getTicksPerFrame() * m_period);
-    int diff=diffTicks(m_time_of_transfer, m_time_of_transfer2);
+    
+    int diff = diffTicks(m_time_of_transfer, m_time_of_transfer2);
     // display message if the difference between two successive tick
     // values is more than 50 ticks. 1 sample at 48k is 512 ticks
     // so 50 ticks = 10%, which is a rather large jitter value.
