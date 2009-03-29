@@ -76,7 +76,7 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_scratch_buffer_size_bytes( 0 )
     , m_ticks_per_frame( 0 )
     , m_dll_bandwidth_hz ( STREAMPROCESSOR_DLL_BW_HZ )
-    , m_sync_delay( 0 )
+    , m_sync_delay_frames( 0 )
     , m_in_xrun( false )
 {
     // create the timestamped buffer and register ourselves as its client
@@ -208,18 +208,29 @@ StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
 }
 
 void
-StreamProcessor::setSyncDelay(unsigned int d) {
+StreamProcessor::setSyncDelay(unsigned int ticks) {
+
+    // round the sync delay to an integer number of packets now we know the frame rate
+    int frames = (int)((float)ticks / getTicksPerFrame());
+    frames = (frames / getNominalFramesPerPacket()) + 1;
+    frames *= getNominalFramesPerPacket();
+    
     #ifdef DEBUG
-    unsigned int frames = (unsigned int)((float)d / getTicksPerFrame());
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %u ticks, %u frames\n", this, d, frames);
+    float ticks2 = frames * getTicksPerFrame();
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %u ticks => rounded to %u frames, %f ticks\n",
+                this, ticks, frames, ticks2);
     #endif
-    m_sync_delay = d;
+    m_sync_delay_frames = frames;
 }
 
 unsigned int
 StreamProcessor::getSyncDelayFrames() {
-    unsigned int frames = (unsigned int)((float)m_sync_delay / getTicksPerFrame());
-    return frames;
+    return m_sync_delay_frames;
+}
+
+unsigned int
+StreamProcessor::getSyncDelay() {
+    return (unsigned int)(m_sync_delay_frames * getTicksPerFrame());
 }
 
 uint64_t
@@ -413,52 +424,50 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 debugWarning( "Instantanous samplerate more than 1%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
                         fs_nom, fs_syt, fs_diff, fs_diff_norm);
             }
-        }
-        #endif
 
-//         #ifdef DEBUG
-        int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
-        int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
-        // display message if the difference between two successive tick
-        // values is more than 50 ticks. 1 sample at 48k is 512 ticks
-        // so 50 ticks = 10%, which is a rather large jitter value.
-        if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                        CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
-                        m_last_timestamp, diff, ticks_per_packet);
-            // !!!HACK!!! FIXME: this is the result of a failure in wrapping/unwrapping somewhere
-            // it's definitely a bug.
-            // try to fix up the timestamp
-            int64_t last_timestamp_fixed;
-            // first try to add one second
-            last_timestamp_fixed = addTicks(m_last_timestamp, TICKS_PER_SECOND);
-            diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
-            if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
-                debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                             CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
-                             m_last_timestamp, diff, ticks_per_packet);
-                debugWarning("HACK: fixed by adding one second of ticks. This is a bug being run-time fixed.\n");
-                m_last_timestamp = last_timestamp_fixed;
-            } else {
-                // if that didn't work, try to subtract one second
-                last_timestamp_fixed = substractTicks(m_last_timestamp, TICKS_PER_SECOND);
-                diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
-                if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
-                    debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+            int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
+            int diff = diffTicks(m_last_timestamp, m_last_timestamp2);
+                // display message if the difference between two successive tick
+                // values is more than 50 ticks. 1 sample at 48k is 512 ticks
+                // so 50 ticks = 10%, which is a rather large jitter value.
+                if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE,
+                                "cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
                                 CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
                                 m_last_timestamp, diff, ticks_per_packet);
-                    debugWarning("HACK: fixed by subtracing one second of ticks. This is a bug being run-time fixed.\n");
-                    m_last_timestamp = last_timestamp_fixed;
+                    // !!!HACK!!! FIXME: this is the result of a failure in wrapping/unwrapping somewhere
+                    // it's definitely a bug.
+                    // try to fix up the timestamp
+                    int64_t last_timestamp_fixed;
+                    // first try to add one second
+                    last_timestamp_fixed = addTicks(m_last_timestamp, TICKS_PER_SECOND);
+                    diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
+                    if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
+                        debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                                    CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                                    m_last_timestamp, diff, ticks_per_packet);
+                        debugWarning("HACK: fixed by adding one second of ticks. This is a bug being run-time fixed.\n");
+                        m_last_timestamp = last_timestamp_fixed;
+                    } else {
+                        // if that didn't work, try to subtract one second
+                        last_timestamp_fixed = substractTicks(m_last_timestamp, TICKS_PER_SECOND);
+                        diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
+                        if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
+                            debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+                                        CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                                        m_last_timestamp, diff, ticks_per_packet);
+                            debugWarning("HACK: fixed by subtracing one second of ticks. This is a bug being run-time fixed.\n");
+                            m_last_timestamp = last_timestamp_fixed;
+                        }
+                    }
                 }
-            }
+                debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+                                "%04u %011llu %011llu %d %d\n",
+                                CYCLE_TIMER_GET_CYCLES(pkt_ctr),
+                                m_last_timestamp2, m_last_timestamp, 
+                                diff, ticks_per_packet);
         }
-        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                           "%04u %011llu %011llu %d %d\n",
-                           CYCLE_TIMER_GET_CYCLES(pkt_ctr),
-                           m_last_timestamp2, m_last_timestamp, 
-                           diff, ticks_per_packet);
-//         #endif
+        #endif
 
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                           "RECV: CY=%04u TS=%011llu\n",
@@ -722,6 +731,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 double fs_diff_norm = fs_diff/fs_nom;
                 debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)\n",
                            fs_nom, fs_syt, fs_diff, fs_diff_norm);
+//                 debugOutput(DEBUG_LEVEL_VERBOSE, "Diff fs: %12f, m_last_timestamp: %011llu, m_last_timestamp2: %011llu\n",
+//                            fs_diff, m_last_timestamp, m_last_timestamp2);
                 if (fs_diff_norm > 0.01 || fs_diff_norm < -0.01) {
                     debugWarning( "Instantanous samplerate more than 1%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
                            fs_nom, fs_syt, fs_diff, fs_diff_norm);
@@ -1550,7 +1561,8 @@ StreamProcessor::doWaitForStreamEnable()
                 int syncdelay_in_frames = m_StreamProcessorManager.getSyncSource().getSyncDelayFrames();
                 ringbuffer_size_frames += syncdelay_in_frames;
 
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Prefill transmit SP %p with %u frames\n", this, ringbuffer_size_frames);
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Prefill transmit SP %p with %u frames (sync_delay_frames = %d)\n",
+                            this, ringbuffer_size_frames, syncdelay_in_frames);
                 // prefill the buffer
                 if(!transferSilence(ringbuffer_size_frames)) {
                     debugFatal("Could not prefill transmit stream\n");

@@ -371,13 +371,16 @@ protected:
          * delays a period signal, e.g. to cope with buffering.
          * @return the sync delay (in ticks)
          */
-        unsigned int getSyncDelay() {return m_sync_delay;};
+        unsigned int getSyncDelay();
         unsigned int getSyncDelayFrames();
         /**
          * sets the sync delay
+         * 
+         * note: will be rounded to an integer number of packets
+         * 
          * @param d sync delay
          */
-        void setSyncDelay(unsigned int d);
+        void setSyncDelay(unsigned int ticks);
 
         /**
          * @brief get the maximal frame latency
@@ -448,7 +451,7 @@ protected:
     protected:
         float m_ticks_per_frame;
         float m_dll_bandwidth_hz;
-        unsigned int m_sync_delay;
+        unsigned int m_sync_delay_frames;
     private:
         bool m_in_xrun;
 
