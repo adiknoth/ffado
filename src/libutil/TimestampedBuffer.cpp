@@ -100,11 +100,13 @@ bool TimestampedBuffer::setBandwidth(double bw) {
     double tupdate = m_nominal_rate * (float)m_update_period;
     double bw_rel = bw * tupdate;
     if(bw_rel >= 0.5) {
-        debugError("Requested bandwidth out of range: %f > %f\n", bw, 0.5*tupdate);
+        debugError("Requested bandwidth out of range: %f > %f\n", bw, 0.5 / tupdate);
         return false;
     }
+    ENTER_CRITICAL_SECTION;
     m_dll_b = bw_rel * (DLL_SQRT2 * DLL_2PI);
     m_dll_c = bw_rel * bw_rel * DLL_2PI * DLL_2PI;
+    EXIT_CRITICAL_SECTION;
     return true;
 }
 
@@ -459,6 +461,8 @@ bool TimestampedBuffer::writeFrames(unsigned int nframes, char *data, ffado_time
     if (m_transparent) {
         // while disabled, we don't update the DLL, nor do we write frames
         // we just set the correct timestamp for the frames
+        incrementFrameCounter(nframes, ts);
+        decrementFrameCounter(nframes);
         setBufferTailTimestamp(ts);
     } else {
         // add the data payload to the ringbuffer
@@ -792,7 +796,7 @@ bool TimestampedBuffer::blockProcessReadFrames(unsigned int nbframes) {
 void TimestampedBuffer::setBufferTailTimestamp(ffado_timestamp_t new_timestamp) {
 
     // add the offsets
-    ffado_timestamp_t ts=new_timestamp;
+    ffado_timestamp_t ts = new_timestamp;
 
     if (ts >= m_wrap_at) {
         ts -= m_wrap_at;
@@ -813,7 +817,7 @@ void TimestampedBuffer::setBufferTailTimestamp(ffado_timestamp_t new_timestamp) 
 
     m_buffer_tail_timestamp = ts;
 
-    m_dll_e2=m_update_period * (double)m_nominal_rate;
+    m_dll_e2 = m_update_period * (double)m_current_rate;
     m_buffer_next_tail_timestamp = (ffado_timestamp_t)((double)m_buffer_tail_timestamp + m_dll_e2);
 
     EXIT_CRITICAL_SECTION;
@@ -1100,6 +1104,7 @@ void TimestampedBuffer::dumpInfo() {
                                           ts_head, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "    Head - Tail         : "TIMESTAMP_FORMAT_SPEC"\n", diff);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   DLL Rate             : %f (%f)\n", m_dll_e2, m_dll_e2/m_update_period);
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "   DLL Bandwidth        : %10e 1/ticks (%f Hz)\n", getBandwidth(), getBandwidth() * TICKS_PER_SECOND);
 }
 
 } // end of namespace Util

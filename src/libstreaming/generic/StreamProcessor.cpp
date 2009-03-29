@@ -528,16 +528,6 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             }
             return RAW1394_ISO_DEFER;
         } else if(result2 == eCRV_OK) {
-            // no problem here
-            // FIXME: cache the period size?
-            unsigned int periodsize = m_StreamProcessorManager.getPeriodSize();
-            unsigned int bufferfill = m_data_buffer->getBufferFill();
-            if(bufferfill >= periodsize) {
-                debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "signal activity, %d>%d\n", 
-                                                        bufferfill, periodsize);
-                //SIGNAL_ACTIVITY_SPM;
-                return RAW1394_ISO_DEFER; // FIXME: might not be needed
-            }
             return RAW1394_ISO_OK;
         } else {
             debugError("Invalid response\n");
@@ -1407,7 +1397,7 @@ StreamProcessor::doStop()
             }
             result &= m_data_buffer->setNominalRate(ticks_per_frame);
             result &= m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
-            result &= m_data_buffer->setBandwidth(m_dll_bandwidth_hz / (double)TICKS_PER_SECOND);
+            result &= m_data_buffer->setBandwidth(STREAMPROCESSOR_DLL_FAST_BW_HZ / (double)TICKS_PER_SECOND);
             result &= m_data_buffer->prepare(); // FIXME: the name
 
             debugOutput(DEBUG_LEVEL_VERBOSE, "DLL info: nominal tpf: %f, update period: %d, bandwidth: %e 1/ticks (%e Hz)\n", 
@@ -1604,6 +1594,9 @@ StreamProcessor::doRunning()
                                              this);
             m_in_xrun = false;
             m_local_node_id = m_1394service.getLocalNodeId() & 0x3f;
+            // reduce the DLL bandwidth to what we require
+            result &= m_data_buffer->setBandwidth(m_dll_bandwidth_hz / (double)TICKS_PER_SECOND);
+            // enable the data buffer
             m_data_buffer->setTransparent(false);
             m_last_timestamp2 = 0; // NOTE: no use in checking if we just started running
             break;

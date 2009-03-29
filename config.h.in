@@ -205,7 +205,9 @@
 
 #define STREAMPROCESSORMANAGER_DYNAMIC_SYNC_DELAY           0
 
-// the default bandwidth of the stream processor timestamp DLL
+// the default bandwidth of the stream processor timestamp DLL when synchronizing (should be fast)
+#define STREAMPROCESSOR_DLL_FAST_BW_HZ                      5.0
+// the default bandwidth of the stream processor timestamp DLL when streaming
 #define STREAMPROCESSOR_DLL_BW_HZ                           0.1
 
 // -- AMDTP options -- //
