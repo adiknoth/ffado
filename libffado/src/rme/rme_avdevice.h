@@ -54,8 +54,8 @@ struct VendorModelEntry {
     unsigned int vendor_id;
     unsigned int unit_version;
     enum ERmeModel model;
-    char *vendor_name;
-    char *model_name;
+    const char *vendor_name;
+    const char *model_name;
 };
 
 class RmeDevice : public FFADODevice {
@@ -91,8 +91,8 @@ public:
     virtual bool startStreamByIndex(int i);
     virtual bool stopStreamByIndex(int i);
 
-    unsigned int readRegister(unsigned int reg);
-    signed int writeRegister(unsigned int reg, quadlet_t data);
+    unsigned int readRegister(fb_nodeaddr_t reg);
+    signed int writeRegister(fb_nodeaddr_t reg, quadlet_t data);
 
 protected:
     struct VendorModelEntry *m_model;

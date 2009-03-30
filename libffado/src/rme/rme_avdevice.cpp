@@ -46,8 +46,9 @@ namespace Rme {
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
 {
-    {FW_VENDORID_RME, 0x0001, RME_MODEL_FIREFACE800, "RME", "Fireface-800"},
-    {FW_VENDORID_RME, 0x0002, RME_MODEL_FIREFACE400, "RME", "Fireface-400"},
+//  {vendor_id, unit_version, model identifier, vendor name, model name,}
+    {FW_VENDORID_RME, 0x0001, RME_MODEL_FIREFACE800, "RME", "Fireface-800",},
+    {FW_VENDORID_RME, 0x0002, RME_MODEL_FIREFACE400, "RME", "Fireface-400",},
 };
 
 RmeDevice::RmeDevice( DeviceManager& d,
@@ -274,7 +275,7 @@ RmeDevice::stopStreamByIndex(int i) {
 }
 
 unsigned int 
-RmeDevice::readRegister(unsigned int reg) {
+RmeDevice::readRegister(fb_nodeaddr_t reg) {
 
     quadlet_t quadlet;
     
@@ -286,7 +287,7 @@ RmeDevice::readRegister(unsigned int reg) {
 }
 
 signed int
-RmeDevice::writeRegister(unsigned int reg, quadlet_t data) {
+RmeDevice::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
 
     unsigned int err = 0;
     data = CondSwapToBus32(data);
