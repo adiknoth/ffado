@@ -99,6 +99,15 @@ protected:
     enum ERmeModel m_rme_model;
 
     signed int m_ddsFreq;
+
+private:
+    unsigned long long int cmd_buffer_addr();
+    unsigned long long int stream_start_reg();
+    unsigned long long int stream_end_reg();
+    unsigned long long int flash_settings_addr();
+    unsigned long long int flash_mixer_vol_addr();
+    unsigned long long int flash_mixer_pan_addr();
+    unsigned long long int flash_mixer_hw_addr();
 };
 
 }

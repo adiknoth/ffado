@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2008 by Jonathan Woithe
+ * Copyright (C) 2005-2009 by Jonathan Woithe
  * Copyright (C) 2005-2008 by Pieter Palmers
  *
  * This file is part of FFADO
@@ -25,6 +25,7 @@
 #warning RME support is currently useless (detection only)
 
 #include "rme/rme_avdevice.h"
+#include "rme/fireface_def.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -42,6 +43,21 @@
 #include <libraw1394/csr.h>
 
 namespace Rme {
+
+// Template for a RmeDevice object method which intelligently returns a
+// register or value applicable to the connected model and warns if something
+// isn't quite right.
+#define MODEL_SELECTOR(_name,_ff400_arg,_ff800_arg) \
+unsigned long long int \
+RmeDevice::_name() { \
+    switch (m_rme_model) { \
+        case RME_MODEL_FIREFACE400: return _ff400_arg; \
+        case RME_MODEL_FIREFACE800: return _ff800_arg; \
+    default: \
+      debugOutput( DEBUG_LEVEL_WARNING, "Bad RME model %d\n", m_rme_model ); \
+  } \
+  return 0xffffffffffffffffLL; \
+}
 
 // to define the supported devices
 static VendorModelEntry supportedDeviceList[] =
@@ -66,6 +82,14 @@ RmeDevice::~RmeDevice()
 {
 
 }
+
+MODEL_SELECTOR(cmd_buffer_addr, RME_FF400_CMD_BUFFER, RME_FF800_CMD_BUFFER)
+MODEL_SELECTOR(stream_start_reg, RME_FF400_STREAM_START_REG, RME_FF800_STREAM_START_REG)
+MODEL_SELECTOR(stream_end_reg, RME_FF400_STREAM_END_REG, RME_FF800_STREAM_END_REG)
+MODEL_SELECTOR(flash_settings_addr, RME_FF400_FLASH_SETTINGS_ADDR, RME_FF800_FLASH_SETTINGS_ADDR)
+MODEL_SELECTOR(flash_mixer_vol_addr, RME_FF400_FLASH_MIXER_VOLUME_ADDR, RME_FF800_FLASH_MIXER_VOLUME_ADDR)
+MODEL_SELECTOR(flash_mixer_pan_addr, RME_FF400_FLASH_MIXER_PAN_ADDR, RME_FF800_FLASH_MIXER_PAN_ADDR)
+MODEL_SELECTOR(flash_mixer_hw_addr, RME_FF400_FLASH_MIXER_HW_ADDR, RME_FF800_FLASH_MIXER_HW_ADDR)
 
 bool
 RmeDevice::probe( ConfigRom& configRom, bool generic )

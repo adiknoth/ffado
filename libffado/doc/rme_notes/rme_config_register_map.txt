@@ -190,13 +190,13 @@ For the FF800, the entire buffer is written to flash as a single block.
 Polling for "device not busy" should commence after a wait of 5 ms.
 
 For the FF400, the buffer is written in 32-quadlet (128-byte) sub-blocks via
-a bounce buffer.  If the final sub-block is not 32-quadlets the write is only
-as big as the sub-block (that is, no padding takes place).  The sub-block
-data to be written is sent to register 0x80100290.  The 2-quadlet register
-at 0x80100288 is set with the flash address to write the block to and the
-size (in bytes) of the data block.  Finally, a 0x1 is written to CBA+(8*4)
-to initiate the write.  Polling for "device not busy" should commence after
-a wait of 2 ms.
+a bounce buffer.  If the final sub-block is not 32-quadlets the write is
+only as big as the sub-block (that is, no padding takes place).  The
+sub-block data to be written is sent to the block starting at 0x80100290. 
+The 2-quadlet register at 0x80100288 is set with the flash address to write
+the block to and the size (in bytes) of the data block.  Finally, a 0x1 is
+written to CBA+(8*4) to initiate the write.  Polling for "device not busy"
+should commence after a wait of 2 ms.
 
 
 Erasing the flash
@@ -206,7 +206,7 @@ separately.  Therefore one only has to erase section of interest when
 changing something.
 
 On the FF400, erasure is controlled by writing a special magic number to
-the the flash erase control register (CBA+8*4):
+the the flash control register (CBA+8*4):
   Erase volume: write 0xe
   Erase settings: write 0xd
   Erase configuration (firmware): write 0xc
