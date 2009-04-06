@@ -92,7 +92,9 @@ public:
     virtual bool stopStreamByIndex(int i);
 
     unsigned int readRegister(fb_nodeaddr_t reg);
+    signed int readBlock(fb_nodeaddr_t reg, quadlet_t *buf, unsigned int n_quads);
     signed int writeRegister(fb_nodeaddr_t reg, quadlet_t data);
+    signed int writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads);
 
 protected:
     struct VendorModelEntry *m_model;
@@ -108,6 +110,17 @@ private:
     unsigned long long int flash_mixer_vol_addr();
     unsigned long long int flash_mixer_pan_addr();
     unsigned long long int flash_mixer_hw_addr();
+
+    /* Low-level flash memory functions */
+    signed int wait_while_busy(unsigned int init_delay);
+    signed int get_revision(unsigned int *revision);
+    signed int read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads);
+
+    /* Upper level flash memory functions */
+    signed int read_device_settings(void);
+
+    /* Hardware functions */
+    signed int init_hardware(void);
 };
 
 }

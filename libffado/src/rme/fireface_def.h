@@ -36,26 +36,33 @@
 #define RME_FF800               1
 
 /* The Command Buffer Address (CBA) is different for the two interfaces */
-#define RME_FF400_CMD_BUFFER    0xfc88f000
-#define RME_FF800_CMD_BUFFER    0x80100500
+#define RME_FF400_CMD_BUFFER    0x80100500
+#define RME_FF800_CMD_BUFFER    0xfc88f000
 
 /* Offsets for registers at fixed offsets from the device's command buffer address */
-#define RME_FF_SRATE_CTRL_OFS   (0*4)
-#define RME_FF_CONF1_OFS        (5*4)
-#define RME_FF_CONF2_OFS        (6*4)
-#define RME_FF_CONF3_OFS        (7*4)
-#define RME_FF400_FLASH_CMD_OFS (8*4)
+#define RME_FF_SRATE_CTRL_OFS     (0*4)
+#define RME_FF_CONF1_OFS          (5*4)
+#define RME_FF_CONF2_OFS          (6*4)
+#define RME_FF_CONF3_OFS          (7*4)
+#define RME_FF400_FLASH_CMD_OFS   (8*4)       // Write only
+#define RME_FF400_FLASH_STAT_OFS  (8*4)       // Read only
 
 /* General register definitions */
+#define RME_FF400_CONF_REG           (RME_FF400_CMD_BUFFER + RME_FF_CONF1_OFS)
+#define RME_FF800_CONF_REG           (RME_FF800_CMD_BUFFER + RME_FF_CONF1_OFS)
+
 #define RME_FF400_STREAM_START_REG   (RME_FF400_CMD_BUFFER + 0x001c) 
 #define RME_FF800_STREAM_START_REG  0x200000028LL
 #define RME_FF400_STREAM_END_REG     (RME_FF400_CMD_BUFFER + 0x0004)  // 4 quadlets wide
 #define RME_FF800_STREAM_END_REG    0x200000034LL                     // 3 quadlets wide
 
-#define RME_FF_HOST_LED_REG         0x200000324LL
+#define RME_FF800_HOST_LED_REG      0x200000324LL
 
-#define RME_FF_CHANNEL_MUTE_MASK     0x801c0000    /* Write only */
-#define RME_FF_STATUS_REG            0x801c0000    /* Read only */
+#define RME_FF800_REVISION_REG      0x200000100LL
+
+#define RME_FF_CHANNEL_MUTE_MASK     0x801c0000    // Write only
+#define RME_FF_STATUS_REG0           0x801c0000    // Read only
+#define RME_FF_STATUS_REG1           0x801c0004    // Read only
 
 /* Addresses of various blocks in memory-mapped flash */
 #define RME_FF400_FLASH_SETTINGS_ADDR       0x00060000
@@ -71,8 +78,10 @@
 /* Flash control registers */
 #define RME_FF400_FLASH_BLOCK_ADDR_REG      0x80100288
 #define RME_FF400_FLASH_BLOCK_SIZE_REG      0x8010028c
-#define RME_FF400_FLASH_CMD_REG             (RME_FF400_CMD_BUFFER+RME_FF400_FLASH_CMD_OFS)
+#define RME_FF400_FLASH_CMD_REG             (RME_FF400_CMD_BUFFER + RME_FF400_FLASH_CMD_OFS)
+#define RME_FF400_FLASH_STAT_REG            (RME_FF400_CMD_BUFFER + RME_FF400_FLASH_STAT_OFS)
 #define RME_FF400_FLASH_WRITE_BUFFER        0x80100290
+#define RME_FF400_FLASH_READ_BUFFER         0x80100290
 
 /* Erase control registers on the FF800 */
 #define RME_FF800_FLASH_ERASE_VOLUME_REG    0x3fffffff4LL
@@ -81,10 +90,22 @@
 #define RME_FF800_FLASH_ERASE_CONFIG_REG    0x3fffffffcLL
 
 /* Flags and special values */
-#define RME_FF400_FLASH_CMD_WRITE           0x1
-#define RME_FF400_FLASH_CMD_READ            0x2
-#define RME_FF400_FLASH_CMD_ERASE_VOLUME    0xe
-#define RME_FF400_FLASH_CMD_ERASE_SETTINGS  0xd
-#define RME_FF400_FLASH_CMD_ERASE_CONFIG    0xc
+#define RME_FF400_FLASH_CMD_WRITE           0x01000000
+#define RME_FF400_FLASH_CMD_READ            0x02000000
+#define RME_FF400_FLASH_CMD_ERASE_VOLUME    0x0e000000
+#define RME_FF400_FLASH_CMD_ERASE_SETTINGS  0x0d000000
+#define RME_FF400_FLASH_CMD_ERASE_CONFIG    0x0c000000
+#define RME_FF400_FLASH_CMD_GET_REVISION    0x0f000000
+
+
+/* Defines for components of the control register */
+/* FIXME: flesh this out once the details of how this gets used have been 
+ * finalised
+ */
+#define CR_FREQ0      0x02000000
+#define CR_FREQ1      0x04000000
+#define CR_DS         0x08000000
+#define CR_QS         0x10000000
+
 
 #endif

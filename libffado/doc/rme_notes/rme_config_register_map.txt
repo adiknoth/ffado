@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.6
+Version: 0.7
 Author: Jonathan Woithe
-Date: 27 March 2009
+Date: 4 April 2009
 
 
 Definitions
@@ -13,7 +13,22 @@ CBA = Command Buffer Address
 FF800 = Fireface-800
 FF400 = Fireface-400
 
-Multi-byte values sent to/from the Fireface are generally little endian.
+Multi-byte values sent to/from the Fireface are generally little endian -
+that is, the device interprets quadlets in asynchronous packets as little
+endian even though the bus definition is big-endian.  If writing a driver
+for use on a little endian machine, this means that a lack of byte swapping
+(to account for the bus endianness standard) will cause bit 0 on the host to
+be bit 0 on the device.
+
+FFADO however adheres to the bus standards and byteswaps on little endian
+machines.  Under FFADO therefore, bit 0 on the host will in fact be read by
+the device as the least significant bit in the most significant byte.
+
+The bit maps in this document regarding the configuration registers are
+written from the device's point of view.
+
+Curiously enough, audio data appears to be send on the bus in big endian
+format (although this is to be confirmed).
 
 
 Device address space location
@@ -142,6 +157,9 @@ Configuration register 3 (FF800: 0xfc88f01c, FF400: 0x8010051c):
   bit 1: Freq0 control (set to 1)
   bit 0: Clock mode: 0 = Master, 1 = Autosync
 
+On the FF400, writing to these registers with valid values for the first
+time after power up has the side effect of extingishing the "Host" LED.
+
 
 Interfacing to device flash
 ---------------------------
@@ -171,7 +189,7 @@ The meaning of the "mixer shadow" section of the mixer flash is not
 understood at present.
 
 
-Reading the flash
+Reading blocks from the flash (flash command 0x2)
 
 For the FF800 the entire buffer is read directly from flash as a single block.
 Polling for "device not busy" should commence after a wait of 5 ms.
@@ -181,10 +199,11 @@ is read at the end if the total buffer size is not a multiple of
 32-quadlets.  To read a sub-block, the address is placed in register
 0x80100288 and the sub-block size (in bytes) in 0x8010028c.  A 0x02 is
 then written to CBA+(8*4) to initiate the read.  Polling for "device not
-busy" should commence after a wait of 2 ms.
+busy" should commence after a wait of 2 ms.  Once not busy the data is
+available for reading from 0x80100290.
 
 
-Writing the flash
+Writing blocks to the flash (flash command 1)
 
 For the FF800, the entire buffer is written to flash as a single block.
 Polling for "device not busy" should commence after a wait of 5 ms.
@@ -197,6 +216,20 @@ The 2-quadlet register at 0x80100288 is set with the flash address to write
 the block to and the size (in bytes) of the data block.  Finally, a 0x1 is
 written to CBA+(8*4) to initiate the write.  Polling for "device not busy"
 should commence after a wait of 2 ms.
+
+
+Getting other data from flash
+
+There are a few other commands issued to the flash memory system for
+obtaining data about the connected interface:
+
+ * Device revision
+
+   On the FF800 this is read directly from register 0x200000100.
+
+   On the FF400, 0xf is written to CBA+(8*4).  Poll for "not busy" after a
+   wait of 2ms.  Once not busy the revision is read from register
+   0x80100290.
 
 
 Erasing the flash
@@ -246,12 +279,12 @@ elapsed.
 Device settings format
 ----------------------
 
-The device settings are stored in flash as an array of 32 bit unsigned
+The device settings are stored in flash as an array of 44 32-bit unsigned
 integers.  These are:
-  - Device ID
-  - Device revision
-  - ASIO latency
-  - Samples per frame
+  0  - Device ID
+  1  - Device revision
+  2  - ASIO latency
+  3  - Samples per frame
   SPDIF input mode (0=coax?, 1=optical?)
   SPDIF output emphasis active
   SPDIF output is "professional" (ie: AES/EBU)
@@ -268,33 +301,34 @@ integers.  These are:
   - Number of devices
   - TMS
   - Speed
-  - Channels available (high)
+ 20  - Channels available (high)
   - Channels available (low)
   Limit bandwidth setting
   - Bandwidth allocated
   - Stop on dropout
-  Input level 
+ 25  Input level 
   Output level
-  Mic level [0] - FF400:Phoneslevel-1 / F800:AnalogInput[1]* ???
-  Mic level [1] - AnalogInput[2] ???
-  Mic phantom power [4]
-  Instrument - AnalogInput[0]-1 ???
+ 27  Mic level [0] - FF400:Phoneslevel-1 / F800:AnalogInput[1]* ???
+ 28  Mic level [1] - AnalogInput[2] ???
+ 29  Mic phantom power [4]
+ 33  Instrument - AnalogInput[0]-1 ???
   Filter (aka speaker emulation)
   Fuzz (aka drive)
   Sync align
-  - Device index
+ 37  - Device index
   - Advanced dialog
-  Sample rate
-  - Interleaved
-  - Sn
-  Word clock single speed
-  - Number of channels
-  - Dropped samples
-  p12db_an[0] - Limiter==0&&AnalogInput[0]==2*: 1 else 0 ???
-  - p12db_an[1-9]
+ 39 Sample rate
+ 40  - Interleaved
+ 41  - Sn
+ 42  Word clock single speed
+ 43  - Number of channels
+ 44  - Dropped samples
+ 45  p12db_an[0] - Limiter==0&&AnalogInput[0]==2*: 1 else 0 ???
+ 46  - p12db_an[1-9]
 
 "-" = elements not used
 
+Total size: 55 quadlets
 
 Streaming control registers
 ---------------------------
@@ -474,3 +508,7 @@ Host LED
 The "host" LED of the FF800 is controlled by a dedicated register at
 0x200000324.  Note that this register address goes beyond the 32-bit
 boundary.
+
+On the FF400 the host LED is controlled internally.  On power up it is
+turned on.  Once the host PC programs the configuration registers with
+valid values the host LED will automatically turn off.

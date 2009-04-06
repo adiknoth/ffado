@@ -138,13 +138,16 @@ RmeDevice::discover()
         }
     }
 
-    if (m_model != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model->vendor_name, m_model->model_name);
-        return true;
-    }
+    if (m_model == NULL)
+        return false;
 
-    return false;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+        m_model->vendor_name, m_model->model_name);
+
+    init_hardware();
+read_device_settings();
+
+    return true;
 }
 
 int
@@ -310,6 +313,23 @@ RmeDevice::readRegister(fb_nodeaddr_t reg) {
     return CondSwapFromBus32(quadlet);
 }
 
+signed int 
+RmeDevice::readBlock(fb_nodeaddr_t reg, quadlet_t *buf, unsigned int n_quads) {
+
+    unsigned int i;
+
+    if (get1394Service().read(0xffc0 | getNodeId(), reg, n_quads, buf) <= 0) {
+        debugError("Error doing RME block read of %d quadlets from register 0x%06x\n",
+            n_quads, reg);
+        return -1;
+    }
+    for (i=0; i<n_quads; i++) {
+       buf[i] = CondSwapFromBus32(buf[i]);
+    }
+
+    return 0;
+}
+
 signed int
 RmeDevice::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
 
@@ -319,7 +339,26 @@ RmeDevice::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
         err = 1;
         debugError("Error doing RME write to register 0x%06x\n",reg);
     }
-//    SleepRelativeUsec(100);
+    return (err==0)?0:-1;
+}
+
+signed int
+RmeDevice::writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads) {
+//
+// Write a block of data to the device starting at address "reg".  Note that
+// the conditional byteswap is done "in place" on data, so the contents of
+// data may be modified by calling this function.
+//
+    unsigned int err = 0;
+    unsigned int i;
+
+    for (i=0; i<n_quads; i++)
+      data[i] = CondSwapToBus32(data[i]);
+    if (get1394Service().write(0xffc0 | getNodeId(), reg, n_quads, data) <= 0) {
+        err = 1;
+        debugError("Error doing RME block write of %d quadlets to register 0x%06x\n",
+          n_quads, reg);
+    }
     return (err==0)?0:-1;
 }
                   
