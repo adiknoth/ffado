@@ -791,6 +791,9 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
             max_packet_size = min_packetsize_recv;
         }
 
+        // apparently a too small value causes issues too
+        if(max_packet_size < 200) max_packet_size = 200;
+
         // the interrupt/wakeup interval prediction of raw1394 is a mess...
         int irq_interval = (packets_per_period-1) / min_interrupts_per_period;
         if(irq_interval <= 0) irq_interval=1;

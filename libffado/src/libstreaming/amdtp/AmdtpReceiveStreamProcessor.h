@@ -79,10 +79,10 @@ public:
     AmdtpReceiveStreamProcessor(FFADODevice &parent, int dimension);
     virtual ~AmdtpReceiveStreamProcessor() {};
 
-    enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,
-                                               unsigned char tag, unsigned char sy,
-                                               uint32_t pkt_ctr);
-    enum eChildReturnValue processPacketData(unsigned char *data, unsigned int length);
+    virtual enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,
+                                                       unsigned char tag, unsigned char sy,
+                                                       uint32_t pkt_ctr);
+    virtual enum eChildReturnValue processPacketData(unsigned char *data, unsigned int length);
 
     virtual bool prepareChild();
 
@@ -99,7 +99,7 @@ public:
 protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
 
-private:
+protected:
     void decodeAudioPortsFloat(quadlet_t *data, unsigned int offset, unsigned int nevents);
     void decodeAudioPortsInt24(quadlet_t *data, unsigned int offset, unsigned int nevents);
     void decodeMidiPorts(quadlet_t *data, unsigned int offset, unsigned int nevents);

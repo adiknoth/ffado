@@ -34,6 +34,18 @@
 #include <iostream>
 #include <semaphore.h>
 
+#define FFADO_ASSERT(x) { \
+    if(!(x)) { \
+        m_debugModule.print( DebugModule::eDL_Fatal,        \
+                                __FILE__,                   \
+                                __FUNCTION__,               \
+                                __LINE__,                   \
+                                "Assertion failed...\n");      \
+        debugPrintBacktrace( 10 ); \
+        DebugModuleManager::instance()->flush(); \
+        assert(x); \
+    }}
+
 typedef short debug_level_t;
 
 #define DEBUG_LEVEL_MESSAGE        0

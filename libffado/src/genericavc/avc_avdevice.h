@@ -52,7 +52,6 @@ public:
 
     static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
     virtual bool discover();
-    bool discoverGeneric();
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
 
     virtual bool serialize( std::string basePath, Util::IOSerialize& ser ) const;
@@ -89,6 +88,7 @@ public:
         { return FFADODevice::getConfigRom(); };
 
 protected:
+    bool discoverGeneric();
     virtual bool addPlugToProcessor( AVC::Plug& plug, Streaming::StreamProcessor *processor,
                              Streaming::AmdtpAudioPort::E_Direction direction);
 /*    bool setSamplingFrequencyPlug( AVC::Plug& plug,

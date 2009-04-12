@@ -35,28 +35,6 @@ ffado_source = env.Split( '\
 	ffadodevice.cpp \
 	debugmodule/debugmodule.cpp \
 	DeviceStringParser.cpp \
-	libavc/streamformat/avc_extended_stream_format.cpp \
-	libavc/musicsubunit/avc_descriptor_music.cpp \
-	libavc/musicsubunit/avc_musicsubunit.cpp \
-	libavc/audiosubunit/avc_audiosubunit.cpp \
-	libavc/audiosubunit/avc_function_block.cpp \
-	libavc/descriptors/avc_descriptor_cmd.cpp \
-	libavc/descriptors/avc_descriptor.cpp \
-	libavc/general/avc_extended_subunit_info.cpp \
-	libavc/general/avc_unit_info.cpp \
-	libavc/general/avc_generic.cpp \
-	libavc/general/avc_subunit_info.cpp \
-	libavc/general/avc_connect.cpp \
-	libavc/general/avc_signal_format.cpp \
-	libavc/general/avc_extended_cmd_generic.cpp \
-	libavc/general/avc_extended_plug_info.cpp \
-	libavc/general/avc_plug_info.cpp \
-	libavc/general/avc_unit.cpp \
-	libavc/general/avc_subunit.cpp \
-	libavc/general/avc_plug.cpp \
-	libavc/general/avc_vendor_dependent_cmd.cpp \
-	libavc/avc_definitions.cpp \
-	libavc/ccm/avc_signal_source.cpp \
 	libieee1394/ARMHandler.cpp \
 	libieee1394/configrom.cpp \
 	libieee1394/csr1212.c \
@@ -98,7 +76,6 @@ if env['SERIALIZE_USE_EXPAT']:
 else:
 	ffado_source.append('libutil/serialize_libxml.cpp')
 
-
 bebob_source = env.Split( '\
 	bebob/bebob_avdevice.cpp \
 	bebob/bebob_avdevice_subunit.cpp \
@@ -120,6 +97,7 @@ bebob_source = env.Split( '\
 	bebob/mackie/onyxmixer.cpp \
 	maudio/maudio_avdevice.cpp \
 ' )
+
 bebob_pkgdata = env.Split( '\
 	maudio/refdesign.xml \
 	maudio/fw410.xml \
@@ -151,6 +129,14 @@ fireworks_source =  env.Split( '\
 
 fireworks_pkgdata =  env.Split( '\
 ' )
+
+oxford_source =  env.Split( '\
+	oxford/oxford_device.cpp \
+	libstreaming/amdtp-oxford/AmdtpOxfordReceiveStreamProcessor.cpp \
+' )
+
+oxford_pkgdata = env.Split( '\
+' )	
 
 motu_source = env.Split( '\
 	motu/motu_avdevice.cpp \
@@ -188,6 +174,31 @@ amdtp_source = env.Split( '\
 	libstreaming/amdtp/AmdtpTransmitStreamProcessor.cpp \
 ' )
 
+libavc_source = env.Split( '\
+	libavc/streamformat/avc_extended_stream_format.cpp \
+	libavc/musicsubunit/avc_descriptor_music.cpp \
+	libavc/musicsubunit/avc_musicsubunit.cpp \
+	libavc/audiosubunit/avc_audiosubunit.cpp \
+	libavc/audiosubunit/avc_descriptor_audio.cpp \
+	libavc/audiosubunit/avc_function_block.cpp \
+	libavc/descriptors/avc_descriptor_cmd.cpp \
+	libavc/descriptors/avc_descriptor.cpp \
+	libavc/general/avc_extended_subunit_info.cpp \
+	libavc/general/avc_unit_info.cpp \
+	libavc/general/avc_generic.cpp \
+	libavc/general/avc_subunit_info.cpp \
+	libavc/general/avc_connect.cpp \
+	libavc/general/avc_signal_format.cpp \
+	libavc/general/avc_extended_cmd_generic.cpp \
+	libavc/general/avc_extended_plug_info.cpp \
+	libavc/general/avc_plug_info.cpp \
+	libavc/general/avc_unit.cpp \
+	libavc/general/avc_subunit.cpp \
+	libavc/general/avc_plug.cpp \
+	libavc/general/avc_vendor_dependent_cmd.cpp \
+	libavc/avc_definitions.cpp \
+	libavc/ccm/avc_signal_source.cpp \
+' )
 
 source = ffado_source
 pkgdata = []
@@ -199,6 +210,10 @@ if env['ENABLE_FIREWORKS']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_FIREWORKS"] )
 	source += fireworks_source
 	pkgdata += fireworks_pkgdata
+if env['ENABLE_OXFORD']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_OXFORD"] )
+	source += oxford_source
+	pkgdata += oxford_pkgdata
 if env['ENABLE_MOTU']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_MOTU"] )
 	source += motu_source
@@ -218,6 +233,7 @@ if env['ENABLE_BOUNCE']:
 # The list of devices needing GENERICAVC is controlled in ../SConstruct
 if env['ENABLE_GENERICAVC']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_GENERICAVC"] )
+	source += libavc_source
 	source += amdtp_source
 	source += genericavc_source
 	pkgdata += genericavc_pkgdata

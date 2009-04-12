@@ -58,6 +58,8 @@ protected:
     virtual bool deserializeUpdateChild( std::string basePath,
                                          Util::IODeserialize& deser ) { return true; }
 
+    class AVCAudioIdentifierDescriptor*  m_identifier_descriptor;
+
 };
 
 }

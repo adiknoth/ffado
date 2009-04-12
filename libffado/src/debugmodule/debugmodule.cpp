@@ -672,7 +672,7 @@ DebugModuleManager::printBacktrace(int len)
         char name[64];
         name[0]=0;
         getFunctionName(m_backtrace_buffer[j], name, 64);
-        chars_written += snprintf(m_backtrace_strbuffer + chars_written, MB_BUFFERSIZE-chars_written, "%s ", name);
+        chars_written += snprintf(m_backtrace_strbuffer + chars_written, MB_BUFFERSIZE-chars_written, "%s\n", name);
     }
     chars_written += snprintf(m_backtrace_strbuffer + chars_written, MB_BUFFERSIZE-chars_written, "\n");
 

@@ -532,7 +532,7 @@ Ieee1394Service::readNoLock( fb_nodeid_t nodeId,
         return true;
     } else {
         #ifdef DEBUG
-        debugOutput(DEBUG_LEVEL_NORMAL,
+        debugOutput(DEBUG_LEVEL_VERBOSE,
                     "raw1394_read failed: node 0x%hX, addr = 0x%016llX, length = %u\n",
                     nodeId, addr, length);
         #endif

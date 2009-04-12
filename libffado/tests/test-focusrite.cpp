@@ -32,8 +32,10 @@
 #include "libutil/cmd_serialize.h"
 #include "libavc/general/avc_generic.h"
 #include "libutil/Time.h"
+#include "libutil/ByteSwap.h"
 
 #include "bebob/focusrite/focusrite_cmd.h"
+#include "bebob/focusrite/focusrite_generic.h"
 using namespace BeBoB::Focusrite;
 
 #include <argp.h>
@@ -121,10 +123,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
         arguments->nargs++;
         break;
     case ARGP_KEY_END:
-        if(arguments->nargs<4) {
-            printf("not enough arguments\n");
-            return -1;
-        }
+
         
         break;
     default:
@@ -164,30 +163,33 @@ main(int argc, char **argv)
     FocusriteVendorDependentCmd cmd( *m_1394Service );
         cmd.setVerbose( DEBUG_LEVEL_NORMAL );
     
-    #define TOTAL_IDS_TO_SCAN 128
+    #define TOTAL_IDS_TO_SCAN 110
     uint32_t old_vals[TOTAL_IDS_TO_SCAN+1];
+    m_1394Service->setVerboseLevel(DEBUG_LEVEL_INFO);
     
     while(1) {
-        for (int id=0; id<TOTAL_IDS_TO_SCAN;id++) {
+        for (int id=88; id<TOTAL_IDS_TO_SCAN;id++) {
+            quadlet_t value;
+            int ntries=5;
+            bool retval = false;
+            fb_nodeaddr_t addr = FR_PARAM_SPACE_START + (id * 4);
+            fb_nodeid_t nodeId = arguments.node | 0xFFC0;
 //             if (id==64) continue; // metering
 //             if (id==65) continue; // metering
 //             if (id==66) continue; // metering
 //             if (id==67) continue; // metering
-            cmd.setCommandType( AVC::AVCCommand::eCT_Status );
-            cmd.setNodeId( arguments.node  );
-            cmd.setSubunitType( AVC::eST_Unit  );
-            cmd.setSubunitId( 0xff );
-            cmd.m_id=id;
-            cmd.m_value=0;
-    
-            if ( !cmd.fire() ) {
-                debugError( "FocusriteVendorDependentCmd info command failed\n" );
-                // shouldn't this be an error situation?
-    //             return false;
+            while(ntries-- && !(retval = m_1394Service->read_quadlet(nodeId, addr, &value))) {
+                SleepRelativeUsec(10000);
             }
-            if (old_vals[id] != cmd.m_value) {
-                printf("%04d changed from %08X to %08X\n", cmd.m_id,  old_vals[id], cmd.m_value);
-                old_vals[id] = cmd.m_value;
+            if (!retval) {
+                debugError( " read from %16llX failed (id: %d)\n", addr, id);
+            } else {
+                value = CondSwapFromBus32(value);
+            
+                if (old_vals[id] != value) {
+                    printf("%04d changed from %08X to %08X\n", id,  old_vals[id], value);
+                    old_vals[id] = value;
+                }
             }
         }
         SleepRelativeUsec(1000000);

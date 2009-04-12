@@ -287,8 +287,65 @@ Plug::discoverName()
 bool
 Plug::discoverNoOfChannels()
 {
-
-    return true;
+    if (m_nrOfChannels == 0) {
+        // not discovered yet, get from ext stream format
+        ExtendedStreamFormatCmd extStreamFormatCmd =
+            setPlugAddrToStreamFormatCmd( ExtendedStreamFormatCmd::eSF_ExtendedStreamFormatInformationCommand );
+        extStreamFormatCmd.setVerbose( getDebugLevel() );
+    
+        if ( !extStreamFormatCmd.fire() ) {
+            debugError( "stream format command failed\n" );
+            return false;
+        }
+    
+        if ( ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NoStreamFormat )
+            || ( extStreamFormatCmd.getStatus() ==  ExtendedStreamFormatCmd::eS_NotUsed ) )
+        {
+            debugOutput( DEBUG_LEVEL_VERBOSE,
+                        "No stream format information available\n" );
+            return true;
+        }
+    
+        if ( !extStreamFormatCmd.getFormatInformation() ) {
+            debugOutput(DEBUG_LEVEL_NORMAL, "No stream format information for plug found -> skip\n" );
+            return true;
+        }
+    
+        if ( extStreamFormatCmd.getFormatInformation()->m_root
+            != FormatInformation::eFHR_AudioMusic  )
+        {
+            debugOutput(DEBUG_LEVEL_NORMAL, "Format hierarchy root is not Audio&Music -> skip\n" );
+            return true;
+        }
+    
+        FormatInformation* formatInfo =
+            extStreamFormatCmd.getFormatInformation();
+        FormatInformationStreamsCompound* compoundStream
+            = dynamic_cast< FormatInformationStreamsCompound* > (
+                formatInfo->m_streams );
+        if ( compoundStream ) {
+            unsigned int nb_channels = 0;
+            for ( int i = 1;
+                i <= compoundStream->m_numberOfStreamFormatInfos;
+                ++i )
+            {
+                StreamFormatInfo* streamFormatInfo =
+                    compoundStream->m_streamFormatInfos[ i - 1 ];
+    
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                            "number of channels = %d, stream format = %d\n",
+                            streamFormatInfo->m_numberOfChannels,
+                            streamFormatInfo->m_streamFormat );
+                // FIXME: might not be correct to sum all
+                nb_channels += streamFormatInfo->m_numberOfChannels;
+            }
+            m_nrOfChannels = nb_channels;
+        }
+        return true;
+    } else {
+        // already got the nb channels from somewhere else
+        return true;
+    }
 }
 
 bool
@@ -308,7 +365,28 @@ Plug::discoverChannelName()
 bool
 Plug::discoverClusterInfo()
 {
+    // if there are no cluster info's, we'll have to come up with some
+    if(m_clusterInfos.size() == 0) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "fixing up cluster infos\n");
+        // we figure out how many channels we have, and build one cluster
+        struct ClusterInfo c;
+        c.m_index = 1;
+        c.m_portType = 0;
+        c.m_name = "Unknown";
 
+        c.m_nrOfChannels = m_nrOfChannels;
+        for(int i=0; i<m_nrOfChannels; i++) {
+            struct ChannelInfo ci;
+            ci.m_streamPosition = i;
+            ci.m_location = 0xFF;
+            ci.m_name = "Unknown";
+            c.m_channelInfos.push_back(ci);
+        }
+        c.m_streamFormat = 0; // filled in later
+        
+        m_clusterInfos.push_back(c);
+    }
+    
     return true;
 }
 
@@ -371,7 +449,7 @@ Plug::discoverStreamFormat()
                 debugOutput(DEBUG_LEVEL_NORMAL, 
                             "No matching cluster "
                             "info found for index %d\n",  i );
-                    return false;
+                    //return false;
             }
             StreamFormatInfo* streamFormatInfo =
                 compoundStream->m_streamFormatInfos[ i - 1 ];
@@ -381,36 +459,38 @@ Plug::discoverStreamFormat()
                          streamFormatInfo->m_numberOfChannels,
                          streamFormatInfo->m_streamFormat );
 
-            int nrOfChannels = clusterInfo->m_nrOfChannels;
-            if ( streamFormatInfo->m_streamFormat ==
-                 FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
-            {
-                // 8 logical midi channels fit into 1 channel
-                nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
+            if ( clusterInfo ) {
+                int nrOfChannels = clusterInfo->m_nrOfChannels;
+                if ( streamFormatInfo->m_streamFormat ==
+                    FormatInformation::eFHL2_AM824_MIDI_CONFORMANT )
+                {
+                    // 8 logical midi channels fit into 1 channel
+                    nrOfChannels = ( ( nrOfChannels + 7 ) / 8 );
+                }
+                // sanity check
+                if ( nrOfChannels != streamFormatInfo->m_numberOfChannels )
+                {
+                    debugOutput(DEBUG_LEVEL_NORMAL, 
+                                "Number of channels "
+                                "mismatch: '%s' plug discovering reported "
+                                "%d channels for cluster '%s', while stream "
+                                "format reported %d\n",
+                                getName(),
+                                nrOfChannels,
+                                clusterInfo->m_name.c_str(),
+                                streamFormatInfo->m_numberOfChannels);
+                }
+                clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
+    
+                debugOutput( DEBUG_LEVEL_VERBOSE,
+                            "%s plug %d cluster info %d ('%s'): "
+                            "stream format %d\n",
+                            getName(),
+                            m_id,
+                            i,
+                            clusterInfo->m_name.c_str(),
+                            clusterInfo->m_streamFormat );
             }
-            // sanity check
-            if ( nrOfChannels != streamFormatInfo->m_numberOfChannels )
-            {
-                debugOutput(DEBUG_LEVEL_NORMAL, 
-                              "Number of channels "
-                              "mismatch: '%s' plug discovering reported "
-                              "%d channels for cluster '%s', while stream "
-                              "format reported %d\n",
-                              getName(),
-                              nrOfChannels,
-                              clusterInfo->m_name.c_str(),
-                              streamFormatInfo->m_numberOfChannels);
-            }
-            clusterInfo->m_streamFormat = streamFormatInfo->m_streamFormat;
-
-            debugOutput( DEBUG_LEVEL_VERBOSE,
-                         "%s plug %d cluster info %d ('%s'): "
-                         "stream format %d\n",
-                         getName(),
-                         m_id,
-                         i,
-                         clusterInfo->m_name.c_str(),
-                         clusterInfo->m_streamFormat );
         }
     }
 

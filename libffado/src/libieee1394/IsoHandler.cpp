@@ -624,7 +624,7 @@ IsoHandler::enable(int cycle)
                                 m_Client->getChannel(),
                                 m_receive_mode,
                                 m_irq_interval)) {
-            debugFatal("Could not do receive initialisation!\n" );
+            debugFatal("Could not do receive initialization (PACKET_PER_BUFFER)!\n" );
             debugFatal("  %s\n",strerror(errno));
             return false;
         }

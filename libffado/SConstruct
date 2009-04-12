@@ -61,6 +61,7 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
 	PathOption( "SHAREDIR", "Overwrite the directory where misc shared files are installed to.", "$PREFIX/share/libffado", PathOption.PathAccept ),
 	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
 	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks AV/C part.", True ),
+	BoolOption( "ENABLE_OXFORD", "Enable/Disable support for the Oxford Semiconductor AV/C platform.", True ),
 	BoolOption( "ENABLE_MOTU", "Enable/Disable the MOTU part.", True ),
 	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", True ),
 	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
@@ -337,6 +338,7 @@ env.MergeFlags( "-DDBUS_HAS_THREADS_INIT_DEFAULT" )
 if env['ENABLE_ALL']:
 	env['ENABLE_BEBOB'] = True
 	env['ENABLE_FIREWORKS'] = True
+	env['ENABLE_OXFORD'] = True
 	env['ENABLE_MOTU'] = True
 	env['ENABLE_DICE'] = True
 	env['ENABLE_METRIC_HALO'] = True
@@ -346,7 +348,9 @@ if env['ENABLE_ALL']:
 # HACK: when the bounce device gets fixed, remove this
 env['ENABLE_BOUNCE'] = False
 
-if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS']:
+if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] \
+   or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS'] \
+   or env['ENABLE_OXFORD']:
 	env['ENABLE_GENERICAVC'] = True
 
 env['BUILD_STATIC_LIB'] = False

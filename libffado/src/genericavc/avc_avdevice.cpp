@@ -45,8 +45,6 @@
 
 #include <libraw1394/csr.h>
 
-using namespace AVC;
-
 namespace GenericAVC {
 
 IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
@@ -80,8 +78,8 @@ AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
         // check if we have a music subunit
-        SubUnitInfoCmd subUnitInfoCmd( configRom.get1394Service() );
-        subUnitInfoCmd.setCommandType( AVCCommand::eCT_Status );
+        AVC::SubUnitInfoCmd subUnitInfoCmd( configRom.get1394Service() );
+        subUnitInfoCmd.setCommandType( AVC::AVCCommand::eCT_Status );
         subUnitInfoCmd.m_page = 0;
         subUnitInfoCmd.setNodeId( configRom.getNodeId() );
         subUnitInfoCmd.setVerbose( configRom.getVerboseLevel() );
@@ -90,9 +88,9 @@ AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
             return false;
         }
         for ( int i = 0; i < subUnitInfoCmd.getNrOfValidEntries(); ++i ) {
-            subunit_type_t subunit_type
+            AVC::subunit_type_t subunit_type
                 = subUnitInfoCmd.m_table[i].m_subunit_type;
-            if (subunit_type == eST_Music) return true;
+            if (subunit_type == AVC::eST_Music) return true;
         }
 
         return false;
@@ -202,12 +200,12 @@ AvDevice::getStreamingState()
 
 int
 AvDevice::getSamplingFrequency( ) {
-    AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
+    AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, AVC::Plug::eAPD_Input, 0 );
     if ( !inputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
         return false;
     }
-    AVC::Plug* outputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Output, 0 );
+    AVC::Plug* outputPlug = getPlugById( m_pcrPlugs, AVC::Plug::eAPD_Output, 0 );
     if ( !outputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
         return false;
@@ -240,7 +238,7 @@ AvDevice::setSamplingFrequency( int s )
         }
         return true;
     } else {
-        AVC::Plug* plug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
+        AVC::Plug* plug = getPlugById( m_pcrPlugs, AVC::Plug::eAPD_Input, 0 );
         if ( !plug ) {
             debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
             return false;
@@ -252,7 +250,7 @@ AvDevice::setSamplingFrequency( int s )
             return false;
         }
 
-        plug = getPlugById( m_pcrPlugs, Plug::eAPD_Output,  0 );
+        plug = getPlugById( m_pcrPlugs, AVC::Plug::eAPD_Output,  0 );
         if ( !plug ) {
             debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
             return false;
@@ -279,7 +277,7 @@ AvDevice::supportsSamplingFrequency( int s )
 {
     Util::MutexLockHelper lock(m_DeviceMutex);
 
-    AVC::Plug* plug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
+    AVC::Plug* plug = getPlugById( m_pcrPlugs, AVC::Plug::eAPD_Input, 0 );
     if ( !plug ) {
         debugError( "Could not retrieve iso input plug 0\n" );
         return false;
@@ -291,7 +289,7 @@ AvDevice::supportsSamplingFrequency( int s )
         return false;
     }
 
-    plug = getPlugById( m_pcrPlugs, Plug::eAPD_Output,  0 );
+    plug = getPlugById( m_pcrPlugs, AVC::Plug::eAPD_Output,  0 );
     if ( !plug ) {
         debugError( "Could not retrieve iso output plug 0\n" );
         return false;
@@ -332,14 +330,14 @@ AvDevice::getSupportedClockSources() {
 
     Util::MutexLockHelper lock(m_DeviceMutex);
 
-    PlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
-        eST_Music,
+    AVC::PlugVector syncMSUInputPlugs = m_pPlugManager->getPlugsByType(
+        AVC::eST_Music,
         0,
         0xff,
         0xff,
-        Plug::eAPA_SubunitPlug,
-        Plug::eAPD_Input,
-        Plug::eAPT_Sync );
+        AVC::Plug::eAPA_SubunitPlug,
+        AVC::Plug::eAPD_Input,
+        AVC::Plug::eAPT_Sync );
     if ( !syncMSUInputPlugs.size() ) {
         // there exist devices which do not have a sync plug
         // or their av/c model is broken. 
@@ -361,7 +359,7 @@ AvDevice::getSupportedClockSources() {
 
 bool
 AvDevice::setActiveClockSource(ClockSource s) {
-    Plug *src=m_pPlugManager->getPlug( s.id );
+    AVC::Plug *src = m_pPlugManager->getPlug( s.id );
     if (!src) {
         debugError("Could not find plug with id %d\n", s.id);
         return false;
@@ -412,15 +410,15 @@ AvDevice::syncInfoToClockSource(const SyncInfo& si) {
 
     // now figure out what type this is
     switch(si.m_source->getPlugType()) {
-        case Plug::eAPT_IsoStream:
+        case AVC::Plug::eAPT_IsoStream:
             s.type=eCT_SytMatch;
             break;
-        case Plug::eAPT_Sync:
-            if(si.m_source->getPlugAddressType() == Plug::eAPA_PCR) {
+        case AVC::Plug::eAPT_Sync:
+            if(si.m_source->getPlugAddressType() == AVC::Plug::eAPA_PCR) {
                 s.type=eCT_SytStream; // this is logical
-            } else if(si.m_source->getPlugAddressType() == Plug::eAPA_SubunitPlug) {
+            } else if(si.m_source->getPlugAddressType() == AVC::Plug::eAPA_SubunitPlug) {
                 s.type=eCT_Internal; // this assumes some stuff
-            } else if(si.m_source->getPlugAddressType() == Plug::eAPA_ExternalPlug) {
+            } else if(si.m_source->getPlugAddressType() == AVC::Plug::eAPA_ExternalPlug) {
                 std::string plugname=si.m_source->getName();
                 s.description=plugname;
                 // this is basically due to Focusrites interpretation
@@ -433,8 +431,8 @@ AvDevice::syncInfoToClockSource(const SyncInfo& si) {
                 s.type=eCT_Invalid;
             }
             break;
-        case Plug::eAPT_Digital:
-            if(si.m_source->getPlugAddressType() == Plug::eAPA_ExternalPlug) {
+        case AVC::Plug::eAPT_Digital:
+            if(si.m_source->getPlugAddressType() == AVC::Plug::eAPA_ExternalPlug) {
                 std::string plugname=si.m_source->getName();
                 s.description=plugname;
                 // this is basically due to Focusrites interpretation
@@ -518,12 +516,12 @@ AvDevice::prepare() {
     ///////////
     // get plugs
 
-    AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Input, 0 );
+    AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, AVC::Plug::eAPD_Input, 0 );
     if ( !inputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
         return false;
     }
-    AVC::Plug* outputPlug = getPlugById( m_pcrPlugs, Plug::eAPD_Output, 0 );
+    AVC::Plug* outputPlug = getPlugById( m_pcrPlugs, AVC::Plug::eAPD_Output, 0 );
     if ( !outputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso output plug 0\n" );
         return false;
@@ -664,30 +662,30 @@ AvDevice::addPlugToProcessor(
         debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
     }
 
-    Plug::ClusterInfoVector& clusterInfos = plug.getClusterInfos();
-    for ( Plug::ClusterInfoVector::const_iterator it = clusterInfos.begin();
+    AVC::Plug::ClusterInfoVector& clusterInfos = plug.getClusterInfos();
+    for ( AVC::Plug::ClusterInfoVector::const_iterator it = clusterInfos.begin();
           it != clusterInfos.end();
           ++it )
     {
-        const Plug::ClusterInfo* clusterInfo = &( *it );
+        const AVC::Plug::ClusterInfo* clusterInfo = &( *it );
 
-        Plug::ChannelInfoVector channelInfos = clusterInfo->m_channelInfos;
-        for ( Plug::ChannelInfoVector::const_iterator it = channelInfos.begin();
+        AVC::Plug::ChannelInfoVector channelInfos = clusterInfo->m_channelInfos;
+        for ( AVC::Plug::ChannelInfoVector::const_iterator it = channelInfos.begin();
               it != channelInfos.end();
               ++it )
         {
-            const Plug::ChannelInfo* channelInfo = &( *it );
+            const AVC::Plug::ChannelInfo* channelInfo = &( *it );
             std::ostringstream portname;
 
             portname << id << "_" << channelInfo->m_name;
 
             Streaming::Port *p=NULL;
             switch(clusterInfo->m_portType) {
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_Speaker:
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_Headphone:
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_Microphone:
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_Line:
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_Analog:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_Speaker:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_Headphone:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_Microphone:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_Line:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_Analog:
                 debugOutput(DEBUG_LEVEL_VERBOSE, " Adding audio channel %s (pos=0x%02X, loc=0x%02X)\n",
                     channelInfo->m_name.c_str(), channelInfo->m_streamPosition, channelInfo->m_location);
                 p=new Streaming::AmdtpAudioPort(
@@ -700,7 +698,7 @@ AvDevice::addPlugToProcessor(
                 );
                 break;
 
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
                 debugOutput(DEBUG_LEVEL_VERBOSE, " Adding MIDI channel %s (pos=0x%02X, loc=0x%02X)\n",
                     channelInfo->m_name.c_str(), channelInfo->m_streamPosition, processor->getPortCount(Streaming::Port::E_Midi));
                 p=new Streaming::AmdtpMidiPort(
@@ -718,11 +716,11 @@ AvDevice::addPlugToProcessor(
                 );
 
                 break;
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_SPDIF:
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_ADAT:
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_TDIF:
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_MADI:
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_Digital:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_SPDIF:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_ADAT:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_TDIF:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_MADI:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_Digital:
                 debugOutput(DEBUG_LEVEL_VERBOSE, " Adding digital audio channel %s (pos=0x%02X, loc=0x%02X)\n",
                     channelInfo->m_name.c_str(), channelInfo->m_streamPosition, channelInfo->m_location);
                 p=new Streaming::AmdtpAudioPort(
@@ -735,14 +733,14 @@ AvDevice::addPlugToProcessor(
                 );
                 break;
 
-            case ExtendedPlugInfoClusterInfoSpecificData::ePT_NoType:
+            case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_NoType:
             default:
             // unsupported
                 break;
             }
 
             if (!p) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",channelInfo->m_name.c_str());
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", channelInfo->m_name.c_str());
             }
          }
     }

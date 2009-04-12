@@ -26,7 +26,7 @@
 #include "../general/avc_subunit.h"
 
 #include "../audiosubunit/avc_function_block.h"
-
+#include "../audiosubunit/avc_descriptor_audio.h"
 
 #include <sstream>
 
@@ -36,6 +36,7 @@ namespace AVC {
 
 SubunitAudio::SubunitAudio( Unit& unit, subunit_t id )
     : Subunit( unit, eST_Audio, id )
+    , m_identifier_descriptor ( new AVCAudioIdentifierDescriptor( &unit, this ) )
 {
 }
 
@@ -57,6 +58,14 @@ SubunitAudio::discover()
     if ( !Subunit::discover() ) {
         return false;
     }
+
+    // load the descriptor (if not already loaded)
+//     m_identifier_descriptor->setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
+//     if (m_identifier_descriptor != NULL) {
+//         if(!m_identifier_descriptor->load()) {
+//             debugWarning("Could not load Audio Subunit Identifier descriptor\n");
+//         }
+//     }
 
     return true;
 }

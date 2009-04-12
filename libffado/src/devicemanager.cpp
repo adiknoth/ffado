@@ -53,6 +53,10 @@
     #include "fireworks/fireworks_device.h"
 #endif
 
+#ifdef ENABLE_OXFORD
+    #include "oxford/oxford_device.h"
+#endif
+
 #ifdef ENABLE_BOUNCE
 #include "bounce/bounce_avdevice.h"
 #include "bounce/bounce_slave_avdevice.h"
@@ -937,6 +941,13 @@ DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying ECHO Audio FireWorks...\n" );
     if ( FireWorks::Device::probe( getConfiguration(), *configRom, generic ) ) {
         return FireWorks::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
+    }
+#endif
+
+#ifdef ENABLE_OXFORD
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Oxford FW90x...\n" );
+    if ( Oxford::Device::probe( getConfiguration(), *configRom, generic ) ) {
+        return Oxford::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 

@@ -516,6 +516,11 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 debugError("Could not update state!\n");
                 return RAW1394_ISO_ERROR;
             }
+
+            // don't process the data when waiting for a stream
+            if(m_state == ePS_WaitingForStream) {
+                return RAW1394_ISO_OK;
+            }
         }
 
         // for all states that reach this we are allowed to
