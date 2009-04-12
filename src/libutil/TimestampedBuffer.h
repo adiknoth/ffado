@@ -152,6 +152,8 @@ class TimestampedBuffer
         void dumpInfo();
         void setVerboseLevel ( int l ) {setDebugLevel ( l );};
 
+        bool resizeBuffer(unsigned int size);
+
     private:
         void decrementFrameCounter(unsigned int nbframes);
         void incrementFrameCounter(unsigned int nbframes, ffado_timestamp_t new_timestamp);

@@ -382,9 +382,8 @@ bool TimestampedBuffer::prepare() {
 
     m_current_rate = m_nominal_rate;
 
-    if( !(m_event_buffer=ffado_ringbuffer_create(
-            (m_events_per_frame * m_buffer_size) * m_event_size))) {
-        debugFatal("Could not allocate memory event ringbuffer\n");
+    if( !resizeBuffer(m_buffer_size) ) {
+        debugError("Failed to allocate the event buffer\n");
         return false;
     }
 
@@ -407,6 +406,38 @@ bool TimestampedBuffer::prepare() {
     // really something sane to say about them
     m_buffer_tail_timestamp = TIMESTAMP_MAX + 1.0;
     m_buffer_next_tail_timestamp = TIMESTAMP_MAX + 1.0;
+
+    return true;
+}
+
+/**
+ * Resizes the timestamped buffer
+ * @return true if successful, false if not
+ */
+bool
+TimestampedBuffer::resizeBuffer(unsigned int new_size)
+{
+    assert(new_size);
+    assert(m_events_per_frame);
+    assert(m_event_size);
+
+    // if present, free the previous buffer
+    if(m_event_buffer) {
+        ffado_ringbuffer_free(m_event_buffer);
+    }
+    // allocate a new one
+    if( !(m_event_buffer = ffado_ringbuffer_create(
+            (m_events_per_frame * new_size) * m_event_size))) {
+        debugFatal("Could not allocate memory event ringbuffer\n");
+
+        return false;
+    }
+    resetFrameCounter();
+
+    m_current_rate = m_nominal_rate;
+    m_dll_e2 = m_current_rate * (float)m_update_period;
+
+    m_buffer_size = new_size;
 
     return true;
 }

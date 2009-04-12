@@ -266,7 +266,7 @@ IsoTask::Execute()
         }
 
         if(no_one_to_poll) {
-            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+            debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                         "(%p, %s) No one to poll, waiting for something to happen\n",
                         this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
             // wait for something to happen

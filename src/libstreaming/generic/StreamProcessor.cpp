@@ -76,7 +76,7 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_scratch_buffer_size_bytes( 0 )
     , m_ticks_per_frame( 0 )
     , m_dll_bandwidth_hz ( STREAMPROCESSOR_DLL_BW_HZ )
-    , m_sync_delay_frames( 0 )
+    , m_extra_buffer_frames( 0 )
     , m_in_xrun( false )
 {
     // create the timestamped buffer and register ourselves as its client
@@ -131,10 +131,6 @@ void StreamProcessor::handlerDied()
     SIGNAL_ACTIVITY_ALL;
 }
 
-uint64_t StreamProcessor::getTimeNow() {
-    return m_1394service.getCycleTimerTicks();
-}
-
 int StreamProcessor::getMaxFrameLatency() {
     return (int)(m_IsoHandlerManager.getPacketLatencyForStream( this ) * TICKS_PER_CYCLE);
 }
@@ -171,76 +167,46 @@ StreamProcessor::getNbPacketsIsoXmitBuffer()
 /***********************************************
  * Buffer management and manipulation          *
  ***********************************************/
+void
+StreamProcessor::getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int *fc)
+{
+    m_data_buffer->getBufferHeadTimestamp(ts, fc);
+}
+
+void
+StreamProcessor::getBufferTailTimestamp(ffado_timestamp_t *ts, signed int *fc)
+{
+    m_data_buffer->getBufferTailTimestamp(ts, fc);
+}
+
+void StreamProcessor::setBufferTailTimestamp(ffado_timestamp_t new_timestamp)
+{
+    m_data_buffer->setBufferTailTimestamp(new_timestamp);
+}
+
+void
+StreamProcessor::setBufferHeadTimestamp(ffado_timestamp_t new_timestamp)
+{
+    m_data_buffer->setBufferHeadTimestamp(new_timestamp);
+}
 
 int StreamProcessor::getBufferFill() {
     return m_data_buffer->getBufferFill();
 }
 
-int64_t
-StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
-{
-    uint64_t time_at_period=getTimeAtPeriod();
-
-    // we delay the period signal with the sync delay
-    // this makes that the period signals lag a little compared to reality
-    // ISO buffering causes the packets to be received at max
-    // m_handler->getWakeupInterval() later than the time they were received.
-    // hence their payload is available this amount of time later. However, the
-    // period boundary is predicted based upon earlier samples, and therefore can
-    // pass before these packets are processed. Adding this extra term makes that
-    // the period boundary is signalled later
-    time_at_period = addTicks(time_at_period, m_StreamProcessorManager.getSyncSource().getSyncDelay());
-
-    uint64_t cycle_timer=m_1394service.getCycleTimerTicks();
-
-    // calculate the time until the next period
-    int32_t until_next=diffTicks(time_at_period,cycle_timer);
-
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11ld\n",
-        time_at_period, cycle_timer, until_next
-        );
-
-    // now convert to usecs
-    // don't use the mapping function because it only works
-    // for absolute times, not the relative time we are
-    // using here (which can also be negative).
-    return (int64_t)(((float)until_next) / TICKS_PER_USEC);
-}
-
 void
-StreamProcessor::setSyncDelay(unsigned int ticks) {
-
-    // round the sync delay to an integer number of packets now we know the frame rate
-    int frames = (int)((float)ticks / getTicksPerFrame());
-    frames = (frames / getNominalFramesPerPacket()) + 1;
-    frames *= getNominalFramesPerPacket();
-    
-    #ifdef DEBUG
-    float ticks2 = frames * getTicksPerFrame();
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %u ticks => rounded to %u frames, %f ticks\n",
-                this, ticks, frames, ticks2);
-    #endif
-    m_sync_delay_frames = frames;
+StreamProcessor::setExtraBufferFrames(unsigned int frames) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting extra buffer to %d frames\n", frames);
+    m_extra_buffer_frames = frames;
 }
 
 unsigned int
-StreamProcessor::getSyncDelayFrames() {
-    return m_sync_delay_frames;
-}
-
-unsigned int
-StreamProcessor::getSyncDelay() {
-    return (unsigned int)(m_sync_delay_frames * getTicksPerFrame());
+StreamProcessor::getExtraBufferFrames() {
+    return m_extra_buffer_frames;
 }
 
 uint64_t
-StreamProcessor::getTimeAtPeriodUsecs()
-{
-    return (uint64_t)((float)getTimeAtPeriod() * TICKS_PER_USEC);
-}
-
-uint64_t
-StreamProcessor::getTimeAtPeriod() 
+StreamProcessor::getTimeAtPeriod()
 {
     if (getType() == ePT_Receive) {
         ffado_timestamp_t next_period_boundary = m_data_buffer->getTimestampFromHead(m_StreamProcessorManager.getPeriodSize());
@@ -515,6 +481,11 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             if (!updateState()) { // we are allowed to change the state directly
                 debugError("Could not update state!\n");
                 return RAW1394_ISO_ERROR;
+            }
+
+            // don't process the data when waiting for a stream
+            if(m_state == ePS_WaitingForStream) {
+                return RAW1394_ISO_OK;
             }
         }
 
@@ -1378,27 +1349,29 @@ bool StreamProcessor::stopRunning(int64_t t) {
 bool
 StreamProcessor::doStop()
 {
+    assert(m_data_buffer);
+
     float ticks_per_frame;
-    unsigned int ringbuffer_size_frames = (m_StreamProcessorManager.getNbBuffers() + 1) * m_StreamProcessorManager.getPeriodSize();
+    unsigned int ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
+    ringbuffer_size_frames += m_extra_buffer_frames;
+    ringbuffer_size_frames += 1; // to ensure that we can fit it all in there
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
     bool result = true;
 
     switch(m_state) {
         case ePS_Created:
-            assert(m_data_buffer);
-
             // prepare the framerate estimate
             ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_StreamProcessorManager.getNominalRate());
             m_ticks_per_frame = ticks_per_frame;
             m_local_node_id= m_1394service.getLocalNodeId() & 0x3f;
             m_correct_last_timestamp = false;
-
+        
             debugOutput(DEBUG_LEVEL_VERBOSE, "Initializing remote ticks/frame to %f\n", ticks_per_frame);
-
+        
             // initialize internal buffer
             result &= m_data_buffer->setBufferSize(ringbuffer_size_frames);
-
+        
             result &= m_data_buffer->setEventSize( getEventSize() );
             result &= m_data_buffer->setEventsPerFrame( getEventsPerFrame() );
             if(getType() == ePT_Receive) {
@@ -1407,13 +1380,12 @@ StreamProcessor::doStop()
                 result &= m_data_buffer->setUpdatePeriod( m_StreamProcessorManager.getPeriodSize() );
             }
             result &= m_data_buffer->setNominalRate(ticks_per_frame);
-            result &= m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
+            result &= m_data_buffer->setWrapValue(128L * TICKS_PER_SECOND);
             result &= m_data_buffer->setBandwidth(STREAMPROCESSOR_DLL_FAST_BW_HZ / (double)TICKS_PER_SECOND);
             result &= m_data_buffer->prepare(); // FIXME: the name
 
             debugOutput(DEBUG_LEVEL_VERBOSE, "DLL info: nominal tpf: %f, update period: %d, bandwidth: %e 1/ticks (%e Hz)\n", 
                         m_data_buffer->getNominalRate(), m_data_buffer->getUpdatePeriod(), m_data_buffer->getBandwidth(), m_data_buffer->getBandwidth() * TICKS_PER_SECOND);
-
             break;
         case ePS_DryRunning:
             if(!m_IsoHandlerManager.stopHandlerForStream(this)) {
@@ -1426,7 +1398,8 @@ StreamProcessor::doStop()
             return false;
     }
 
-    result &= m_data_buffer->clearBuffer(); // FIXME: don't like the reset() name
+    // clear all data
+    result &= m_data_buffer->clearBuffer();
     // make the buffer transparent
     m_data_buffer->setTransparent(true);
 
@@ -1543,26 +1516,30 @@ bool
 StreamProcessor::doWaitForStreamEnable()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
-    unsigned int ringbuffer_size_frames;
+
+    unsigned int ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
+    ringbuffer_size_frames += m_extra_buffer_frames;
+    ringbuffer_size_frames += 1; // to ensure that we can fit it all in there
+
     switch(m_state) {
         case ePS_DryRunning:
             // we have to start waiting for an incoming stream
             // this basically means nothing, the state change will
             // be picked up by the packet iterator
 
-            if(!m_data_buffer->clearBuffer()) {
-                debugError("Could not reset data buffer\n");
+            // clear the buffer / resize it to the most recent
+            // size setting
+            if(!m_data_buffer->resizeBuffer(ringbuffer_size_frames)) {
+                debugError("Could not resize data buffer\n");
                 return false;
             }
+
             if (getType() == ePT_Transmit) {
                 ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
+                ringbuffer_size_frames += m_extra_buffer_frames;
 
-                // add sync delay
-                int syncdelay_in_frames = m_StreamProcessorManager.getSyncSource().getSyncDelayFrames();
-                ringbuffer_size_frames += syncdelay_in_frames;
-
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Prefill transmit SP %p with %u frames (sync_delay_frames = %d)\n",
-                            this, ringbuffer_size_frames, syncdelay_in_frames);
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Prefill transmit SP %p with %u frames (xmit prebuffer = %d)\n",
+                            this, ringbuffer_size_frames, m_extra_buffer_frames);
                 // prefill the buffer
                 if(!transferSilence(ringbuffer_size_frames)) {
                     debugFatal("Could not prefill transmit stream\n");
@@ -1942,10 +1919,6 @@ StreamProcessor::dumpInfo()
                                           m_StreamProcessorManager.getNominalRate(),
                                           24576000.0/m_StreamProcessorManager.getSyncSource().m_data_buffer->getRate(),
                                           24576000.0/m_data_buffer->getRate());
-    float d = getSyncDelay();
-    debugOutputShort(DEBUG_LEVEL_NORMAL, "  Sync delay             : %f ticks (%f frames, %f cy)\n",
-                                         d, d/getTicksPerFrame(),
-                                         d/((float)TICKS_PER_CYCLE));
     #endif
     m_data_buffer->dumpInfo();
 }
