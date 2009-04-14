@@ -37,8 +37,6 @@
 
 #include "debugmodule/debugmodule.h"
 
-#include <libavc1394/avc1394.h>
-
 #include <vector>
 #include <string>
 
