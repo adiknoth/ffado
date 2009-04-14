@@ -90,22 +90,85 @@
 #define RME_FF800_FLASH_ERASE_CONFIG_REG    0x3fffffffcLL
 
 /* Flags and special values */
-#define RME_FF400_FLASH_CMD_WRITE           0x01000000
-#define RME_FF400_FLASH_CMD_READ            0x02000000
-#define RME_FF400_FLASH_CMD_ERASE_VOLUME    0x0e000000
-#define RME_FF400_FLASH_CMD_ERASE_SETTINGS  0x0d000000
-#define RME_FF400_FLASH_CMD_ERASE_CONFIG    0x0c000000
-#define RME_FF400_FLASH_CMD_GET_REVISION    0x0f000000
+#define RME_FF400_FLASH_CMD_WRITE           0x00000001
+#define RME_FF400_FLASH_CMD_READ            0x00000002
+#define RME_FF400_FLASH_CMD_ERASE_VOLUME    0x0000000e
+#define RME_FF400_FLASH_CMD_ERASE_SETTINGS  0x0000000d
+#define RME_FF400_FLASH_CMD_ERASE_CONFIG    0x0000000c
+#define RME_FF400_FLASH_CMD_GET_REVISION    0x0000000f
 
 
 /* Defines for components of the control register */
 /* FIXME: flesh this out once the details of how this gets used have been 
  * finalised
  */
-#define CR_FREQ0      0x02000000
-#define CR_FREQ1      0x04000000
-#define CR_DS         0x08000000
-#define CR_QS         0x10000000
+#define CR_FREQ0      0x00000002
+#define CR_FREQ1      0x00000004
+#define CR_DS         0x00000008
+#define CR_QS         0x00000010
 
+
+/* Structure used to store device settings in the device flash RAM.  This
+ * structure mirrors the layout in the Fireface's flash, so it cannot be
+ * altered.
+ */
+typedef struct {
+    uint32_t unused_device_id;
+    uint32_t unused_device_rev;
+    uint32_t unused_asio_latency;
+    uint32_t unused_samples_per_frame;
+    uint32_t spdif_input_mode;
+    uint32_t spdif_output_emphasis;
+    uint32_t spdif_output_pro;
+    uint32_t clock_mode;
+    uint32_t spdif_output_nonaudio;
+    uint32_t sync_ref;
+    uint32_t spdif_output_mode;
+    uint32_t unused_check_input;
+    uint32_t unused_status;
+    uint32_t unused_register[4];
+    uint32_t unused_iso_rx_channel;
+    uint32_t unused_iso_tx_channel;
+    uint32_t unused_timecode;
+    uint32_t unused_device_type;
+    uint32_t unused_number_of_devices;
+    uint32_t tms;
+    uint32_t unused_speed;
+    uint32_t unused_channels_avail_hi;
+    uint32_t unused_channels_avail_lo;
+    uint32_t limit_bandwidth;
+    uint32_t unused_bandwidth_allocated;
+    uint32_t stop_on_dropout;
+    uint32_t input_level;
+    uint32_t output_level;
+    uint32_t mic_level[2];
+    uint32_t mic_phantom[4];
+    uint32_t instrument;
+    uint32_t filter;
+    uint32_t fuzz;
+    uint32_t unused_sync_align;
+    uint32_t unused_device_index;
+    uint32_t unused_advanced_dialog;
+    uint32_t sample_rate;
+    uint32_t unused_interleaved;
+    uint32_t unused_sn;
+    uint32_t word_clock_single_speed;
+    uint32_t unused_num_channels;
+    uint32_t unused_dropped_samples;
+    uint32_t p12db_an[10];
+} FF_device_flash_settings_t;
+
+// Defines used to interpret device flash settings
+#define FF_DEV_FLASH_INVALID                   0xffffffff
+#define FF_DEV_FLASH_SPDIF_INPUT_COAX          0x00000001   // To be confirmed
+#define FF_DEV_FLASH_SPDIF_INPUT_OPTICAL       0x00000000   // To be confirmed
+#define FF_DEV_FLASH_SPDIF_OUTPUT_COAX         0x00000000   // To be confirmed
+#define FF_DEV_FLASH_SPDIF_OUTPUT_OPTICAL      0x00000001   // To be confirmed
+#define FF_DEV_FLASH_SPDIF_OUTPUT_EMPHASIS_ON  0x00000001
+#define FF_DEV_FLASH_SPDIF_OUTPUT_PRO_ON       0x00000001
+#define FF_DEV_FLASH_SPDIF_OUTPUT_NONAUDIO_ON  0x00000001
+#define FF_DEV_FLASH_CLOCK_MODE_MASTER         0x00000000
+#define FF_DEV_FLASH_CLOCK_MODE_SLAVE          0x00000001
+#define FF_DEV_FLASH_MIC_PHANTOM_ON            0x00000001
 
 #endif

@@ -116,23 +116,65 @@ RmeDevice::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
 signed int 
 RmeDevice::read_device_settings(void) 
 {
-    quadlet_t buf[55];
+    FF_device_flash_settings_t hw_settings;
     signed int i;
     unsigned int rev;
 
-i = get_revision(&rev);
-fprintf(stderr,"get rev %d: 0x%08x\n", i, rev);
+    i = get_revision(&rev);
+    if (i != 0) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Error reading hardware revision: %d\n", i);
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Hardware revision: 0x%08x\n", rev);
+    }
 
-#if 1
-memset(buf, 0xdb, sizeof(buf));
+    // Read settings flash ram block
     i = read_flash(m_rme_model==RME_MODEL_FIREFACE800?
-      RME_FF800_FLASH_SETTINGS_ADDR:RME_FF400_FLASH_SETTINGS_ADDR, buf, 55);
-fprintf(stderr,"result=%d\n", i);
+      RME_FF800_FLASH_SETTINGS_ADDR:RME_FF400_FLASH_SETTINGS_ADDR, 
+        (quadlet_t *)&hw_settings, sizeof(hw_settings)/sizeof(uint32_t));
+    if (i != 0) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Error reading device flash settings: %d\n", i);
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Device flash settings:\n");
+        if (hw_settings.clock_mode == FF_DEV_FLASH_INVALID) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  Clock mode: not set in device flash\n");
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  Clock mode: %s\n",
+              hw_settings.clock_mode==FF_DEV_FLASH_CLOCK_MODE_MASTER?"Master":"Slave");
+        }
+        if (hw_settings.sample_rate == FF_DEV_FLASH_INVALID) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: not set in device flash\n");
+        } else
+        if (hw_settings.sample_rate == 0) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: DDS not active\n");
+        } else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: %d Hz (DDS active)\n", hw_settings.sample_rate);
+        }
+    }
 
-for (i=0; i<55; i++) {
+{
+quadlet_t buf[4];
+signed int i;
+  i = readBlock(RME_FF_STATUS_REG0, buf, 4);
+  fprintf(stderr, "Status read: %d\n", i);
+  for (i=0; i<4; i++)
+    fprintf(stderr,"0x%08x ", buf[i]);
+  fprintf(stderr,"\n");
+}
+
+#if 0
+{
+// Read mixer volume flash ram block
+quadlet_t buf[0x800];
+  memset(buf, 0xdb, sizeof(buf));
+  i = read_flash(m_rme_model==RME_MODEL_FIREFACE800?
+        RME_FF800_FLASH_MIXER_VOLUME_ADDR:RME_FF400_FLASH_MIXER_VOLUME_ADDR, buf, 32);
+fprintf(stderr,"result=%d\n", i);
+for (i=0; i<32; i++) {
   fprintf(stderr, "%d: 0x%08x\n", i, buf[i]);
 }
+}
 #endif
+
     return 0;
 }
 

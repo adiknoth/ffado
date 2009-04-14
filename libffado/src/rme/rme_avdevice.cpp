@@ -44,6 +44,32 @@
 
 namespace Rme {
 
+// The RME devices expect async packet data in little endian format (as
+// opposed to bus order, which is big endian).  Therefore define our own
+// 32-bit byteswap function to do this.
+#if __BYTE_ORDER == __BIG_ENDIAN
+static inline uint32_t
+ByteSwapToDevice32(uint32_t d)
+{
+    return byteswap_32(d);
+}
+ByteSwapFromDevice32(uint32_t d)
+{
+    return byteswap_32(d);
+}
+#else
+static inline uint32_t
+ByteSwapToDevice32(uint32_t d)
+{
+    return d;
+}
+static inline uint32_t
+ByteSwapFromDevice32(uint32_t d)
+{
+    return d;
+}
+#endif
+
 // Template for a RmeDevice object method which intelligently returns a
 // register or value applicable to the connected model and warns if something
 // isn't quite right.
@@ -310,7 +336,7 @@ RmeDevice::readRegister(fb_nodeaddr_t reg) {
     if (get1394Service().read(0xffc0 | getNodeId(), reg, 1, &quadlet) <= 0) {
         debugError("Error doing RME read from register 0x%06x\n",reg);
     }
-    return CondSwapFromBus32(quadlet);
+    return ByteSwapFromDevice32(quadlet);
 }
 
 signed int 
@@ -324,7 +350,7 @@ RmeDevice::readBlock(fb_nodeaddr_t reg, quadlet_t *buf, unsigned int n_quads) {
         return -1;
     }
     for (i=0; i<n_quads; i++) {
-       buf[i] = CondSwapFromBus32(buf[i]);
+       buf[i] = ByteSwapFromDevice32(buf[i]);
     }
 
     return 0;
@@ -334,7 +360,7 @@ signed int
 RmeDevice::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
 
     unsigned int err = 0;
-    data = CondSwapToBus32(data);
+    data = ByteSwapToDevice32(data);
     if (get1394Service().write(0xffc0 | getNodeId(), reg, 1, &data) <= 0) {
         err = 1;
         debugError("Error doing RME write to register 0x%06x\n",reg);
@@ -352,8 +378,9 @@ RmeDevice::writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads) 
     unsigned int err = 0;
     unsigned int i;
 
-    for (i=0; i<n_quads; i++)
-      data[i] = CondSwapToBus32(data[i]);
+    for (i=0; i<n_quads; i++) {
+      data[i] = ByteSwapToDevice32(data[i]);
+    }
     if (get1394Service().write(0xffc0 | getNodeId(), reg, n_quads, data) <= 0) {
         err = 1;
         debugError("Error doing RME block write of %d quadlets to register 0x%06x\n",

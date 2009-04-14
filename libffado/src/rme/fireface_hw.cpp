@@ -89,12 +89,15 @@ RmeDevice::init_hardware(void)
 
     data[2] |= (CR_FREQ0 + CR_FREQ1 + CR_DS + CR_QS);
 
-//data[0] = 0x00020811;
-//data[1] = 0x0000031e;
-//data[2] = 0xc400101f;
-data[0] = 0x11080200;
-data[1] = 0x1e030000;
-data[2] = 0x1f1000c4;
+//data[0] = 0x00020811;      // Phantom off
+data[0] = 0x00020811;      // Phantom on
+data[1] = 0x0000031e;
+data[2] = 0xc400101f;
+
+//data[0] = 0x10080200;    // Phantom off
+//data[0] = 0x11080200;    // Phantom on
+//data[1] = 0x1e030000;
+//data[2] = 0x1f1000c4;
 
     conf_reg = (m_rme_model==RME_MODEL_FIREFACE800)?RME_FF800_CONF_REG:RME_FF400_CONF_REG;
     if (writeBlock(conf_reg, data, 3) != 0)

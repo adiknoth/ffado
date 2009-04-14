@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.7
+Version: 0.8
 Author: Jonathan Woithe
-Date: 4 April 2009
+Date: 13 April 2009
 
 
 Definitions
@@ -13,22 +13,32 @@ CBA = Command Buffer Address
 FF800 = Fireface-800
 FF400 = Fireface-400
 
-Multi-byte values sent to/from the Fireface are generally little endian -
-that is, the device interprets quadlets in asynchronous packets as little
-endian even though the bus definition is big-endian.  If writing a driver
-for use on a little endian machine, this means that a lack of byte swapping
-(to account for the bus endianness standard) will cause bit 0 on the host to
-be bit 0 on the device.
+Multi-byte values sent to/from the Fireface in async packets are generally
+little endian - that is, the device interprets quadlets in asynchronous
+packets as little endian even though the bus definition is big-endian.  If
+writing a driver for use on a little endian machine, this means that a lack
+of byte swapping (to account for the bus endianness standard) will cause bit
+0 on the host to be bit 0 on the device.
 
-FFADO however adheres to the bus standards and byteswaps on little endian
-machines.  Under FFADO therefore, bit 0 on the host will in fact be read by
-the device as the least significant bit in the most significant byte.
+By default, FFADO however adheres to the bus standards and byteswaps on
+little endian machines.  Under this regime, bit 0 on the host will in fact
+be read by the device as the least significant bit in the most significant
+byte.
+
+In order to retain consistency with device documentation, the FFADO RME
+driver currently sends async packet data in the little endian format which
+the RME device expects.  Although this is technically wrong (in so far as
+the Firewire standard is concerned), at this stage it is considered that
+introducing an endianness difference between the FFADO driver and the
+documentation is likely to result in maintenance issues down the track.
 
 The bit maps in this document regarding the configuration registers are
-written from the device's point of view.
+written from the device's point of view.  That is, the values quoted should
+be sent to the device in little endian format unless otherwise stated.
 
-Curiously enough, audio data appears to be send on the bus in big endian
-format (although this is to be confirmed).
+Curiously enough, preliminary investigations suggest that audio data appears
+to be sent on the bus in big endian format (although this is to be
+confirmed).
 
 
 Device address space location
@@ -56,15 +66,33 @@ Sample rate is controlled by writing the desired sample rate in Hz to the
 sample rate control register located at offset 0 from the command buffer
 address (0xfc88f000 on a FF800).  Rates which have been observed are 32k,
 44.056k, 44.144k, 44.1k, 45.937k, 46.080k, 47.952k, 48k and 48.048k, along
-with corresponding 2x and 4x rates.
+with corresponding 2x and 4x rates.  This assumes the DDS has been enabled. 
+If DDS is not active it seems the audio system assumes a frequency of 44.1
+kHz which cannot be changed.  The value of disabling the DDS is therefore
+not entirely understood.
 
-Nowhere is there any evidence of register 0xfc88f000 being read by the PC. 
-It seems that the PC explicitly sets the device to its desired sample rate
-and then caches the sample rate locally.
+The PC does not appear to request the device's current sample rate; in fact,
+it doesn't appear to be available from the device itself (except from the
+flash device setting record in the case where the DDS has been enabled). 
+When requesting the device status, the sample rate returned is based on the
+PC's audio engine sample rate so long as the device status has been read
+without error (if an error occurs the sample rate is hardcoded to 44.1 kHz). 
+It therefore seems that when DDS is in use the PC explicitly sets the device
+to its desired sample rate and then caches the sample rate locally.  If DDS
+is not active it appears at this stage that the only internally generated
+sample rate available is 44.1 kHz.
+
+When using an external clock without DDS it's not clear how the PC works out
+what sample rate to use.  Presumedly it remains at 44.1 kHz.
 
 In terms of multipliers the RME treats sample rates greater than 112000 Hz
 as 4x rates, with rates greater than 56000 Hz as 2x rates.  Rates less than
 30000 Hz and greater than 210000 Hz are invalid.
+
+It is not yet known how the driver works out that the DDS is active since
+the device flash settings are not read and in any case, if the device flash
+settings have not been set they won't indicate anything useful about the
+current device state.
 
 
 Configuration registers 1, 2 and 3
@@ -279,56 +307,65 @@ elapsed.
 Device settings format
 ----------------------
 
-The device settings are stored in flash as an array of 44 32-bit unsigned
+The device settings are stored in flash as an array of 59 32-bit unsigned
 integers.  These are:
-  0  - Device ID
-  1  - Device revision
-  2  - ASIO latency
-  3  - Samples per frame
-  SPDIF input mode (0=coax?, 1=optical?)
-  SPDIF output emphasis active
-  SPDIF output is "professional" (ie: AES/EBU)
-  Clock mode (0=master?, 1=autosync?)
-  SPDIF output is non-audio (eg: AC3 passthrough)
-  Sync reference
-  SPDIF output mode (0=coax?, 1=optical?)
-  - Check input
-  - Status
-  - Register[4]
-  - Iso receive channel
-  - Iso transmit channel
-  - Timecode
-  - Number of devices
-  - TMS
-  - Speed
- 20  - Channels available (high)
-  - Channels available (low)
-  Limit bandwidth setting
-  - Bandwidth allocated
-  - Stop on dropout
- 25  Input level 
-  Output level
- 27  Mic level [0] - FF400:Phoneslevel-1 / F800:AnalogInput[1]* ???
- 28  Mic level [1] - AnalogInput[2] ???
- 29  Mic phantom power [4]
- 33  Instrument - AnalogInput[0]-1 ???
-  Filter (aka speaker emulation)
-  Fuzz (aka drive)
-  Sync align
- 37  - Device index
-  - Advanced dialog
- 39 Sample rate
- 40  - Interleaved
- 41  - Sn
- 42  Word clock single speed
- 43  - Number of channels
- 44  - Dropped samples
- 45  p12db_an[0] - Limiter==0&&AnalogInput[0]==2*: 1 else 0 ???
- 46  - p12db_an[1-9]
+  0 - Device ID (FF400=0x77e1f4ea)
+  1 - Device revision (FF400=0x004af3d8)
+  2 - ASIO latency (FF400=0x00000001)
+  3 - Samples per frame (FF400 default is 0x30)
+  4 SPDIF input mode (1=coax?, 0=optical?)
+  5 SPDIF output emphasis active
+  6 SPDIF output is "professional" (ie: AES/EBU)
+  7 Clock mode (0=master?, 1=autosync?)
+  8 SPDIF output is non-audio (eg: AC3 passthrough)
+  9 Sync reference
+ 10 SPDIF output mode (0=coax?, 1=optical?)
+ 11 - Check input
+ 12 - Status (FF400 idle=0x77e691d0)
+ 13 - Register[4] (FF400 = 0x004adbc8,0x001377c0,0x000301ee,0x00000001)
+ 17 - Iso receive channel (FF400=0x7ffde000)
+ 18 - Iso transmit channel (FF400=0x77f43664) 
+ 19 - Timecode (FF400 example: 0x004b35c8)
+ 20 - Device type (FF400=0x00000001)
+ 21 - Number of devices (FF400=0x77f43664)
+ 22 TMS (FF400=0x00000000)
+ 23 - Speed (FF400=0x00000000)
+ 24 - Channels available (high) (FF400=0x0012f2e4)
+ 25 - Channels available (low) (FF400=0x00000000)
+ 26 Limit bandwidth setting (0=full bandwidth)
+ 27 - Bandwidth allocated (FF400=0x00000000)
+ 28 Stop on dropout (FF400=0x00000000)
+ 29 Input level (0=lo-gain)
+ 30 Output level (0=-10dBV)
+ 31 Mic level [0] - FF400:Phoneslevel-1 / F800:AnalogInput[1]* ???
+ 32 Mic level [1] - AnalogInput[2] ???
+ 33 Mic phantom power [4]
+ 37 Instrument - AnalogInput[0]-1 ???
+ 38 Filter (aka speaker emulation)
+ 39 Fuzz (aka drive)
+ 40 - Sync align
+ 41 - Device index (FF400=0x77e24d0d)
+ 42 - Advanced dialog (FF400=0x000201f8) [but might be related to TCO control)
+ 43 Sample rate (eg: 0x0000ac44) [set to 0x00000000 unless DDS enabled]
+ 44 - Interleaved (FF400=0x00000000)
+ 45 - Sn (FF400=0x77e14925)
+ 46 Word clock single speed (1=single speed)
+ 47 - Number of channels (FF400=0x000000f0)
+ 48 - Dropped samples
+ 49 p12db_an[0] - Limiter==0&&AnalogInput[0]==2*: 1 else 0 ???
+ 50 - p12db_an[1-9]
 
-"-" = elements not used
+"-" = elements not used (under MacOSX at least)
 
-Total size: 55 quadlets
+Total size: 59 quadlets
+
+The default state of these quadlets is 0xffffffff, which is taken to
+indicate that the respective setting has not been written to flash. This in
+turn causes the driver to assume its own default value.  While these
+settings can be changed in real time by writing to the relevant control
+registers, these are not persistent across device power cycles.  To make
+them persistent it is necessary to store them into the flash.
+
 
 Streaming control registers
 ---------------------------
@@ -470,6 +507,10 @@ and up to a maximum setting of 0x00010000 (+6.5dB).
 Mute is synthesised by setting the respective send value to -inf (0). 
 Conversely, solo is synthesised by muting all sends to the selected bus
 except the send being soloed.
+
+Note that a different scale is used when writing mixer settings into flash.
+Fader values are stored as 16 bit numbers, with 803 (0x0323) seemingly
+representing 0 dB.  Other details of the scale used are still to be deduced.
 
 
 Metering values
