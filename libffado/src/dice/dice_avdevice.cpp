@@ -42,6 +42,9 @@
 #include <cstring>
 #include <assert.h>
 
+#include "libutil/Configuration.h"
+#include "devicemanager.h"
+
 using namespace std;
 
 namespace Dice {
@@ -50,6 +53,7 @@ namespace Dice {
 static VendorModelEntry supportedDeviceList[] =
 {
     // vendor id, model id, vendor name, model name
+    {FW_VENDORID_TCAT,   0x00000001, "TCAT", "DiceII EVM"},
     {FW_VENDORID_TCAT,   0x00000002, "TCAT", "DiceII EVM"},
     {FW_VENDORID_TCAT,   0x00000004, "TCAT", "DiceII EVM (vxx)"},
     {FW_VENDORID_TCAT,   0x00000021, "TC Electronic", "Konnekt 8"},
@@ -85,7 +89,7 @@ DiceAvDevice::DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRo
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Dice::DiceAvDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
-
+    addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 
 DiceAvDevice::~DiceAvDevice()
@@ -232,91 +236,105 @@ DiceAvDevice::setSamplingFrequency( int samplingFrequency )
     bool supported=false;
     fb_quadlet_t select=0x0;
 
-    switch ( samplingFrequency ) {
-    default:
-    case 22050:
-    case 24000:
-        supported=false;
-        break;
-    case 32000:
-        supported=maskedCheckNotZeroGlobalReg(
-                    DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
-                    DICE_CLOCKCAP_RATE_32K);
-        select=DICE_RATE_32K;
-        break;
-    case 44100:
-        supported=maskedCheckNotZeroGlobalReg(
-                    DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
-                    DICE_CLOCKCAP_RATE_44K1);
-        select=DICE_RATE_44K1;
-        break;
-    case 48000:
-        supported=maskedCheckNotZeroGlobalReg(
-                    DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
-                    DICE_CLOCKCAP_RATE_48K);
-        select=DICE_RATE_48K;
-        break;
-    case 88200:
-        supported=maskedCheckNotZeroGlobalReg(
-                    DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
-                    DICE_CLOCKCAP_RATE_88K2);
-        select=DICE_RATE_88K2;
-        break;
-    case 96000:
-        supported=maskedCheckNotZeroGlobalReg(
-                    DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
-                    DICE_CLOCKCAP_RATE_96K);
-        select=DICE_RATE_96K;
-        break;
-    case 176400:
-        supported=maskedCheckNotZeroGlobalReg(
-                    DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
-                    DICE_CLOCKCAP_RATE_176K4);
-        select=DICE_RATE_176K4;
-        break;
-    case 192000:
-        supported=maskedCheckNotZeroGlobalReg(
-                    DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
-                    DICE_CLOCKCAP_RATE_192K);
-        select=DICE_RATE_192K;
-        break;
+    bool snoopMode = false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
 
-    if (!supported) {
-        debugWarning("Unsupported sample rate: %d\n", (samplingFrequency));
-        return false;
+    if(snoopMode) {
+        int current_sr = getSamplingFrequency();
+        if (current_sr != samplingFrequency ) {
+            debugError("In snoop mode it is impossible to set the sample rate.\n");
+            debugError("Please start the client with the correct setting.\n");
+            return false;
+        }
+        return true;
+    } else {
+        switch ( samplingFrequency ) {
+        default:
+        case 22050:
+        case 24000:
+            supported=false;
+            break;
+        case 32000:
+            supported=maskedCheckNotZeroGlobalReg(
+                        DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
+                        DICE_CLOCKCAP_RATE_32K);
+            select=DICE_RATE_32K;
+            break;
+        case 44100:
+            supported=maskedCheckNotZeroGlobalReg(
+                        DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
+                        DICE_CLOCKCAP_RATE_44K1);
+            select=DICE_RATE_44K1;
+            break;
+        case 48000:
+            supported=maskedCheckNotZeroGlobalReg(
+                        DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
+                        DICE_CLOCKCAP_RATE_48K);
+            select=DICE_RATE_48K;
+            break;
+        case 88200:
+            supported=maskedCheckNotZeroGlobalReg(
+                        DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
+                        DICE_CLOCKCAP_RATE_88K2);
+            select=DICE_RATE_88K2;
+            break;
+        case 96000:
+            supported=maskedCheckNotZeroGlobalReg(
+                        DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
+                        DICE_CLOCKCAP_RATE_96K);
+            select=DICE_RATE_96K;
+            break;
+        case 176400:
+            supported=maskedCheckNotZeroGlobalReg(
+                        DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
+                        DICE_CLOCKCAP_RATE_176K4);
+            select=DICE_RATE_176K4;
+            break;
+        case 192000:
+            supported=maskedCheckNotZeroGlobalReg(
+                        DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
+                        DICE_CLOCKCAP_RATE_192K);
+            select=DICE_RATE_192K;
+            break;
+        }
+    
+        if (!supported) {
+            debugWarning("Unsupported sample rate: %d\n", (samplingFrequency));
+            return false;
+        }
+    
+        if (isIsoStreamingEnabled()) {
+            debugError("Cannot change samplerate while streaming is enabled\n");
+            return false;
+        }
+    
+        fb_quadlet_t clockreg;
+        if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
+            debugError("Could not read CLOCK_SELECT register\n");
+            return false;
+        }
+    
+        clockreg = DICE_SET_RATE(clockreg, select);
+    
+        if (!writeGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, clockreg)) {
+            debugError("Could not write CLOCK_SELECT register\n");
+            return false;
+        }
+    
+        // check if the write succeeded
+        fb_quadlet_t clockreg_verify;
+        if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg_verify)) {
+            debugError("Could not read CLOCK_SELECT register\n");
+            return false;
+        }
+    
+        if(clockreg != clockreg_verify) {
+            debugError("Samplerate register write failed\n");
+            return false;
+        }
     }
-
-    if (isIsoStreamingEnabled()) {
-        debugError("Cannot change samplerate while streaming is enabled\n");
-        return false;
-    }
-
-    fb_quadlet_t clockreg;
-    if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
-        debugError("Could not read CLOCK_SELECT register\n");
-        return false;
-    }
-
-    clockreg = DICE_SET_RATE(clockreg, select);
-
-    if (!writeGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, clockreg)) {
-        debugError("Could not write CLOCK_SELECT register\n");
-        return false;
-    }
-
-    // check if the write succeeded
-    fb_quadlet_t clockreg_verify;
-    if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg_verify)) {
-        debugError("Could not read CLOCK_SELECT register\n");
-        return false;
-    }
-
-    if(clockreg != clockreg_verify) {
-        debugError("Samplerate register write failed\n");
-        return false;
-    }
-
     return true;
 }
 
@@ -689,12 +707,46 @@ DiceAvDevice::showDevice()
 // the size of the packet.
 bool
 DiceAvDevice::prepare() {
+    fb_quadlet_t nb_audio;
+    fb_quadlet_t nb_midi;
+    unsigned int nb_channels = 0;
+
+    bool snoopMode = false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
+    // get the device specific and/or global SP configuration
+    Util::Configuration &config = getDeviceManager().getConfiguration();
+    // base value is the config.h value
+    float recv_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+    float xmit_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+
+    int xmit_max_cycles_early_transmit = AMDTP_MAX_CYCLES_TO_TRANSMIT_EARLY;
+    int xmit_transfer_delay = AMDTP_TRANSMIT_TRANSFER_DELAY;
+    int xmit_min_cycles_before_presentation = AMDTP_MIN_CYCLES_BEFORE_PRESENTATION;
+
+    // we can override that globally
+    config.getValueForSetting("streaming.common.recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForSetting("streaming.common.xmit_sp_dll_bw", xmit_sp_dll_bw);
+    config.getValueForSetting("streaming.amdtp.xmit_max_cycles_early_transmit", xmit_max_cycles_early_transmit);
+    config.getValueForSetting("streaming.amdtp.xmit_transfer_delay", xmit_transfer_delay);
+    config.getValueForSetting("streaming.amdtp.xmit_min_cycles_before_presentation", xmit_min_cycles_before_presentation);
+
+    // or override in the device section
+    uint32_t vendorid = getConfigRom().getNodeVendorId();
+    uint32_t modelid = getConfigRom().getModelId();
+    config.getValueForDeviceSetting(vendorid, modelid, "recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForDeviceSetting(vendorid, modelid, "xmit_sp_dll_bw", xmit_sp_dll_bw);
+    config.getValueForDeviceSetting(vendorid, modelid, "xmit_max_cycles_early_transmit", xmit_max_cycles_early_transmit);
+    config.getValueForDeviceSetting(vendorid, modelid, "xmit_transfer_delay", xmit_transfer_delay);
+    config.getValueForDeviceSetting(vendorid, modelid, "xmit_min_cycles_before_presentation", xmit_min_cycles_before_presentation);
+
+    diceNameVector names_audio;
+    diceNameVector names_midi;
     // prepare receive SP's
 //     for (unsigned int i=0;i<1;i++) {
-    for (unsigned int i=0;i<m_nb_tx;i++) {
-        fb_quadlet_t nb_audio;
-        fb_quadlet_t nb_midi;
-        unsigned int nb_channels=0;
+    for (unsigned int i=0; i<m_nb_tx; i++) {
 
         if(!readTxReg(i, DICE_REGISTER_TX_NB_AUDIO_BASE, &nb_audio)) {
             debugError("Could not read DICE_REGISTER_TX_NB_AUDIO_BASE register for ATX%u\n",i);
@@ -706,8 +758,7 @@ DiceAvDevice::prepare() {
         }
 
         // request the channel names
-        diceNameVector names_audio=getTxNameString(i);
-
+        names_audio = getTxNameString(i);
         if (names_audio.size() != nb_audio) {
             debugWarning("The audio channel name vector is incorrect, using default names\n");
             names_audio.clear();
@@ -719,11 +770,10 @@ DiceAvDevice::prepare() {
             }
         }
 
-        nb_channels=nb_audio;
+        nb_channels = nb_audio;
         if(nb_midi) nb_channels += 1; // midi-muxed counts as one
 
         // construct the MIDI names
-        diceNameVector names_midi;
         for (unsigned int j=0;j<nb_midi;j++) {
             std::ostringstream newname;
             newname << "midi_in_" << j;
@@ -732,7 +782,7 @@ DiceAvDevice::prepare() {
 
         // construct the streamprocessor
         Streaming::AmdtpReceiveStreamProcessor *p;
-        p=new Streaming::AmdtpReceiveStreamProcessor(*this,
+        p = new Streaming::AmdtpReceiveStreamProcessor(*this,
                              nb_channels);
 
         if(!p->init()) {
@@ -771,31 +821,44 @@ DiceAvDevice::prepare() {
             }
         }
 
+        if(!p->setDllBandwidth(recv_sp_dll_bw)) {
+            debugFatal("Could not set DLL bandwidth\n");
+            delete p;
+            return false;
+        }
+
+        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Receive SP on channel [%d audio, %d midi]\n", this, nb_audio, nb_midi);
         // add the SP to the vector
         m_receiveProcessors.push_back(p);
     }
 
     // prepare transmit SP's
-    //for (unsigned int i=0;i<1;i++) {
-    for (unsigned int i=0;i<m_nb_rx;i++) {
-        fb_quadlet_t nb_audio;
-        fb_quadlet_t nb_midi;
-        unsigned int nb_channels=0;
+    names_audio.clear();
+    names_midi.clear();
+//     for (unsigned int i=0;i<1;i++) {
+    for (unsigned int i=0; i<m_nb_rx; i++) {
 
-        if(!readTxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &nb_audio)) {
-            debugError("Could not read DICE_REGISTER_RX_NB_AUDIO_BASE register for ARX%u\n",i);
+        // construct the streamprocessor
+        Streaming::StreamProcessor *p;
+        if(!readRxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &nb_audio)) {
+            debugError("Could not read DICE_REGISTER_RX_NB_AUDIO_BASE register for ARX%u\n", i);
             continue;
         }
-        if(!readTxReg(i, DICE_REGISTER_RX_MIDI_BASE, &nb_midi)) {
-            debugError("Could not read DICE_REGISTER_RX_MIDI_BASE register for ARX%u\n",i);
+        if(!readRxReg(i, DICE_REGISTER_RX_MIDI_BASE, &nb_midi)) {
+            debugError("Could not read DICE_REGISTER_RX_MIDI_BASE register for ARX%u\n", i);
             continue;
         }
+
+        // request the channel names
+        names_audio = getRxNameString(i);
 
         /* Vendor-specific hacks */
+        // PP: I think this was a workaround for a bug that is not required anymore
+        #if 0
         if (FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) {
             /* Alesis io14 RX0 claims to have six audio channels. Ignore
-             * it, just use 8 for Bus1-L+R .. Bus4-L+R.
-             */
+            * it, just use 8 for Bus1-L+R .. Bus4-L+R.
+            */
             if (0x00000001 == getConfigRom().getModelId()) {
                 nb_audio = 8;
             }
@@ -805,59 +868,73 @@ DiceAvDevice::prepare() {
                 nb_audio = 2;
             }
         }
+        #endif
 
-        // request the channel names
-        diceNameVector names_audio=getRxNameString(i);
+        nb_channels = nb_audio;
+        if(nb_midi) nb_channels += 1; // midi-muxed counts as one
 
         if (names_audio.size() != nb_audio) {
             debugWarning("The audio channel name vector is incorrect, using default names\n");
             names_audio.clear();
 
-            for (unsigned int j=0;j<nb_audio;j++) {
+            for (unsigned int j=0; j < nb_audio; j++) {
                 std::ostringstream newname;
                 newname << "output_" << j;
                 names_audio.push_back(newname.str());
             }
         }
 
-        nb_channels=nb_audio;
-        if(nb_midi) nb_channels += 1; // midi-muxed counts as one
-
         // construct the MIDI names
-        diceNameVector names_midi;
-        for (unsigned int j=0;j<nb_midi;j++) {
+        for (unsigned int j=0; j < nb_midi; j++) {
             std::ostringstream newname;
             newname << "midi_out_" << j;
             names_midi.push_back(newname.str());
         }
 
-        // construct the streamprocessor
-        Streaming::AmdtpTransmitStreamProcessor *p;
-        p=new Streaming::AmdtpTransmitStreamProcessor(*this,
-                             nb_channels);
+        enum Streaming::Port::E_Direction port_type;
+        float dll_bw;
+        if (snoopMode) {
+            // we are snooping, so this is receive too.
+            p = new Streaming::AmdtpReceiveStreamProcessor(*this, nb_channels);
+            port_type = Streaming::Port::E_Capture;
+            dll_bw = recv_sp_dll_bw;
+        } else {
+            // this is a normal situation
+            Streaming::AmdtpTransmitStreamProcessor *t;
+            t = new Streaming::AmdtpTransmitStreamProcessor(*this, nb_channels);
+            #if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+            // the DICE-II cannot handle payload in the NO-DATA packets.
+            // the other DICE chips don't need payload. Therefore
+            // we disable it.
+            t->sendPayloadForNoDataPackets(false);
+            #endif
+    
+            // transmit control parameters
+            t->setMaxCyclesToTransmitEarly(xmit_max_cycles_early_transmit);
+            t->setTransferDelay(xmit_transfer_delay);
+            t->setMinCyclesBeforePresentation(xmit_min_cycles_before_presentation);
+
+            p = t;
+            port_type = Streaming::Port::E_Playback;
+            dll_bw = xmit_sp_dll_bw;
+        }
 
         if(!p->init()) {
-            debugFatal("Could not initialize transmit processor!\n");
+            debugFatal("Could not initialize transmit processor %s!\n",
+                (snoopMode?" in snoop mode":""));
             delete p;
             continue;
         }
 
-#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
-        // the DICE-II cannot handle payload in the NO-DATA packets.
-        // the other DICE chips don't need payload. Therefore
-        // we disable it.
-        p->sendPayloadForNoDataPackets(false);
-#endif
-
         // add audio ports to the processor
-        for (unsigned int j=0;j<nb_audio;j++) {
+        for (unsigned int j=0; j < nb_audio; j++) {
             diceChannelInfo channelInfo;
-            channelInfo.name=names_audio.at(j);
-            channelInfo.portType=ePT_Analog;
-            channelInfo.streamPosition=j;
-            channelInfo.streamLocation=0;
+            channelInfo.name = names_audio.at(j);
+            channelInfo.portType = ePT_Analog;
+            channelInfo.streamPosition = j;
+            channelInfo.streamLocation = 0;
 
-            if (!addChannelToProcessor(&channelInfo, p, Streaming::Port::E_Playback)) {
+            if (!addChannelToProcessor(&channelInfo, p, port_type)) {
                 debugError("Could not add channel %s to StreamProcessor\n",
                     channelInfo.name.c_str());
                 continue;
@@ -865,20 +942,34 @@ DiceAvDevice::prepare() {
         }
 
         // add midi ports to the processor
-        for (unsigned int j=0;j<nb_midi;j++) {
+        for (unsigned int j=0; j < nb_midi; j++) {
             diceChannelInfo channelInfo;
-            channelInfo.name=names_midi.at(j);
-            channelInfo.portType=ePT_MIDI;
-            channelInfo.streamPosition=nb_audio;
-            channelInfo.streamLocation=j;
+            channelInfo.name = names_midi.at(j);
+            channelInfo.portType = ePT_MIDI;
+            channelInfo.streamPosition = nb_audio;
+            channelInfo.streamLocation = j;
 
-            if (!addChannelToProcessor(&channelInfo, p, Streaming::Port::E_Playback)) {
+            if (!addChannelToProcessor(&channelInfo, p, port_type)) {
                 debugError("Could not add channel %s to StreamProcessor\n",
                     channelInfo.name.c_str());
                 continue;
             }
         }
 
+        // set DLL bandwidth
+        if(!p->setDllBandwidth(recv_sp_dll_bw)) {
+            debugFatal("Could not set DLL bandwidth\n");
+            delete p;
+            return false;
+        }
+        
+        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Transmit SP on channel [%d audio, %d midi]%s\n", 
+                                         this, nb_audio, nb_midi, (snoopMode?" snoop mode":""));
+
+        // we put this SP into the transmit SP vector,
+        // no matter if we are in snoop mode or not
+        // this allows us to find out what direction
+        // a certain stream should have.
         m_transmitProcessors.push_back(p);
     }
     return true;
@@ -948,61 +1039,72 @@ DiceAvDevice::lock() {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Locking %s %s at node %d\n",
         m_model->vendor_name, m_model->model_name, getNodeId());
 
+    bool snoopMode = false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
+    if (snoopMode) {
+        debugWarning("Lock not supported in snoop mode\n");
+        return true; //FIXME: this should be false
+    } else {
+
     // get a notifier to handle device notifications
-    nodeaddr_t notify_address;
-    notify_address = get1394Service().findFreeARMBlock(
-                        DICE_NOTIFIER_BASE_ADDRESS,
-                        DICE_NOTIFIER_BLOCK_LENGTH,
-                        DICE_NOTIFIER_BLOCK_LENGTH);
-
-    if (notify_address == 0xFFFFFFFFFFFFFFFFLLU) {
-        debugError("Could not find free ARM block for notification\n");
-        return false;
+        nodeaddr_t notify_address;
+        notify_address = get1394Service().findFreeARMBlock(
+                            DICE_NOTIFIER_BASE_ADDRESS,
+                            DICE_NOTIFIER_BLOCK_LENGTH,
+                            DICE_NOTIFIER_BLOCK_LENGTH);
+    
+        if (notify_address == 0xFFFFFFFFFFFFFFFFLLU) {
+            debugError("Could not find free ARM block for notification\n");
+            return false;
+        }
+    
+        m_notifier=new DiceAvDevice::DiceNotifier(this, notify_address);
+    
+        if(!m_notifier) {
+            debugError("Could not allocate notifier\n");
+            return false;
+        }
+    
+        if (!get1394Service().registerARMHandler(m_notifier)) {
+            debugError("Could not register notifier\n");
+            delete m_notifier;
+            m_notifier=NULL;
+            return false;
+        }
+    
+        // register this notifier
+        fb_nodeaddr_t addr = DICE_REGISTER_BASE
+                        + m_global_reg_offset
+                        + DICE_REGISTER_GLOBAL_OWNER;
+    
+        // registry offsets should always be smaller than 0x7FFFFFFF
+        // because otherwise base + offset > 64bit
+        if(m_global_reg_offset & 0x80000000) {
+            debugError("register offset not initialized yet\n");
+            return false;
+        }
+    
+        fb_nodeaddr_t swap_value = ((0xFFC0) | get1394Service().getLocalNodeId());
+        swap_value = swap_value << 48;
+        swap_value |= m_notifier->getStart();
+    
+        if (!get1394Service().lockCompareSwap64(getNodeId() | 0xFFC0,
+                                                addr, DICE_OWNER_NO_OWNER,
+                                                swap_value, &result )) {
+            debugWarning("Could not register ourselves as device owner\n");
+            return false;
+        }
+    
+        if (result != DICE_OWNER_NO_OWNER) {
+            debugWarning("Could not register ourselves as device owner, unexpected register value: 0x%016llX\n", result);
+            return false;
+        }
+    
+        return true;
     }
-
-    m_notifier=new DiceAvDevice::DiceNotifier(this, notify_address);
-
-    if(!m_notifier) {
-        debugError("Could not allocate notifier\n");
-        return false;
-    }
-
-    if (!get1394Service().registerARMHandler(m_notifier)) {
-        debugError("Could not register notifier\n");
-        delete m_notifier;
-        m_notifier=NULL;
-        return false;
-    }
-
-    // register this notifier
-    fb_nodeaddr_t addr = DICE_REGISTER_BASE
-                       + m_global_reg_offset
-                       + DICE_REGISTER_GLOBAL_OWNER;
-
-    // registry offsets should always be smaller than 0x7FFFFFFF
-    // because otherwise base + offset > 64bit
-    if(m_global_reg_offset & 0x80000000) {
-        debugError("register offset not initialized yet\n");
-        return false;
-    }
-
-    fb_nodeaddr_t swap_value = ((0xFFC0) | get1394Service().getLocalNodeId());
-    swap_value = swap_value << 48;
-    swap_value |= m_notifier->getStart();
-
-    if (!get1394Service().lockCompareSwap64(getNodeId() | 0xFFC0,
-                                            addr, DICE_OWNER_NO_OWNER,
-                                            swap_value, &result )) {
-        debugWarning("Could not register ourselves as device owner\n");
-        return false;
-    }
-
-    if (result != DICE_OWNER_NO_OWNER) {
-        debugWarning("Could not register ourselves as device owner, unexpected register value: 0x%016llX\n", result);
-        return false;
-    }
-
-    return true;
 }
 
 
@@ -1010,47 +1112,77 @@ bool
 DiceAvDevice::unlock() {
     fb_octlet_t result;
 
-    if(!m_notifier) {
-        debugWarning("Request to unlock, but no notifier present!\n");
-        return false;
+    bool snoopMode = false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
 
-    fb_nodeaddr_t addr = DICE_REGISTER_BASE
-                       + m_global_reg_offset
-                       + DICE_REGISTER_GLOBAL_OWNER;
-
-    // registry offsets should always be smaller than 0x7FFFFFFF
-    // because otherwise base + offset > 64bit
-    if(m_global_reg_offset & 0x80000000) {
-        debugError("register offset not initialized yet\n");
-        return false;
+    if (snoopMode) {
+        debugWarning("Unlock not supported in snoop mode\n");
+        return true; //FIXME: this should be false
+    } else {
+        if(!m_notifier) {
+            debugWarning("Request to unlock, but no notifier present!\n");
+            return false;
+        }
+    
+        fb_nodeaddr_t addr = DICE_REGISTER_BASE
+                        + m_global_reg_offset
+                        + DICE_REGISTER_GLOBAL_OWNER;
+    
+        // registry offsets should always be smaller than 0x7FFFFFFF
+        // because otherwise base + offset > 64bit
+        if(m_global_reg_offset & 0x80000000) {
+            debugError("register offset not initialized yet\n");
+            return false;
+        }
+    
+        fb_nodeaddr_t compare_value = ((0xFFC0) | get1394Service().getLocalNodeId());
+        compare_value <<= 48;
+        compare_value |= m_notifier->getStart();
+    
+        if (!get1394Service().lockCompareSwap64(  getNodeId() | 0xFFC0, addr, compare_value,
+                                        DICE_OWNER_NO_OWNER, &result )) {
+            debugWarning("Could not unregister ourselves as device owner\n");
+            return false;
+        }
+    
+        get1394Service().unregisterARMHandler(m_notifier);
+        delete m_notifier;
+        m_notifier=NULL;
+    
+        return true;
     }
-
-    fb_nodeaddr_t compare_value = ((0xFFC0) | get1394Service().getLocalNodeId());
-    compare_value <<= 48;
-    compare_value |= m_notifier->getStart();
-
-    if (!get1394Service().lockCompareSwap64(  getNodeId() | 0xFFC0, addr, compare_value,
-                                       DICE_OWNER_NO_OWNER, &result )) {
-        debugWarning("Could not unregister ourselves as device owner\n");
-        return false;
-    }
-
-    get1394Service().unregisterARMHandler(m_notifier);
-    delete m_notifier;
-    m_notifier=NULL;
-
-    return true;
 }
 
 bool
 DiceAvDevice::enableStreaming() {
-    return enableIsoStreaming();
+    bool snoopMode = false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
+    if (snoopMode) {
+        debugWarning("Stream should be already running for snoop mode\n");
+        return true;
+    } else {
+        return enableIsoStreaming();
+    }
 }
 
 bool
 DiceAvDevice::disableStreaming() {
-    return disableIsoStreaming();
+    bool snoopMode = false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
+    if (snoopMode) {
+        debugWarning("Won't disable stream in snoop mode\n");
+        return true;
+    } else {
+        return disableIsoStreaming();
+    }
 }
 
 int
@@ -1072,98 +1204,131 @@ DiceAvDevice::getStreamProcessorByIndex(int i) {
 
 bool
 DiceAvDevice::startStreamByIndex(int i) {
+    bool snoopMode = false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
 
-    if (isIsoStreamingEnabled()) {
+    if (!snoopMode && isIsoStreamingEnabled()) {
         debugError("Cannot start streams while streaming is enabled\n");
         return false;
     }
 
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
-        Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
+        Streaming::StreamProcessor *p = m_receiveProcessors.at(n);
 
-        // allocate ISO channel
-        int isochannel=allocateIsoChannel(p->getMaxPacketSize());
-        if(isochannel<0) {
-            debugError("Could not allocate iso channel for SP %d (ATX %d)\n",i,n);
-            return false;
+        if(snoopMode) { // a stream from the device to another host
+            fb_quadlet_t reg_isoch;
+            // check value of ISO_CHANNEL register
+            if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
+                debugError("Could not read ISO_CHANNEL register for ATX %d\n", n);
+                p->setChannel(-1);
+                return false;
+            }
+            int isochannel = reg_isoch;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Snooping RX from channel %d\n", isochannel);
+            p->setChannel(isochannel);
+        } else {
+            // allocate ISO channel
+            int isochannel = allocateIsoChannel(p->getMaxPacketSize());
+            if(isochannel<0) {
+                debugError("Could not allocate iso channel for SP %d (ATX %d)\n",i,n);
+                return false;
+            }
+            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Allocated channel %lu for RX\n", isochannel);
+            p->setChannel(isochannel);
+    
+            fb_quadlet_t reg_isoch;
+            // check value of ISO_CHANNEL register
+            if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
+                debugError("Could not read ISO_CHANNEL register for ATX %d\n", n);
+                p->setChannel(-1);
+                deallocateIsoChannel(isochannel);
+                return false;
+            }
+            if(reg_isoch != 0xFFFFFFFFUL) {
+                debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08X) for ATX %d\n", reg_isoch, n);
+                p->setChannel(-1);
+                deallocateIsoChannel(isochannel);
+                return false;
+            }
+    
+            // write value of ISO_CHANNEL register
+            reg_isoch = isochannel;
+            if(!writeTxReg(n, DICE_REGISTER_TX_ISOC_BASE, reg_isoch)) {
+                debugError("Could not write ISO_CHANNEL register for ATX %d\n", n);
+                p->setChannel(-1);
+                deallocateIsoChannel(isochannel);
+                return false;
+            }
         }
-        p->setChannel(isochannel);
-
-        fb_quadlet_t reg_isoch;
-        // check value of ISO_CHANNEL register
-        if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
-            debugError("Could not read ISO_CHANNEL register for ATX %d\n", n);
-            p->setChannel(-1);
-            deallocateIsoChannel(isochannel);
-            return false;
-        }
-        if(reg_isoch != 0xFFFFFFFFUL) {
-            debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08X) for ATX %d\n", reg_isoch, n);
-            p->setChannel(-1);
-            deallocateIsoChannel(isochannel);
-            return false;
-        }
-
-        // write value of ISO_CHANNEL register
-        reg_isoch=isochannel;
-        if(!writeTxReg(n, DICE_REGISTER_TX_ISOC_BASE, reg_isoch)) {
-            debugError("Could not write ISO_CHANNEL register for ATX %d\n", n);
-            p->setChannel(-1);
-            deallocateIsoChannel(isochannel);
-            return false;
-        }
-
         return true;
 
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
 
-        // allocate ISO channel
-        int isochannel=allocateIsoChannel(p->getMaxPacketSize());
-        if(isochannel<0) {
-            debugError("Could not allocate iso channel for SP %d (ARX %d)\n",i,n);
-            return false;
+        if(snoopMode) { // a stream from the device to another host
+            fb_quadlet_t reg_isoch;
+            // check value of ISO_CHANNEL register
+            if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
+                debugError("Could not read ISO_CHANNEL register for ARX %d\n", n);
+                p->setChannel(-1);
+                return false;
+            }
+            int isochannel = reg_isoch;
+            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Snooping TX from channel %d\n", isochannel);
+            p->setChannel(isochannel);
+        } else {
+            // allocate ISO channel
+            int isochannel = allocateIsoChannel(p->getMaxPacketSize());
+            if(isochannel<0) {
+                debugError("Could not allocate iso channel for SP %d (ARX %d)\n",i,n);
+                return false;
+            }
+            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Allocated channel %lu for TX\n", isochannel);
+            p->setChannel(isochannel);
+    
+            fb_quadlet_t reg_isoch;
+            // check value of ISO_CHANNEL register
+            if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
+                debugError("Could not read ISO_CHANNEL register for ARX %d\n", n);
+                p->setChannel(-1);
+                deallocateIsoChannel(isochannel);
+                return false;
+            }
+            if(reg_isoch != 0xFFFFFFFFUL) {
+                debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08X) for ARX %d\n", reg_isoch, n);
+                p->setChannel(-1);
+                deallocateIsoChannel(isochannel);
+                return false;
+            }
+    
+            // write value of ISO_CHANNEL register
+            reg_isoch=isochannel;
+            if(!writeRxReg(n, DICE_REGISTER_RX_ISOC_BASE, reg_isoch)) {
+                debugError("Could not write ISO_CHANNEL register for ARX %d\n", n);
+                p->setChannel(-1);
+                deallocateIsoChannel(isochannel);
+                return false;
+            }
         }
-        p->setChannel(isochannel);
-
-        fb_quadlet_t reg_isoch;
-        // check value of ISO_CHANNEL register
-        if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
-            debugError("Could not read ISO_CHANNEL register for ARX %d\n", n);
-            p->setChannel(-1);
-            deallocateIsoChannel(isochannel);
-            return false;
-        }
-        if(reg_isoch != 0xFFFFFFFFUL) {
-            debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08X) for ARX %d\n", reg_isoch, n);
-            p->setChannel(-1);
-            deallocateIsoChannel(isochannel);
-            return false;
-        }
-
-        // write value of ISO_CHANNEL register
-        reg_isoch=isochannel;
-        if(!writeRxReg(n, DICE_REGISTER_RX_ISOC_BASE, reg_isoch)) {
-            debugError("Could not write ISO_CHANNEL register for ARX %d\n", n);
-            p->setChannel(-1);
-            deallocateIsoChannel(isochannel);
-            return false;
-        }
-
         return true;
     }
 
     debugError("SP index %d out of range!\n",i);
-
     return false;
 }
 
 bool
 DiceAvDevice::stopStreamByIndex(int i) {
+    bool snoopMode = false;
+    if(!getOption("snoopMode", snoopMode)) {
+        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
 
-    if (isIsoStreamingEnabled()) {
+    if (!snoopMode && isIsoStreamingEnabled()) {
         debugError("Cannot stop streams while streaming is enabled\n");
         return false;
     }
@@ -1171,32 +1336,35 @@ DiceAvDevice::stopStreamByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
-        unsigned int isochannel=p->getChannel();
-
-        fb_quadlet_t reg_isoch;
-        // check value of ISO_CHANNEL register
-        if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
-            debugError("Could not read ISO_CHANNEL register for ATX %d\n", n);
-            return false;
+        if(snoopMode) { // a stream from the device to another host
+            // nothing to do
+        } else {
+            unsigned int isochannel = p->getChannel();
+    
+            fb_quadlet_t reg_isoch;
+            // check value of ISO_CHANNEL register
+            if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
+                debugError("Could not read ISO_CHANNEL register for ATX %d\n", n);
+                return false;
+            }
+            if(reg_isoch != isochannel) {
+                debugError("ISO_CHANNEL register != 0x%08X (=0x%08X) for ATX %d\n", isochannel, reg_isoch, n);
+                return false;
+            }
+    
+            // write value of ISO_CHANNEL register
+            reg_isoch=0xFFFFFFFFUL;
+            if(!writeTxReg(n, DICE_REGISTER_TX_ISOC_BASE, reg_isoch)) {
+                debugError("Could not write ISO_CHANNEL register for ATX %d\n", n);
+                return false;
+            }
+    
+            // deallocate ISO channel
+            if(!deallocateIsoChannel(isochannel)) {
+                debugError("Could not deallocate iso channel for SP %d (ATX %d)\n",i,n);
+                return false;
+            }
         }
-        if(reg_isoch != isochannel) {
-            debugError("ISO_CHANNEL register != 0x%08X (=0x%08X) for ATX %d\n", isochannel, reg_isoch, n);
-            return false;
-        }
-
-        // write value of ISO_CHANNEL register
-        reg_isoch=0xFFFFFFFFUL;
-        if(!writeTxReg(n, DICE_REGISTER_TX_ISOC_BASE, reg_isoch)) {
-            debugError("Could not write ISO_CHANNEL register for ATX %d\n", n);
-            return false;
-        }
-
-        // deallocate ISO channel
-        if(!deallocateIsoChannel(isochannel)) {
-            debugError("Could not deallocate iso channel for SP %d (ATX %d)\n",i,n);
-            return false;
-        }
-
         p->setChannel(-1);
         return true;
 
@@ -1204,30 +1372,34 @@ DiceAvDevice::stopStreamByIndex(int i) {
         int n=i-m_receiveProcessors.size();
         Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
 
-        unsigned int isochannel=p->getChannel();
-
-        fb_quadlet_t reg_isoch;
-        // check value of ISO_CHANNEL register
-        if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
-            debugError("Could not read ISO_CHANNEL register for ARX %d\n", n);
-            return false;
-        }
-        if(reg_isoch != isochannel) {
-            debugError("ISO_CHANNEL register != 0x%08X (=0x%08X) for ARX %d\n", isochannel, reg_isoch, n);
-            return false;
-        }
-
-        // write value of ISO_CHANNEL register
-        reg_isoch=0xFFFFFFFFUL;
-        if(!writeRxReg(n, DICE_REGISTER_RX_ISOC_BASE, reg_isoch)) {
-            debugError("Could not write ISO_CHANNEL register for ARX %d\n", n);
-            return false;
-        }
-
-        // deallocate ISO channel
-        if(!deallocateIsoChannel(isochannel)) {
-            debugError("Could not deallocate iso channel for SP %d (ARX %d)\n",i,n);
-            return false;
+        if(snoopMode) { // a stream from the device to another host
+            // nothing to do
+        } else {
+            unsigned int isochannel = p->getChannel();
+    
+            fb_quadlet_t reg_isoch;
+            // check value of ISO_CHANNEL register
+            if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
+                debugError("Could not read ISO_CHANNEL register for ARX %d\n", n);
+                return false;
+            }
+            if(reg_isoch != isochannel) {
+                debugError("ISO_CHANNEL register != 0x%08X (=0x%08X) for ARX %d\n", isochannel, reg_isoch, n);
+                return false;
+            }
+    
+            // write value of ISO_CHANNEL register
+            reg_isoch=0xFFFFFFFFUL;
+            if(!writeRxReg(n, DICE_REGISTER_RX_ISOC_BASE, reg_isoch)) {
+                debugError("Could not write ISO_CHANNEL register for ARX %d\n", n);
+                return false;
+            }
+    
+            // deallocate ISO channel
+            if(!deallocateIsoChannel(isochannel)) {
+                debugError("Could not deallocate iso channel for SP %d (ARX %d)\n",i,n);
+                return false;
+            }
         }
 
         p->setChannel(-1);
@@ -1723,9 +1895,9 @@ DiceAvDevice::globalOffsetGen(fb_nodeaddr_t offset, size_t length) {
 
 bool
 DiceAvDevice::readTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading tx %d register offset 0x%04llX\n", i, offset);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Reading tx %d register offset 0x%04llX\n", i, offset);
 
-    fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, sizeof(fb_quadlet_t));
+    fb_nodeaddr_t offset_tx = txOffsetGen(i, offset, sizeof(fb_quadlet_t));
     return readReg(m_tx_reg_offset + offset_tx, result);
 }
 

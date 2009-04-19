@@ -53,10 +53,10 @@
 #define IEEE1394SERVICE_CONFIGROM_READ_WAIT_USECS         1000
 
 // FCP defines
-#define IEEE1394SERVICE_FCP_MAX_TRIES                       20
+#define IEEE1394SERVICE_FCP_MAX_TRIES                        2
 #define IEEE1394SERVICE_FCP_SLEEP_BETWEEN_FAILURES_USECS  1000
 #define IEEE1394SERVICE_FCP_POLL_TIMEOUT_MSEC              200
-#define IEEE1394SERVICE_FCP_RESPONSE_TIMEOUT_USEC      2000000
+#define IEEE1394SERVICE_FCP_RESPONSE_TIMEOUT_USEC       200000
 
 // The current version of libiec61883 doesn't seem to calculate
 // the bandwidth correctly. Defining this to non-zero skips

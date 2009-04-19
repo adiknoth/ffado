@@ -507,7 +507,7 @@ AvDevice::showDevice()
 
 bool
 AvDevice::prepare() {
-    bool snoopMode=false;
+    bool snoopMode = false;
     Util::MutexLockHelper lock(m_DeviceMutex);
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
@@ -594,8 +594,8 @@ AvDevice::prepare() {
         p=new Streaming::AmdtpReceiveStreamProcessor(*this,
                                   inputPlug->getNrOfChannels());
     } else {
-        Streaming::AmdtpTransmitStreamProcessor * t;
-        t=new Streaming::AmdtpTransmitStreamProcessor(*this,
+        Streaming::AmdtpTransmitStreamProcessor *t;
+        t = new Streaming::AmdtpTransmitStreamProcessor(*this,
                                 inputPlug->getNrOfChannels());
         #if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
             // FIXME: it seems that some BeBoB devices can't handle NO-DATA without payload

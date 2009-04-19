@@ -24,8 +24,8 @@
 #ifndef DICEDEFINES_H
 #define DICEDEFINES_H
 
-#define DICE_VER_1_0_4_0
-// #define DICE_VER_1_0_7_0
+// #define DICE_VER_1_0_4_0
+#define DICE_VER_1_0_7_0
 
 #define DICE_INVALID_OFFSET                  0xFFFFF00000000000ULL
 
