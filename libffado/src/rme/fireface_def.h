@@ -98,15 +98,37 @@
 #define RME_FF400_FLASH_CMD_GET_REVISION    0x0000000f
 
 
-/* Defines for components of the control register */
+/* Defines for components of the control registers */
 /* FIXME: flesh this out once the details of how this gets used have been 
  * finalised
  */
-#define CR_FREQ0      0x00000002
-#define CR_FREQ1      0x00000004
-#define CR_DS         0x00000008
-#define CR_QS         0x00000010
+#define CR2_CLOCKMODE_MASTER    0x00000000
+#define CR2_CLOCKMODE_AUTOSYNC  0x00000001
+#define CR2_FREQ0               0x00000002
+#define CR2_FREQ1               0x00000004
+#define CR2_DSPEED              0x00000008
+#define CR2_QSSPEED             0x00000010
+#define CR2_SPDIF_OUT_PRO       0x00000020
+#define CR2_SPDIF_OUT_EMP       0x00000040
+#define CR2_SPDIF_OUT_NONAUDIO  0x00000080
+#define CR2_SPDIF_OUT_ADAT2     0x00000100
+#define CR2_SPDIF_IN_COAX       0x00000000
+#define CR2_SPDIF_IN_ADAT2      0x00000200
+#define CR2_SYNC_REF0           0x00000400
+#define CR2_SYNC_REF1           0x00000800
+#define CR2_SYNC_REF2           0x00001000
+#define CR2_WORD_CLOCK_1x       0x00002000
+#define CR2_TOGGLE_TCO          0x00004000  // Normally set to 0
+#define CR2_P12DB_AN0           0x00010000  // Normally set to 0
+#define CR2_FF400_BIT           0x04000000  // Set on FF400, clear on FF800
+#define CR2_TMS                 0x40000000  // Unit option, normally 0
+#define CR2_DROP_AND_STOP       0x80000000  // Normally set to 1
 
+#define CR2_SYNC_ADAT1          0x0
+#define CR2_SYNC_ADAT2          (CR2_SYNC_REF0)
+#define CR2_SYNC_SPDIF          (CR2_SYNC_REF0 | CR2_SYNC_REF1)
+#define CR2_SYNC_WORDCLOCK      (CR2_SYNC_REF2)
+#define CR2_SYNC_TCO            (CR2_SYNC_REF0 | CR2_SYNC_REF2)
 
 /* Structure used to store device settings in the device flash RAM.  This
  * structure mirrors the layout in the Fireface's flash, so it cannot be
