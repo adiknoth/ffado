@@ -21,8 +21,9 @@
  *
  */
 
+#warning M-Audio support is currently useless
+
 #include "maudio/maudio_avdevice.h"
-#include "bebob/bebob_avdevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -31,112 +32,154 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "devicemanager.h"
+
 #include <string>
 #include <stdint.h>
 
 namespace MAudio {
 
-AvDevice::AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( d, configRom)
-    , m_model ( NULL )
+Device::Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+    : FFADODevice( d, configRom)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created MAudio::AvDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created MAudio::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 }
 
-AvDevice::~AvDevice()
+Device::~Device()
 {
 }
 
-static VendorModelEntry supportedDeviceList[] =
-{
-    //{FW_VENDORID_BRIDGECO, 0x00010048, "BridgeCo", "RD Audio1", "refdesign.xml"},
-
-    {FW_VENDORID_MAUDIO, 0x00010046, "M-Audio", "FW 410", "fw410.xml"},
-    {FW_VENDORID_MAUDIO, 0x00010058, "M-Audio", "FW 410", "fw410.xml"},       // Version 5.10.0.5036
-    {FW_VENDORID_MAUDIO, 0x00010060, "M-Audio", "FW Audiophile", "fwap.xml"},
-};
-
 bool
-AvDevice::probe( ConfigRom& configRom, bool generic )
+Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
-    if (generic) return false;
+    if(generic) {
+        return false;
+    } else {
+        // check if device is in supported devices list
+        unsigned int vendorId = configRom.getNodeVendorId();
+        unsigned int modelId = configRom.getModelId();
 
-    unsigned int iVendorId = configRom.getNodeVendorId();
-    unsigned int iModelId = configRom.getModelId();
-
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == iVendorId )
-             && ( supportedDeviceList[i].model_id == iModelId ) )
-        {
-            return true;
-        }
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_MAudio;
     }
-    return false;
 }
 
 FFADODevice *
-AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new AvDevice( d, configRom );
+    return new Device( d, configRom );
 }
 
 bool
-AvDevice::discover()
+Device::discover()
 {
     unsigned int vendorId = getConfigRom().getNodeVendorId();
     unsigned int modelId = getConfigRom().getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            m_model = &(supportedDeviceList[i]);
-            break;
-        }
-    }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
 
-    if (m_model != NULL) {
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_MAudio) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model->vendor_name, m_model->model_name);
-    } else return false;
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
+    } else {
+        debugWarning("Using generic M-Audio support for unsupported device '%s %s'\n",
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
+    }
 
     return true;
 }
 
-bool
-AvDevice::setSamplingFrequency( int eSamplingFrequency )
-{
-    // not supported
-    return false;
-}
 
-int AvDevice::getSamplingFrequency( ) {
-    return 44100;
-}
-
-uint64_t
-AvDevice::getConfigurationId()
-{
+int
+Device::getSamplingFrequency( ) {
     return 0;
 }
 
-void
-AvDevice::showDevice()
+std::vector<int>
+Device::getSupportedSamplingFrequencies()
 {
+    std::vector<int> frequencies;
+    return frequencies;
+}
+
+FFADODevice::ClockSourceVector
+Device::getSupportedClockSources() {
+    FFADODevice::ClockSourceVector r;
+    return r;
 }
 
 bool
-AvDevice::prepare() {
+Device::setActiveClockSource(ClockSource s) {
+    return false;
+}
+
+FFADODevice::ClockSource
+Device::getActiveClockSource() {
+    ClockSource s;
+    return s;
+}
+
+bool
+Device::setSamplingFrequency( int samplingFrequency )
+{
+
+    return false;
+}
+
+bool
+Device::lock() {
 
     return true;
+}
+
+
+bool
+Device::unlock() {
+
+    return true;
+}
+
+void
+Device::showDevice()
+{
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
+
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+        "%s %s at node %d\n", vme.vendor_name.c_str(), vme.model_name.c_str(), getNodeId());
+}
+
+bool
+Device::prepare() {
+
+    return true;
+}
+
+int
+Device::getStreamCount() {
+    return 0;
+}
+
+Streaming::StreamProcessor *
+Device::getStreamProcessorByIndex(int i) {
+
+    return NULL;
+}
+
+bool
+Device::startStreamByIndex(int i) {
+    return false;
+}
+
+bool
+Device::stopStreamByIndex(int i) {
+    return false;
 }
 
 }

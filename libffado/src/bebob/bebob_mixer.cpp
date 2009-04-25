@@ -55,7 +55,7 @@ bool from_string(T& t,
 
 IMPL_DEBUG_MODULE( Mixer, Mixer, DEBUG_LEVEL_NORMAL );
 
-Mixer::Mixer(AvDevice &d)
+Mixer::Mixer(Device &d)
     : Control::Container(&d)
     , m_device(d)
 {

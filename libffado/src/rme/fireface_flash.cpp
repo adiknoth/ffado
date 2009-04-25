@@ -21,7 +21,7 @@
  *
  */
 
-/* This file implements the flash memory methods of the RmeDevice object */
+/* This file implements the flash memory methods of the Device object */
 
 #include "rme/rme_avdevice.h"
 #include "rme/fireface_def.h"
@@ -33,7 +33,7 @@
 namespace Rme {
 
 signed int 
-RmeDevice::wait_while_busy(unsigned int init_delay_ms) 
+Device::wait_while_busy(unsigned int init_delay_ms) 
 {
     signed int i;
     quadlet_t status;
@@ -59,7 +59,7 @@ RmeDevice::wait_while_busy(unsigned int init_delay_ms)
 }
 
 signed int
-RmeDevice::get_revision(unsigned int *revision)
+Device::get_revision(unsigned int *revision)
 {
     signed int err = 0;
 
@@ -77,7 +77,7 @@ RmeDevice::get_revision(unsigned int *revision)
 }
 
 signed int 
-RmeDevice::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
+Device::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
 {
     // Read "n_quads" quadlets from the Fireface Flash starting at address
     // addr.  The result is written to "buf" which is assumed big enough to
@@ -114,7 +114,7 @@ RmeDevice::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
 }
 
 signed int 
-RmeDevice::read_device_settings(void) 
+Device::read_device_settings(void) 
 {
     FF_device_flash_settings_t hw_settings;
     signed int i;

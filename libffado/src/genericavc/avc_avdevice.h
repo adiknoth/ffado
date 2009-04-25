@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef GENERICAVC_AVDEVICE_H
-#define GENERICAVC_AVDEVICE_H
+#ifndef GENERICAVC_DEVICE_H
+#define GENERICAVC_DEVICE_H
 
 #include "ffadodevice.h"
 #include "libutil/Configuration.h"
@@ -45,10 +45,10 @@ class Ieee1394Service;
 
 namespace GenericAVC {
 
-class AvDevice : public FFADODevice, public AVC::Unit {
+class Device : public FFADODevice, public AVC::Unit {
 public:
-    AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~AvDevice();
+    Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    virtual ~Device();
 
     static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
     virtual bool discover();

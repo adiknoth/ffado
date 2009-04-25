@@ -287,5 +287,124 @@ device_definitions = (
     modelname = "All of them";
     driver = 10;
     mixer = "MotuMixer";
+},
+{
+    vendorid = 0x000a35;
+    modelid = 0x0001;
+    vendorname = "RME";
+    modelname = "FireFace800";
+    driver = 40;
+},
+{
+    vendorid = 0x000a35;
+    modelid = 0x0002;
+    vendorname = "RME";
+    modelname = "FireFace400";
+    driver = 40;
+},
+{
+    vendorid = 0x000166;
+    modelid = 0x0001;
+    vendorname = "TCAT";
+    modelname = "DiceII EVM (1)";
+    driver = 20;
+},
+{
+    vendorid = 0x000166;
+    modelid = 0x0002;
+    vendorname = "TCAT";
+    modelname = "DiceII EVM (2)";
+    driver = 20;
+},
+{
+    vendorid = 0x000166;
+    modelid = 0x0004;
+    vendorname = "TCAT";
+    modelname = "DiceII EVM (4)";
+    driver = 20;
+},
+{
+    vendorid = 0x000166;
+    modelid = 0x00000020;
+    vendorname = "TC Electronic";
+    modelname = "Konnekt 24D";
+    driver = 20;
+},
+{
+    vendorid = 0x000166;
+    modelid = 0x00000021;
+    vendorname = "TC Electronic";
+    modelname = "Konnekt 8";
+    driver = 20;
+},
+{
+    vendorid = 0x000166;
+    modelid = 0x00000023;
+    vendorname = "TC Electronic";
+    modelname = "Konnekt Live";
+    driver = 20;
+},
+{
+    vendorid = 0x000595;
+    modelid = 0x00000001;
+    vendorname = "Alesis";
+    modelname = "io|14";
+    driver = 20;
+},
+{
+    vendorid = 0x000595;
+    modelid = 0x00000000;
+    vendorname = "Alesis";
+    modelname = "Multimix16 Firewire";
+    driver = 20;
+},
+{
+    vendorid = 0x000595;
+    modelid = 0x00000000;
+    vendorname = "Alesis";
+    modelname = "Multimix16 Firewire";
+    driver = 20;
+},
+{
+    vendorid = 0x000a92;
+    modelid = 0x0000000b;
+    vendorname = "Presonus";
+    modelname = "Firestudio Project";
+    driver = 20;
+},
+{
+    vendorid = 0x00130e;
+    modelid = 0x00000005;
+    vendorname = "Focusrite";
+    modelname = "Saffire PRO 40";
+    driver = 20;
+},
+{
+    vendorid = 0x001C6A;
+    modelid = 0x00000001;
+    vendorname = "Weiss Engineering Ltd.";
+    modelname = "ADC 2";
+    driver = 20;
+},
+{
+    vendorid = 0x001C6A;
+    modelid = 0x00000002;
+    vendorname = "Weiss Engineering Ltd.";
+    modelname = "Vesta";
+    driver = 20;
+},
+{
+    vendorid = 0x001C6A;
+    modelid = 0x00000003;
+    vendorname = "Weiss Engineering Ltd.";
+    modelname = "Minerva";
+    driver = 20;
+},
+{
+    vendorid = 0x001C6A;
+    modelid = 0x00000004;
+    vendorname = "Weiss Engineering Ltd.";
+    modelname = "AFI 1";
+    driver = 20;
 }
 );

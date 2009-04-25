@@ -32,6 +32,8 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "devicemanager.h"
+
 #include <string>
 #include <stdint.h>
 #include <assert.h>
@@ -75,7 +77,7 @@ ByteSwapFromDevice32(uint32_t d)
 // isn't quite right.
 #define MODEL_SELECTOR(_name,_ff400_arg,_ff800_arg) \
 unsigned long long int \
-RmeDevice::_name() { \
+Device::_name() { \
     switch (m_rme_model) { \
         case RME_MODEL_FIREFACE400: return _ff400_arg; \
         case RME_MODEL_FIREFACE800: return _ff800_arg; \
@@ -85,32 +87,23 @@ RmeDevice::_name() { \
   return 0xffffffffffffffffLL; \
 }
 
-// to define the supported devices
-static VendorModelEntry supportedDeviceList[] =
-{
-//  {vendor_id, unit_version, model identifier, vendor name, model name,}
-    {FW_VENDORID_RME, 0x0001, RME_MODEL_FIREFACE800, "RME", "Fireface-800",},
-    {FW_VENDORID_RME, 0x0002, RME_MODEL_FIREFACE400, "RME", "Fireface-400",},
-};
-
-RmeDevice::RmeDevice( DeviceManager& d,
+Device::Device( DeviceManager& d,
                       std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
-    , m_model( NULL )
     , m_rme_model( RME_MODEL_NONE )
     , m_ddsFreq( -1 )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::RmeDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 }
 
-RmeDevice::~RmeDevice()
+Device::~Device()
 {
 
 }
 
 MODEL_SELECTOR(cmd_buffer_addr, RME_FF400_CMD_BUFFER, RME_FF800_CMD_BUFFER)
-MODEL_SELECTOR(stream_start_reg, RME_FF400_STREAM_START_REG, RME_FF800_STREAM_START_REG)
+MODEL_SELECTOR(stream_start_reg, RME_FF400_STREAM_START_REG0, RME_FF800_STREAM_START_REG0)
 MODEL_SELECTOR(stream_end_reg, RME_FF400_STREAM_END_REG, RME_FF800_STREAM_END_REG)
 MODEL_SELECTOR(flash_settings_addr, RME_FF400_FLASH_SETTINGS_ADDR, RME_FF800_FLASH_SETTINGS_ADDR)
 MODEL_SELECTOR(flash_mixer_vol_addr, RME_FF400_FLASH_MIXER_VOLUME_ADDR, RME_FF800_FLASH_MIXER_VOLUME_ADDR)
@@ -118,66 +111,60 @@ MODEL_SELECTOR(flash_mixer_pan_addr, RME_FF400_FLASH_MIXER_PAN_ADDR, RME_FF800_F
 MODEL_SELECTOR(flash_mixer_hw_addr, RME_FF400_FLASH_MIXER_HW_ADDR, RME_FF800_FLASH_MIXER_HW_ADDR)
 
 bool
-RmeDevice::probe( ConfigRom& configRom, bool generic )
+Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
-    if (generic) return false;
-    unsigned int vendorId = configRom.getNodeVendorId();
-    unsigned int unitVersion = configRom.getUnitVersion();
+    if (generic) {
+        return false;
+    } else {
+        // check if device is in supported devices list
+        unsigned int vendorId = configRom.getNodeVendorId();
+        unsigned int modelId = configRom.getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].unit_version == unitVersion )
-           )
-        {
-            return true;
-        }
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_RME;
     }
-
-    return false;
 }
 
 FFADODevice *
-RmeDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new RmeDevice(d, configRom );
+    return new Device(d, configRom );
 }
 
 bool
-RmeDevice::discover()
+Device::discover()
 {
     unsigned int vendorId = getConfigRom().getNodeVendorId();
-    unsigned int unitVersion = getConfigRom().getUnitVersion();
+    unsigned int modelId = getConfigRom().getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].unit_version == unitVersion )
-           )
-        {
-            m_model = &(supportedDeviceList[i]);
-            m_rme_model = supportedDeviceList[i].model;
-        }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_RME) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
+    } else {
+        debugWarning("Using generic RME support for unsupported device '%s %s'\n",
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
 
-    if (m_model == NULL)
-        return false;
-
-    debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-        m_model->vendor_name, m_model->model_name);
+    if (modelId == RME_MODEL_FIREFACE800) {
+        m_rme_model = RME_MODEL_FIREFACE800;
+    } else if (modelId == RME_MODEL_FIREFACE400) {
+        m_rme_model = RME_MODEL_FIREFACE400;
+    } else {
+        debugError("Unsupported model\n");
+    }
 
     init_hardware();
-read_device_settings();
+    read_device_settings();
 
     return true;
 }
 
 int
-RmeDevice::getSamplingFrequency( ) {
+Device::getSamplingFrequency( ) {
 /*
  * Retrieve the current sample rate from the RME device.  At this stage it
  * seems that the "current rate" can't be retrieved from the device.  Other
@@ -193,13 +180,13 @@ RmeDevice::getSamplingFrequency( ) {
 }
 
 int
-RmeDevice::getConfigurationId()
+Device::getConfigurationId()
 {
     return 0;
 }
 
 bool
-RmeDevice::setSamplingFrequency( int samplingFrequency )
+Device::setSamplingFrequency( int samplingFrequency )
 {
 /*
  * Set the RME device's samplerate.  The RME can do sampling frequencies of
@@ -245,7 +232,7 @@ RmeDevice::setSamplingFrequency( int samplingFrequency )
     };};
 
 std::vector<int>
-RmeDevice::getSupportedSamplingFrequencies()
+Device::getSupportedSamplingFrequencies()
 {
     std::vector<int> frequencies;
     RME_CHECK_AND_ADD_SR(frequencies, 32000);
@@ -261,74 +248,79 @@ RmeDevice::getSupportedSamplingFrequencies()
 }
 
 FFADODevice::ClockSourceVector
-RmeDevice::getSupportedClockSources() {
+Device::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
     return r;
 }
 
 bool
-RmeDevice::setActiveClockSource(ClockSource s) {
+Device::setActiveClockSource(ClockSource s) {
     return false;
 }
 
 FFADODevice::ClockSource
-RmeDevice::getActiveClockSource() {
+Device::getActiveClockSource() {
     ClockSource s;
     return s;
 }
 
 bool
-RmeDevice::lock() {
+Device::lock() {
 
     return true;
 }
 
 
 bool
-RmeDevice::unlock() {
+Device::unlock() {
 
     return true;
 }
 
 void
-RmeDevice::showDevice()
+Device::showDevice()
 {
-	debugOutput(DEBUG_LEVEL_VERBOSE,
-		"%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
-		getNodeId());
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
+
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+        "%s %s at node %d\n", vme.vendor_name.c_str(), vme.model_name.c_str(), getNodeId());
 }
 
 bool
-RmeDevice::prepare() {
+Device::prepare() {
 
-	debugOutput(DEBUG_LEVEL_NORMAL, "Preparing RmeDevice...\n" );
+	debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
 
 	return true;
 }
 
 int
-RmeDevice::getStreamCount() {
+Device::getStreamCount() {
  	return 0; // one receive, one transmit
 }
 
 Streaming::StreamProcessor *
-RmeDevice::getStreamProcessorByIndex(int i) {
+Device::getStreamProcessorByIndex(int i) {
     return NULL;
 }
 
 bool
-RmeDevice::startStreamByIndex(int i) {
+Device::startStreamByIndex(int i) {
     return false;
 }
 
 bool
-RmeDevice::stopStreamByIndex(int i) {
+Device::stopStreamByIndex(int i) {
     return false;
 
 }
 
 unsigned int 
-RmeDevice::readRegister(fb_nodeaddr_t reg) {
+Device::readRegister(fb_nodeaddr_t reg) {
 
     quadlet_t quadlet;
     
@@ -340,7 +332,7 @@ RmeDevice::readRegister(fb_nodeaddr_t reg) {
 }
 
 signed int 
-RmeDevice::readBlock(fb_nodeaddr_t reg, quadlet_t *buf, unsigned int n_quads) {
+Device::readBlock(fb_nodeaddr_t reg, quadlet_t *buf, unsigned int n_quads) {
 
     unsigned int i;
 
@@ -357,7 +349,7 @@ RmeDevice::readBlock(fb_nodeaddr_t reg, quadlet_t *buf, unsigned int n_quads) {
 }
 
 signed int
-RmeDevice::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
+Device::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
 
     unsigned int err = 0;
     data = ByteSwapToDevice32(data);
@@ -369,7 +361,7 @@ RmeDevice::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
 }
 
 signed int
-RmeDevice::writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads) {
+Device::writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads) {
 //
 // Write a block of data to the device starting at address "reg".  Note that
 // the conditional byteswap is done "in place" on data, so the contents of

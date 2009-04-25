@@ -45,7 +45,7 @@ using namespace std;
 namespace Oxford {
 
 Device::Device(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
-    : GenericAVC::AvDevice( d, configRom)
+    : GenericAVC::Device( d, configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Oxford::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -67,7 +67,7 @@ void
 Device::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a Oxford::Device\n");
-    GenericAVC::AvDevice::showDevice();
+    GenericAVC::Device::showDevice();
 }
 
 bool

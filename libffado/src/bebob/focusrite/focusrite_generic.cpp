@@ -30,7 +30,7 @@ namespace BeBoB {
 namespace Focusrite {
 
 FocusriteDevice::FocusriteDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( d, configRom)
+    : BeBoB::Device( d, configRom)
     , m_cmd_time_interval( 0 )
     , m_earliest_next_cmd_time( 0 )
 {
@@ -43,7 +43,7 @@ void
 FocusriteDevice::showDevice()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Focusrite::FocusriteDevice\n");
-    BeBoB::AvDevice::showDevice();
+    BeBoB::Device::showDevice();
 }
 
 void
@@ -51,7 +51,7 @@ FocusriteDevice::setVerboseLevel(int l)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 
-    BeBoB::AvDevice::setVerboseLevel(l);
+    BeBoB::Device::setVerboseLevel(l);
 }
 
 bool

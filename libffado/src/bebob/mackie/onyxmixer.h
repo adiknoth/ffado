@@ -30,7 +30,7 @@
 namespace BeBoB {
 namespace Mackie {
 
-class OnyxMixerDevice : public BeBoB::AvDevice {
+class OnyxMixerDevice : public BeBoB::Device {
 
 public:
     OnyxMixerDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));

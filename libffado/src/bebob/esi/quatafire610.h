@@ -30,7 +30,7 @@
 namespace BeBoB {
 namespace ESI {
 
-class QuataFireDevice : public BeBoB::AvDevice {
+class QuataFireDevice : public BeBoB::Device {
 
 public:
     QuataFireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));

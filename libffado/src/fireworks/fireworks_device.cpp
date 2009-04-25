@@ -50,7 +50,7 @@ using namespace std;
 namespace FireWorks {
 
 Device::Device(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
-    : GenericAVC::AvDevice( d, configRom)
+    : GenericAVC::Device( d, configRom)
     , m_poll_lock( new Util::PosixMutex("DEVPOLL") )
     , m_efc_discovery_done ( false )
     , m_MixerContainer ( NULL )
@@ -75,7 +75,7 @@ Device::showDevice()
         }
     }
     m_HwInfo.showEfcCmd();
-    GenericAVC::AvDevice::showDevice();
+    GenericAVC::Device::showDevice();
 }
 
 bool
@@ -140,8 +140,8 @@ Device::discover()
     }
 
     // discover AVC-wise
-    if ( !GenericAVC::AvDevice::discoverGeneric() ) {
-        debugError( "Could not discover GenericAVC::AvDevice\n" );
+    if ( !GenericAVC::Device::discoverGeneric() ) {
+        debugError( "Could not discover GenericAVC::Device\n" );
         return false;
     }
 

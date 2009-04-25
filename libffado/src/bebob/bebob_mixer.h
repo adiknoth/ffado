@@ -32,7 +32,7 @@
 
 namespace BeBoB {
 
-class AvDevice;
+class Device;
 class FunctionBlock;
 class FunctionBlockFeature;
 class FunctionBlockSelector;
@@ -42,7 +42,7 @@ class Mixer
     : public Control::Container
 {
 public:
-    Mixer(AvDevice &d);
+    Mixer(Device &d);
     virtual ~Mixer();
 
     virtual std::string getName()
@@ -59,11 +59,11 @@ public:
     bool deleteElement(Control::Element *);
     bool clearElements();
 
-    AvDevice& getParent()
+    Device& getParent()
         {return m_device;};
 
 protected:
-    AvDevice&            m_device;
+    Device&            m_device;
 protected:
     DECLARE_DEBUG_MODULE;
 };

@@ -31,7 +31,7 @@
 namespace Rme {
 
 signed int 
-RmeDevice::init_hardware(void)
+Device::init_hardware(void)
 {
     // Initialises the hardware to a known state.  This has the side effect
     // of extinguishing the "Host" LED on the FF400 when done for the first
@@ -87,7 +87,7 @@ RmeDevice::init_hardware(void)
         data[2] |= 0x04000000;
     }
 
-    data[2] |= (CR_FREQ0 + CR_FREQ1 + CR_DS + CR_QS);
+    data[2] |= (CR2_FREQ0 + CR2_FREQ1 + CR2_DSPEED + CR2_QSSPEED);
 
 //data[0] = 0x00020811;      // Phantom off
 data[0] = 0x00020811;      // Phantom on

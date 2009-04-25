@@ -42,6 +42,9 @@
 
 #ifdef ENABLE_BEBOB
 #include "bebob/bebob_avdevice.h"
+#endif
+
+#ifdef ENABLE_MAUDIO
 #include "maudio/maudio_avdevice.h"
 #endif
 
@@ -932,8 +935,8 @@ DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
 {
 #ifdef ENABLE_BEBOB
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying BeBoB...\n" );
-    if ( BeBoB::AvDevice::probe( getConfiguration(), *configRom, generic ) ) {
-        return BeBoB::AvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
+    if ( BeBoB::Device::probe( getConfiguration(), *configRom, generic ) ) {
+        return BeBoB::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
@@ -951,11 +954,18 @@ DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
     }
 #endif
 
+#ifdef ENABLE_MAUDIO
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying M-Audio...\n" );
+    if ( MAudio::Device::probe( getConfiguration(), *configRom, generic ) ) {
+        return MAudio::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
+    }
+#endif
+
 // we want to try the non-generic AV/C platforms before trying the generic ones
 #ifdef ENABLE_GENERICAVC
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Generic AV/C...\n" );
-    if ( GenericAVC::AvDevice::probe( getConfiguration(), *configRom, generic ) ) {
-        return GenericAVC::AvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
+    if ( GenericAVC::Device::probe( getConfiguration(), *configRom, generic ) ) {
+        return GenericAVC::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
@@ -968,29 +978,29 @@ DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
 
 #ifdef ENABLE_DICE
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Dice...\n" );
-    if ( Dice::DiceAvDevice::probe( *configRom, generic ) ) {
-        return Dice::DiceAvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
+    if ( Dice::Device::probe( getConfiguration(), *configRom, generic ) ) {
+        return Dice::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_METRIC_HALO
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Metric Halo...\n" );
-    if ( MetricHalo::MHAvDevice::probe( *configRom, generic ) ) {
-        return MetricHalo::MHAvDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
+    if ( MetricHalo::Device::probe( getConfiguration(), *configRom, generic ) ) {
+        return MetricHalo::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_RME
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying RME...\n" );
-    if ( Rme::RmeDevice::probe( *configRom, generic ) ) {
-        return Rme::RmeDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
+    if ( Rme::Device::probe( getConfiguration(), *configRom, generic ) ) {
+        return Rme::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
 #ifdef ENABLE_BOUNCE
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Bounce...\n" );
-    if ( Bounce::BounceDevice::probe( *configRom, generic ) ) {
-        return Bounce::BounceDevice::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
+    if ( Bounce::Device::probe( getConfiguration(), *configRom, generic ) ) {
+        return Bounce::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
@@ -1024,8 +1034,8 @@ FFADODevice*
 DeviceManager::getSlaveDriver( std::auto_ptr<ConfigRom>( configRom ) )
 {
 #ifdef ENABLE_BOUNCE
-    if ( Bounce::BounceSlaveDevice::probe( *configRom.get() ) ) {
-        return Bounce::BounceSlaveDevice::createDevice( configRom );
+    if ( Bounce::SlaveDevice::probe( getConfiguration(), *configRom, false ) ) {
+        return Bounce::SlaveDevice::createDevice(  *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
     return NULL;

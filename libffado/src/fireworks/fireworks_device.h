@@ -41,7 +41,7 @@ class Ieee1394Service;
 
 namespace FireWorks {
 
-class Device : public GenericAVC::AvDevice {
+class Device : public GenericAVC::Device {
     friend class MonitorControl;
     friend class SimpleControl;
     friend class BinaryControl;

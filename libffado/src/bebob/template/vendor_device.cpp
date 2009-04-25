@@ -28,7 +28,7 @@ namespace __Vendor__ {
 
 VendorDevice::VendorDevice( Ieee1394Service& ieee1394Service,
                             std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( ieee1394Service, configRom)
+    : BeBoB::Device( ieee1394Service, configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::__Vendor__::VendorDevice (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -42,7 +42,7 @@ void
 VendorDevice::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a BeBoB::__Vendor__::VendorDevice\n");
-    BeBoB::AvDevice::showDevice();
+    BeBoB::Device::showDevice();
 }
 
 } // __Vendor__

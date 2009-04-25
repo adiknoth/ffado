@@ -22,7 +22,8 @@
  *
  */
 
-#include "libstreaming/amdtp/AmdtpSlaveStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpReceiveStreamProcessor.h"
+#include "libstreaming/amdtp/AmdtpTransmitStreamProcessor.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -36,50 +37,36 @@
 
 namespace Bounce {
 
-static VendorModelEntry supportedDeviceList[] =
-{
-  //{vendor_id, model_id, unit_specifier_id, vendor_name, model_name},
-    {FW_VENDORID_FFADO, 0x0B0001, 0x0B0001, "FFADO", "Bounce Slave"},
-};
-
-BounceSlaveDevice::BounceSlaveDevice( Ieee1394Service& ieee1394Service,
-                                      std::auto_ptr<ConfigRom>( configRom ))
-    : BounceDevice( ieee1394Service, configRom )
+SlaveDevice::SlaveDevice( DeviceManager& d, std::auto_ptr< ConfigRom >( configRom ) )
+    : Device( d, configRom )
 {
     addOption(Util::OptionContainer::Option("isoTimeoutSecs",(int64_t)120));
 }
 
-BounceSlaveDevice::~BounceSlaveDevice() {
+SlaveDevice::~SlaveDevice() {
 
 }
 
 bool
-BounceSlaveDevice::probe( ConfigRom& configRom )
+SlaveDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     // we are always capable of constructing a slave device
     return true;
 }
 
 FFADODevice *
-BounceSlaveDevice::createDevice( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
+SlaveDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new BounceSlaveDevice(ieee1394Service, configRom );
+    return new SlaveDevice(d, configRom );
 }
 
 bool
-BounceSlaveDevice::discover()
+SlaveDevice::discover()
 {
-    m_model = &(supportedDeviceList[0]);
-    if (m_model != NULL) {
-        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model->vendor_name, m_model->model_name);
-        return true;
-    }
-    return false;
+    return true;
 }
 
-bool BounceSlaveDevice::initMemSpace() {
+bool SlaveDevice::initMemSpace() {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Initializing memory space...\n");
     fb_quadlet_t result=0xFFFFFFFFLU;
 
@@ -95,15 +82,15 @@ bool BounceSlaveDevice::initMemSpace() {
     }
 
     // set everything such that we can be discovered
-    m_original_config_rom=save_config_rom( m_p1394Service->getHandle() );
+    m_original_config_rom = save_config_rom( get1394Service().getHandle() );
 
-    if ( init_config_rom( m_p1394Service->getHandle() ) < 0 ) {
+    if ( init_config_rom( get1394Service().getHandle() ) < 0 ) {
         debugError("Could not initalize local config rom\n");
         return false;
     }
 
     // refresh our config rom cache
-    if ( !m_pConfigRom->initialize() ) {
+    if ( !getConfigRom().initialize() ) {
         // \todo If a PHY on the bus is in power safe mode then
         // the config rom is missing. So this might be just
         // such this case and we can safely skip it. But it might
@@ -116,20 +103,19 @@ bool BounceSlaveDevice::initMemSpace() {
     return true;
 }
 
-bool BounceSlaveDevice::restoreMemSpace() {
+bool SlaveDevice::restoreMemSpace() {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Restoring memory space...\n");
-    restore_config_rom( m_p1394Service->getHandle(), m_original_config_rom);
+    restore_config_rom( get1394Service().getHandle(), m_original_config_rom);
     return true;
 }
 
 bool
-BounceSlaveDevice::lock() {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Locking %s %s at node %d\n",
-        m_model->vendor_name, m_model->model_name, getNodeId());
+SlaveDevice::lock() {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Locking node %d\n", getNodeId());
 
     // get a notifier to handle device notifications
     nodeaddr_t notify_address;
-    notify_address = m_p1394Service->findFreeARMBlock(
+    notify_address = get1394Service().findFreeARMBlock(
                         BOUNCE_REGISTER_BASE,
                         BOUNCE_REGISTER_LENGTH,
                         BOUNCE_REGISTER_LENGTH);
@@ -139,14 +125,14 @@ BounceSlaveDevice::lock() {
         return false;
     }
 
-    m_Notifier=new BounceSlaveDevice::BounceSlaveNotifier(this, notify_address);
+    m_Notifier=new SlaveDevice::BounceSlaveNotifier(this, notify_address);
 
     if(!m_Notifier) {
         debugError("Could not allocate notifier\n");
         return false;
     }
 
-    if (!m_p1394Service->registerARMHandler(m_Notifier)) {
+    if (!get1394Service().registerARMHandler(m_Notifier)) {
         debugError("Could not register notifier\n");
         delete m_Notifier;
         m_Notifier=NULL;
@@ -163,13 +149,13 @@ BounceSlaveDevice::lock() {
 }
 
 bool
-BounceSlaveDevice::unlock() {
+SlaveDevice::unlock() {
     // (re)initialize the memory space
     if (!restoreMemSpace()) {
         debugError("Could not restore memory space\n");
         return false;
     }
-    m_p1394Service->unregisterARMHandler(m_Notifier);
+    get1394Service().unregisterARMHandler(m_Notifier);
     delete m_Notifier;
     m_Notifier=NULL;
 
@@ -177,16 +163,14 @@ BounceSlaveDevice::unlock() {
 }
 
 bool
-BounceSlaveDevice::prepare() {
-    debugOutput(DEBUG_LEVEL_NORMAL, "Preparing BounceSlaveDevice...\n" );
+SlaveDevice::prepare() {
+    debugOutput(DEBUG_LEVEL_NORMAL, "Preparing SlaveDevice...\n" );
 
     // create & add streamprocessors
     Streaming::StreamProcessor *p;
 
-    p=new Streaming::AmdtpSlaveReceiveStreamProcessor(
-                             m_p1394Service->getPort(),
-                             m_samplerate,
-                             BOUNCE_NB_AUDIO_CHANNELS);
+    p = new Streaming::AmdtpReceiveStreamProcessor(*this,
+                       BOUNCE_NB_AUDIO_CHANNELS+(BOUNCE_NB_MIDI_CHANNELS?1:0));
 
     if(!p->init()) {
         debugFatal("Could not initialize receive processor!\n");
@@ -204,10 +188,8 @@ BounceSlaveDevice::prepare() {
     m_receiveProcessors.push_back(p);
 
     // do the transmit processor
-    p=new Streaming::AmdtpSlaveTransmitStreamProcessor(
-                                m_p1394Service->getPort(),
-                                m_samplerate,
-                                BOUNCE_NB_AUDIO_CHANNELS);
+    p = new Streaming::AmdtpTransmitStreamProcessor(*this, 
+                       BOUNCE_NB_AUDIO_CHANNELS+(BOUNCE_NB_MIDI_CHANNELS?1:0));
 
     if(!p->init()) {
         debugFatal("Could not initialize transmit processor!\n");
@@ -228,7 +210,7 @@ BounceSlaveDevice::prepare() {
 
 // this has to wait until the ISO channel numbers are written
 bool
-BounceSlaveDevice::startStreamByIndex(int i) {
+SlaveDevice::startStreamByIndex(int i) {
 
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
@@ -257,7 +239,7 @@ BounceSlaveDevice::startStreamByIndex(int i) {
 
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         int n=i-m_receiveProcessors.size();
-        Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
+        Streaming::StreamProcessor *p = m_transmitProcessors.at(n);
 
         // the other side sends on this channel
         nodeaddr_t iso_channel_offset = BOUNCE_REGISTER_TX_ISOCHANNEL;
@@ -288,14 +270,14 @@ BounceSlaveDevice::startStreamByIndex(int i) {
 }
 
 bool
-BounceSlaveDevice::stopStreamByIndex(int i) {
+SlaveDevice::stopStreamByIndex(int i) {
     // nothing special to do I guess...
     return false;
 }
 
 // helpers
 bool
-BounceSlaveDevice::waitForRegisterNotEqualTo(nodeaddr_t offset, fb_quadlet_t v) {
+SlaveDevice::waitForRegisterNotEqualTo(nodeaddr_t offset, fb_quadlet_t v) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Waiting for StreamProcessor streams to start running...\n");
     // we have to wait until all streamprocessors indicate that they are running
     // i.e. that there is actually some data stream flowing
@@ -328,8 +310,8 @@ BounceSlaveDevice::waitForRegisterNotEqualTo(nodeaddr_t offset, fb_quadlet_t v) 
 // FIXME: should be changed into a better framework
 
 
-struct BounceSlaveDevice::configrom_backup
-BounceSlaveDevice::save_config_rom(raw1394handle_t handle)
+struct SlaveDevice::configrom_backup
+SlaveDevice::save_config_rom(raw1394handle_t handle)
 {
     int retval;
     struct configrom_backup tmp;
@@ -342,7 +324,7 @@ BounceSlaveDevice::save_config_rom(raw1394handle_t handle)
 }
 
 int
-BounceSlaveDevice::restore_config_rom(raw1394handle_t handle, struct BounceSlaveDevice::configrom_backup old)
+SlaveDevice::restore_config_rom(raw1394handle_t handle, struct SlaveDevice::configrom_backup old)
 {
     int retval;
 //     int i;
@@ -374,7 +356,7 @@ BounceSlaveDevice::restore_config_rom(raw1394handle_t handle, struct BounceSlave
 }
 
 int
-BounceSlaveDevice::init_config_rom(raw1394handle_t handle)
+SlaveDevice::init_config_rom(raw1394handle_t handle)
 {
     int retval, i;
     quadlet_t rom[0x100];
@@ -460,7 +442,7 @@ BounceSlaveDevice::init_config_rom(raw1394handle_t handle)
 
 // the notifier
 
-BounceSlaveDevice::BounceSlaveNotifier::BounceSlaveNotifier(BounceSlaveDevice *d, nodeaddr_t start)
+SlaveDevice::BounceSlaveNotifier::BounceSlaveNotifier(SlaveDevice *d, nodeaddr_t start)
  : ARMHandler(start, BOUNCE_REGISTER_LENGTH,
               RAW1394_ARM_READ | RAW1394_ARM_WRITE, // allowed operations
               0, //RAW1394_ARM_READ | RAW1394_ARM_WRITE, // operations to be notified of
@@ -470,7 +452,7 @@ BounceSlaveDevice::BounceSlaveNotifier::BounceSlaveNotifier(BounceSlaveDevice *d
 
 }
 
-BounceSlaveDevice::BounceSlaveNotifier::~BounceSlaveNotifier()
+SlaveDevice::BounceSlaveNotifier::~BounceSlaveNotifier()
 {
 
 }

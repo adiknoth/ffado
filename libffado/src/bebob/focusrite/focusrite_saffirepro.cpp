@@ -545,7 +545,7 @@ uint64_t
 SaffireProDevice::getConfigurationId()
 {
     // have the generic mechanism create a unique configuration id.
-    uint64_t id = BeBoB::AvDevice::getConfigurationId();
+    uint64_t id = BeBoB::Device::getConfigurationId();
 
     // there are some parts that can be enabled/disabled and
     // that have influence on the AV/C model and channel config

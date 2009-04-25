@@ -215,7 +215,7 @@ protected:
     FocusriteDevice&        m_Parent;
 };
 
-class FocusriteDevice : public BeBoB::AvDevice {
+class FocusriteDevice : public BeBoB::Device {
 public:
     FocusriteDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual ~FocusriteDevice() {};

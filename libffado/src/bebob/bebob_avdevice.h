@@ -21,8 +21,8 @@
  *
  */
 
-#ifndef BEBOB_AVDEVICE_H
-#define BEBOB_AVDEVICE_H
+#ifndef BEBOB_DEVICE_H
+#define BEBOB_DEVICE_H
 
 #include <stdint.h>
 
@@ -58,10 +58,10 @@
 
 namespace BeBoB {
 
-class AvDevice : public GenericAVC::AvDevice {
+class Device : public GenericAVC::Device {
 public:
-    AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~AvDevice();
+    Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    virtual ~Device();
 
     static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
     virtual bool loadFromCache();

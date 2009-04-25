@@ -31,7 +31,7 @@
 namespace BeBoB {
 namespace __Vendor__ {
 
-class VendorDevice : public BeBoB::AvDevice {
+class VendorDevice : public BeBoB::Device {
 public:
     VendorDevice( Ieee1394Service& ieee1394Service,
               std::auto_ptr<ConfigRom>( configRom ));

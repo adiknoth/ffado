@@ -42,12 +42,17 @@ class Configuration {
 public:
     // driver ID's to be used in the config file
     enum eDrivers {
-        eD_Unknown = 0,
-        eD_BeBoB = 1,
-        eD_FireWorks = 2,
-        eD_GenericAVC = 3,
-        eD_Oxford = 4,
-        eD_MOTU = 10,
+        eD_Unknown     = 0,
+        eD_BeBoB       = 1,
+        eD_FireWorks   = 2,
+        eD_GenericAVC  = 3,
+        eD_Oxford      = 4,
+        eD_MAudio      = 5,
+        eD_MOTU        = 10,
+        eD_DICE        = 20,
+        eD_MetricHalo  = 30,
+        eD_RME         = 40,
+        eD_Bounce      = 50,
     };
 
     // the modes a config file can have

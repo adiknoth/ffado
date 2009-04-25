@@ -30,6 +30,8 @@
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
 
+#include "libutil/Configuration.h"
+
 // #include "libstreaming/rme/RmeStreamProcessor.h"
 
 /* RME Fireface register definitions */
@@ -49,23 +51,14 @@ enum ERmeModel {
     RME_MODEL_FIREFACE400   = 0x0002,
 };
 
-// struct to define the supported devices
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int unit_version;
-    enum ERmeModel model;
-    const char *vendor_name;
-    const char *model_name;
-};
-
-class RmeDevice : public FFADODevice {
+class Device : public FFADODevice {
 public:
 
-    RmeDevice( DeviceManager& d,
+    Device( DeviceManager& d,
                std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~RmeDevice();
+    virtual ~Device();
 
-    static bool probe( ConfigRom& configRom, bool generic = false );
+    static bool probe( Util::Configuration& c, ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d,
                                         std::auto_ptr<ConfigRom>( configRom ));
     static int getConfigurationId( );
@@ -97,7 +90,6 @@ public:
     signed int writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads);
 
 protected:
-    struct VendorModelEntry *m_model;
     enum ERmeModel m_rme_model;
 
     signed int m_ddsFreq;

@@ -52,31 +52,19 @@
 #define BOUNCE_NB_MIDI_CHANNELS  2
 
 class ConfigRom;
-class Ieee1394Service;
+class DeviceManager;
 
 namespace Bounce {
 
-// struct to define the supported devices
-struct VendorModelEntry {
-    uint32_t vendor_id;
-    uint32_t model_id;
-    uint32_t unit_specifier_id;
-    char *vendor_name;
-    char *model_name;
-};
-
-class BounceDevice : public FFADODevice {
+class Device : public FFADODevice {
 private:
     class BounceNotifier;
 public:
-    BounceDevice( Ieee1394Service& ieee1394Service,
-                  std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~BounceDevice();
+    Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    virtual ~Device();
 
-    static bool probe( ConfigRom& configRom, bool generic = false );
-    static FFADODevice * createDevice( Ieee1394Service& ieee1394Service,
-                                        std::auto_ptr<ConfigRom>( configRom ));
-    static int getConfigurationId( );
+    static bool probe( Util::Configuration&, ConfigRom& configRom, bool generic = false );
+    static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
 
     virtual bool setSamplingFrequency( int samplingFrequency );
@@ -85,6 +73,8 @@ public:
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);
     virtual ClockSource getActiveClockSource();
+
+    virtual std::vector<int> getSupportedSamplingFrequencies();
 
     virtual bool prepare();
     virtual bool lock();
@@ -101,7 +91,6 @@ public:
 
 protected:
     unsigned int m_samplerate;
-    struct VendorModelEntry* m_model;
 
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
@@ -134,11 +123,11 @@ private:
     class BounceNotifier : public ARMHandler
     {
     public:
-        BounceNotifier(BounceDevice *, nodeaddr_t start);
+        BounceNotifier(Device *, nodeaddr_t start);
         virtual ~BounceNotifier();
 
     private:
-        BounceDevice *m_bouncedevice;
+        Device *m_bouncedevice;
     };
 };
 

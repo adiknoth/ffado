@@ -32,6 +32,8 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "devicemanager.h"
+
 #include <string>
 #include <stdint.h>
 #include <assert.h>
@@ -43,170 +45,154 @@
 
 namespace MetricHalo {
 
-// to define the supported devices
-static VendorModelEntry supportedDeviceList[] =
-{
-    {0x00000000, 0x0000, "Metric Halo", "XXX"},
-};
-
-MHAvDevice::MHAvDevice( DeviceManager& d,
+Device::Device( DeviceManager& d,
                         std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
-    , m_model( NULL )
-
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created MetricHalo::MHAvDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created MetricHalo::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 }
 
-MHAvDevice::~MHAvDevice()
+Device::~Device()
 {
 
 }
 
 bool
-MHAvDevice::probe( ConfigRom& configRom, bool generic )
+Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
-    if (generic) return false;
-    unsigned int vendorId = configRom.getNodeVendorId();
-    unsigned int modelId = configRom.getModelId();
+    if (generic) {
+        return false;
+    } else {
+        // check if device is in supported devices list
+        unsigned int vendorId = configRom.getNodeVendorId();
+        unsigned int modelId = configRom.getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            return true;
-        }
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_MetricHalo;
     }
-
-    return false;
 }
 
 FFADODevice *
-MHAvDevice::createDevice( DeviceManager& d,
+Device::createDevice( DeviceManager& d,
                           std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new MHAvDevice(d, configRom );
+    return new Device(d, configRom );
 }
 
 bool
-MHAvDevice::discover()
+Device::discover()
 {
     unsigned int vendorId = getConfigRom().getNodeVendorId();
     unsigned int modelId = getConfigRom().getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            m_model = &(supportedDeviceList[i]);
-        }
-    }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
 
-    if (m_model != NULL) {
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_MetricHalo) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model->vendor_name, m_model->model_name);
-        return true;
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
+    } else {
+        debugWarning("Using generic Metric Halo support for unsupported device '%s %s'\n",
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
 
     return false;
 }
 
 int
-MHAvDevice::getSamplingFrequency( ) {
+Device::getSamplingFrequency( ) {
     return 0;
 }
 
 std::vector<int>
-MHAvDevice::getSupportedSamplingFrequencies()
+Device::getSupportedSamplingFrequencies()
 {
     std::vector<int> frequencies;
     return frequencies;
 }
 
 FFADODevice::ClockSourceVector
-MHAvDevice::getSupportedClockSources() {
+Device::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
     return r;
 }
 
 bool
-MHAvDevice::setActiveClockSource(ClockSource s) {
+Device::setActiveClockSource(ClockSource s) {
     return false;
 }
 
 FFADODevice::ClockSource
-MHAvDevice::getActiveClockSource() {
+Device::getActiveClockSource() {
     ClockSource s;
     return s;
 }
 
 
 int
-MHAvDevice::getConfigurationId( ) {
+Device::getConfigurationId( ) {
     return 0;
 }
 
 bool
-MHAvDevice::setSamplingFrequency( int samplingFrequency )
+Device::setSamplingFrequency( int samplingFrequency )
 {
 
     return false;
 }
 
 bool
-MHAvDevice::lock() {
+Device::lock() {
 
     return true;
 }
 
 
 bool
-MHAvDevice::unlock() {
+Device::unlock() {
 
     return true;
 }
 
 void
-MHAvDevice::showDevice()
+Device::showDevice()
 {
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
+
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+
     debugOutput(DEBUG_LEVEL_VERBOSE,
-        "%s %s at node %d\n", m_model->vendor_name, m_model->model_name,
-        getNodeId());
+        "%s %s at node %d\n", vme.vendor_name.c_str(), vme.model_name.c_str(), getNodeId());
 }
 
 bool
-MHAvDevice::prepare() {
+Device::prepare() {
 
     return true;
 }
 
 int
-MHAvDevice::getStreamCount() {
+Device::getStreamCount() {
     return 0;
 }
 
 Streaming::StreamProcessor *
-MHAvDevice::getStreamProcessorByIndex(int i) {
+Device::getStreamProcessorByIndex(int i) {
 
     return NULL;
 }
 
 bool
-MHAvDevice::startStreamByIndex(int i) {
+Device::startStreamByIndex(int i) {
     return false;
 }
 
 bool
-MHAvDevice::stopStreamByIndex(int i) {
+Device::stopStreamByIndex(int i) {
     return false;
 }
 

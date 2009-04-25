@@ -43,34 +43,34 @@ class Ieee1394Service;
 
 namespace MAudio {
 
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-    const char *vendor_name;
-    const char *model_name;
-    const char *filename;
-};
-
-class AvDevice : public BeBoB::AvDevice {
+class Device : public FFADODevice {
 public:
-    AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~AvDevice();
+    Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    virtual ~Device();
 
-    static bool probe( ConfigRom& configRom, bool generic = false );
+    static bool probe( Util::Configuration& c, ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
 
-    virtual uint64_t getConfigurationId( );
-    
     virtual void showDevice();
 
     virtual bool setSamplingFrequency( int );
     virtual int getSamplingFrequency( );
+    virtual std::vector<int> getSupportedSamplingFrequencies();
+
+    virtual ClockSourceVector getSupportedClockSources();
+    virtual bool setActiveClockSource(ClockSource);
+    virtual ClockSource getActiveClockSource();
+
+    virtual int getStreamCount();
 
     virtual bool prepare();
+    virtual bool lock();
+    virtual bool unlock();
 
-protected:
-    struct VendorModelEntry*  m_model;
+    virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    virtual bool startStreamByIndex(int i);
+    virtual bool stopStreamByIndex(int i);
 
 };
 

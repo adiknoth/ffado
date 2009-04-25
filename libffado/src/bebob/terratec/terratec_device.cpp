@@ -27,7 +27,7 @@ namespace BeBoB {
 namespace Terratec {
 
 Phase88Device::Phase88Device(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( d, configRom)
+    : BeBoB::Device( d, configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Terratec::Phase88Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -42,7 +42,7 @@ void
 Phase88Device::showDevice()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Terratec::Phase88Device\n");
-    BeBoB::AvDevice::showDevice();
+    BeBoB::Device::showDevice();
 }
 /*                'externalsync': ['/Mixer/Selector_8', self.comboExtSync], 
                 'syncsource':   ['/Mixer/Selector_9', self.comboSyncSource], */

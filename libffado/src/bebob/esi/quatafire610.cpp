@@ -29,7 +29,7 @@ namespace BeBoB {
 namespace ESI {
 
 QuataFireDevice::QuataFireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( d, configRom)
+    : BeBoB::Device( d, configRom)
 {
     m_fixed_clocksource.type = FFADODevice::eCT_Auto;
     m_fixed_clocksource.valid = true;
@@ -50,7 +50,7 @@ void
 QuataFireDevice::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a BeBoB::ESI::QuataFireDevice\n");
-    BeBoB::AvDevice::showDevice();
+    BeBoB::Device::showDevice();
 }
 
 FFADODevice::ClockSource

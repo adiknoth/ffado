@@ -29,7 +29,7 @@
 namespace BeBoB {
 namespace Edirol {
 
-class EdirolFa66Device : public BeBoB::AvDevice {
+class EdirolFa66Device : public BeBoB::Device {
 public:
     EdirolFa66Device( DeviceManager& d,
                        std::auto_ptr<ConfigRom>( configRom ));

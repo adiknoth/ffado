@@ -36,7 +36,7 @@ class Ieee1394Service;
 
 namespace Oxford {
 
-class Device : public GenericAVC::AvDevice {
+class Device : public GenericAVC::Device {
 
 public:
     Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ) );

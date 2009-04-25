@@ -47,17 +47,17 @@
 
 namespace GenericAVC {
 
-IMPL_DEBUG_MODULE( AvDevice, AvDevice, DEBUG_LEVEL_NORMAL );
+IMPL_DEBUG_MODULE( Device, Device, DEBUG_LEVEL_NORMAL );
 
-AvDevice::AvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+Device::Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created GenericAVC::AvDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created GenericAVC::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
     addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 
-AvDevice::~AvDevice()
+Device::~Device()
 {
     for ( StreamProcessorVectorIterator it = m_receiveProcessors.begin();
           it != m_receiveProcessors.end();
@@ -74,7 +74,7 @@ AvDevice::~AvDevice()
 }
 
 bool
-AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
+Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
         // check if we have a music subunit
@@ -106,13 +106,13 @@ AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 }
 
 FFADODevice *
-AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new AvDevice(d, configRom );
+    return new Device(d, configRom );
 }
 
 bool
-AvDevice::discover()
+Device::discover()
 {
     Util::MutexLockHelper lock(m_DeviceMutex);
 
@@ -134,7 +134,7 @@ AvDevice::discover()
 }
 
 bool
-AvDevice::discoverGeneric()
+Device::discoverGeneric()
 {
     if ( !Unit::discover() ) {
         debugError( "Could not discover unit\n" );
@@ -153,7 +153,7 @@ AvDevice::discoverGeneric()
 }
 
 void
-AvDevice::setVerboseLevel(int l)
+Device::setVerboseLevel(int l)
 {
     Util::MutexLockHelper lock(m_DeviceMutex);
     setDebugLevel(l);
@@ -165,7 +165,7 @@ AvDevice::setVerboseLevel(int l)
 
 #include <libieee1394/IEC61883.h>
 enum FFADODevice::eStreamingState
-AvDevice::getStreamingState()
+Device::getStreamingState()
 {
     // check the IEC plug control registers to see if the device is streaming
     // a bit of a hack, but will do until we come up with something better
@@ -199,7 +199,7 @@ AvDevice::getStreamingState()
 }
 
 int
-AvDevice::getSamplingFrequency( ) {
+Device::getSamplingFrequency( ) {
     AVC::Plug* inputPlug = getPlugById( m_pcrPlugs, AVC::Plug::eAPD_Input, 0 );
     if ( !inputPlug ) {
         debugError( "setSampleRate: Could not retrieve iso input plug 0\n" );
@@ -221,7 +221,7 @@ AvDevice::getSamplingFrequency( ) {
 }
 
 bool
-AvDevice::setSamplingFrequency( int s )
+Device::setSamplingFrequency( int s )
 {
     Util::MutexLockHelper lock(m_DeviceMutex);
     bool snoopMode=false;
@@ -273,7 +273,7 @@ AvDevice::setSamplingFrequency( int s )
 }
 
 bool
-AvDevice::supportsSamplingFrequency( int s )
+Device::supportsSamplingFrequency( int s )
 {
     Util::MutexLockHelper lock(m_DeviceMutex);
 
@@ -308,7 +308,7 @@ AvDevice::supportsSamplingFrequency( int s )
       v.push_back(x); }
 
 std::vector<int>
-AvDevice::getSupportedSamplingFrequencies()
+Device::getSupportedSamplingFrequencies()
 {
     if (m_supported_frequencies_cache.size() == 0) {
         GENERICAVC_CHECK_AND_ADD_SR(m_supported_frequencies_cache, 22050);
@@ -325,7 +325,7 @@ AvDevice::getSupportedSamplingFrequencies()
 }
 
 FFADODevice::ClockSourceVector
-AvDevice::getSupportedClockSources() {
+Device::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
 
     Util::MutexLockHelper lock(m_DeviceMutex);
@@ -358,7 +358,7 @@ AvDevice::getSupportedClockSources() {
 }
 
 bool
-AvDevice::setActiveClockSource(ClockSource s) {
+Device::setActiveClockSource(ClockSource s) {
     AVC::Plug *src = m_pPlugManager->getPlug( s.id );
     if (!src) {
         debugError("Could not find plug with id %d\n", s.id);
@@ -381,7 +381,7 @@ AvDevice::setActiveClockSource(ClockSource s) {
 }
 
 FFADODevice::ClockSource
-AvDevice::getActiveClockSource() {
+Device::getActiveClockSource() {
     const SyncInfo* si=getActiveSyncInfo();
     if ( !si ) {
         debugError( "Could not retrieve active sync information\n" );
@@ -395,7 +395,7 @@ AvDevice::getActiveClockSource() {
 }
 
 FFADODevice::ClockSource
-AvDevice::syncInfoToClockSource(const SyncInfo& si) {
+Device::syncInfoToClockSource(const SyncInfo& si) {
     ClockSource s;
 
     // the description is easy
@@ -464,7 +464,7 @@ AvDevice::syncInfoToClockSource(const SyncInfo& si) {
 }
 
 bool
-AvDevice::lock() {
+Device::lock() {
     bool snoopMode=false;
     Util::MutexLockHelper lock(m_DeviceMutex);
     if(!getOption("snoopMode", snoopMode)) {
@@ -481,7 +481,7 @@ AvDevice::lock() {
 }
 
 bool
-AvDevice::unlock() {
+Device::unlock() {
     bool snoopMode=false;
     Util::MutexLockHelper lock(m_DeviceMutex);
     if(!getOption("snoopMode", snoopMode)) {
@@ -497,7 +497,7 @@ AvDevice::unlock() {
 }
 
 void
-AvDevice::showDevice()
+Device::showDevice()
 {
     FFADODevice::showDevice();
 
@@ -506,7 +506,7 @@ AvDevice::showDevice()
 }
 
 bool
-AvDevice::prepare() {
+Device::prepare() {
     bool snoopMode = false;
     Util::MutexLockHelper lock(m_DeviceMutex);
     if(!getOption("snoopMode", snoopMode)) {
@@ -652,7 +652,7 @@ AvDevice::prepare() {
 }
 
 bool
-AvDevice::addPlugToProcessor(
+Device::addPlugToProcessor(
     AVC::Plug& plug,
     Streaming::StreamProcessor *processor,
     Streaming::AmdtpAudioPort::E_Direction direction) {
@@ -748,7 +748,7 @@ AvDevice::addPlugToProcessor(
 }
 
 int
-AvDevice::getStreamCount() {
+Device::getStreamCount() {
     int retval;
     Util::MutexLockHelper lock(m_DeviceMutex);
     retval = m_receiveProcessors.size() + m_transmitProcessors.size();
@@ -756,7 +756,7 @@ AvDevice::getStreamCount() {
 }
 
 Streaming::StreamProcessor *
-AvDevice::getStreamProcessorByIndex(int i) {
+Device::getStreamProcessorByIndex(int i) {
 
     if (i<(int)m_receiveProcessors.size()) {
         return m_receiveProcessors.at(i);
@@ -768,7 +768,7 @@ AvDevice::getStreamProcessorByIndex(int i) {
 }
 
 bool
-AvDevice::startStreamByIndex(int i) {
+Device::startStreamByIndex(int i) {
     int iso_channel=-1;
     bool snoopMode=false;
     if(!getOption("snoopMode", snoopMode)) {
@@ -851,7 +851,7 @@ AvDevice::startStreamByIndex(int i) {
 }
 
 bool
-AvDevice::stopStreamByIndex(int i) {
+Device::stopStreamByIndex(int i) {
     bool snoopMode=false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
@@ -909,7 +909,7 @@ AvDevice::stopStreamByIndex(int i) {
 }
 
 bool
-AvDevice::serialize( std::string basePath, Util::IOSerialize& ser ) const
+Device::serialize( std::string basePath, Util::IOSerialize& ser ) const
 {
     bool result;
     result  = AVC::Unit::serialize( basePath, ser );
@@ -918,7 +918,7 @@ AvDevice::serialize( std::string basePath, Util::IOSerialize& ser ) const
 }
 
 bool
-AvDevice::deserialize( std::string basePath, Util::IODeserialize& deser )
+Device::deserialize( std::string basePath, Util::IODeserialize& deser )
 {
     bool result;
     result = AVC::Unit::deserialize( basePath, deser );

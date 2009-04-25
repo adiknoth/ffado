@@ -59,14 +59,15 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
 	PathOption( "LIBDIR", "Overwrite the directory where libs are installed to.", "$PREFIX/lib", PathOption.PathAccept ),
 	PathOption( "INCLUDEDIR", "Overwrite the directory where headers are installed to.", "$PREFIX/include", PathOption.PathAccept ),
 	PathOption( "SHAREDIR", "Overwrite the directory where misc shared files are installed to.", "$PREFIX/share/libffado", PathOption.PathAccept ),
-	BoolOption( "ENABLE_BEBOB", "Enable/Disable the bebob part.", True ),
-	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable the ECHO Audio FireWorks AV/C part.", True ),
-	BoolOption( "ENABLE_OXFORD", "Enable/Disable support for the Oxford Semiconductor AV/C platform.", True ),
-	BoolOption( "ENABLE_MOTU", "Enable/Disable the MOTU part.", True ),
-	BoolOption( "ENABLE_DICE", "Enable/Disable the DICE part.", True ),
-	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable the Metric Halo part.", False ),
-	BoolOption( "ENABLE_RME", "Enable/Disable the RME part.", False ),
-	#BoolOption( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE part.", False ),
+	BoolOption( "ENABLE_BEBOB", "Enable/Disable support for the BeBoB platform.", True ),
+	BoolOption( "ENABLE_FIREWORKS", "Enable/Disable support for the ECHO Audio FireWorks platform.", True ),
+	BoolOption( "ENABLE_OXFORD", "Enable/Disable support for the Oxford Semiconductor FW platform.", True ),
+	BoolOption( "ENABLE_MOTU", "Enable/Disable support for the MOTU platform.", True ),
+	BoolOption( "ENABLE_DICE", "Enable/Disable support for the TCAT DICE platform.", True ),
+	BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable support for the Metric Halo platform.", False ),
+	BoolOption( "ENABLE_RME", "Enable/Disable support for the RME platform.", False ),
+	BoolOption( "ENABLE_MAUDIO", "Enable/Disable support for the M-Audio custom BeBoB devices.", False ),
+	BoolOption( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE device.", False ),
 	BoolOption( "ENABLE_GENERICAVC", """\
 Enable/Disable the the generic avc part (mainly used by apple).
   Note that disabling this option might be overwritten by other devices needing
@@ -203,6 +204,11 @@ if env['SERIALIZE_USE_EXPAT']:
 else:
 	env['SERIALIZE_USE_EXPAT']=0
 
+if env['ENABLE_BOUNCE'] or env['ENABLE_ALL']:
+	env['REQUIRE_LIBAVC']=1
+else:
+	env['REQUIRE_LIBAVC']=0
+
 if not env.GetOption('clean'):
 	#
 	# Check for working gcc and g++ compilers and their environment.
@@ -229,12 +235,17 @@ if not env.GetOption('clean'):
 		'libiec61883' : '1.1.0',
 		'dbus-1' : '1.0',
 		}
+
+	if env['REQUIRE_LIBAVC']:
+		pkgs['libavc1394'] = '0.5.3'
+
 	if not env['SERIALIZE_USE_EXPAT']:
 		pkgs['libxml++-2.6'] = '2.13.0'
 
 	for pkg in pkgs:
 		name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
 		env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, pkgs[pkg] )
+		print '%s_FLAGS' % name2
 		if env['%s_FLAGS'%name2] == 0:
 			allpresent &= 0
 
@@ -344,13 +355,11 @@ if env['ENABLE_ALL']:
 	env['ENABLE_METRIC_HALO'] = True
 	env['ENABLE_RME'] = True
 	env['ENABLE_BOUNCE'] = True
-
-# HACK: when the bounce device gets fixed, remove this
-env['ENABLE_BOUNCE'] = False
+	env['ENABLE_MAUDIO'] = True
 
 if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] \
    or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS'] \
-   or env['ENABLE_OXFORD']:
+   or env['ENABLE_OXFORD'] or env['ENABLE_MAUDIO']:
 	env['ENABLE_GENERICAVC'] = True
 
 env['BUILD_STATIC_LIB'] = False

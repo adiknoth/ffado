@@ -44,22 +44,14 @@ namespace Dice {
 
 class DiceNotifier;
 
-// struct to define the supported devices
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-    const char *vendor_name;
-    const char *model_name;
-};
-
-class DiceAvDevice : public FFADODevice {
+class Device : public FFADODevice {
 private:
     class DiceNotifier;
 public:
-    DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
-    ~DiceAvDevice();
+    Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    ~Device();
 
-    static bool probe( ConfigRom& configRom, bool generic = false );
+    static bool probe( Util::Configuration& c, ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual bool discover();
 
@@ -93,7 +85,6 @@ public:
     virtual bool setNickname(std::string name);
 
 protected:
-    struct VendorModelEntry *m_model;
 
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
@@ -203,11 +194,11 @@ private:
     class DiceNotifier : public ARMHandler
     {
     public:
-        DiceNotifier(DiceAvDevice *, nodeaddr_t start);
+        DiceNotifier(Device *, nodeaddr_t start);
         virtual ~DiceNotifier();
 
     private:
-        DiceAvDevice *m_dicedevice;
+        Device *m_dicedevice;
     };
 };
 

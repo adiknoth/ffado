@@ -49,28 +49,8 @@ using namespace std;
 
 namespace Dice {
 
-// to define the supported devices
-static VendorModelEntry supportedDeviceList[] =
-{
-    // vendor id, model id, vendor name, model name
-    {FW_VENDORID_TCAT,   0x00000001, "TCAT", "DiceII EVM"},
-    {FW_VENDORID_TCAT,   0x00000002, "TCAT", "DiceII EVM"},
-    {FW_VENDORID_TCAT,   0x00000004, "TCAT", "DiceII EVM (vxx)"},
-    {FW_VENDORID_TCAT,   0x00000021, "TC Electronic", "Konnekt 8"},
-    {FW_VENDORID_TCAT,   0x00000023, "TC Electronic", "Konnekt Live"},
-    {FW_VENDORID_ALESIS, 0x00000001, "Alesis", "io|14"},
-    {FW_VENDORID_ALESIS, 0x00000000, "Alesis", "Multimix16 Firewire"},
-    {FW_VENDORID_PRESONUS, 0x0000000b, "Presonus", "Firestudio Project"},
-    {FW_VENDORID_FOCUSRITE, 0x00000005, "Focusrite", "Saffire PRO 40"},
-    {FW_VENDORID_WEISS, 0x00000001, "Weiss Engineering Ltd.", "ADC 2"},
-    {FW_VENDORID_WEISS, 0x00000002, "Weiss Engineering Ltd.", "Vesta"},
-    {FW_VENDORID_WEISS, 0x00000003, "Weiss Engineering Ltd.", "Minerva"},
-    {FW_VENDORID_WEISS, 0x00000004, "Weiss Engineering Ltd.", "AFI 1"},
-};
-
-DiceAvDevice::DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+Device::Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
-    , m_model( NULL )
     , m_global_reg_offset (0xFFFFFFFFLU)
     , m_global_reg_size (0xFFFFFFFFLU)
     , m_tx_reg_offset (0xFFFFFFFFLU)
@@ -87,12 +67,12 @@ DiceAvDevice::DiceAvDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRo
     , m_rx_size (0xFFFFFFFFLU)
     , m_notifier (NULL)
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Dice::DiceAvDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Dice::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
-    addOption(Util::OptionContainer::Option("snoopMode",false));
+    addOption(Util::OptionContainer::Option("snoopMode", false));
 }
 
-DiceAvDevice::~DiceAvDevice()
+Device::~Device()
 {
     for ( StreamProcessorVectorIterator it = m_receiveProcessors.begin();
           it != m_receiveProcessors.end();
@@ -113,54 +93,42 @@ DiceAvDevice::~DiceAvDevice()
 }
 
 bool
-DiceAvDevice::probe( ConfigRom& configRom, bool generic )
+Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
-    if (generic) return false;
-    unsigned int vendorId = configRom.getNodeVendorId();
-    unsigned int modelId = configRom.getModelId();
+    if (generic) {
+        return false;
+    } else {
+        // check if device is in supported devices list
+        unsigned int vendorId = configRom.getNodeVendorId();
+        unsigned int modelId = configRom.getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            return true;
-        }
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_DICE;
     }
-
-    return false;
 }
 
 FFADODevice *
-DiceAvDevice::createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+Device::createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new DiceAvDevice( d, configRom );
+    return new Device( d, configRom );
 }
 
 bool
-DiceAvDevice::discover()
+Device::discover()
 {
     unsigned int vendorId = getConfigRom().getNodeVendorId();
     unsigned int modelId = getConfigRom().getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( ( supportedDeviceList[i].vendor_id == vendorId )
-             && ( supportedDeviceList[i].model_id == modelId )
-           )
-        {
-            m_model = &(supportedDeviceList[i]);
-        }
-    }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
 
-    if (m_model == NULL) {
-        debugWarning("DiceAvDevice::discover() called for a non-dice device");
-        return false;
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_DICE) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
+    } else {
+        debugWarning("Using generic DICE support for unsupported device '%s %s'\n",
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
 
     if ( !initIoFunctions() ) {
@@ -168,14 +136,11 @@ DiceAvDevice::discover()
         return false;
     }
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s (nick: %s)\n",
-                m_model->vendor_name, m_model->model_name, getDeviceNickName().c_str());
-
     return true;
 }
 
 int
-DiceAvDevice::getSamplingFrequency( ) {
+Device::getSamplingFrequency( ) {
     int samplingFrequency;
 
     fb_quadlet_t clockreg;
@@ -208,7 +173,7 @@ DiceAvDevice::getSamplingFrequency( ) {
     { if(maskedCheckNotZeroGlobalReg( DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, reg)) \
        v.push_back(x); }
 std::vector<int>
-DiceAvDevice::getSupportedSamplingFrequencies()
+Device::getSupportedSamplingFrequencies()
 {
     std::vector<int> frequencies;
     DICE_CHECK_AND_ADD_SR(frequencies, 32000, DICE_CLOCKCAP_RATE_32K);
@@ -222,13 +187,13 @@ DiceAvDevice::getSupportedSamplingFrequencies()
 }
 
 int
-DiceAvDevice::getConfigurationId()
+Device::getConfigurationId()
 {
     return 0;
 }
 
 bool
-DiceAvDevice::setSamplingFrequency( int samplingFrequency )
+Device::setSamplingFrequency( int samplingFrequency )
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Setting sample rate: %d\n",
         (samplingFrequency));
@@ -339,7 +304,7 @@ DiceAvDevice::setSamplingFrequency( int samplingFrequency )
 }
 
 FFADODevice::ClockSourceVector
-DiceAvDevice::getSupportedClockSources() {
+Device::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
 
     quadlet_t clock_caps;
@@ -387,7 +352,7 @@ DiceAvDevice::getSupportedClockSources() {
 }
 
 bool
-DiceAvDevice::isClockSourceIdLocked(unsigned int id, quadlet_t ext_status_reg) {
+Device::isClockSourceIdLocked(unsigned int id, quadlet_t ext_status_reg) {
     switch (id) {
         default: return true;
         case  DICE_CLOCKSOURCE_AES1:
@@ -417,7 +382,7 @@ DiceAvDevice::isClockSourceIdLocked(unsigned int id, quadlet_t ext_status_reg) {
     }
 }
 bool
-DiceAvDevice::isClockSourceIdSlipping(unsigned int id, quadlet_t ext_status_reg) {
+Device::isClockSourceIdSlipping(unsigned int id, quadlet_t ext_status_reg) {
     switch (id) {
         default: return false;
         case  DICE_CLOCKSOURCE_AES1:
@@ -448,7 +413,7 @@ DiceAvDevice::isClockSourceIdSlipping(unsigned int id, quadlet_t ext_status_reg)
 }
 
 enum FFADODevice::eClockSourceType
-DiceAvDevice::clockIdToType(unsigned int id) {
+Device::clockIdToType(unsigned int id) {
     switch (id) {
         default: return eCT_Invalid;
         case  DICE_CLOCKSOURCE_AES1:
@@ -474,7 +439,7 @@ DiceAvDevice::clockIdToType(unsigned int id) {
 }
 
 bool
-DiceAvDevice::setActiveClockSource(ClockSource s) {
+Device::setActiveClockSource(ClockSource s) {
     fb_quadlet_t clockreg;
     if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
         debugError("Could not read CLOCK_SELECT register\n");
@@ -504,7 +469,7 @@ DiceAvDevice::setActiveClockSource(ClockSource s) {
 }
 
 FFADODevice::ClockSource
-DiceAvDevice::getActiveClockSource() {
+Device::getActiveClockSource() {
     ClockSource s;
     quadlet_t clock_caps;
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &clock_caps);
@@ -547,19 +512,19 @@ DiceAvDevice::getActiveClockSource() {
 }
 
 bool
-DiceAvDevice::setNickname( std::string name)
+Device::setNickname( std::string name)
 {
     return setDeviceNickName(name);
 }
 
 std::string
-DiceAvDevice::getNickname()
+Device::getNickname()
 {
     return getDeviceNickName();
 }
 
 void
-DiceAvDevice::showDevice()
+Device::showDevice()
 {
     fb_quadlet_t tmp_quadlet;
     fb_octlet_t tmp_octlet;
@@ -706,7 +671,7 @@ DiceAvDevice::showDevice()
 // bandwidth allocation required for the packets themselves is just
 // the size of the packet.
 bool
-DiceAvDevice::prepare() {
+Device::prepare() {
     fb_quadlet_t nb_audio;
     fb_quadlet_t nb_midi;
     unsigned int nb_channels = 0;
@@ -976,7 +941,7 @@ DiceAvDevice::prepare() {
 }
 
 bool
-DiceAvDevice::addChannelToProcessor(
+Device::addChannelToProcessor(
     diceChannelInfo *channelInfo,
     Streaming::StreamProcessor *processor,
     Streaming::Port::E_Direction direction) {
@@ -1033,11 +998,10 @@ DiceAvDevice::addChannelToProcessor(
 }
 
 bool
-DiceAvDevice::lock() {
+Device::lock() {
     fb_octlet_t result;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Locking %s %s at node %d\n",
-        m_model->vendor_name, m_model->model_name, getNodeId());
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Locking device at node %d\n", getNodeId());
 
     bool snoopMode = false;
     if(!getOption("snoopMode", snoopMode)) {
@@ -1061,7 +1025,7 @@ DiceAvDevice::lock() {
             return false;
         }
     
-        m_notifier=new DiceAvDevice::DiceNotifier(this, notify_address);
+        m_notifier=new Device::DiceNotifier(this, notify_address);
     
         if(!m_notifier) {
             debugError("Could not allocate notifier\n");
@@ -1109,7 +1073,7 @@ DiceAvDevice::lock() {
 
 
 bool
-DiceAvDevice::unlock() {
+Device::unlock() {
     fb_octlet_t result;
 
     bool snoopMode = false;
@@ -1156,7 +1120,7 @@ DiceAvDevice::unlock() {
 }
 
 bool
-DiceAvDevice::enableStreaming() {
+Device::enableStreaming() {
     bool snoopMode = false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
@@ -1171,7 +1135,7 @@ DiceAvDevice::enableStreaming() {
 }
 
 bool
-DiceAvDevice::disableStreaming() {
+Device::disableStreaming() {
     bool snoopMode = false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
@@ -1186,12 +1150,12 @@ DiceAvDevice::disableStreaming() {
 }
 
 int
-DiceAvDevice::getStreamCount() {
+Device::getStreamCount() {
     return m_receiveProcessors.size() + m_transmitProcessors.size();
 }
 
 Streaming::StreamProcessor *
-DiceAvDevice::getStreamProcessorByIndex(int i) {
+Device::getStreamProcessorByIndex(int i) {
 
     if (i<(int)m_receiveProcessors.size()) {
         return m_receiveProcessors.at(i);
@@ -1203,7 +1167,7 @@ DiceAvDevice::getStreamProcessorByIndex(int i) {
 }
 
 bool
-DiceAvDevice::startStreamByIndex(int i) {
+Device::startStreamByIndex(int i) {
     bool snoopMode = false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
@@ -1322,7 +1286,7 @@ DiceAvDevice::startStreamByIndex(int i) {
 }
 
 bool
-DiceAvDevice::stopStreamByIndex(int i) {
+Device::stopStreamByIndex(int i) {
     bool snoopMode = false;
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
@@ -1414,7 +1378,7 @@ DiceAvDevice::stopStreamByIndex(int i) {
 // helper routines
 
 // allocate ISO resources for the SP's
-int DiceAvDevice::allocateIsoChannel(unsigned int packet_size) {
+int Device::allocateIsoChannel(unsigned int packet_size) {
     unsigned int bandwidth=8+packet_size;
 
     int ch=get1394Service().allocateIsoChannelGeneric(bandwidth);
@@ -1425,23 +1389,23 @@ int DiceAvDevice::allocateIsoChannel(unsigned int packet_size) {
     return ch;
 }
 // deallocate ISO resources
-bool DiceAvDevice::deallocateIsoChannel(int channel) {
+bool Device::deallocateIsoChannel(int channel) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "freeing channel %d\n",channel);
     return get1394Service().freeIsoChannel(channel);
 }
 
 bool
-DiceAvDevice::enableIsoStreaming() {
+Device::enableIsoStreaming() {
     return writeGlobalReg(DICE_REGISTER_GLOBAL_ENABLE, DICE_ISOSTREAMING_ENABLE);
 }
 
 bool
-DiceAvDevice::disableIsoStreaming() {
+Device::disableIsoStreaming() {
     return writeGlobalReg(DICE_REGISTER_GLOBAL_ENABLE, DICE_ISOSTREAMING_DISABLE);
 }
 
 bool
-DiceAvDevice::isIsoStreamingEnabled() {
+Device::isIsoStreamingEnabled() {
     fb_quadlet_t result;
     readGlobalReg(DICE_REGISTER_GLOBAL_ENABLE, &result);
     // I don't know what exactly is 'enable',
@@ -1454,7 +1418,7 @@ DiceAvDevice::isIsoStreamingEnabled() {
  * @return true if readGlobalReg(offset) & mask == 0
  */
 bool
-DiceAvDevice::maskedCheckZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask) {
+Device::maskedCheckZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask) {
     fb_quadlet_t result;
     readGlobalReg(offset, &result);
     return ((result & mask) == 0);
@@ -1464,12 +1428,12 @@ DiceAvDevice::maskedCheckZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask) 
  * @return true if readGlobalReg(offset) & mask != 0
  */
 bool
-DiceAvDevice::maskedCheckNotZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask) {
+Device::maskedCheckNotZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask) {
     return !maskedCheckZeroGlobalReg(offset, mask);
 }
 
-DiceAvDevice::diceNameVector
-DiceAvDevice::getTxNameString(unsigned int i) {
+Device::diceNameVector
+Device::getTxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_TX_NAMES_SIZE+1];
 
@@ -1483,8 +1447,8 @@ DiceAvDevice::getTxNameString(unsigned int i) {
     return splitNameString(std::string(namestring));
 }
 
-DiceAvDevice::diceNameVector
-DiceAvDevice::getRxNameString(unsigned int i) {
+Device::diceNameVector
+Device::getRxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_RX_NAMES_SIZE+1];
 
@@ -1498,8 +1462,8 @@ DiceAvDevice::getRxNameString(unsigned int i) {
     return splitNameString(std::string(namestring));
 }
 
-DiceAvDevice::diceNameVector
-DiceAvDevice::getClockSourceNameString() {
+Device::diceNameVector
+Device::getClockSourceNameString() {
     diceNameVector names;
     char namestring[DICE_CLOCKSOURCENAMES_SIZE+1];
 
@@ -1514,7 +1478,7 @@ DiceAvDevice::getClockSourceNameString() {
 }
 
 std::string
-DiceAvDevice::getDeviceNickName() {
+Device::getDeviceNickName() {
     char namestring[DICE_NICK_NAME_SIZE+1];
 
     if (!readGlobalRegBlockSwapped(DICE_REGISTER_GLOBAL_NICK_NAME,
@@ -1528,7 +1492,7 @@ DiceAvDevice::getDeviceNickName() {
 }
 
 bool
-DiceAvDevice::setDeviceNickName(std::string name) {
+Device::setDeviceNickName(std::string name) {
     char namestring[DICE_NICK_NAME_SIZE+1];
     strncpy(namestring, name.c_str(), DICE_NICK_NAME_SIZE);
 
@@ -1540,8 +1504,8 @@ DiceAvDevice::setDeviceNickName(std::string name) {
     return true;
 }
 
-DiceAvDevice::diceNameVector
-DiceAvDevice::splitNameString(std::string in) {
+Device::diceNameVector
+Device::splitNameString(std::string in) {
     diceNameVector names;
 
     // find the end of the string
@@ -1565,7 +1529,7 @@ DiceAvDevice::splitNameString(std::string in) {
 
 // I/O routines
 bool
-DiceAvDevice::initIoFunctions() {
+Device::initIoFunctions() {
 
     // offsets and sizes are returned in quadlets, but we use byte values
 
@@ -1675,7 +1639,7 @@ DiceAvDevice::initIoFunctions() {
 }
 
 bool
-DiceAvDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
+Device::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX\n", offset);
 
     if(offset >= DICE_INVALID_OFFSET) {
@@ -1699,7 +1663,7 @@ DiceAvDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
 }
 
 bool
-DiceAvDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
+Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, data: 0x%08X\n",
         offset, data);
 
@@ -1719,7 +1683,7 @@ DiceAvDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
 }
 
 bool
-DiceAvDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n",
         offset, length);
 
@@ -1744,7 +1708,7 @@ DiceAvDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
 }
 
 bool
-DiceAvDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",
         offset, length);
 
@@ -1771,7 +1735,7 @@ DiceAvDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t len
 }
 
 bool
-DiceAvDevice::readRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::readRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n",
         offset, length);
 
@@ -1796,7 +1760,7 @@ DiceAvDevice::readRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size
 }
 
 bool
-DiceAvDevice::writeRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::writeRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",
         offset, length);
 
@@ -1823,7 +1787,7 @@ DiceAvDevice::writeRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, siz
 }
 
 bool
-DiceAvDevice::readGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
+Device::readGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register offset 0x%04llX\n", offset);
 
     fb_nodeaddr_t offset_gl=globalOffsetGen(offset, sizeof(fb_quadlet_t));
@@ -1831,7 +1795,7 @@ DiceAvDevice::readGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
 }
 
 bool
-DiceAvDevice::writeGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
+Device::writeGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register offset 0x%08llX, data: 0x%08X\n",
         offset, data);
 
@@ -1840,7 +1804,7 @@ DiceAvDevice::writeGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
 }
 
 bool
-DiceAvDevice::readGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::readGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -1849,7 +1813,7 @@ DiceAvDevice::readGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_
 }
 
 bool
-DiceAvDevice::writeGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::writeGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -1858,7 +1822,7 @@ DiceAvDevice::writeGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size
 }
 
 bool
-DiceAvDevice::readGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::readGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -1867,7 +1831,7 @@ DiceAvDevice::readGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data
 }
 
 bool
-DiceAvDevice::writeGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::writeGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -1876,7 +1840,7 @@ DiceAvDevice::writeGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *dat
 }
 
 fb_nodeaddr_t
-DiceAvDevice::globalOffsetGen(fb_nodeaddr_t offset, size_t length) {
+Device::globalOffsetGen(fb_nodeaddr_t offset, size_t length) {
 
     // registry offsets should always be smaller than 0x7FFFFFFF
     // because otherwise base + offset > 64bit
@@ -1894,7 +1858,7 @@ DiceAvDevice::globalOffsetGen(fb_nodeaddr_t offset, size_t length) {
 }
 
 bool
-DiceAvDevice::readTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
+Device::readTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Reading tx %d register offset 0x%04llX\n", i, offset);
 
     fb_nodeaddr_t offset_tx = txOffsetGen(i, offset, sizeof(fb_quadlet_t));
@@ -1902,7 +1866,7 @@ DiceAvDevice::readTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *resu
 }
 
 bool
-DiceAvDevice::writeTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) {
+Device::writeTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing tx %d register offset 0x%08llX, data: 0x%08X\n",
         i, offset, data);
 
@@ -1911,7 +1875,7 @@ DiceAvDevice::writeTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data
 }
 
 bool
-DiceAvDevice::readTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::readTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -1920,7 +1884,7 @@ DiceAvDevice::readTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t 
 }
 
 bool
-DiceAvDevice::writeTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::writeTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -1929,7 +1893,7 @@ DiceAvDevice::writeTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t
 }
 
 bool
-DiceAvDevice::readTxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::readTxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -1938,7 +1902,7 @@ DiceAvDevice::readTxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_qua
 }
 
 fb_nodeaddr_t
-DiceAvDevice::txOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
+Device::txOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
     // registry offsets should always be smaller than 0x7FFFFFFF
     // because otherwise base + offset > 64bit
     if(m_tx_reg_offset & 0x80000000) {
@@ -1970,7 +1934,7 @@ DiceAvDevice::txOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
 }
 
 bool
-DiceAvDevice::readRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
+Device::readRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx %d register offset 0x%04llX\n", i, offset);
 
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, sizeof(fb_quadlet_t));
@@ -1978,7 +1942,7 @@ DiceAvDevice::readRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *resu
 }
 
 bool
-DiceAvDevice::writeRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) {
+Device::writeRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register offset 0x%08llX, data: 0x%08X\n",
         offset, data);
 
@@ -1987,7 +1951,7 @@ DiceAvDevice::writeRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data
 }
 
 bool
-DiceAvDevice::readRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::readRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -1996,7 +1960,7 @@ DiceAvDevice::readRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t 
 }
 
 bool
-DiceAvDevice::writeRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::writeRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -2005,7 +1969,7 @@ DiceAvDevice::writeRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t
 }
 
 bool
-DiceAvDevice::readRxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::readRxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
@@ -2014,7 +1978,7 @@ DiceAvDevice::readRxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_qua
 }
 
 fb_nodeaddr_t
-DiceAvDevice::rxOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
+Device::rxOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
     // registry offsets should always be smaller than 0x7FFFFFFF
     // because otherwise base + offset > 64bit
     if(m_rx_reg_offset & 0x80000000) {
@@ -2047,7 +2011,7 @@ DiceAvDevice::rxOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
 
 // the notifier
 
-DiceAvDevice::DiceNotifier::DiceNotifier(DiceAvDevice *d, nodeaddr_t start)
+Device::DiceNotifier::DiceNotifier(Device *d, nodeaddr_t start)
  : ARMHandler(start, DICE_NOTIFIER_BLOCK_LENGTH,
               RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
               RAW1394_ARM_WRITE, 0)
@@ -2056,7 +2020,7 @@ DiceAvDevice::DiceNotifier::DiceNotifier(DiceAvDevice *d, nodeaddr_t start)
 
 }
 
-DiceAvDevice::DiceNotifier::~DiceNotifier()
+Device::DiceNotifier::~DiceNotifier()
 {
 
 }

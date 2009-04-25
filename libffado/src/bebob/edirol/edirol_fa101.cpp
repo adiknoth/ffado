@@ -28,7 +28,7 @@ namespace Edirol {
 
 EdirolFa101Device::EdirolFa101Device( DeviceManager& d,
                                       std::auto_ptr<ConfigRom>( configRom ))
-    : BeBoB::AvDevice( d , configRom)
+    : BeBoB::Device( d , configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Edirol::EdirolFa101Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -69,7 +69,7 @@ void
 EdirolFa101Device::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a BeBoB::EdirolFa101::EdirolFa101Device\n");
-    BeBoB::AvDevice::showDevice();
+    BeBoB::Device::showDevice();
 }
 
 }

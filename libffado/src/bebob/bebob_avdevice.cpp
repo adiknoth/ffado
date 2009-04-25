@@ -59,22 +59,22 @@ using namespace AVC;
 
 namespace BeBoB {
 
-AvDevice::AvDevice( DeviceManager& d, std::auto_ptr< ConfigRom >( configRom ) )
-    : GenericAVC::AvDevice( d, configRom )
+Device::Device( DeviceManager& d, std::auto_ptr< ConfigRom >( configRom ) )
+    : GenericAVC::Device( d, configRom )
     , m_last_discovery_config_id ( 0xFFFFFFFFFFFFFFFFLLU )
     , m_Mixer ( 0 )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::AvDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 }
 
-AvDevice::~AvDevice()
+Device::~Device()
 {
     destroyMixer();
 }
 
 bool
-AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
+Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
     if(generic) {
         // try a bebob-specific command to check for the firmware
@@ -120,7 +120,7 @@ AvDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 }
 
 FFADODevice *
-AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
+Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
     unsigned int vendorId = configRom->getNodeVendorId();
     unsigned int modelId = configRom->getModelId();
@@ -137,7 +137,7 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
                 case 0x00010049:
                     return new Edirol::EdirolFa66Device(d, configRom);
                 default:
-                    return new AvDevice(d, configRom);
+                    return new Device(d, configRom);
             }
         case FW_VENDORID_ESI:
             if (modelId == 0x00010064) {
@@ -149,7 +149,7 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
                 case 0x00000003:
                     return new Terratec::Phase88Device(d, configRom);
                 default: // return a plain BeBoB device
-                    return new AvDevice(d, configRom);
+                    return new Device(d, configRom);
             }
         case FW_VENDORID_FOCUSRITE:
             switch(modelId) {
@@ -159,10 +159,10 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
                 case 0x00000000:
                     return new Focusrite::SaffireDevice(d, configRom);
                 default: // return a plain BeBoB device
-                    return new AvDevice(d, configRom);
+                    return new Device(d, configRom);
            }
         default:
-            return new AvDevice(d, configRom);
+            return new Device(d, configRom);
     }
     return NULL;
 }
@@ -171,7 +171,7 @@ AvDevice::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     { if(supportsSamplingFrequency(x)) \
       v.push_back(x); }
 bool
-AvDevice::discover()
+Device::discover()
 {
     unsigned int vendorId = getConfigRom().getNodeVendorId();
     unsigned int modelId = getConfigRom().getModelId();
@@ -213,7 +213,7 @@ AvDevice::discover()
 }
 
 bool
-AvDevice::buildMixer()
+Device::buildMixer()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Building a generic BeBoB mixer...\n");
     // create a Mixer
@@ -233,14 +233,14 @@ AvDevice::buildMixer()
 }
 
 bool
-AvDevice::destroyMixer()
+Device::destroyMixer()
 {
     delete m_Mixer;
     return true;
 }
 
 bool
-AvDevice::setSelectorFBValue(int id, int value) {
+Device::setSelectorFBValue(int id, int value) {
     FunctionBlockCmd fbCmd( get1394Service(),
                             FunctionBlockCmd::eFBT_Selector,
                             id,
@@ -269,7 +269,7 @@ AvDevice::setSelectorFBValue(int id, int value) {
 }
 
 int
-AvDevice::getSelectorFBValue(int id) {
+Device::getSelectorFBValue(int id) {
 
     FunctionBlockCmd fbCmd( get1394Service(),
                             FunctionBlockCmd::eFBT_Selector,
@@ -299,7 +299,7 @@ AvDevice::getSelectorFBValue(int id) {
 }
 
 bool
-AvDevice::setFeatureFBVolumeCurrent(int id, int channel, int v) {
+Device::setFeatureFBVolumeCurrent(int id, int channel, int v) {
 
     FunctionBlockCmd fbCmd( get1394Service(),
                             FunctionBlockCmd::eFBT_Feature,
@@ -333,7 +333,7 @@ AvDevice::setFeatureFBVolumeCurrent(int id, int channel, int v) {
 }
 
 int
-AvDevice::getFeatureFBVolumeValue(int id, int channel, FunctionBlockCmd::EControlAttribute controlAttribute) 
+Device::getFeatureFBVolumeValue(int id, int channel, FunctionBlockCmd::EControlAttribute controlAttribute) 
 {
     FunctionBlockCmd fbCmd( get1394Service(),
                             FunctionBlockCmd::eFBT_Feature,
@@ -369,25 +369,25 @@ AvDevice::getFeatureFBVolumeValue(int id, int channel, FunctionBlockCmd::EContro
 }
 
 int 
-AvDevice::getFeatureFBVolumeMinimum(int id, int channel)
+Device::getFeatureFBVolumeMinimum(int id, int channel)
 {
     return getFeatureFBVolumeValue(id, channel, AVC::FunctionBlockCmd::eCA_Minimum);
 }
 
 int 
-AvDevice::getFeatureFBVolumeMaximum(int id, int channel)
+Device::getFeatureFBVolumeMaximum(int id, int channel)
 {
     return getFeatureFBVolumeValue(id, channel, AVC::FunctionBlockCmd::eCA_Maximum);
 }
 
 int 
-AvDevice::getFeatureFBVolumeCurrent(int id, int channel)
+Device::getFeatureFBVolumeCurrent(int id, int channel)
 {
     return getFeatureFBVolumeValue(id, channel, AVC::FunctionBlockCmd::eCA_Current);   
 }
 
 bool
-AvDevice::setFeatureFBLRBalanceCurrent(int id, int channel, int v) {
+Device::setFeatureFBLRBalanceCurrent(int id, int channel, int v) {
 
     FunctionBlockCmd fbCmd( get1394Service(),
                             FunctionBlockCmd::eFBT_Feature,
@@ -421,7 +421,7 @@ AvDevice::setFeatureFBLRBalanceCurrent(int id, int channel, int v) {
 }
 
 int
-AvDevice::getFeatureFBLRBalanceValue(int id, int channel, FunctionBlockCmd::EControlAttribute controlAttribute) 
+Device::getFeatureFBLRBalanceValue(int id, int channel, FunctionBlockCmd::EControlAttribute controlAttribute) 
 {
     FunctionBlockCmd fbCmd( get1394Service(),
                             FunctionBlockCmd::eFBT_Feature,
@@ -457,41 +457,41 @@ AvDevice::getFeatureFBLRBalanceValue(int id, int channel, FunctionBlockCmd::ECon
 }
 
 int 
-AvDevice::getFeatureFBLRBalanceMinimum(int id, int channel)
+Device::getFeatureFBLRBalanceMinimum(int id, int channel)
 {
     return getFeatureFBLRBalanceValue(id, channel, AVC::FunctionBlockCmd::eCA_Minimum);
 }
 
 int 
-AvDevice::getFeatureFBLRBalanceMaximum(int id, int channel)
+Device::getFeatureFBLRBalanceMaximum(int id, int channel)
 {
     return getFeatureFBLRBalanceValue(id, channel, AVC::FunctionBlockCmd::eCA_Maximum);
 }
 
 int 
-AvDevice::getFeatureFBLRBalanceCurrent(int id, int channel)
+Device::getFeatureFBLRBalanceCurrent(int id, int channel)
 {
     return getFeatureFBLRBalanceValue(id, channel, AVC::FunctionBlockCmd::eCA_Current);   
 }
 
 void
-AvDevice::showDevice()
+Device::showDevice()
 {
     debugOutput(DEBUG_LEVEL_NORMAL, "Device is a BeBoB device\n");
-    GenericAVC::AvDevice::showDevice();
+    GenericAVC::Device::showDevice();
     flushDebugOutput();
 }
 
 void
-AvDevice::setVerboseLevel(int l)
+Device::setVerboseLevel(int l)
 {
     if (m_Mixer) m_Mixer->setVerboseLevel( l );
-    GenericAVC::AvDevice::setVerboseLevel( l );
+    GenericAVC::Device::setVerboseLevel( l );
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting verbose level to %d...\n", l );
 }
 
 AVC::Subunit*
-AvDevice::createSubunit(AVC::Unit& unit,
+Device::createSubunit(AVC::Unit& unit,
                         AVC::ESubunitType type,
                         AVC::subunit_t id )
 {
@@ -513,7 +513,7 @@ AvDevice::createSubunit(AVC::Unit& unit,
 
 
 AVC::Plug *
-AvDevice::createPlug( AVC::Unit* unit,
+Device::createPlug( AVC::Unit* unit,
                       AVC::Subunit* subunit,
                       AVC::function_block_type_t functionBlockType,
                       AVC::function_block_type_t functionBlockId,
@@ -536,7 +536,7 @@ AvDevice::createPlug( AVC::Unit* unit,
 }
 
 bool
-AvDevice::propagatePlugInfo() {
+Device::propagatePlugInfo() {
     // we don't have to propagate since we discover things
     // another way
     debugOutput(DEBUG_LEVEL_VERBOSE, "Skip plug info propagation\n");
@@ -544,7 +544,7 @@ AvDevice::propagatePlugInfo() {
 }
 
 uint8_t
-AvDevice::getConfigurationIdSampleRate()
+Device::getConfigurationIdSampleRate()
 {
     ExtendedStreamFormatCmd extStreamFormatCmd( get1394Service() );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR, 0 );
@@ -577,7 +577,7 @@ AvDevice::getConfigurationIdSampleRate()
 }
 
 uint8_t
-AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection )
+Device::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDirection )
 {
     ExtendedPlugInfoCmd extPlugInfoCmd( get1394Service() );
     UnitPlugAddress unitPlugAddress( UnitPlugAddress::ePT_PCR,
@@ -612,7 +612,7 @@ AvDevice::getConfigurationIdNumberOfChannel( PlugAddress::EPlugDirection ePlugDi
 }
 
 uint16_t
-AvDevice::getConfigurationIdSyncMode()
+Device::getConfigurationIdSyncMode()
 {
     SignalSourceCmd signalSourceCmd( get1394Service() );
     SignalUnitAddress signalUnitAddr;
@@ -658,7 +658,7 @@ AvDevice::getConfigurationIdSyncMode()
 }
 
 bool
-AvDevice::needsRediscovery()
+Device::needsRediscovery()
 {
     // require rediscovery if the config id differs from the one saved
     // in the previous discovery
@@ -666,7 +666,7 @@ AvDevice::needsRediscovery()
 }
 
 uint64_t
-AvDevice::getConfigurationId()
+Device::getConfigurationId()
 {
     // create a unique configuration id.
     uint64_t id = 0;
@@ -678,25 +678,25 @@ AvDevice::getConfigurationId()
 }
 
 bool
-AvDevice::serialize( std::string basePath,
+Device::serialize( std::string basePath,
                      Util::IOSerialize& ser ) const
 {
     bool result;
-    result  = GenericAVC::AvDevice::serialize( basePath, ser );
+    result  = GenericAVC::Device::serialize( basePath, ser );
     return result;
 }
 
 bool
-AvDevice::deserialize( std::string basePath,
+Device::deserialize( std::string basePath,
                        Util::IODeserialize& deser )
 {
     bool result;
-    result  = GenericAVC::AvDevice::deserialize( basePath, deser );
+    result  = GenericAVC::Device::deserialize( basePath, deser );
     return result;
 }
 
 std::string
-AvDevice::getCachePath()
+Device::getCachePath()
 {
     std::string cachePath;
     char* pCachePath;
@@ -718,7 +718,7 @@ AvDevice::getCachePath()
 }
 
 bool
-AvDevice::loadFromCache()
+Device::loadFromCache()
 {
     std::string sDevicePath = getCachePath() + getConfigRom().getGuidString();
 
@@ -766,7 +766,7 @@ AvDevice::loadFromCache()
 }
 
 bool
-AvDevice::saveCache()
+Device::saveCache()
 {
     // the path looks like this:
     // PATH_TO_CACHE + GUID + CONFIGURATION_ID
@@ -799,7 +799,7 @@ AvDevice::saveCache()
 
     // come up with an unique file name for the current settings
     char* configId;
-    asprintf(&configId, "%016llx", BeBoB::AvDevice::getConfigurationId() );
+    asprintf(&configId, "%016llx", BeBoB::Device::getConfigurationId() );
     if ( !configId ) {
         debugError( "Could not create id string\n" );
         return false;

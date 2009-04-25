@@ -95,7 +95,6 @@ bebob_source = env.Split( '\
 	bebob/edirol/edirol_fa66.cpp \
 	bebob/esi/quatafire610.cpp \
 	bebob/mackie/onyxmixer.cpp \
-	maudio/maudio_avdevice.cpp \
 ' )
 
 bebob_pkgdata = env.Split( '\
@@ -103,6 +102,13 @@ bebob_pkgdata = env.Split( '\
 	maudio/fw410.xml \
 	maudio/fwap.xml \
 ' )
+
+maudio_source =  env.Split( '\
+	maudio/maudio_avdevice.cpp \
+' )
+
+maudio_pkgdata = env.Split( '\
+' )	
 
 genericavc_source =  env.Split( '\
 	genericavc/avc_avdevice.cpp \
@@ -154,7 +160,6 @@ dice_source = env.Split( '\
 bounce_source = env.Split( '\
 	bounce/bounce_avdevice.cpp \
 	bounce/bounce_slave_avdevice.cpp \
-	libstreaming/AmdtpSlaveStreamProcessor.cpp \
 ' )
 
 metric_halo_source = env.Split( '\
@@ -206,6 +211,10 @@ if env['ENABLE_BEBOB']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_BEBOB"] )
 	source += bebob_source
 	pkgdata += bebob_pkgdata
+if env['ENABLE_MAUDIO']:
+	libenv.AppendUnique( CCFLAGS=["-DENABLE_MAUDIO"] )
+	source += maudio_source
+	pkgdata += maudio_pkgdata
 if env['ENABLE_FIREWORKS']:
 	libenv.AppendUnique( CCFLAGS=["-DENABLE_FIREWORKS"] )
 	source += fireworks_source
@@ -246,6 +255,8 @@ if not env.GetOption( "clean" ):
 		libenv.MergeFlags( env['LIBXML26_FLAGS'] )
 	else:
 		libenv.PrependUnique( LIBS=["expat"] )
+	if env['REQUIRE_LIBAVC']:
+		libenv.MergeFlags( env['LIBAVC1394_FLAGS'] )
 
 # add the libconfig
 libenv.AppendUnique( CPPPATH=["#/external/libconfig"] )

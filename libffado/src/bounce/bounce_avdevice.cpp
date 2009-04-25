@@ -27,14 +27,11 @@
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
-#include "libavc/general/avc_plug_info.h"
-#include "libavc/general/avc_extended_plug_info.h"
-#include "libavc/general/avc_subunit_info.h"
-#include "libavc/streamformat/avc_extended_stream_format.h"
-#include "libutil/cmd_serialize.h"
-#include "libavc/avc_definitions.h"
+#include "libutil/Configuration.h"
 
 #include "debugmodule/debugmodule.h"
+
+#include "devicemanager.h"
 
 #include <iostream>
 #include <sstream>
@@ -45,100 +42,71 @@
 
 namespace Bounce {
 
-// to define the supported devices
-static VendorModelEntry supportedDeviceList[] =
-{
-    {FW_VENDORID_FFADO, 0x0B0001LU, 0x0B0001LU, "FFADO", "Bounce"},
-};
-
-BounceDevice::BounceDevice( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
-    : FFADODevice( ieee1394Service, configRom )
+Device::Device( DeviceManager& d, std::auto_ptr< ConfigRom >( configRom ) )
+    : FFADODevice( d, configRom )
     , m_samplerate (44100)
-    , m_model( NULL )
     , m_Notifier ( NULL )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::BounceDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Bounce::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
     addOption(Util::OptionContainer::Option("snoopMode",false));
 }
 
-BounceDevice::~BounceDevice()
+Device::~Device()
 {
 
 }
 
 bool
-BounceDevice::probe( ConfigRom& configRom, bool generic )
+Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 {
-    if (generic) return false;
+    if(generic) {
+        return false;
+    } else {
+        // check if device is in supported devices list
+        unsigned int vendorId = configRom.getNodeVendorId();
+        unsigned int modelId = configRom.getModelId();
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "probing BounceDevice\n");
-//     unsigned int vendorId = configRom.getNodeVendorId();
-    unsigned int modelId = configRom.getModelId();
-    unsigned int unitSpecifierId = configRom.getUnitSpecifierId();
-    debugOutput( DEBUG_LEVEL_VERBOSE, "modelId = 0x%08X, specid = 0x%08X\n", modelId, unitSpecifierId);
-
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if (
-//             ( supportedDeviceList[i].vendor_id == vendorId )
-             ( supportedDeviceList[i].model_id == modelId )
-             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId )
-           )
-        {
-            return true;
-        }
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        return c.isValid(vme) && vme.driver == Util::Configuration::eD_Bounce;
     }
-
     return false;
 }
 
 FFADODevice *
-BounceDevice::createDevice( Ieee1394Service& ieee1394Service,
-                            std::auto_ptr<ConfigRom>( configRom ))
+Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new BounceDevice(ieee1394Service, configRom );
+    return new Device(d, configRom );
 }
 
 bool
-BounceDevice::discover()
+Device::discover()
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "discovering BounceDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "discovering Device (NodeID %d)\n",
                  getNodeId() );
 
-//     unsigned int vendorId = m_pConfigRom->getNodeVendorId();
-    unsigned int modelId = m_pConfigRom->getModelId();
-    unsigned int unitSpecifierId = m_pConfigRom->getUnitSpecifierId();
+    unsigned int vendorId = getConfigRom().getNodeVendorId();
+    unsigned int modelId = getConfigRom().getModelId();
 
-    for ( unsigned int i = 0;
-          i < ( sizeof( supportedDeviceList )/sizeof( VendorModelEntry ) );
-          ++i )
-    {
-        if ( //( supportedDeviceList[i].vendor_id == vendorId )
-             ( supportedDeviceList[i].model_id == modelId )
-             && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId )
-           )
-        {
-            m_model = &(supportedDeviceList[i]);
-        }
-    }
+    Util::Configuration &c = getDeviceManager().getConfiguration();
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
 
-    if (m_model != NULL) {
+    if (c.isValid(vme) && vme.driver == Util::Configuration::eD_Bounce) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
-                m_model->vendor_name, m_model->model_name);
-        return true;
+                     vme.vendor_name.c_str(),
+                     vme.model_name.c_str());
+    } else {
+        debugWarning("Using generic Bounce support for unsupported device '%s %s'\n",
+                     getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
-    return false;
+    return true;
 }
 
-int BounceDevice::getSamplingFrequency( ) {
+int Device::getSamplingFrequency( ) {
     return m_samplerate;
 }
 
-bool BounceDevice::setSamplingFrequency( int s ) {
+bool Device::setSamplingFrequency( int s ) {
     if (s) {
         m_samplerate=s;
         return true;
@@ -146,55 +114,57 @@ bool BounceDevice::setSamplingFrequency( int s ) {
 }
 
 FFADODevice::ClockSourceVector
-BounceDevice::getSupportedClockSources() {
+Device::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
     return r;
 }
 
 bool
-BounceDevice::setActiveClockSource(ClockSource s) {
+Device::setActiveClockSource(ClockSource s) {
     return false;
 }
 
 FFADODevice::ClockSource
-BounceDevice::getActiveClockSource() {
+Device::getActiveClockSource() {
     ClockSource s;
     return s;
 }
 
-int BounceDevice::getConfigurationId( ) {
-    return 0;
+std::vector<int>
+Device::getSupportedSamplingFrequencies()
+{
+    std::vector<int> frequencies;
+    return frequencies;
 }
 
 
 bool
-BounceDevice::lock() {
+Device::lock() {
 
     return true;
 }
 
 
 bool
-BounceDevice::unlock() {
+Device::unlock() {
 
     return true;
 }
 
 void
-BounceDevice::showDevice()
+Device::showDevice()
 {
+
     debugOutput(DEBUG_LEVEL_NORMAL, "\nI am the bouncedevice, the bouncedevice I am...\n" );
-    debugOutput(DEBUG_LEVEL_NORMAL, "Vendor            :  %s\n", m_pConfigRom->getVendorName().c_str());
-    debugOutput(DEBUG_LEVEL_NORMAL, "Model             :  %s\n", m_pConfigRom->getModelName().c_str());
-    debugOutput(DEBUG_LEVEL_NORMAL, "Vendor Name       :  %s\n", m_model->vendor_name);
-    debugOutput(DEBUG_LEVEL_NORMAL, "Model Name        :  %s\n", m_model->model_name);
+    debugOutput(DEBUG_LEVEL_NORMAL, "Vendor            :  %s\n", getConfigRom().getVendorName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL, "Model             :  %s\n", getConfigRom().getModelName().c_str());
     debugOutput(DEBUG_LEVEL_NORMAL, "Node              :  %d\n", getNodeId());
-    debugOutput(DEBUG_LEVEL_NORMAL, "GUID              :  0x%016llX\n", m_pConfigRom->getGuid());
+    debugOutput(DEBUG_LEVEL_NORMAL, "GUID              :  0x%016llX\n", getConfigRom().getGuid());
     debugOutput(DEBUG_LEVEL_NORMAL, "\n" );
 }
 
 bool
-BounceDevice::addPortsToProcessor(
+Device::addPortsToProcessor(
     Streaming::StreamProcessor *processor,
     Streaming::Port::E_Direction direction) {
 
@@ -256,8 +226,8 @@ BounceDevice::addPortsToProcessor(
 }
 
 bool
-BounceDevice::prepare() {
-    debugOutput(DEBUG_LEVEL_NORMAL, "Preparing BounceDevice...\n" );
+Device::prepare() {
+    debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
 
     bool snoopMode=false;
     if(!getOption("snoopMode", snoopMode)) {
@@ -267,9 +237,7 @@ BounceDevice::prepare() {
     // create & add streamprocessors
     Streaming::StreamProcessor *p;
 
-    p=new Streaming::AmdtpReceiveStreamProcessor(
-                             m_p1394Service->getPort(),
-                             m_samplerate,
+    p=new Streaming::AmdtpReceiveStreamProcessor(*this,
                              BOUNCE_NB_AUDIO_CHANNELS+(BOUNCE_NB_MIDI_CHANNELS?1:0));
 
     if(!p->init()) {
@@ -290,14 +258,10 @@ BounceDevice::prepare() {
     // do the transmit processor
     if (snoopMode) {
         // we are snooping, so this is receive too.
-        p=new Streaming::AmdtpReceiveStreamProcessor(
-                                m_p1394Service->getPort(),
-                                m_samplerate,
+        p=new Streaming::AmdtpReceiveStreamProcessor(*this,
                                 BOUNCE_NB_AUDIO_CHANNELS+(BOUNCE_NB_MIDI_CHANNELS?1:0));
     } else {
-        p=new Streaming::AmdtpTransmitStreamProcessor(
-                                m_p1394Service->getPort(),
-                                m_samplerate,
+        p=new Streaming::AmdtpTransmitStreamProcessor(*this,
                                 BOUNCE_NB_AUDIO_CHANNELS+(BOUNCE_NB_MIDI_CHANNELS?1:0));
     }
 
@@ -330,12 +294,12 @@ BounceDevice::prepare() {
 }
 
 int
-BounceDevice::getStreamCount() {
+Device::getStreamCount() {
     return m_receiveProcessors.size() + m_transmitProcessors.size();
 }
 
 Streaming::StreamProcessor *
-BounceDevice::getStreamProcessorByIndex(int i) {
+Device::getStreamProcessorByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         return m_receiveProcessors.at(i);
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
@@ -346,7 +310,7 @@ BounceDevice::getStreamProcessorByIndex(int i) {
 }
 
 bool
-BounceDevice::startStreamByIndex(int i) {
+Device::startStreamByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
@@ -430,7 +394,7 @@ BounceDevice::startStreamByIndex(int i) {
 }
 
 bool
-BounceDevice::stopStreamByIndex(int i) {
+Device::stopStreamByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         int n=i;
         Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
@@ -504,10 +468,10 @@ BounceDevice::stopStreamByIndex(int i) {
 // helper functions
 
 // allocate ISO resources for the SP's
-int BounceDevice::allocateIsoChannel(unsigned int packet_size) {
+int Device::allocateIsoChannel(unsigned int packet_size) {
     unsigned int bandwidth=8+packet_size;
 
-    int ch=m_p1394Service->allocateIsoChannelGeneric(bandwidth);
+    int ch=get1394Service().allocateIsoChannelGeneric(bandwidth);
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "allocated channel %d, bandwidth %d\n",
         ch, bandwidth);
@@ -515,15 +479,15 @@ int BounceDevice::allocateIsoChannel(unsigned int packet_size) {
     return ch;
 }
 // deallocate ISO resources
-bool BounceDevice::deallocateIsoChannel(int channel) {
+bool Device::deallocateIsoChannel(int channel) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "freeing channel %d\n",channel);
-    return m_p1394Service->freeIsoChannel(channel);
+    return get1394Service().freeIsoChannel(channel);
 }
 
 // I/O functions
 
 bool
-BounceDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
+Device::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX\n", offset);
 
     if(offset >= BOUNCE_INVALID_OFFSET) {
@@ -534,7 +498,7 @@ BounceDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
-    if(!m_p1394Service->read_quadlet( nodeId, addr, result ) ) {
+    if(!get1394Service().read_quadlet( nodeId, addr, result ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
@@ -544,7 +508,7 @@ BounceDevice::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
 }
 
 bool
-BounceDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
+Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, data: 0x%08X\n",
         offset, data);
 
@@ -556,7 +520,7 @@ BounceDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
-    if(!m_p1394Service->write_quadlet( nodeId, addr, data ) ) {
+    if(!get1394Service().write_quadlet( nodeId, addr, data ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
@@ -564,7 +528,7 @@ BounceDevice::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
 }
 
 bool
-BounceDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n",
         offset, length);
 
@@ -576,7 +540,7 @@ BounceDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
-    if(!m_p1394Service->read( nodeId, addr, length, data ) ) {
+    if(!get1394Service().read( nodeId, addr, length, data ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
         return false;
     }
@@ -584,7 +548,7 @@ BounceDevice::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
 }
 
 bool
-BounceDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+Device::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",
         offset, length);
 
@@ -596,7 +560,7 @@ BounceDevice::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t len
     fb_nodeaddr_t addr=BOUNCE_REGISTER_BASE + offset;
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
-    if(!m_p1394Service->write( nodeId, addr, length, data ) ) {
+    if(!get1394Service().write( nodeId, addr, length, data ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012llX\n", nodeId, addr);
         return false;
     }

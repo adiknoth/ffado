@@ -28,6 +28,7 @@
 
 #include "debugmodule/debugmodule.h"
 #include "libavc/avc_definitions.h"
+#include "libutil/Configuration.h"
 
 // #include "libstreaming/mh/MHStreamProcessor.h"
 
@@ -36,21 +37,13 @@ class Ieee1394Service;
 
 namespace MetricHalo {
 
-// struct to define the supported devices
-struct VendorModelEntry {
-    unsigned int vendor_id;
-    unsigned int model_id;
-    char *vendor_name;
-    char *model_name;
-};
-
-class MHAvDevice : public FFADODevice {
+class Device : public FFADODevice {
 public:
-    MHAvDevice( DeviceManager& d,
+    Device( DeviceManager& d,
                 std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~MHAvDevice();
+    virtual ~Device();
 
-    static bool probe( ConfigRom& configRom, bool generic = false );
+    static bool probe( Util::Configuration& c, ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d,
                                        std::auto_ptr<ConfigRom>( configRom ));
     static int getConfigurationId();
@@ -78,9 +71,6 @@ public:
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);
-
-protected:
-    struct VendorModelEntry *m_model;
 
 };
 
