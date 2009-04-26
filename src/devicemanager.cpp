@@ -643,7 +643,41 @@ DeviceManager::discover( bool useCache, bool rediscover )
         // the side effect of this is that for the same set of attached devices,
         // a device id always corresponds to the same device
         sort(m_avDevices.begin(), m_avDevices.end(), FFADODevice::compareGUID);
+
+        // first map the devices to a position using the device spec strings
+        std::map<fb_octlet_t, int> positionMap;
+        for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+            it != m_avDevices.end();
+            ++it )
+        {
+            int pos = m_deviceStringParser->matchPosition((*it)->getConfigRom());
+            fb_octlet_t guid = (*it)->getConfigRom().getGuid();
+            positionMap[guid] = pos;
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Mapping %s to position %d...\n", (*it)->getConfigRom().getGuidString().c_str(), pos );
+        }
+
+        // now run over all positions, and add the devices that belong to it
+        FFADODeviceVector sorted;
+        int nbPositions = m_deviceStringParser->countDeviceStrings();
         int i=0;
+        for (i=0; i < nbPositions; i++) {
+            for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+                it != m_avDevices.end();
+                ++it )
+            {
+                fb_octlet_t guid = (*it)->getConfigRom().getGuid();
+                if(positionMap[guid] == i) {
+                    sorted.push_back(*it);
+                }
+            }
+        }
+
+        // assign the new vector
+        assert(sorted.size() == m_avDevices.size());
+        m_avDevices = sorted;
+
+        // set device id's
+        i = 0;
         for ( FFADODeviceVectorIterator it = m_avDevices.begin();
             it != m_avDevices.end();
             ++it )
