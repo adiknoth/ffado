@@ -622,6 +622,19 @@ bool StreamProcessorManager::syncStartAll() {
         (unsigned int)TICKS_TO_OFFSET(m_sync_delay),
         sync_delay_frames);
 
+    // the amount of prebuffer frames should be a multiple of the common block size
+    // as otherwise the position of MIDI is messed up
+    if(xmit_prebuffer_frames % max_packet_size_frames) {
+        int tmp = 0;
+        while(tmp < xmit_prebuffer_frames) {
+            tmp += max_packet_size_frames;
+        }
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "The number of prebuffer frames (%d) is not a multiple of the common block size (%d), increased to %d...\n", 
+                    xmit_prebuffer_frames, max_packet_size_frames, tmp);
+        xmit_prebuffer_frames = tmp;
+    }
+
     // check if this can even work.
     // the worst case point where we can receive a period is at 1 period + sync delay
     // this means that the number of frames in the xmit buffer has to be at least

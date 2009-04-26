@@ -267,10 +267,26 @@ AmdtpTransmitStreamProcessor::generatePacketData (
 {
     if (m_data_buffer->readFrames(m_syt_interval, (char *)(data + 8)))
     {
-        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                            "XMIT DATA: TSP= %011llu (%04u)\n",
                            m_last_timestamp,
                            (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
+        #if 0
+        // debug code to output the packet content
+        char tmpbuff[8192];
+        int cnt=0;
+        quadlet_t *tmp = (quadlet_t *)((char *)(data + 8));
+
+        for(int i=0; i<m_syt_interval; i++) {
+            cnt += snprintf(tmpbuff + cnt, 8192-cnt, "[%02d] ", i);
+            for(int j=0; j<m_dimension; j++) {
+                cnt += snprintf(tmpbuff + cnt, 8192-cnt, "%08X ", *tmp);
+                tmp++;
+            }
+            cnt += snprintf(tmpbuff + cnt, 8192-cnt, "\n");
+        }
+        debugOutput(DEBUG_LEVEL_VERBOSE, "\n%s\n", tmpbuff);
+        #endif
         return eCRV_OK;
     }
     else return eCRV_XRun;
@@ -1032,12 +1048,13 @@ AmdtpTransmitStreamProcessor::encodeMidiPorts(quadlet_t *data,
                     quadlet_t tmpval;
                     tmpval = ((*buffer)<<16) & 0x00FF0000;
                     tmpval = IEC61883_AM824_SET_LABEL(tmpval, IEC61883_AM824_LABEL_MIDI_1X);
+                    tmpval = 0x817F0000;
                     *target_event = CondSwapToBus32(tmpval);
 
-//                     debugOutput ( DEBUG_LEVEL_VERBOSE, "MIDI port %s, pos=%u, loc=%u, nevents=%u, dim=%d\n",
-//                                p.port->getName().c_str(), p.position, p.location, nevents, m_dimension );
-//                     debugOutput ( DEBUG_LEVEL_VERBOSE, "base=%p, target=%p, value=%08X\n",
-//                                data, target_event, tmpval );
+                    debugOutputExtreme( DEBUG_LEVEL_VERBOSE, "MIDI port %s, pos=%u, loc=%u, nevents=%u, dim=%d\n",
+                               p.port->getName().c_str(), p.position, p.location, nevents, m_dimension );
+                    debugOutputExtreme( DEBUG_LEVEL_VERBOSE, "base=%p, target=%p, value=%08X\n",
+                               data, target_event, tmpval );
                 } else {
                     // can't send a byte, either because there is no byte,
                     // or because this would exceed the maximum rate

@@ -389,10 +389,10 @@ CycleTimerHelper::Execute()
         not_good = (-err_ticks > 1*TICKS_PER_CYCLE || err_ticks > 1*TICKS_PER_CYCLE);
         if(not_good) {
             debugOutput(DEBUG_LEVEL_VERBOSE, 
-                        "(%p) have to retry CTR read, diff unrealistic: diff: %lld, max: +/- %ld (try: %d) %lld\n", 
+                        "(%p) have to retry CTR read, diff unrealistic: diff: %lld, max: +/- %u (try: %d) %lld\n", 
                         this, err_ticks, 1*TICKS_PER_CYCLE, ntries, expected_ticks);
             // sleep half a cycle to make sure the hardware moved on
-            Util::SystemTimeSource::SleepUsecRelative(USECS_PER_CYCLE);
+            Util::SystemTimeSource::SleepUsecRelative(USECS_PER_CYCLE / 2);
         }
 
     } while(not_good && --ntries && !m_first_run && !m_unhandled_busreset);

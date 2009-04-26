@@ -377,6 +377,7 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
                     sample_int=(sample_int >> 16) & 0x000000FF;
                     sample_int |= 0x01000000; // flag that there is a midi event present
                     *buffer = sample_int;
+                    debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "(%p) MIDI [%d]: %08X\n", this, i, sample_int);
                 } else if(IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_2X)
                        || IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_3X) ) {
                     debugOutput(DEBUG_LEVEL_VERBOSE, "Midi mode %X not supported.\n", IEC61883_AM824_GET_LABEL(sample_int));
