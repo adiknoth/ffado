@@ -1048,7 +1048,6 @@ AmdtpTransmitStreamProcessor::encodeMidiPorts(quadlet_t *data,
                     quadlet_t tmpval;
                     tmpval = ((*buffer)<<16) & 0x00FF0000;
                     tmpval = IEC61883_AM824_SET_LABEL(tmpval, IEC61883_AM824_LABEL_MIDI_1X);
-                    tmpval = 0x817F0000;
                     *target_event = CondSwapToBus32(tmpval);
 
                     debugOutputExtreme( DEBUG_LEVEL_VERBOSE, "MIDI port %s, pos=%u, loc=%u, nevents=%u, dim=%d\n",
