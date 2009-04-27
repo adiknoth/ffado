@@ -44,6 +44,10 @@
 
 #include <libraw1394/csr.h>
 
+// Known values for the unit version of RME devices
+#define RME_UNITVERSION_FF800  0x0001
+#define RME_UNITVERSION_FF400  0x0002
+
 namespace Rme {
 
 // The RME devices expect async packet data in little endian format (as
@@ -72,7 +76,7 @@ ByteSwapFromDevice32(uint32_t d)
 }
 #endif
 
-// Template for a RmeDevice object method which intelligently returns a
+// Template for an RME Device object method which intelligently returns a
 // register or value applicable to the connected model and warns if something
 // isn't quite right.
 #define MODEL_SELECTOR(_name,_ff400_arg,_ff800_arg) \
@@ -103,7 +107,8 @@ Device::~Device()
 }
 
 MODEL_SELECTOR(cmd_buffer_addr, RME_FF400_CMD_BUFFER, RME_FF800_CMD_BUFFER)
-MODEL_SELECTOR(stream_start_reg, RME_FF400_STREAM_START_REG0, RME_FF800_STREAM_START_REG0)
+MODEL_SELECTOR(stream_init_reg, RME_FF400_STREAM_INIT_REG, RME_FF800_STREAM_INIT_REG)
+MODEL_SELECTOR(stream_start_reg, RME_FF400_STREAM_START_REG, RME_FF800_STREAM_START_REG)
 MODEL_SELECTOR(stream_end_reg, RME_FF400_STREAM_END_REG, RME_FF800_STREAM_END_REG)
 MODEL_SELECTOR(flash_settings_addr, RME_FF400_FLASH_SETTINGS_ADDR, RME_FF800_FLASH_SETTINGS_ADDR)
 MODEL_SELECTOR(flash_mixer_vol_addr, RME_FF400_FLASH_MIXER_VOLUME_ADDR, RME_FF800_FLASH_MIXER_VOLUME_ADDR)
@@ -116,11 +121,17 @@ Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
     if (generic) {
         return false;
     } else {
-        // check if device is in supported devices list
+        // check if device is in supported devices list.  Note that the RME
+        // devices use the unit version to identify the individual devices. 
+        // To avoid having to extend the configuration file syntax to
+        // include this at this point, we'll use the configuration file
+        // model ID to test against the device unit version.  This can be
+        // tidied up if the configuration file is extended at some point to
+        // include the unit version.
         unsigned int vendorId = configRom.getNodeVendorId();
-        unsigned int modelId = configRom.getModelId();
+        unsigned int unitVersion = configRom.getUnitVersion();
 
-        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+        Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, unitVersion );
         return c.isValid(vme) && vme.driver == Util::Configuration::eD_RME;
     }
 }
@@ -135,26 +146,29 @@ bool
 Device::discover()
 {
     unsigned int vendorId = getConfigRom().getNodeVendorId();
-    unsigned int modelId = getConfigRom().getModelId();
+    // See note in Device::probe() about why we use the unit version here.
+    unsigned int unitVersion = getConfigRom().getUnitVersion();
 
     Util::Configuration &c = getDeviceManager().getConfiguration();
-    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
+    Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, unitVersion );
 
     if (c.isValid(vme) && vme.driver == Util::Configuration::eD_RME) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
                      vme.vendor_name.c_str(),
                      vme.model_name.c_str());
     } else {
-        debugWarning("Using generic RME support for unsupported device '%s %s'\n",
+        debugWarning("Device '%s %s' unsupported by RME driver (no generic RME support)\n",
                      getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
 
-    if (modelId == RME_MODEL_FIREFACE800) {
+    if (unitVersion == RME_UNITVERSION_FF800) {
         m_rme_model = RME_MODEL_FIREFACE800;
-    } else if (modelId == RME_MODEL_FIREFACE400) {
+    } else
+    if (unitVersion == RME_MODEL_FIREFACE400) {
         m_rme_model = RME_MODEL_FIREFACE400;
     } else {
         debugError("Unsupported model\n");
+        return false;
     }
 
     init_hardware();
@@ -191,12 +205,19 @@ Device::setSamplingFrequency( int samplingFrequency )
 /*
  * Set the RME device's samplerate.  The RME can do sampling frequencies of
  * 32k, 44.1k and 48k along with the corresponding 2x and 4x rates. 
- * However, it can also do +/- 4% from any of these "base" frequencies.
- * This makes it a little long-winded to work out whether a given frequency
- * is supported or not.
+ * However, it can also do +/- 4% from any of these "base" frequencies using
+ * its DDS.  This makes it a little long-winded to work out whether a given
+ * frequency is supported or not.
+ *
+ * This function is concerned with setting the device up for streaming, so the
+ * register we want to write to is in fact the streaming sample rate portion of
+ * the streaming initialisation function (as opposed to the DDS frequency register
+ * which is distinct on the FF800.  How the FF800's DDS register will ultimately
+ * be controlled is yet to be determined.
  */
 
     /* Work out whether the requested rate is supported */
+    /* FIXME: the +/- 4% range is only doable if the DDS is engaged */
     if (!((samplingFrequency >= 32000*0.96 && samplingFrequency <= 32000*1.04) ||
         (samplingFrequency >= 44100*0.96 && samplingFrequency <= 44100*1.04) ||
         (samplingFrequency >= 48000*0.96 && samplingFrequency <= 48000*1.04) ||
@@ -210,7 +231,7 @@ Device::setSamplingFrequency( int samplingFrequency )
     }
     
     /* Send the desired frequency to the RME */
-    if (writeRegister(RME_REG_DDS_CONTROL, samplingFrequency) != 0)
+    if (writeRegister(stream_init_reg(), samplingFrequency) != 0)
       return false;
 
     m_ddsFreq = samplingFrequency;
@@ -235,6 +256,9 @@ std::vector<int>
 Device::getSupportedSamplingFrequencies()
 {
     std::vector<int> frequencies;
+    /* FIXME: the +/- 4% frequency range is only doable if the DDS is
+     * engaged.
+     */
     RME_CHECK_AND_ADD_SR(frequencies, 32000);
     RME_CHECK_AND_ADD_SR(frequencies, 44100);
     RME_CHECK_AND_ADD_SR(frequencies, 48000);

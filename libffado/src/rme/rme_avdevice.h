@@ -32,10 +32,8 @@
 
 #include "libutil/Configuration.h"
 
+#include "fireface_def.h"
 // #include "libstreaming/rme/RmeStreamProcessor.h"
-
-/* RME Fireface register definitions */
-#define RME_REG_DDS_CONTROL       0xfc88f000
 
 class ConfigRom;
 class Ieee1394Service;
@@ -94,8 +92,11 @@ protected:
 
     signed int m_ddsFreq;
 
+    FF_software_settings_t settings;
+
 private:
     unsigned long long int cmd_buffer_addr();
+    unsigned long long int stream_init_reg();
     unsigned long long int stream_start_reg();
     unsigned long long int stream_end_reg();
     unsigned long long int flash_settings_addr();

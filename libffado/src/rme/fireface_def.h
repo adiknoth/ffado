@@ -40,7 +40,7 @@
 #define RME_FF800_CMD_BUFFER    0xfc88f000
 
 /* Offsets for registers at fixed offsets from the device's command buffer address */
-#define RME_FF_SRATE_CTRL_OFS     (0*4)
+#define RME_FF_DDS_SRATE_OFS      (0*4)
 #define RME_FF_CONF1_OFS          (5*4)
 #define RME_FF_CONF2_OFS          (6*4)
 #define RME_FF_CONF3_OFS          (7*4)
@@ -51,16 +51,18 @@
 #define RME_FF400_CONF_REG          (RME_FF400_CMD_BUFFER + RME_FF_CONF1_OFS)
 #define RME_FF800_CONF_REG          (RME_FF800_CMD_BUFFER + RME_FF_CONF1_OFS)
 
+#define RME_FF400_STREAM_INIT_REG   (RME_FF400_CMD_BUFFER)           // 3 quadlets wide
 #define RME_FF400_STREAM_SRATE      (RME_FF400_CMD_BUFFER)
 #define RME_FF400_STREAM_CONF0      (RME_FF400_CMD_BUFFER+4)
 #define RME_FF400_STREAM_CONF1      (RME_FF400_CMD_BUFFER+8)
-#define RME_FF800_STREAM_SRATE      0x20000001c
-#define RME_FF800_STREAM_CONF0      (0x20000001c+4)
-#define RME_FF800_STREAM_CONF1      (0x20000001c+8)
-#define RME_FF400_STREAM_START_REG0 (RME_FF400_CMD_BUFFER + 0x001c) 
-#define RME_FF800_STREAM_START_REG0 0x200000028LL
+#define RME_FF800_STREAM_INIT_REG   0x20000001cLL                    // 3 quadlets wide
+#define RME_FF800_STREAM_SRATE      0x20000001cLL
+#define RME_FF800_STREAM_CONF0      (0x20000001cLL+4)
+#define RME_FF800_STREAM_CONF1      (0x20000001cLL+8)
+#define RME_FF400_STREAM_START_REG  (RME_FF400_CMD_BUFFER + 0x001c)  // 1 quadlet
+#define RME_FF800_STREAM_START_REG  0x200000028LL                    // 1 quadlet
 #define RME_FF400_STREAM_END_REG    (RME_FF400_CMD_BUFFER + 0x0004)  // 4 quadlets wide
-#define RME_FF800_STREAM_END_REG    0x200000034LL                     // 3 quadlets wide
+#define RME_FF800_STREAM_END_REG    0x200000034LL                    // 3 quadlets wide
 
 #define RME_FF800_HOST_LED_REG      0x200000324LL
 
@@ -116,10 +118,11 @@
 #define CR0_PHANTOM_MIC1        0x00000080
 #define CR0_PHANTOM_MIC3        0x00000100
 #define CR0_ZEROBIT09           0x00000200
-#define CR0_INSTR_DRIVE_FPGA    0x00000400
-#define CRO_OLEVEL_FPGA_CTRL_0  0x00000800
-#define CRO_OLEVEL_FPGA_CTRL_1  0x00001000
-#define CRO_OLEVEL_FPGA_CTRL_2  0x00002000
+#define CR0_INSTR_DRIVE_FPGA    0x00000200
+#define CRO_OLEVEL_FPGA_CTRL_0  0x00000400
+#define CRO_OLEVEL_FPGA_CTRL_1  0x00000800
+#define CRO_OLEVEL_FPGA_CTRL_2  0x00001000
+#define CR0_ZEROBIT13           0x00002000
 #define CRO_ZEROBIT14           0x00004000
 #define CRO_ZEROBIT15           0x00008000
 #define CRO_PHLEVEL_CTRL0       0x00010000
@@ -199,7 +202,7 @@
 
 /* Structure used to store device settings in the device flash RAM.  This
  * structure mirrors the layout in the Fireface's flash, so it cannot be
- * altered.
+ * altered.  Fields named as unused_* are not utilised at present.
  */
 typedef struct {
     uint32_t unused_device_id;
@@ -259,5 +262,9 @@ typedef struct {
 #define FF_DEV_FLASH_CLOCK_MODE_MASTER         0x00000000
 #define FF_DEV_FLASH_CLOCK_MODE_SLAVE          0x00000001
 #define FF_DEV_FLASH_MIC_PHANTOM_ON            0x00000001
+
+typedef struct {
+    uint32_t mic_phantom[4];
+} FF_software_settings_t;
 
 #endif

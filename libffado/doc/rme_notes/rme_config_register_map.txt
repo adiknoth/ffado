@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.8
+Version: 0.9
 Author: Jonathan Woithe
-Date: 13 April 2009
+Date: 27 April 2009
 
 
 Definitions
@@ -117,13 +117,12 @@ Configuration register 1 (FF800: 0xfc88f014, FF400: 0x8010014):
     00 = +4 dBu
     01 = -10 dBV
     10 = hi-gain
-  bits 15-14: unknown, set to 0
-  bits 13-11: Output level control (part 1 of 2: FPGA LED drive):
+  bits 15-13: unknown, set to 0
+  bits 12-10: Output level control (part 1 of 2: FPGA LED drive):
     001 = hi-gain
     010 = +4dBU
     100 = -10dBV
-  bit 10: Instrument option: Drive (part 1 of 2: FPGA LED drive) (active = 1)
-  bit 9: unknown, set to 0
+  bit 9: Instrument option: Drive (part 1 of 2: FPGA LED drive) (active = 1)
   bit 8: Phantom power, mic 10 (active = 1)
   bit 7: Phantom power, mic 8 (active = 1)
   bit 6: unknown, set to 0

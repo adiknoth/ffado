@@ -33,44 +33,54 @@ namespace Rme {
 signed int 
 Device::init_hardware(void)
 {
-    // Initialises the hardware to a known state.  This has the side effect
-    // of extinguishing the "Host" LED on the FF400 when done for the first
-    // time after the interface has been powered up.
+    // Initialises the hardware the state defined by the Device's settings
+    // structure.  This has the side effect of extinguishing the "Host" LED
+    // on the FF400 when done for the first time after the interface has
+    // been powered up.
     //
     // FIXME: currently this is a minimum skeleton to prove basic
     // functionality.  It requires details to be filled in.
     quadlet_t data[3] = {0, 0, 0};
     unsigned int conf_reg;
 
+    if (settings.mic_phantom[0])
+      data[0] |= CR0_PHANTOM_MIC0;
+    if (settings.mic_phantom[1])
+      data[0] |= CR0_PHANTOM_MIC1;
+    if (settings.mic_phantom[2])
+      data[0] |= CR0_PHANTOM_MIC2;
+    if (settings.mic_phantom[3])
+      data[0] |= CR0_PHANTOM_MIC3;
+
     /* Input level */
     switch (1) {
         case 1: // Low gain
-            data[1] |= 0x0;    // CPLD
-            data[0] |= 0x8;    // LED control (used on FF800 only)
+            data[1] |= CR1_ILEVEL_CPLD_LOGAIN;    // CPLD
+            data[0] |= CR0_ILEVEL_FPGA_LOGAIN;    // LED control (used on FF800 only)
             break;
         case 2: // +4 dBu
-            data[1] |= 0x2;
-            data[0] |= 0x10;
+            data[1] |= CR1_ILEVEL_CPLD_4dBU;
+            data[0] |= CR0_ILEVEL_FPGA_4dBU;
             break;
         case 3: // -10 dBV
-            data[1] |= 0x3;
-            data[0] |= 0x20;
+            data[1] |= CR1_ILEVEL_CPLD_m10dBV;
+            data[0] |= CR0_ILEVEL_FPGA_m10dBV;
             break;
     }
 
     /* Output level */
     switch (1) {
         case 1: // High gain
-            data[1] |= 0x10;   // CPLD
-            data[0] |= 0x400;  // LED control (used on FF800 only)
+            data[1] |= CR1_OLEVEL_CPLD_HIGAIN;   // CPLD
+            data[0] |= CR0_OLEVEL_FPGA_HIGAIN;   // LED control (used on FF800 only)
             break;
         case 2: // +4 dBu
-            data[1] |= 0x18;
-            data[0] |= 0x800;
+            data[1] |= CR1_OLEVEL_CPLD_4dBU;
+            data[0] |= CR0_OLEVEL_FPGA_4dBU;
             break;
         case 3: // -10 dBV
-            data[1] |= 0x8;
-            data[0] |= 0x1000;
+            data[1] |= CR1_OLEVEL_CPLD_m10dBV;
+            data[0] |= CR0_OLEVEL_FPGA_m10dBV;
             break;
     }
 
@@ -81,10 +91,10 @@ Device::init_hardware(void)
     data[1] = 0x200;
 
     /* Drop-and-stop is hardwired on */
-    data[2] |= 0x8000000;
+    data[2] |= CR2_DROP_AND_STOP;
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
-        data[2] |= 0x04000000;
+        data[2] |= CR2_FF400_BIT;
     }
 
     data[2] |= (CR2_FREQ0 + CR2_FREQ1 + CR2_DSPEED + CR2_QSSPEED);
@@ -93,11 +103,6 @@ Device::init_hardware(void)
 data[0] = 0x00020811;      // Phantom on
 data[1] = 0x0000031e;
 data[2] = 0xc400101f;
-
-//data[0] = 0x10080200;    // Phantom off
-//data[0] = 0x11080200;    // Phantom on
-//data[1] = 0x1e030000;
-//data[2] = 0x1f1000c4;
 
     conf_reg = (m_rme_model==RME_MODEL_FIREFACE800)?RME_FF800_CONF_REG:RME_FF400_CONF_REG;
     if (writeBlock(conf_reg, data, 3) != 0)
