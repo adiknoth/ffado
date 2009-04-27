@@ -290,6 +290,9 @@ device_definitions = (
 },
 {
     vendorid = 0x000a35;
+    # Note: RME detection code compares the modelid field against the
+    # device's unit version since RME seem to use the configrom modelid
+    # for other things not necessarily related to device differentiation.
     modelid = 0x0001;
     vendorname = "RME";
     modelname = "FireFace800";
@@ -297,6 +300,9 @@ device_definitions = (
 },
 {
     vendorid = 0x000a35;
+    # Note: RME detection code compares the modelid field against the
+    # device's unit version since RME seem to use the configrom modelid
+    # for other things not necessarily related to device differentiation.
     modelid = 0x0002;
     vendorname = "RME";
     modelname = "FireFace400";
