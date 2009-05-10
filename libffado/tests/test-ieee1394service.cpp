@@ -40,7 +40,6 @@
 #include "src/libieee1394/cycletimer.h"
 #include "src/libieee1394/configrom.h"
 #include "src/libieee1394/ieee1394service.h"
-#include "src/libieee1394/ARMHandler.h"
 
 #include "src/libutil/Thread.h"
 #include "src/libutil/Functors.h"
@@ -342,11 +341,11 @@ int main(int argc, char *argv[])
 
     nodeaddr_t addr =  m_service->findFreeARMBlock(0x0000FFFFE0000000ULL, 4, 4 );
 
-    ARMHandler *test_arm=new ARMHandler(addr,
-                         4,
-                         RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
-                         RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
-                         0);
+    Ieee1394Service::ARMHandler *test_arm = new Ieee1394Service::ARMHandler(*m_service, addr,
+                           4,
+                           RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
+                           RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
+                           0);
 
     printf(" adding (%p) as arm handler\n", test_arm);
 
@@ -356,11 +355,11 @@ int main(int argc, char *argv[])
 
     addr =  m_service->findFreeARMBlock(0x0000FFFFE0000000ULL, 4, 4 );
 
-    ARMHandler *test_arm2=new ARMHandler(addr,
-                         4,
-                         RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
-                         RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
-                         0);
+    Ieee1394Service::ARMHandler *test_arm2 = new Ieee1394Service::ARMHandler(*m_service, addr,
+                            4,
+                            RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
+                            RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
+                            0);
 
     printf(" adding (%p) as arm handler\n", test_arm2);
 

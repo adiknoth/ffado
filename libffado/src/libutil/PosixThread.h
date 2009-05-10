@@ -53,6 +53,7 @@
 
 #include "Thread.h"
 #include <pthread.h>
+#include "PosixMutex.h"
 
 namespace Util
 {
@@ -73,31 +74,37 @@ class PosixThread : public Thread
         int fCancellation;
 
         static void* ThreadHandler(void* arg);
-
+        Util::Mutex &m_lock;
     public:
 
         PosixThread(RunnableInterface* runnable, bool real_time, int priority, int cancellation)
                 : Thread(runnable), fThread((pthread_t)NULL), fPriority(priority), fRealTime(real_time), fRunning(false), fCancellation(cancellation)
+                , m_lock(*(new Util::PosixMutex("THREAD")))
         {}
         PosixThread(RunnableInterface* runnable)
                 : Thread(runnable), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(PTHREAD_CANCEL_DEFERRED)
+                , m_lock(*(new Util::PosixMutex("THREAD")))
         {}
         PosixThread(RunnableInterface* runnable, int cancellation)
                 : Thread(runnable), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(cancellation)
+                , m_lock(*(new Util::PosixMutex("THREAD")))
         {}
 
         PosixThread(RunnableInterface* runnable, std::string id, bool real_time, int priority, int cancellation)
                 : Thread(runnable, id), fThread((pthread_t)NULL), fPriority(priority), fRealTime(real_time), fRunning(false), fCancellation(cancellation)
+                , m_lock(*(new Util::PosixMutex(id)))
         {}
         PosixThread(RunnableInterface* runnable, std::string id)
                 : Thread(runnable, id), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(PTHREAD_CANCEL_DEFERRED)
+                , m_lock(*(new Util::PosixMutex(id)))
         {}
         PosixThread(RunnableInterface* runnable, std::string id, int cancellation)
                 : Thread(runnable, id), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(cancellation)
+                , m_lock(*(new Util::PosixMutex(id)))
         {}
 
         virtual ~PosixThread()
-        {}
+        { delete &m_lock; }
 
         virtual int Start();
         virtual int Kill();

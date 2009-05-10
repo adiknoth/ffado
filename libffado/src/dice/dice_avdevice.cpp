@@ -570,6 +570,9 @@ Device::showDevice()
     readGlobalReg(DICE_REGISTER_GLOBAL_SAMPLE_RATE, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_NORMAL,"  Samplerate       : 0x%08X (%lu)\n",tmp_quadlet,tmp_quadlet);
 
+    readGlobalRegBlock(DICE_REGISTER_GLOBAL_VERSION, reinterpret_cast<fb_quadlet_t *>(&tmp_quadlet), sizeof(fb_quadlet_t));
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08X\n", tmp_quadlet);
+    
     readGlobalReg(DICE_REGISTER_GLOBAL_VERSION, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08X (%u.%u.%u.%u)\n",
         tmp_quadlet,
@@ -1025,7 +1028,7 @@ Device::lock() {
             return false;
         }
     
-        m_notifier=new Device::DiceNotifier(this, notify_address);
+        m_notifier = new Device::Notifier(*this, notify_address);
     
         if(!m_notifier) {
             debugError("Could not allocate notifier\n");
@@ -1437,12 +1440,17 @@ Device::getTxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_TX_NAMES_SIZE+1];
 
-    if (!readTxRegBlockSwapped(i, DICE_REGISTER_TX_NAMES_BASE,
+    if (!readTxRegBlock(i, DICE_REGISTER_TX_NAMES_BASE,
                         (fb_quadlet_t *)namestring, DICE_TX_NAMES_SIZE)) {
         debugError("Could not read TX name string \n");
         return names;
     }
 
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)namestring, DICE_TX_NAMES_SIZE/4);
+    #endif
     namestring[DICE_TX_NAMES_SIZE]='\0';
     return splitNameString(std::string(namestring));
 }
@@ -1452,12 +1460,17 @@ Device::getRxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_RX_NAMES_SIZE+1];
 
-    if (!readRxRegBlockSwapped(i, DICE_REGISTER_RX_NAMES_BASE,
+    if (!readRxRegBlock(i, DICE_REGISTER_RX_NAMES_BASE,
                         (fb_quadlet_t *)namestring, DICE_RX_NAMES_SIZE)) {
         debugError("Could not read RX name string \n");
         return names;
     }
 
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)namestring, DICE_RX_NAMES_SIZE/4);
+    #endif
     namestring[DICE_RX_NAMES_SIZE]='\0';
     return splitNameString(std::string(namestring));
 }
@@ -1467,12 +1480,17 @@ Device::getClockSourceNameString() {
     diceNameVector names;
     char namestring[DICE_CLOCKSOURCENAMES_SIZE+1];
 
-    if (!readGlobalRegBlockSwapped(DICE_REGISTER_GLOBAL_CLOCKSOURCENAMES,
+    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_CLOCKSOURCENAMES,
                       (fb_quadlet_t *)namestring, DICE_CLOCKSOURCENAMES_SIZE)) {
         debugError("Could not read CLOCKSOURCE name string \n");
         return names;
     }
 
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)namestring, DICE_CLOCKSOURCENAMES_SIZE/4);
+    #endif
     namestring[DICE_CLOCKSOURCENAMES_SIZE]='\0';
     return splitNameString(std::string(namestring));
 }
@@ -1481,12 +1499,17 @@ std::string
 Device::getDeviceNickName() {
     char namestring[DICE_NICK_NAME_SIZE+1];
 
-    if (!readGlobalRegBlockSwapped(DICE_REGISTER_GLOBAL_NICK_NAME,
+    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
                         (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
         debugError("Could not read nickname string \n");
         return std::string("(unknown)");
     }
 
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)namestring, DICE_NICK_NAME_SIZE/4);
+    #endif
     namestring[DICE_NICK_NAME_SIZE]='\0';
     return std::string(namestring);
 }
@@ -1496,7 +1519,13 @@ Device::setDeviceNickName(std::string name) {
     char namestring[DICE_NICK_NAME_SIZE+1];
     strncpy(namestring, name.c_str(), DICE_NICK_NAME_SIZE);
 
-    if (!writeGlobalRegBlockSwapped(DICE_REGISTER_GLOBAL_NICK_NAME,
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)namestring, DICE_NICK_NAME_SIZE/4);
+    #endif
+
+    if (!writeGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
                         (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
         debugError("Could not write nickname string \n");
         return false;
@@ -1509,9 +1538,9 @@ Device::splitNameString(std::string in) {
     diceNameVector names;
 
     // find the end of the string
-    string::size_type end=in.find(string("\\\\"));
+    string::size_type end = in.find(string("\\\\"));
     // cut the end
-    in=in.substr(0,end);
+    in = in.substr(0,end);
 
     string::size_type cut;
     while( (cut = in.find(string("\\"))) != in.npos ) {
@@ -1532,7 +1561,6 @@ bool
 Device::initIoFunctions() {
 
     // offsets and sizes are returned in quadlets, but we use byte values
-
     if(!readReg(DICE_REGISTER_GLOBAL_PAR_SPACE_OFF, &m_global_reg_offset)) {
         debugError("Could not initialize m_global_reg_offset\n");
         return false;
@@ -1647,15 +1675,15 @@ Device::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
         return false;
     }
 
-    fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
+    fb_nodeaddr_t addr = DICE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
     if(!get1394Service().read_quadlet( nodeId, addr, result ) ) {
         debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
         return false;
     }
 
-    *result=CondSwapFromBus32(*result);
+    *result = CondSwapFromBus32(*result);
 
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08X\n", *result);
 
@@ -1672,8 +1700,8 @@ Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
         return false;
     }
 
-    fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
+    fb_nodeaddr_t addr = DICE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
     if(!get1394Service().write_quadlet( nodeId, addr, CondSwapToBus32(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
@@ -1684,26 +1712,44 @@ Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
 
 bool
 Device::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n",
-        offset, length);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Reading base register offset 0x%08llX, length %u, to %p\n",
+        offset, length, data);
+    const int blocksize_quads = 512/4;
 
     if(offset >= DICE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
 
-    fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
+    fb_nodeaddr_t addr = DICE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
+    int quads_done = 0;
+    // round to next full quadlet
+    int length_quads = (length+3)/4;
+    while(quads_done < length_quads) {
+        fb_nodeaddr_t curr_addr = addr + quads_done*4;
+        fb_quadlet_t *curr_data = data + quads_done;
+        int quads_todo = length_quads - quads_done;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "reading addr: 0x%016llX, %d quads to %p\n", curr_addr, quads_todo, curr_data);
+        
+        if (quads_todo > blocksize_quads) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Truncating read from %d to %d quadlets\n", quads_todo, blocksize_quads);
+            quads_todo = blocksize_quads;
+        }
+        #ifdef DEBUG
+        if (quads_todo < 0) {
+            debugError("BUG: quads_todo < 0: %d\n", quads_todo);
+        }
+        #endif
 
-    if(!get1394Service().read( nodeId, addr, length/4, data ) ) {
-        debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
-        return false;
+        if(!get1394Service().read( nodeId, curr_addr, quads_todo, curr_data ) ) {
+            debugError("Could not read %d quadlets from node 0x%04X addr 0x%012llX\n", nodeId, quads_todo, curr_addr);
+            return false;
+        }
+        quads_done += quads_todo;
     }
 
-    for(unsigned int i=0;i<length/4;i++) {
-        *(data+i)=CondSwapFromBus32(*(data+i));
-    }
-
+    byteSwapFromBus(data, length/4);
     return true;
 }
 
@@ -1711,76 +1757,40 @@ bool
 Device::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",
         offset, length);
+    const int blocksize_quads = 512/4;
 
     if(offset >= DICE_INVALID_OFFSET) {
         debugError("invalid offset: 0x%016llX\n", offset);
         return false;
     }
-
-    fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     fb_quadlet_t data_out[length/4];
+    memcpy(data_out, data, length);
+    byteSwapToBus(data_out, length/4);
 
-    for(unsigned int i=0;i<length/4;i++) {
-        data_out[i]=CondSwapFromBus32(*(data+i));
-    }
+    fb_nodeaddr_t addr = DICE_REGISTER_BASE + offset;
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
+    int quads_done = 0;
+    int length_quads = (length+3)/4;
+    while(quads_done < length_quads) {
+        fb_nodeaddr_t curr_addr = addr + quads_done*4;
+        fb_quadlet_t *curr_data = data_out + quads_done;
+        int quads_todo = length_quads - quads_done;
+        if (quads_todo > blocksize_quads) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Truncating write from %d to %d quadlets\n", quads_todo, blocksize_quads);
+            quads_todo = blocksize_quads;
+        }
+        #ifdef DEBUG
+        if (quads_todo < 0) {
+            debugError("BUG: quads_todo < 0: %d\n", quads_todo);
+        }
+        #endif
 
-    if(!get1394Service().write( nodeId, addr, length/4, data_out ) ) {
-        debugError("Could not write to node 0x%04X addr 0x%012llX\n", nodeId, addr);
-        return false;
-    }
-
-    return true;
-}
-
-bool
-Device::readRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX, length %u\n",
-        offset, length);
-
-    if(offset >= DICE_INVALID_OFFSET) {
-        debugError("invalid offset: 0x%016llX\n", offset);
-        return false;
-    }
-
-    fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
-
-    if(!get1394Service().read( nodeId, addr, length/4, data ) ) {
-        debugError("Could not read from node 0x%04X addr 0x%012llX\n", nodeId, addr);
-        return false;
-    }
-
-    for(unsigned int i=0;i<length/4;i++) {
-        *(data+i)=ByteSwap32(*(data+i));
-    }
-
-    return true;
-}
-
-bool
-Device::writeRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",
-        offset, length);
-
-    if(offset >= DICE_INVALID_OFFSET) {
-        debugError("invalid offset: 0x%016llX\n", offset);
-        return false;
-    }
-
-    fb_nodeaddr_t addr=DICE_REGISTER_BASE + offset;
-    fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
-
-    fb_quadlet_t data_out[length/4];
-
-    for(unsigned int i=0;i<length/4;i++) {
-        data_out[i]=ByteSwap32(*(data+i));
-    }
-
-    if(!get1394Service().write( nodeId, addr, length/4, data_out ) ) {
-        debugError("Could not write to node 0x%04X addr 0x%012llX\n", nodeId, addr);
-        return false;
+        if(!get1394Service().write( nodeId, addr, quads_todo, curr_data ) ) {
+            debugError("Could not write %d quadlets to node 0x%04X addr 0x%012llX\n", nodeId, quads_todo, curr_addr);
+            return false;
+        }
+        quads_done += quads_todo;
     }
 
     return true;
@@ -1790,7 +1800,7 @@ bool
 Device::readGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register offset 0x%04llX\n", offset);
 
-    fb_nodeaddr_t offset_gl=globalOffsetGen(offset, sizeof(fb_quadlet_t));
+    fb_nodeaddr_t offset_gl = globalOffsetGen(offset, sizeof(fb_quadlet_t));
     return readReg(m_global_reg_offset + offset_gl, result);
 }
 
@@ -1799,7 +1809,7 @@ Device::writeGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register offset 0x%08llX, data: 0x%08X\n",
         offset, data);
 
-    fb_nodeaddr_t offset_gl=globalOffsetGen(offset, sizeof(fb_quadlet_t));
+    fb_nodeaddr_t offset_gl = globalOffsetGen(offset, sizeof(fb_quadlet_t));
     return writeReg(m_global_reg_offset + offset_gl, data);
 }
 
@@ -1808,7 +1818,7 @@ Device::readGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
-    fb_nodeaddr_t offset_gl=globalOffsetGen(offset, length);
+    fb_nodeaddr_t offset_gl = globalOffsetGen(offset, length);
     return readRegBlock(m_global_reg_offset + offset_gl, data, length);
 }
 
@@ -1817,26 +1827,8 @@ Device::writeGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t len
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register block offset 0x%04llX, length %u bytes\n",
         offset, length);
 
-    fb_nodeaddr_t offset_gl=globalOffsetGen(offset, length);
+    fb_nodeaddr_t offset_gl = globalOffsetGen(offset, length);
     return writeRegBlock(m_global_reg_offset + offset_gl, data, length);
-}
-
-bool
-Device::readGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register block offset 0x%04llX, length %u bytes\n",
-        offset, length);
-
-    fb_nodeaddr_t offset_gl=globalOffsetGen(offset, length);
-    return readRegBlockSwapped(m_global_reg_offset + offset_gl, data, length);
-}
-
-bool
-Device::writeGlobalRegBlockSwapped(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register block offset 0x%04llX, length %u bytes\n",
-        offset, length);
-
-    fb_nodeaddr_t offset_gl=globalOffsetGen(offset, length);
-    return writeRegBlockSwapped(m_global_reg_offset + offset_gl, data, length);
 }
 
 fb_nodeaddr_t
@@ -1890,15 +1882,6 @@ Device::writeTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data
 
     fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, length);
     return writeRegBlock(m_tx_reg_offset + offset_tx, data, length);
-}
-
-bool
-Device::readTxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
-        offset, length);
-
-    fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, length);
-    return readRegBlockSwapped(m_tx_reg_offset + offset_tx, data, length);
 }
 
 fb_nodeaddr_t
@@ -1968,15 +1951,6 @@ Device::writeRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data
     return writeRegBlock(m_rx_reg_offset + offset_rx, data, length);
 }
 
-bool
-Device::readRxRegBlockSwapped(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
-        offset, length);
-
-    fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, length);
-    return readRegBlockSwapped(m_rx_reg_offset + offset_rx, data, length);
-}
-
 fb_nodeaddr_t
 Device::rxOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
     // registry offsets should always be smaller than 0x7FFFFFFF
@@ -2011,16 +1985,17 @@ Device::rxOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
 
 // the notifier
 
-Device::DiceNotifier::DiceNotifier(Device *d, nodeaddr_t start)
- : ARMHandler(start, DICE_NOTIFIER_BLOCK_LENGTH,
+Device::Notifier::Notifier(Device &d, nodeaddr_t start)
+ : ARMHandler(d.get1394Service(), start, DICE_NOTIFIER_BLOCK_LENGTH,
               RAW1394_ARM_READ | RAW1394_ARM_WRITE | RAW1394_ARM_LOCK,
               RAW1394_ARM_WRITE, 0)
- , m_dicedevice(d)
+ , m_device(d)
 {
-
+    // switch over the debug module to that of this device instead of the 1394 service
+    m_debugModule = d.m_debugModule;
 }
 
-Device::DiceNotifier::~DiceNotifier()
+Device::Notifier::~Notifier()
 {
 
 }

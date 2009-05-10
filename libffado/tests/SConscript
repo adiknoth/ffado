@@ -65,8 +65,13 @@ apps = {
 
 if env['ENABLE_BEBOB']:
 	apps.update( { "test-focusrite" : "test-focusrite.cpp" } )
+if env['ENABLE_GENERICAVC']:
+	env.MergeFlags( env["ALSA_FLAGS"] ) # FIXME: only used here
+	apps.update( { "test-scs" : "test-scs.cpp" } )
 if env['ENABLE_FIREWORKS']:
 	apps.update( { "test-echomixer" : "test-echomixer.cpp" } )
+if env['ENABLE_DICE']:
+	apps.update( { "test-dice-eap" : "test-dice-eap.cpp" } )
 
 for app in apps.keys():
 	env.Program( target=app, source = env.Split( apps[app] ) )

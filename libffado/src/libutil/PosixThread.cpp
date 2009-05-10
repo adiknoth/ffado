@@ -63,6 +63,8 @@ void* PosixThread::ThreadHandler(void* arg)
     RunnableInterface* runnable = obj->fRunnable;
     int err;
 
+    obj->m_lock.Lock();
+
     if ((err = pthread_setcanceltype(obj->fCancellation, NULL)) != 0) {
         debugError("pthread_setcanceltype err = %s\n", strerror(err));
     }
@@ -77,6 +79,8 @@ void* PosixThread::ThreadHandler(void* arg)
 
     // If Init succeed start the thread loop
     bool res = true;
+
+    obj->m_lock.Unlock();
     while (obj->fRunning && res) {
         debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, "(%s) ThreadHandler: run %p\n", obj->m_id.c_str(), obj);
         res = runnable->Execute();
@@ -139,7 +143,10 @@ int PosixThread::Start()
             return -1;
         }
 
-        if ((res = pthread_create(&fThread, &attributes, ThreadHandler, this))) {
+        m_lock.Lock();
+        res = pthread_create(&fThread, &attributes, ThreadHandler, this);
+        m_lock.Unlock();
+        if (res) {
             debugError("Cannot create realtime thread (%d: %s)\n", res, strerror(res));
             debugError(" priority: %d %s\n", fPriority);
             return -1;
@@ -149,7 +156,10 @@ int PosixThread::Start()
     } else {
         debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Create non RT thread %p\n", m_id.c_str(), this);
 
-        if ((res = pthread_create(&fThread, 0, ThreadHandler, this))) {
+        m_lock.Lock();
+        res = pthread_create(&fThread, 0, ThreadHandler, this);
+        m_lock.Unlock();
+        if (res) {
             debugError("Cannot create thread %d %s\n", res, strerror(res));
             return -1;
         }
@@ -164,7 +174,9 @@ int PosixThread::Kill()
         debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Kill %p (thread: %p)\n", m_id.c_str(), this, fThread);
         void* status;
         pthread_cancel(fThread);
+        m_lock.Lock();
         pthread_join(fThread, &status);
+        m_lock.Unlock();
         debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Killed %p (thread: %p)\n", m_id.c_str(), this, fThread);
         return 0;
     } else {
@@ -178,7 +190,10 @@ int PosixThread::Stop()
         debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Stop %p (thread: %p)\n", m_id.c_str(), this, fThread);
         void* status;
         fRunning = false; // Request for the thread to stop
+        m_lock.Lock();
         pthread_join(fThread, &status);
+        fThread = NULL;
+        m_lock.Unlock();
         debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Stopped %p (thread: %p)\n", m_id.c_str(), this, fThread);
         return 0;
     } else {

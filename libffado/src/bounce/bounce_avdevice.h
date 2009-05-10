@@ -34,7 +34,7 @@
 #include "libstreaming/amdtp/AmdtpPort.h"
 #include "libstreaming/amdtp/AmdtpPortInfo.h"
 
-#include "libieee1394/ARMHandler.h"
+#include "libieee1394/ieee1394service.h"
 
 #include "ffadodevice.h"
 
@@ -53,6 +53,10 @@
 
 class ConfigRom;
 class DeviceManager;
+
+namespace Util {
+    class Configuration;
+}
 
 namespace Bounce {
 
@@ -120,14 +124,14 @@ private:
      */
     #define BOUNCE_NOTIFIER_BASE_ADDRESS 0x0000FFFFE0000000ULL
     #define BOUNCE_NOTIFIER_BLOCK_LENGTH 4
-    class BounceNotifier : public ARMHandler
+    class BounceNotifier : public Ieee1394Service::ARMHandler
     {
     public:
-        BounceNotifier(Device *, nodeaddr_t start);
+        BounceNotifier(Device &, nodeaddr_t start);
         virtual ~BounceNotifier();
 
     private:
-        Device *m_bouncedevice;
+        Device &m_bouncedevice;
     };
 };
 

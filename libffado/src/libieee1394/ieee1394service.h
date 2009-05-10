@@ -28,6 +28,7 @@
 #include "fbtypes.h"
 #include "libutil/Functors.h"
 #include "libutil/Mutex.h"
+#include "libutil/Thread.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -39,7 +40,6 @@
 #include <vector>
 #include <string>
 
-class ARMHandler;
 
 #define MAX_FCP_BLOCK_SIZE_BYTES (512)
 #define MAX_FCP_BLOCK_SIZE_QUADS (MAX_FCP_BLOCK_SIZE_BYTES / 4)
@@ -53,6 +53,9 @@ namespace Util {
 }
 
 class Ieee1394Service : public IEC61883 {
+public:
+    class ARMHandler;
+
 public:
     Ieee1394Service();
     Ieee1394Service(bool rt, int prio);
@@ -391,11 +394,42 @@ protected:
     Util::Configuration     *m_configuration;
 
 private:
-    bool configurationUpdated();
+    // this class will create a new 1394 handle
+    // and a thread that will iterate it
+    class HelperThread : public Util::RunnableInterface
+    {
+    public:
+        HelperThread(Ieee1394Service &, std::string);
+        HelperThread(Ieee1394Service &, std::string, bool rt, int prio);
+        virtual ~HelperThread();
 
-    bool startRHThread();
-    void stopRHThread();
-    static void* rHThread( void* arg );
+        raw1394handle_t get1394Handle() {return m_handle;};
+        Ieee1394Service &get1394Service() {return m_parent;};
+
+        virtual bool Init();
+        virtual bool Execute();
+
+        void setThreadParameters(bool rt, int priority);
+
+        bool Start();
+        bool Stop();
+
+    private:
+        Ieee1394Service &m_parent;
+        std::string      m_name;
+        raw1394handle_t  m_handle;
+        Util::Thread &   m_thread;
+        bool             m_iterate;
+
+        DECLARE_DEBUG_MODULE_REFERENCE;
+    };
+
+    HelperThread *m_resetHelper;
+    HelperThread *m_armHelperNormal;
+    HelperThread *m_armHelperRealtime;
+
+private: // unsorted
+    bool configurationUpdated();
 
     void printBuffer( unsigned int level, size_t length, fb_quadlet_t* buffer ) const;
     void printBufferBytes( unsigned int level, size_t length, byte_t* buffer ) const;
@@ -413,14 +447,9 @@ private:
 
     raw1394handle_t m_handle;
     Util::Mutex*    m_handle_lock;
-    raw1394handle_t m_resetHandle;
-    raw1394handle_t m_util_handle; // a handle for operations from the rt thread
+    raw1394handle_t m_util_handle;
     int             m_port;
     std::string     m_portName;
-
-    pthread_t       m_thread;
-    Util::Mutex*    m_RHThread_lock;
-    bool            m_threadRunning;
 
     bool            m_realtime;
     int             m_base_priority;
@@ -486,6 +515,64 @@ public:
     void show();
 private:
     DECLARE_DEBUG_MODULE;
+    
+public:
+    /**
+    * @brief Class to handle AddressRangeMappings
+    *
+    * This class is intended to help with implementing
+    * address range mapping, i.e. implementing handlers
+    * that react to reads/writes of certain addresses
+    * in 1394 memory space
+    *
+    * see the _arm_ functions in raw1394.h for more insight
+    *
+    */
+
+    class ARMHandler {
+    public:
+        ARMHandler(Ieee1394Service &parent,
+                nodeaddr_t start, size_t length,
+                unsigned int access_rights,
+                unsigned int notification_options,
+                unsigned int client_transactions
+                );
+    
+        virtual ~ARMHandler();
+    
+        virtual bool handleRead(struct raw1394_arm_request  *);
+        virtual bool handleWrite(struct raw1394_arm_request  *);
+        virtual bool handleLock(struct raw1394_arm_request  *);
+    
+        struct raw1394_arm_response *getResponse() {return &m_response;};
+    
+        nodeaddr_t getStart() {return m_start;};
+        size_t getLength() {return m_length;};
+        unsigned int getAccessRights() {return m_access_rights;};
+        unsigned int getNotificationOptions() {return m_notification_options;};
+        unsigned int getClientTransactions() {return m_client_transactions;};
+    
+        byte_t *getBuffer() {return m_buffer;};
+    
+    private:
+        Ieee1394Service &m_parent;
+        nodeaddr_t m_start;
+        size_t m_length;
+        unsigned int m_access_rights;
+        unsigned int m_notification_options;
+        unsigned int m_client_transactions;
+    protected:
+        byte_t *m_buffer;
+    
+        struct raw1394_arm_response m_response;
+        
+        void printBufferBytes( unsigned int level, size_t length, byte_t* buffer ) const;
+        void printRequest(struct raw1394_arm_request *arm_req);
+
+        DECLARE_DEBUG_MODULE_REFERENCE;
+    
+    };
+
 };
 
 #endif // FFADO_IEEE1394SERVICE_H

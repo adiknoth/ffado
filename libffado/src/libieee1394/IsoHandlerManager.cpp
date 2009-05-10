@@ -96,12 +96,12 @@ bool
 IsoTask::handleBusReset()
 {
     bool retval = true;
+    if(!m_running) {
+        // nothing to do here
+        return true;
+    }
     m_in_busreset = true;
     requestShadowMapUpdate();
-    if(request_update) {
-        debugError("shadow map update request not honored\n");
-        return false;
-    }
 
     unsigned int i, max;
     max = m_manager.m_IsoHandlers.size();
@@ -121,10 +121,6 @@ IsoTask::handleBusReset()
     // re-enable processing
     m_in_busreset = false;
     requestShadowMapUpdate();
-    if(request_update) {
-        debugError("shadow map update request not honored\n");
-        return false;
-    }
     return retval;
 }
 

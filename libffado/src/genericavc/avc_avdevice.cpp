@@ -22,7 +22,6 @@
  *
  */
 
-//#include "config.h"
 #include "devicemanager.h"
 #include "genericavc/avc_avdevice.h"
 
@@ -44,6 +43,8 @@
 #include <sstream>
 
 #include <libraw1394/csr.h>
+
+#include "stanton/scs.h"
 
 namespace GenericAVC {
 
@@ -108,7 +109,18 @@ Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 FFADODevice *
 Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new Device(d, configRom );
+    unsigned int vendorId = configRom->getNodeVendorId();
+    unsigned int modelId = configRom->getModelId();
+
+    switch (vendorId) {
+        case FW_VENDORID_STANTON:
+            if (modelId == 0x00001000 ) {
+                return new Stanton::ScsDevice(d, configRom);
+            }
+        default:
+            return new GenericAVC::Device(d, configRom);
+    }
+    return NULL;
 }
 
 bool

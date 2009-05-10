@@ -25,7 +25,6 @@
 #include "config.h"
 
 #include "ieee1394service.h"
-#include "ARMHandler.h"
 #include "cycletimer.h"
 #include "IsoHandlerManager.h"
 #include "CycleTimerHelper.h"
@@ -36,6 +35,7 @@
 #include "libutil/SystemTimeSource.h"
 #include "libutil/Watchdog.h"
 #include "libutil/PosixMutex.h"
+#include "libutil/PosixThread.h"
 #include "libutil/Configuration.h"
 
 #include <errno.h>
@@ -52,13 +52,13 @@ IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 
 Ieee1394Service::Ieee1394Service()
     : m_configuration( NULL )
+    , m_resetHelper( NULL )
+    , m_armHelperNormal( NULL )
+    , m_armHelperRealtime( NULL )
     , m_handle( 0 )
     , m_handle_lock( new Util::PosixMutex("SRCVHND") )
-    , m_resetHandle( 0 )
     , m_util_handle( 0 )
     , m_port( -1 )
-    , m_RHThread_lock( new Util::PosixMutex("SRVCRH") )
-    , m_threadRunning( false )
     , m_realtime ( false )
     , m_base_priority ( 0 )
     , m_pIsoManager( new IsoHandlerManager( *this ) )
@@ -80,13 +80,13 @@ Ieee1394Service::Ieee1394Service()
 
 Ieee1394Service::Ieee1394Service(bool rt, int prio)
     : m_configuration( NULL )
+    , m_resetHelper( NULL )
+    , m_armHelperNormal( NULL )
+    , m_armHelperRealtime( NULL )
     , m_handle( 0 )
     , m_handle_lock( new Util::PosixMutex("SRCVHND") )
-    , m_resetHandle( 0 )
     , m_util_handle( 0 )
     , m_port( -1 )
-    , m_RHThread_lock( new Util::PosixMutex("SRVCRH") )
-    , m_threadRunning( false )
     , m_realtime ( rt )
     , m_base_priority ( prio )
     , m_pIsoManager( new IsoHandlerManager( *this, rt, prio ) )
@@ -112,16 +112,24 @@ Ieee1394Service::~Ieee1394Service()
 {
     delete m_pIsoManager;
     delete m_pCTRHelper;
-    stopRHThread();
+
+    m_resetHelper->Stop();
+    m_armHelperNormal->Stop();
+    m_armHelperRealtime->Stop();
+
     for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
           it != m_armHandlers.end();
           ++it )
     {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler for 0x%016llX\n", (*it)->getStart());
-        int err=raw1394_arm_unregister(m_resetHandle, (*it)->getStart());
-        if (err) {
-            debugError(" Failed to unregister ARM handler for 0x%016llX\n", (*it)->getStart());
-            debugError(" Error: %s\n", strerror(errno));
+        if(m_armHelperNormal) {
+            int err = raw1394_arm_unregister(m_armHelperNormal->get1394Handle(), (*it)->getStart());
+            if (err) {
+                debugError(" Failed to unregister ARM handler for 0x%016llX\n", (*it)->getStart());
+                debugError(" Error: %s\n", strerror(errno));
+            }
+        } else {
+            debugWarning("ARM handler registered without valid ARM helper thread\n");
         }
     }
 
@@ -131,10 +139,10 @@ Ieee1394Service::~Ieee1394Service()
     }
     delete m_handle_lock;
 
-    if ( m_resetHandle ) {
-        raw1394_destroy_handle( m_resetHandle );
-    }
-    delete m_RHThread_lock;
+    if(m_resetHelper) delete m_resetHelper;
+    if(m_armHelperNormal) delete m_armHelperNormal;
+    if(m_armHelperRealtime) delete m_armHelperRealtime;
+
     if ( m_util_handle ) {
         raw1394_destroy_handle( m_util_handle );
     }
@@ -228,6 +236,7 @@ Ieee1394Service::initialize( int port )
     if (port + 1 > nb_ports) {
         debugFatal("Requested port (%d) out of range (# ports: %d)\n", port, nb_ports);
     }
+    m_port = port;
 
     if(!m_pWatchdog) {
         debugError("No valid RT watchdog found.\n");
@@ -250,18 +259,47 @@ Ieee1394Service::initialize( int port )
         return false;
     }
 
-    m_resetHandle = raw1394_new_handle_on_port( port );
-    if ( !m_resetHandle ) {
-        if ( !errno ) {
-            debugFatal("libraw1394 not compatible\n");
-        } else {
-            debugFatal("Ieee1394Service::initialize: Could not get 1394 handle: %s",
-                strerror(errno) );
-            debugFatal("Is ieee1394 and raw1394 driver loaded?\n");
-        }
+    // helper threads for all sorts of ASYNC events
+    // note: m_port has to be set!
+    m_resetHelper = new HelperThread(*this, "BUSRST");
+    if ( !m_resetHelper ) {
+        debugFatal("Could not allocate busreset handler helper\n");
+        return false;
+    }
+    m_armHelperNormal = new HelperThread(*this, "ARMSTD");
+    if ( !m_armHelperNormal ) {
+        debugFatal("Could not allocate standard ARM handler helper\n");
+        return false;
+    }
+    m_armHelperRealtime = new HelperThread(*this, "ARMRT", m_realtime, m_base_priority);
+    if ( !m_armHelperRealtime ) {
+        debugFatal("Could not allocate realtime ARM handler helper\n");
         return false;
     }
 
+    // start helper threads
+    if(!m_resetHelper->Start()) {
+        debugFatal("Could not start busreset helper thread\n");
+        return false;
+    }
+    if(!m_armHelperNormal->Start()) {
+        debugFatal("Could not start standard ARM helper thread\n");
+        return false;
+    }
+    if(!m_armHelperRealtime->Start()) {
+        debugFatal("Could not start realtime ARM helper thread\n");
+        return false;
+    }
+
+    // attach the reset and ARM handlers
+    // NOTE: the handlers have to be started first, or there is no 1394handle
+    raw1394_set_bus_reset_handler( m_resetHelper->get1394Handle(),
+                                   this->resetHandlerLowLevel );
+
+    m_default_arm_handler = raw1394_set_arm_tag_handler( m_armHelperNormal->get1394Handle(),
+                                   this->armHandlerLowLevel );
+
+    // utility handle (used to read the CTR register)
     m_util_handle = raw1394_new_handle_on_port( port );
     if ( !m_util_handle ) {
         if ( !errno ) {
@@ -278,7 +316,7 @@ Ieee1394Service::initialize( int port )
     int err;
     uint32_t cycle_timer;
     uint64_t local_time;
-    err=raw1394_read_cycle_timer(m_handle, &cycle_timer, &local_time);
+    err = raw1394_read_cycle_timer(m_util_handle, &cycle_timer, &local_time);
     if(err) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "raw1394_read_cycle_timer failed.\n");
         debugOutput(DEBUG_LEVEL_VERBOSE, " Error descr: %s\n", strerror(err));
@@ -293,8 +331,6 @@ Ieee1394Service::initialize( int port )
         debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer call, using it.\n");
         m_have_new_ctr_read = true;
     }
-
-    m_port = port;
 
     // obtain port name
     raw1394handle_t tmp_handle = raw1394_new_handle();
@@ -322,14 +358,9 @@ Ieee1394Service::initialize( int port )
 
     // set userdata
     raw1394_set_userdata( m_handle, this );
-    raw1394_set_userdata( m_resetHandle, this );
     raw1394_set_userdata( m_util_handle, this );
-    raw1394_set_bus_reset_handler( m_resetHandle,
-                                   this->resetHandlerLowLevel );
 
-    m_default_arm_handler = raw1394_set_arm_tag_handler( m_resetHandle,
-                                   this->armHandlerLowLevel );
-
+    // increase the split-transaction timeout if required (e.g. for bebob's)
     int split_timeout = IEEE1394SERVICE_MIN_SPLIT_TIMEOUT_USECS;
     if(m_configuration) {
         m_configuration->getValueForSetting("ieee1394.min_split_timeout_usecs", split_timeout);
@@ -371,8 +402,6 @@ Ieee1394Service::initialize( int port )
         return false;
     }
 
-    startRHThread();
-
     // make sure that the thread parameters of all our helper threads are OK
     if(!setThreadParameters(m_realtime, m_base_priority)) {
         debugFatal("Could not set thread parameters\n");
@@ -392,14 +421,17 @@ Ieee1394Service::setThreadParameters(bool rt, int priority) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Switching IsoManager to (rt=%d, prio=%d)\n",
                                          rt, priority);
         result &= m_pIsoManager->setThreadParameters(rt, priority);
-    }
+    } //else debugError("Bogus isomanager\n");
     if (m_pCTRHelper) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Switching CycleTimerHelper to (rt=%d, prio=%d)\n", 
                                          rt && IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME,
                                          IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO);
         result &= m_pCTRHelper->setThreadParameters(rt && IEEE1394SERVICE_CYCLETIMER_HELPER_RUN_REALTIME,
                                                     IEEE1394SERVICE_CYCLETIMER_HELPER_PRIO);
-    }
+    } //else debugError("Bogus CTR helper\n");
+    if(m_armHelperRealtime) {
+        m_armHelperRealtime->setThreadParameters(rt, priority);
+    } //else debugError("Bogus RT ARM helper\n");
     return result;
 }
 
@@ -1000,9 +1032,15 @@ Ieee1394Service::resetHandlerLowLevel( raw1394handle_t handle,
                                        unsigned int generation )
 {
     raw1394_update_generation ( handle, generation );
-    Ieee1394Service* instance
-        = (Ieee1394Service*) raw1394_get_userdata( handle );
-    instance->resetHandler( generation );
+
+    Ieee1394Service::HelperThread *thread = reinterpret_cast<Ieee1394Service::HelperThread *>(raw1394_get_userdata( handle ));
+    if(thread == NULL) {
+        debugFatal("Bogus 1394 handle private data\n");
+        return -1;
+    }
+
+    Ieee1394Service& service = thread->get1394Service();
+    service.resetHandler( generation );
 
     return 0;
 }
@@ -1037,19 +1075,18 @@ bool Ieee1394Service::registerARMHandler(ARMHandler *h) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Registering ARM handler (%p) for 0x%016llX, length %u\n",
         h, h->getStart(), h->getLength());
 
-    int err=raw1394_arm_register(m_resetHandle, h->getStart(),
-                                 h->getLength(), h->getBuffer(), (octlet_t)h,
-                                 h->getAccessRights(),
-                                 h->getNotificationOptions(),
-                                 h->getClientTransactions());
+    // FIXME: note that this will result in the ARM handlers not running in a realtime context
+    int err = raw1394_arm_register(m_armHelperNormal->get1394Handle(), h->getStart(),
+                                   h->getLength(), h->getBuffer(), (octlet_t)h,
+                                   h->getAccessRights(),
+                                   h->getNotificationOptions(),
+                                   h->getClientTransactions());
     if (err) {
         debugError("Failed to register ARM handler for 0x%016llX\n", h->getStart());
         debugError(" Error: %s\n", strerror(errno));
         return false;
     }
-
     m_armHandlers.push_back( h );
-
     return true;
 }
 
@@ -1062,7 +1099,7 @@ bool Ieee1394Service::unregisterARMHandler( ARMHandler *h ) {
           ++it )
     {
         if((*it) == h) {
-            int err=raw1394_arm_unregister(m_resetHandle, h->getStart());
+            int err = raw1394_arm_unregister(m_armHelperNormal->get1394Handle(), h->getStart());
             if (err) {
                 debugError("Failed to unregister ARM handler (%p)\n", h);
                 debugError(" Error: %s\n", strerror(errno));
@@ -1091,9 +1128,10 @@ nodeaddr_t Ieee1394Service::findFreeARMBlock( nodeaddr_t start, size_t length, s
     int cnt=0;
     const int maxcnt=10;
     int err=1;
+    Util::MutexLockHelper lock(*m_handle_lock);
     while(err && cnt++ < maxcnt) {
         // try to register
-        err=raw1394_arm_register(m_resetHandle, start, length, 0, 0, 0, 0, 0);
+        err = raw1394_arm_register(m_handle, start, length, 0, 0, 0, 0, 0);
 
         if (err) {
             debugOutput(DEBUG_LEVEL_VERBOSE, " -> cannot use 0x%016llX\n", start);
@@ -1101,7 +1139,7 @@ nodeaddr_t Ieee1394Service::findFreeARMBlock( nodeaddr_t start, size_t length, s
             start += step;
         } else {
             debugOutput(DEBUG_LEVEL_VERBOSE, " -> use 0x%016llX\n", start);
-            err=raw1394_arm_unregister(m_resetHandle, start);
+            err = raw1394_arm_unregister(m_handle, start);
             if (err) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, " error unregistering test handler\n");
                 debugError("    Error: %s\n", strerror(errno));
@@ -1116,15 +1154,22 @@ nodeaddr_t Ieee1394Service::findFreeARMBlock( nodeaddr_t start, size_t length, s
 
 int
 Ieee1394Service::armHandlerLowLevel(raw1394handle_t handle,
-                     unsigned long arm_tag,
-                     byte_t request_type, unsigned int requested_length,
-                     void *data)
+                                    unsigned long arm_tag,
+                                    byte_t request_type, unsigned int requested_length,
+                                    void *data)
 {
-    Ieee1394Service* instance
-        = (Ieee1394Service*) raw1394_get_userdata( handle );
-    instance->armHandler( arm_tag, request_type, requested_length, data );
+    Ieee1394Service::HelperThread *thread = reinterpret_cast<Ieee1394Service::HelperThread *>(raw1394_get_userdata( handle ));
+    if(thread == NULL) {
+        debugFatal("Bogus 1394 handle private data\n");
+        return -1;
+    }
 
-    return 0;
+    Ieee1394Service& service = thread->get1394Service();
+    if(service.armHandler( arm_tag, request_type, requested_length, data )) {
+        return 0;
+    } else {
+        return -1;
+    }
 }
 
 bool
@@ -1138,93 +1183,39 @@ Ieee1394Service::armHandler(  unsigned long arm_tag,
     {
         if((*it) == (ARMHandler *)arm_tag) {
             struct raw1394_arm_request_response *arm_req_resp;
-            arm_req_resp  = (struct raw1394_arm_request_response *) data;
-            raw1394_arm_request_t arm_req=arm_req_resp->request;
-            raw1394_arm_response_t arm_resp=arm_req_resp->response;
+            arm_req_resp = (struct raw1394_arm_request_response *) data;
+            raw1394_arm_request_t arm_req = arm_req_resp->request;
+            raw1394_arm_response_t arm_resp = arm_req_resp->response;
 
             debugOutput(DEBUG_LEVEL_VERBOSE,"ARM handler for address 0x%016llX called\n",
                 (*it)->getStart());
-            debugOutput(DEBUG_LEVEL_VERBOSE," request type   : 0x%02X\n",request_type);
-            debugOutput(DEBUG_LEVEL_VERBOSE," request length : %04d\n",requested_length);
+            debugOutput(DEBUG_LEVEL_VERBOSE," request type   : 0x%02X\n", request_type);
+            debugOutput(DEBUG_LEVEL_VERBOSE," request length : %04d\n", requested_length);
 
             switch(request_type) {
                 case RAW1394_ARM_READ:
                     (*it)->handleRead(arm_req);
-                    *arm_resp=*((*it)->getResponse());
+                    *arm_resp = *((*it)->getResponse());
                     break;
                 case RAW1394_ARM_WRITE:
                     (*it)->handleWrite(arm_req);
-                    *arm_resp=*((*it)->getResponse());
+                    *arm_resp = *((*it)->getResponse());
                     break;
                 case RAW1394_ARM_LOCK:
                     (*it)->handleLock(arm_req);
-                    *arm_resp=*((*it)->getResponse());
+                    *arm_resp = *((*it)->getResponse());
                     break;
                 default:
                     debugWarning("Unknown request type received, ignoring...\n");
             }
-
             return true;
         }
     }
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"default ARM handler called\n");
 
-    m_default_arm_handler(m_resetHandle, arm_tag, request_type, requested_length, data );
+    m_default_arm_handler(m_armHelperNormal->get1394Handle(), arm_tag, request_type, requested_length, data );
     return true;
-}
-
-bool
-Ieee1394Service::startRHThread()
-{
-    int i;
-
-    if ( m_threadRunning ) {
-        return true;
-    }
-    m_RHThread_lock->Lock();
-    i = pthread_create( &m_thread, 0, rHThread, this );
-    m_RHThread_lock->Unlock();
-    if (i) {
-        debugFatal("Could not start ieee1394 service thread\n");
-        return false;
-    }
-    m_threadRunning = true;
-
-    return true;
-}
-
-void
-Ieee1394Service::stopRHThread()
-{
-    if ( m_threadRunning ) {
-        // wait for the thread to finish it's work
-        m_RHThread_lock->Lock();
-        pthread_cancel (m_thread);
-        pthread_join (m_thread, 0);
-        m_RHThread_lock->Unlock();
-        m_threadRunning = false;
-    }
-}
-
-void*
-Ieee1394Service::rHThread( void* arg )
-{
-    Ieee1394Service* pIeee1394Service = (Ieee1394Service*) arg;
-
-    while (true) {
-        // protect ourselves from dying
-        {
-            // use a scoped lock such that it is unlocked
-            // even if we are cancelled while running
-            // FIXME: check if this is true!
-//             Util::MutexLockHelper lock(*(pIeee1394Service->m_RHThread_lock));
-            raw1394_loop_iterate (pIeee1394Service->m_resetHandle);
-        }
-        pthread_testcancel ();
-    }
-
-    return 0;
 }
 
 bool
@@ -1546,4 +1537,100 @@ Ieee1394Service::show()
     debugOutputShort( DEBUG_LEVEL_NORMAL, "Iso handler info:\n");
     #endif
     if (m_pIsoManager) m_pIsoManager->dumpInfo();
+}
+
+// the helper thread class
+Ieee1394Service::HelperThread::HelperThread(Ieee1394Service &parent, std::string name)
+: m_parent( parent )
+, m_name( name )
+, m_handle( NULL )
+, m_thread( *(new Util::PosixThread(this, name, false, 0, PTHREAD_CANCEL_DEFERRED)) )
+, m_iterate( false )
+, m_debugModule(parent.m_debugModule)
+{
+    m_handle = raw1394_new_handle_on_port( parent.m_port );
+    if(!m_handle) {
+        debugError("Could not allocate handle\n");
+        // FIXME: better error handling required
+    }
+    raw1394_set_userdata( m_handle, this );
+}
+
+Ieee1394Service::HelperThread::HelperThread(Ieee1394Service &parent, std::string name, bool rt, int prio)
+: m_parent( parent )
+, m_name( name )
+, m_handle( NULL )
+, m_thread( *(new Util::PosixThread(this, name, rt, prio, PTHREAD_CANCEL_DEFERRED)) )
+, m_iterate( false )
+, m_debugModule(parent.m_debugModule)
+{
+    m_handle = raw1394_new_handle_on_port( parent.m_port );
+    if(!m_handle) {
+        debugError("Could not allocate handle\n");
+        // FIXME: better error handling required
+    }
+    raw1394_set_userdata( m_handle, this );
+}
+
+Ieee1394Service::HelperThread::~HelperThread()
+{
+    m_thread.Stop();
+    delete &m_thread;
+    if(m_handle) {
+        raw1394_destroy_handle(m_handle);
+    }
+}
+
+bool
+Ieee1394Service::HelperThread::Init()
+{
+    m_iterate = true;
+    return true;
+}
+
+bool
+Ieee1394Service::HelperThread::Execute()
+{
+    if(m_iterate) {
+        int err;
+        err = raw1394_loop_iterate (m_handle);
+        if(err < 0) {
+            debugError("Failed to iterate handler\n");
+            return false;
+        } else {
+            return true;
+        }
+    } else {
+        Util::SystemTimeSource::SleepUsecRelative(1000);
+        return true;
+    }
+}
+
+void
+Ieee1394Service::HelperThread::setThreadParameters(bool rt, int priority)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) switch to: (rt=%d, prio=%d)...\n", this, rt, priority);
+    if (priority > THREAD_MAX_RTPRIO) priority = THREAD_MAX_RTPRIO; // cap the priority
+    if (rt) {
+        m_thread.AcquireRealTime(priority);
+    } else {
+        m_thread.DropRealTime();
+    }
+}
+
+bool
+Ieee1394Service::HelperThread::Start()
+{
+    return m_thread.Start() == 0;
+}
+
+bool
+Ieee1394Service::HelperThread::Stop()
+{
+    // request to stop iterating
+    m_iterate = false;
+    // poke the handler such that the iterate() returns
+    raw1394_wake_up(m_handle);
+    // stop the thread
+    return m_thread.Stop() == 0;
 }

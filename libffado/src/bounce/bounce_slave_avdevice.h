@@ -83,14 +83,14 @@ private:
      * this class reacts on the other side writing to the
      * hosts address space
      */
-    class BounceSlaveNotifier : public ARMHandler
+    class BounceSlaveNotifier : public Ieee1394Service::ARMHandler
     {
     public:
-        BounceSlaveNotifier(SlaveDevice *, nodeaddr_t start);
+        BounceSlaveNotifier(SlaveDevice &, nodeaddr_t start);
         virtual ~BounceSlaveNotifier();
 
     private:
-        SlaveDevice *m_bounceslavedevice;
+        SlaveDevice &m_bounceslavedevice;
     };
 };
 

@@ -57,6 +57,15 @@ ByteSwap16(uint16_t d)
     return bswap_16(d);
 }
 
+static inline void
+byteSwapBlock(quadlet_t *data, unsigned int nb_elements)
+{
+    unsigned int i=0;
+    for(; i<nb_elements; i++) {
+        *data = ByteSwap32(*data);
+        data++;
+    }
+}
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 
@@ -253,21 +262,13 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 static inline void
 byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
 {
-    unsigned int i=0;
-    for(; i<nb_elements; i++) {
-        *data = ByteSwap32(*data);
-        data++;
-    }
+    byteSwapBlock(data, nb_elements);
 }
 
 static inline void
 byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
 {
-    unsigned int i=0;
-    for(; i<nb_elements; i++) {
-        *data = ByteSwap32(*data);
-        data++;
-    }
+    byteSwapBlock(data, nb_elements);
 }
 
 #endif // sse2

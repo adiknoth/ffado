@@ -24,10 +24,10 @@
 #include <cstring>
 #include <cstdlib>
 
-#include "ARMHandler.h"
+#include "ieee1394service.h"
 
-IMPL_DEBUG_MODULE( ARMHandler, ARMHandler, DEBUG_LEVEL_NORMAL);
 /**
+ * @param parent         the 1394service that created this handler
  * @param start          identifies addressrange
  * @param length         identifies addressrange length (in bytes)
  * @param initial_value  pointer to buffer containing (if necessary) initial value
@@ -48,40 +48,45 @@ IMPL_DEBUG_MODULE( ARMHandler, ARMHandler, DEBUG_LEVEL_NORMAL);
  *                    access_rights will be ignored.
  *
  */
-ARMHandler::ARMHandler(nodeaddr_t start, size_t length,
-               unsigned int access_rights,
-               unsigned int notification_options,
-               unsigned int client_transactions
-              )
-        : m_start(start),
-        m_length(length),
-        m_access_rights(access_rights),
-        m_notification_options(notification_options),
-        m_client_transactions(client_transactions),
-        m_buffer(0)
+Ieee1394Service::ARMHandler::ARMHandler(Ieee1394Service &parent,
+                                        nodeaddr_t start, size_t length,
+                                        unsigned int access_rights,
+                                        unsigned int notification_options,
+                                        unsigned int client_transactions)
+: m_parent(parent)
+, m_start(start)
+, m_length(length)
+, m_access_rights(access_rights)
+, m_notification_options(notification_options)
+, m_client_transactions(client_transactions)
+, m_buffer(0)
+, m_debugModule(parent.m_debugModule)
 {
-    m_buffer=(byte_t*)calloc(length, sizeof(byte_t));
-    memset(&m_response,0,sizeof(m_response));
+    m_buffer = (byte_t*)calloc(length, sizeof(byte_t));
+    memset(&m_response, 0, sizeof(m_response));
 }
 
-ARMHandler::~ARMHandler() {
+Ieee1394Service::ARMHandler::~ARMHandler() {
     if(m_buffer)
         delete m_buffer;
 }
 
-bool ARMHandler::handleRead(struct raw1394_arm_request *req) {
+bool
+Ieee1394Service::ARMHandler::handleRead(struct raw1394_arm_request *req) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Read\n");
     printRequest(req);
     return true;
 }
 
-bool ARMHandler::handleWrite(struct raw1394_arm_request *req) {
+bool
+Ieee1394Service::ARMHandler::handleWrite(struct raw1394_arm_request *req) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Write\n");
     printRequest(req);
     return true;
 }
 
-bool ARMHandler::handleLock(struct raw1394_arm_request *req) {
+bool
+Ieee1394Service::ARMHandler::handleLock(struct raw1394_arm_request *req) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Lock\n");
     printRequest(req);
     return true;
@@ -110,7 +115,8 @@ bool ARMHandler::handleLock(struct raw1394_arm_request *req) {
 //         struct raw1394_arm_response *response;
 // } *raw1394_arm_request_response_t;
 
-void ARMHandler::printRequest(struct raw1394_arm_request *arm_req) {
+void
+Ieee1394Service::ARMHandler::printRequest(struct raw1394_arm_request *arm_req) {
     debugOutput(DEBUG_LEVEL_VERBOSE, " request info: \n");
     debugOutput(DEBUG_LEVEL_VERBOSE, "  from node 0x%04X to node 0x%04X\n",
         arm_req->source_nodeid, arm_req->destination_nodeid);
@@ -124,7 +130,7 @@ void ARMHandler::printRequest(struct raw1394_arm_request *arm_req) {
 }
 
 void
-ARMHandler::printBufferBytes( unsigned int level, size_t length, byte_t* buffer ) const
+Ieee1394Service::ARMHandler::printBufferBytes( unsigned int level, size_t length, byte_t* buffer ) const
 {
 
     for ( unsigned int i=0; i < length; ++i ) {

@@ -125,7 +125,7 @@ SlaveDevice::lock() {
         return false;
     }
 
-    m_Notifier=new SlaveDevice::BounceSlaveNotifier(this, notify_address);
+    m_Notifier=new SlaveDevice::BounceSlaveNotifier(*this, notify_address);
 
     if(!m_Notifier) {
         debugError("Could not allocate notifier\n");
@@ -442,8 +442,8 @@ SlaveDevice::init_config_rom(raw1394handle_t handle)
 
 // the notifier
 
-SlaveDevice::BounceSlaveNotifier::BounceSlaveNotifier(SlaveDevice *d, nodeaddr_t start)
- : ARMHandler(start, BOUNCE_REGISTER_LENGTH,
+SlaveDevice::BounceSlaveNotifier::BounceSlaveNotifier(SlaveDevice &d, nodeaddr_t start)
+ : ARMHandler(d.get1394Service(), start, BOUNCE_REGISTER_LENGTH,
               RAW1394_ARM_READ | RAW1394_ARM_WRITE, // allowed operations
               0, //RAW1394_ARM_READ | RAW1394_ARM_WRITE, // operations to be notified of
               0)                                    // operations that are replied to by us (instead of kernel)

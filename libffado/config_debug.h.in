@@ -12,9 +12,9 @@
 #define DEBUG_MB_BUFFERS                  1024
 
 // use an RT thread for reading out the messagebuffer.
-// can reduce the number of buffer xruns, but not
-// recommended
-#define DEBUG_MESSAGE_BUFFER_REALTIME        0
+// can reduce the number of buffer xruns, and
+// avoids priority inversion issues
+#define DEBUG_MESSAGE_BUFFER_REALTIME        1
 #define DEBUG_MESSAGE_BUFFER_REALTIME_PRIO   1
 
 // When a write can't get the buffer lock, how many times

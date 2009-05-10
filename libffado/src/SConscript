@@ -112,6 +112,7 @@ maudio_pkgdata = env.Split( '\
 
 genericavc_source =  env.Split( '\
 	genericavc/avc_avdevice.cpp \
+	genericavc/stanton/scs.cpp \
 ' )
 
 genericavc_pkgdata = env.Split( '\
@@ -155,6 +156,7 @@ motu_source = env.Split( '\
 
 dice_source = env.Split( '\
 	dice/dice_avdevice.cpp \
+	dice/dice_eap.cpp \
 ' )
 
 bounce_source = env.Split( '\

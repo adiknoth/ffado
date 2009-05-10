@@ -34,10 +34,9 @@ env.PrependUnique( LIBPATH=[env['build_base']+"src"] )
 env.PrependUnique( LIBS=["ffado"] )
 
 #if not env.GetOption( "clean" ):
-env.MergeFlags( env["ALSA_FLAGS"] )
-env.MergeFlags( "-DPIC" )
-
 sources = ["alsa_plugin.cpp"]
 
 if env['ALSA_FLAGS']:
+    env.MergeFlags( env["ALSA_FLAGS"] )
+    env.MergeFlags( "-DPIC" )
     alsaplugin = env.SharedLibrary( "asound_module_pcm_ffado", sources )
