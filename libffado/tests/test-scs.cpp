@@ -383,14 +383,14 @@ main(int argc, char **argv)
     }
 
     char s[1024];
-    if(arguments.node > -1) {
+    if(arguments.port > -1 && arguments.node > -1) {
         snprintf(s, 1024, "hw:%d,%d", arguments.port, arguments.node);
         if ( !m_deviceManager->addSpecString(s) ) { 
             printMessage("Could not add spec string %s to device manager\n", s );
             delete m_deviceManager;
             return -1;
         }
-    } else {
+    } else if (arguments.port > -1) {
         snprintf(s, 1024, "hw:%d", arguments.port);
         if ( !m_deviceManager->addSpecString(s) ) { 
             printMessage("Could not add spec string %s to device manager\n", s );
