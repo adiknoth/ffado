@@ -263,8 +263,31 @@ typedef struct {
 #define FF_DEV_FLASH_CLOCK_MODE_SLAVE          0x00000001
 #define FF_DEV_FLASH_MIC_PHANTOM_ON            0x00000001
 
+// Structure used by FFADO to keep track of the device status.  This is
+// decoupled from any structures used directly by the device, so it can be
+// added to and ordered freely.  When making changes to the device the
+// configuration registers must be all written to, so any function changing
+// a parameter must have access to the complete device status.
 typedef struct {
     uint32_t mic_phantom[4];
+    uint32_t spdif_input_mode;
+    uint32_t spdif_output_emphasis;
+    uint32_t spdif_output_pro;
+    uint32_t spdif_output_nonaudio;
+    uint32_t spdif_output_mode;
+    uint32_t clock_mode;
+    uint32_t sync_ref;
+    uint32_t tms;
+    uint32_t limit_bandwidth;
+    uint32_t stop_on_dropout;
+    uint32_t input_level;
+    uint32_t output_level;
+    uint32_t mic_level[2];
+    uint32_t instrument;
+    uint32_t filter;
+    uint32_t fuzz;
+    uint32_t sample_rate;
+    uint32_t word_clock_single_speed;
 } FF_software_settings_t;
 
 #endif

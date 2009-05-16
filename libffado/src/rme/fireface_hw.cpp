@@ -53,7 +53,7 @@ Device::init_hardware(void)
       data[0] |= CR0_PHANTOM_MIC3;
 
     /* Input level */
-    switch (1) {
+    switch (settings.input_level) {
         case 1: // Low gain
             data[1] |= CR1_ILEVEL_CPLD_LOGAIN;    // CPLD
             data[0] |= CR0_ILEVEL_FPGA_LOGAIN;    // LED control (used on FF800 only)
@@ -69,7 +69,7 @@ Device::init_hardware(void)
     }
 
     /* Output level */
-    switch (1) {
+    switch (settings.output_level) {
         case 1: // High gain
             data[1] |= CR1_OLEVEL_CPLD_HIGAIN;   // CPLD
             data[0] |= CR0_OLEVEL_FPGA_HIGAIN;   // LED control (used on FF800 only)
@@ -84,11 +84,16 @@ Device::init_hardware(void)
             break;
     }
 
-    /* Speaker emulation  FIXME: needs filling out */
+    /* Speaker emulation / filter  FIXME: needs filling out, is tied in
+     * with analog input settings. 
+     */
     data[1] = 0xf;
 
-    /* Drive  FIXME: needs filling out */
-    data[1] = 0x200;
+    /* Drive / fuzz */
+    if (settings.fuzz)
+      data[0] |= CR0_INSTR_DRIVE_FPGA; // FPGA LED control
+    else
+      data[1] |= CR1_INSTR_DRIVE;      // CPLD
 
     /* Drop-and-stop is hardwired on */
     data[2] |= CR2_DROP_AND_STOP;
