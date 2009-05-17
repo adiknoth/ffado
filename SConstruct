@@ -487,7 +487,13 @@ env['REVISION'] = env['REVISION'].split(':')[-1]
 if len(env['REVISION']) >= 5 and env['REVISION'][0:6] == 'export':
 	env['REVISION'] = ''
 
-env['FFADO_API_VERSION']=FFADO_API_VERSION
+# avoid the 1.999.41- type of version for exported versions
+if env['REVISION'] != '':
+	env['REVISIONSTRING'] = '-' + env['REVISION']
+else:
+	env['REVISIONSTRING'] = ''
+
+env['FFADO_API_VERSION'] = FFADO_API_VERSION
 
 env['PACKAGE'] = "libffado"
 env['VERSION'] = FFADO_VERSION
