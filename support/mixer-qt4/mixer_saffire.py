@@ -106,7 +106,12 @@ class SaffireMixer(QWidget):
 
     def initValues(self):
         selected = self.samplerateselect.selected()
-        self.samplerate = int(self.samplerateselect.getEnumLabel( selected ))
+        label = self.samplerateselect.getEnumLabel( selected )
+        try:
+            self.samplerate = int(label)
+        except:
+            # FIXME: this should be handled properly
+            self.samplerate = 44100
 
         # Saffire:        0x130e010001????
         # SaffireLE:    0x130e010004????
