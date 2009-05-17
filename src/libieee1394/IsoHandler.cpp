@@ -261,7 +261,7 @@ IsoHandler::notifyOfDeath()
     m_Client->handlerDied();
 
     // wake ourselves up
-    raw1394_wake_up(m_handle);
+    if(m_handle) raw1394_wake_up(m_handle);
 }
 
 void IsoHandler::dumpInfo()

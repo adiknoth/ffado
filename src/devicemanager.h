@@ -89,7 +89,9 @@ public:
     bool initStreaming();
     bool prepareStreaming();
     bool finishStreaming();
+    bool startStreamingOnDevice(FFADODevice *device);
     bool startStreaming();
+    bool stopStreamingOnDevice(FFADODevice *device);
     bool stopStreaming();
     bool resetStreaming();
     enum eWaitResult waitForPeriod();

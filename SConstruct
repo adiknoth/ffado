@@ -23,8 +23,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-FFADO_API_VERSION="8"
-FFADO_VERSION="1.999.41"
+FFADO_API_VERSION = "8"
+FFADO_VERSION = "1.999.41"
 
 import os
 import re

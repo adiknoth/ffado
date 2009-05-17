@@ -836,36 +836,88 @@ DeviceManager::finishStreaming() {
 }
 
 bool
-DeviceManager::startStreaming() {
-    // create the connections for all devices
-    // iterate over the found devices
-    // add the stream processors of the devices to the managers
-    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
-        it != m_avDevices.end();
-        ++it )
-    {
-        FFADODevice *device = *it;
-        assert(device);
+DeviceManager::startStreamingOnDevice(FFADODevice *device)
+{
+    assert(device);
 
-        int j=0;
-        for(j=0; j < device->getStreamCount(); j++) {
+    int j=0;
+    bool all_streams_started = true;
+    bool device_start_failed = false;
+    for(j=0; j < device->getStreamCount(); j++) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"Starting stream %d of device %p\n", j, device);
-            // start the stream
-            if (!device->startStreamByIndex(j)) {
-                debugWarning("Could not start stream %d of device %p\n", j, device);
-                continue;
-            }
-        }
-
-        if (!device->enableStreaming()) {
-            debugWarning("Could not enable streaming on device %p!\n", device);
+        // start the stream
+        if (!device->startStreamByIndex(j)) {
+            debugWarning("Could not start stream %d of device %p\n", j, device);
+            all_streams_started = false;
+            break;
         }
     }
 
+    if(!all_streams_started) {
+        // disable all streams that did start up correctly
+        for(j = j-1; j >= 0; j--) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %p\n", j, device);
+            // stop the stream
+            if (!device->stopStreamByIndex(j)) {
+                debugWarning("Could not stop stream %d of device %p\n", j, device);
+            }
+        }
+        device_start_failed = true;
+    } else {
+        if (!device->enableStreaming()) {
+            debugWarning("Could not enable streaming on device %p!\n", device);
+            device_start_failed = true;
+        }
+    }
+    return !device_start_failed;
+}
+
+bool
+DeviceManager::startStreaming() {
+    bool device_start_failed = false;
+    FFADODeviceVectorIterator it;
+
+    // create the connections for all devices
+    // iterate over the found devices
+    for ( it = m_avDevices.begin();
+        it != m_avDevices.end();
+        ++it )
+    {
+        if (!startStreamingOnDevice(*it)) {
+            debugWarning("Could not start streaming on device %p!\n", *it);
+            device_start_failed = true;
+            break;
+        }
+    }
+
+    // if one of the devices failed to start,
+    // the previous routine should have cleaned up the failing one.
+    // we still have to stop all devices that were started before this one.
+    if(device_start_failed) {
+        for (FFADODeviceVectorIterator it2 = m_avDevices.begin();
+            it2 != it;
+            ++it2 )
+        {
+            if (!stopStreamingOnDevice(*it2)) {
+                debugWarning("Could not stop streaming on device %p!\n", *it2);
+            }
+        }
+        return false;
+    }
+
+    // start the stream processor manager to tune in to the channels
     if(m_processorManager->start()) {
         return true;
     } else {
-        stopStreaming();
+        debugWarning("Failed to start SPM!\n");
+        for( it = m_avDevices.begin();
+             it != m_avDevices.end();
+             ++it )
+        {
+            if (!stopStreamingOnDevice(*it)) {
+                debugWarning("Could not stop streaming on device %p!\n", *it);
+            }
+        }
         return false;
     }
 }
@@ -873,6 +925,30 @@ DeviceManager::startStreaming() {
 bool
 DeviceManager::resetStreaming() {
     return true;
+}
+
+bool
+DeviceManager::stopStreamingOnDevice(FFADODevice *device)
+{
+    assert(device);
+    bool result = true;
+
+    if (!device->disableStreaming()) {
+        debugWarning("Could not disable streaming on device %p!\n", device);
+    }
+
+    int j=0;
+    for(j=0; j < device->getStreamCount(); j++) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %p\n", j, device);
+        // stop the stream
+        // start the stream
+        if (!device->stopStreamByIndex(j)) {
+            debugWarning("Could not stop stream %d of device %p\n", j, device);
+            result = false;
+            continue;
+        }
+    }
+    return result;
 }
 
 bool
@@ -888,24 +964,7 @@ DeviceManager::stopStreaming()
         it != m_avDevices.end();
         ++it )
     {
-        FFADODevice *device = *it;
-        assert(device);
-
-        if (!device->disableStreaming()) {
-            debugWarning("Could not disable streaming on device %p!\n", device);
-        }
-
-        int j=0;
-        for(j=0; j < device->getStreamCount(); j++) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %p\n", j, device);
-            // stop the stream
-            // start the stream
-            if (!device->stopStreamByIndex(j)) {
-                debugWarning("Could not stop stream %d of device %p\n", j, device);
-                result = false;
-                continue;
-            }
-        }
+        stopStreamingOnDevice(*it);
     }
     return result;
 }
