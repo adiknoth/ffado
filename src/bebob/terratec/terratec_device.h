@@ -36,6 +36,8 @@ public:
     Phase88Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
     virtual ~Phase88Device();
 
+    virtual bool discover();
+
     virtual void showDevice();
 
     // override these since the phase88 does not support

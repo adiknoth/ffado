@@ -166,6 +166,18 @@ BeBoB::BootloaderManager::cacheInfoRegisters( int retries )
     return false;
 }
 
+std::string
+BeBoB::BootloaderManager::getSoftwareDate()
+{
+    return makeDate( m_cachedInfoRegs.m_softwareDate );
+}
+
+std::string
+BeBoB::BootloaderManager::getSoftwareTime()
+{
+    return makeDate( m_cachedInfoRegs.m_softwareTime );
+}
+
 void
 BeBoB::BootloaderManager::printInfoRegisters()
 {

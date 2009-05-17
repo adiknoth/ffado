@@ -66,6 +66,11 @@ namespace BeBoB {
 
         bool setStartBootloader( bool bStartBootloader )
             { m_bStartBootloader = bStartBootloader; return true; }
+
+        int getSoftwareVersion() {return m_cachedInfoRegs.m_softwareVersion;};
+        std::string getSoftwareDate();
+        std::string getSoftwareTime();
+
         protected:
         enum EObjectType {
             eOT_Application,
