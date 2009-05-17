@@ -192,24 +192,24 @@ libenv.AppendUnique( CPPPATH=["#/external/libconfig"] )
 libenv.PrependUnique( LIBPATH=[env['build_base']+"external/libconfig"] )
 libenv.PrependUnique( LIBS=["libconfigpp"] )
 
-soname = "libffado.so.%s" % libenv['VERSION']
-soname_short = "libffado.so.%s" % libenv['VERSION'].split('.')[0]
+libname_versioned = "libffado.so.%s" % libenv['VERSION']
+libname_versioned_short = "libffado.so.%s" % libenv['VERSION'].split('.')[0]
 
-libenv.AppendUnique( LINKFLAGS = env.Split("-Wl,-soname=%s" % soname) )
+libenv.AppendUnique( LINKFLAGS = env.Split("-Wl,-soname=%s" % libname_versioned_short) )
 ffadolib = libenv.SharedLibrary( "ffado", source )
 
 #libenv.Install( "$libdir", ffadolib )
-installer = libenv.InstallAs ( "$libdir/%s" % soname , ffadolib )
+installer = libenv.InstallAs ( "$libdir/%s" % libname_versioned , ffadolib )
 
 # if stripping would be something for us
 #libenv.AddPostAction(installer, [['strip', env['STRIPFLAGS'], t[0].path]])
 
 # make the required links
-libenv.NoCache( '$libdir/%s' % soname )
-libenv.AddPostAction(installer, [['rm', '-f', '$libdir/libffado.so', '$libdir/%s' % soname_short],
+libenv.NoCache( '$libdir/%s' % libname_versioned )
+libenv.AddPostAction(installer, [['rm', '-f', '$libdir/libffado.so', '$libdir/%s' % libname_versioned_short],
                                  ['cd', '$libdir',
-                                 '&&','ln', '-s', soname_short, 'libffado.so',
-                                 '&&','ln', '-s', installer[0].name, soname_short,
+                                 '&&','ln', '-s', libname_versioned_short, 'libffado.so',
+                                 '&&','ln', '-s', installer[0].name, libname_versioned_short,
                                  ]
                                 ])
 
