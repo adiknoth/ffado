@@ -41,6 +41,7 @@
 #include "IntelFlashMap.h"
 
 #define ECHO_FLASH_ERASE_TIMEOUT_MILLISECS 2000
+#define FIREWORKS_MIN_FIRMWARE_VERSION 0x04080000
 
 #include <sstream>
 using namespace std;
@@ -135,7 +136,6 @@ Device::discover()
 
     // get the info from the EFC
     if ( !discoverUsingEFC() ) {
-        debugError( "Could not discover using EFC\n" );
         return false;
     }
 
@@ -160,6 +160,19 @@ Device::discoverUsingEFC()
 
     if (!doEfcOverAVC(m_HwInfo)) {
         debugError("Could not read hardware capabilities\n");
+        return false;
+    }
+
+    // check the firmware version
+    if (m_HwInfo.m_arm_version < FIREWORKS_MIN_FIRMWARE_VERSION) {
+        debugError("Firmware version %u.%u (rev %u) not recent enough. FFADO requires at least version %u.%u (rev %u).\n", 
+                    (m_HwInfo.m_arm_version >> 24) & 0xFF,
+                    (m_HwInfo.m_arm_version >> 16) & 0xFF,
+                    (m_HwInfo.m_arm_version >> 0) & 0xFFFF,
+                    (FIREWORKS_MIN_FIRMWARE_VERSION >> 24) & 0xFF,
+                    (FIREWORKS_MIN_FIRMWARE_VERSION >> 16) & 0xFF,
+                    (FIREWORKS_MIN_FIRMWARE_VERSION >> 0) & 0xFFFF
+                    );
         return false;
     }
 
