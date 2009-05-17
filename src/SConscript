@@ -192,7 +192,7 @@ libenv.AppendUnique( CPPPATH=["#/external/libconfig"] )
 libenv.PrependUnique( LIBPATH=[env['build_base']+"external/libconfig"] )
 libenv.PrependUnique( LIBS=["libconfigpp"] )
 
-#env1.AppendUnique( LINKFLAGS = env.Split("-Wl,-rpath $libdir -Wl,-soname -Wl,libffado.so.1 --version-info=1:0:0") )
+libenv.AppendUnique( LINKFLAGS = env.Split("-Wl,-soname=libffado.so.2") )
 ffadolib = libenv.SharedLibrary( "ffado", source )
 
 if libenv['BUILD_STATIC_LIB']:
