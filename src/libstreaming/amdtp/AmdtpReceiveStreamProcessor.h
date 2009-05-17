@@ -28,30 +28,7 @@
  * This class implements IEC61883-6 / AM824 / AMDTP based streaming
  */
 
-#include "debugmodule/debugmodule.h"
-
-#include "../generic/StreamProcessor.h"
-#include "../util/cip.h"
-
-#include <libiec61883/iec61883.h>
-#include <pthread.h>
-
-#define AMDTP_MAX_PACKET_SIZE 2048
-
-#define IEC61883_STREAM_TYPE_MIDI   0x0D
-#define IEC61883_STREAM_TYPE_SPDIF  0x00
-#define IEC61883_STREAM_TYPE_MBLA   0x06
-
-#define IEC61883_AM824_LABEL_MASK             0xFF000000
-#define IEC61883_AM824_GET_LABEL(x)         (((x) & 0xFF000000) >> 24)
-#define IEC61883_AM824_SET_LABEL(x,y)         ((x) | ((y)<<24))
-
-#define IEC61883_AM824_LABEL_MIDI_NO_DATA     0x80
-#define IEC61883_AM824_LABEL_MIDI_1X          0x81
-#define IEC61883_AM824_LABEL_MIDI_2X          0x82
-#define IEC61883_AM824_LABEL_MIDI_3X          0x83
-
-#define IEC61883_AM824_HAS_LABEL(x, lbl)         (((x) & 0xFF000000) == (((quadlet_t)(lbl))<<24))
+#include "AmdtpStreamProcessor-common.h"
 
 namespace Streaming {
 
