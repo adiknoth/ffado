@@ -30,8 +30,10 @@
 #include "../fbtypes.h"
 #include <assert.h>
 
+#include <cstdio>
 #include <vector>
 #include <iostream>
+#include <stdint.h>
 #include <semaphore.h>
 
 typedef short debug_level_t;
