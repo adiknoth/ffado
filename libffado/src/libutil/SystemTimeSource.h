@@ -26,6 +26,8 @@
 
 #include "../debugmodule/debugmodule.h"
 
+#include <stdint.h>
+
 typedef uint64_t ffado_microsecs_t;
 
 namespace Util {

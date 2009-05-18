@@ -24,6 +24,8 @@
 #include "ClockSelect.h"
 #include "ffadodevice.h"
 
+#include <cstdio>
+
 namespace Control {
 
 //// --- ClockSelect --- ////

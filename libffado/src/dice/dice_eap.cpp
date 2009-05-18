@@ -21,6 +21,8 @@
  *
  */
 
+#include <stdio.h>
+
 #include "dice_avdevice.h"
 
 #include "dice_eap.h"

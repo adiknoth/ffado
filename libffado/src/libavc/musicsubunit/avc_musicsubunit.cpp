@@ -34,6 +34,7 @@
 #include "avc_musicsubunit.h"
 #include "avc_descriptor_music.h"
 
+#include <cstdio>
 #include <sstream>
 
 namespace AVC {

@@ -28,6 +28,7 @@
 
 #include <libraw1394/raw1394.h> // byte_t and quadlet_t declaration
 #include <string>
+#include <stdint.h>
 
 namespace Util {
 	namespace Cmd {
