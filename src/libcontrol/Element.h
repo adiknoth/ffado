@@ -28,6 +28,7 @@
 
 #include <vector>
 #include <string>
+#include <stdint.h>
 
 #include "libutil/Mutex.h"
 #include "libutil/Functors.h"

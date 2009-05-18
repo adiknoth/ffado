@@ -27,6 +27,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <ostream>
+#include <stdint.h>
 #include <libraw1394/raw1394.h>
 
 namespace AVC {

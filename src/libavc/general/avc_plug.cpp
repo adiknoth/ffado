@@ -33,6 +33,7 @@
 #include "libieee1394/ieee1394service.h"
 #include "libutil/cmd_serialize.h"
 
+#include <cstdio>
 #include <sstream>
 
 namespace AVC {

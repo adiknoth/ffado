@@ -25,6 +25,7 @@
 #include "serialize.h"
 
 #include <cstring>
+#include <cstdio>
 #include <cstdlib>
 
 using namespace std;

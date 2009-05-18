@@ -38,6 +38,7 @@
 
 #include <vector>
 #include <string>
+#include <stdint.h>
 
 #define MAX_FCP_BLOCK_SIZE_BYTES (512)
 #define MAX_FCP_BLOCK_SIZE_QUADS (MAX_FCP_BLOCK_SIZE_BYTES / 4)

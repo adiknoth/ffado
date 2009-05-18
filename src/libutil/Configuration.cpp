@@ -23,6 +23,7 @@
 
 #include "Configuration.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 using namespace libconfig;
