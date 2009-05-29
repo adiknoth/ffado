@@ -52,17 +52,30 @@ Device::init_hardware(void)
     if (settings.mic_phantom[3])
       data[0] |= CR0_PHANTOM_MIC3;
 
+    /* Phones level */
+    switch (settings.phones_level) {
+        case FF_SWPARAM_PHONESLEVEL_HIGAIN:
+            data[0] |= CRO_PHLEVEL_HIGAIN;
+            break;
+        case FF_SWPARAM_PHONESLEVEL_4dBU:
+            data[0] |= CR0_PHLEVEL_4dBU;
+            break;
+        case FF_SWPARAM_PHONESLEVEL_m10dBV:
+            data[0] |= CRO_PHLEVEL_m10dBV;
+            break;
+    }
+
     /* Input level */
     switch (settings.input_level) {
-        case 1: // Low gain
+        case FF_SWPARAM_ILEVEL_LOGAIN: // Low gain
             data[1] |= CR1_ILEVEL_CPLD_LOGAIN;    // CPLD
             data[0] |= CR0_ILEVEL_FPGA_LOGAIN;    // LED control (used on FF800 only)
             break;
-        case 2: // +4 dBu
+        case FF_SWPARAM_ILEVEL_4dBU:   // +4 dBu
             data[1] |= CR1_ILEVEL_CPLD_4dBU;
             data[0] |= CR0_ILEVEL_FPGA_4dBU;
             break;
-        case 3: // -10 dBV
+        case FF_SWPARAM_ILEVEL_m10dBV: // -10 dBV
             data[1] |= CR1_ILEVEL_CPLD_m10dBV;
             data[0] |= CR0_ILEVEL_FPGA_m10dBV;
             break;
@@ -70,24 +83,50 @@ Device::init_hardware(void)
 
     /* Output level */
     switch (settings.output_level) {
-        case 1: // High gain
+        case FF_SWPARAM_OLEVEL_HIGAIN: // High gain
             data[1] |= CR1_OLEVEL_CPLD_HIGAIN;   // CPLD
             data[0] |= CR0_OLEVEL_FPGA_HIGAIN;   // LED control (used on FF800 only)
             break;
-        case 2: // +4 dBu
+        case FF_SWPARAM_OLEVEL_4dBU:   // +4 dBu
             data[1] |= CR1_OLEVEL_CPLD_4dBU;
             data[0] |= CR0_OLEVEL_FPGA_4dBU;
             break;
-        case 3: // -10 dBV
+        case FF_SWPARAM_OLEVEL_m10dBV: // -10 dBV
             data[1] |= CR1_OLEVEL_CPLD_m10dBV;
             data[0] |= CR0_OLEVEL_FPGA_m10dBV;
             break;
     }
 
-    /* Speaker emulation / filter  FIXME: needs filling out, is tied in
-     * with analog input settings. 
+    /* Set input options.  The meaning of the options differs between
+     * devices, so we use the generic identifiers here.
      */
-    data[1] = 0xf;
+    data[1] |= (settings.input_opt[1] & FF_SWPARAM_INPUT_OPT_A) ? CR1_INPUT_OPT1_A : 0;
+    data[1] |= (settings.input_opt[1] & FF_SWPARAM_INPUT_OPT_B) ? CR1_INPUT_OPT1_B : 0;
+    data[1] |= (settings.input_opt[2] & FF_SWPARAM_INPUT_OPT_A) ? CR1_INPUT_OPT2_A : 0;
+    data[1] |= (settings.input_opt[2] & FF_SWPARAM_INPUT_OPT_B) ? CR1_INPUT_OPT2_B : 0;
+
+    // Drive the speaker emulation / filter LED via FPGA
+    data[0] |= (settings.filter) ? CR0_FILTER_FPGA : 0;
+
+    // Set the "rear" option for input 0 if selected
+    data[1] |= (settings.input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_REAR) ? CR1_FF800_INPUT1_REAR : 0;
+
+    // The input 0 "front" option is activated using one of two bits
+    // depending on whether the filter (aka "speaker emulation") setting is
+    // active.
+    if (settings.input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_FRONT) {
+        data[1] |= (settings.filter) ? CR1_FF800_INPUT1_FRONT_WITH_FILTER : CR1_FF800_INPUT1_FRONT;
+    }
+
+    data[2] |= (settings.spdif_output_emphasis==FF_SWPARAM_SPDIF_OUTPUT_EMPHASIS_ON) ? CR2_SPDIF_OUT_EMP : 0;
+    data[2] |= (settings.spdif_output_pro==FF_SWPARAM_SPDIF_OUTPUT_PRO_ON) ? CR2_SPDIF_OUT_PRO : 0;
+    data[2] |= (settings.spdif_output_nonaudio==FF_SWPARAM_SPDIF_OUTPUT_NONAUDIO_ON) ? CR2_SPDIF_OUT_NONAUDIO : 0;
+    data[2] |= (settings.spdif_output_mode==FF_SWPARAM_SPDIF_OUTPUT_OPTICAL) ? CR2_SPDIF_OUT_ADAT2 : 0;
+    data[2] |= (settings.clock_mode==FF_SWPARAM_SPDIF_CLOCK_MODE_AUTOSYNC) ? CR2_CLOCKMODE_AUTOSYNC : CR2_CLOCKMODE_MASTER;
+    data[2] |= (settings.spdif_input_mode==FF_SWPARAM_SPDIF_INPUT_COAX) ? CR2_SPDIF_IN_COAX : CR2_SPDIF_IN_ADAT2;
+    data[2] |= (settings.word_clock_single_speed=FF_SWPARAM_WORD_CLOCK_1x) ? CR2_WORD_CLOCK_1x : 0;
+
+    /* TMS / TCO toggle bits in CR2 are not set by other drivers */
 
     /* Drive / fuzz */
     if (settings.fuzz)
@@ -95,15 +134,39 @@ Device::init_hardware(void)
     else
       data[1] |= CR1_INSTR_DRIVE;      // CPLD
 
-    /* Drop-and-stop is hardwired on */
+    /* Drop-and-stop is hardwired on in other drivers */
     data[2] |= CR2_DROP_AND_STOP;
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         data[2] |= CR2_FF400_BIT;
     }
 
+    switch (settings.sync_ref) {
+        case FF_SWPARAM_SYNCREF_WORDCLOCK:
+            data[2] |= CR2_SYNC_WORDCLOCK;
+            break;
+        case FF_SWPARAM_SYNCREF_ADAT1:
+            data[2] |= CR2_SYNC_ADAT1;
+            break;
+        case FF_SWPARAM_SYNCREF_ADAT2:
+            data[2] |= CR2_SYNC_ADAT2;
+            break;
+        case FF_SWPARAM_SYNCREF_SPDIF:
+            data[2] |= CR2_SYNC_SPDIF;
+            break;
+        case FF_SWPARAM_SYNCREC_TCO:
+            data[2] |= CR2_SYNC_TCO;
+            break;
+    }
+
+    // This is hardwired in other drivers
     data[2] |= (CR2_FREQ0 + CR2_FREQ1 + CR2_DSPEED + CR2_QSSPEED);
 
+    data[2] |= (settings.limiter_disable && 
+                (settings.input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_FRONT)) ? 
+                CR2_DISABLE_LIMITER : 0;
+
+//This is just for testing - it's a known consistent configuration
 //data[0] = 0x00020811;      // Phantom off
 data[0] = 0x00020811;      // Phantom on
 data[1] = 0x0000031e;

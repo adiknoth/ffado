@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.9
+Version: 0.10
 Author: Jonathan Woithe
-Date: 27 April 2009
+Date: 29 May 2009
 
 
 Definitions
@@ -39,6 +39,14 @@ be sent to the device in little endian format unless otherwise stated.
 Curiously enough, preliminary investigations suggest that audio data appears
 to be sent on the bus in big endian format (although this is to be
 confirmed).
+
+The FF800 includes a number of instrument options for input 1 which are
+described using several different terms interchangeably:
+ - "Drive" (also referred to as "fuzz") activates 25 dB extra gain
+ - "Speaker emulation" (also referred to as "filter") removes LF noise and
+   some HF
+ - "Limiter" activates a soft-limiter with a threshold of -10 dBFS.  This
+   can only be switched off if the Front input is used for channel 1.
 
 
 Device address space location
@@ -312,10 +320,10 @@ integers.  These are:
   1 - Device revision (FF400=0x004af3d8)
   2 - ASIO latency (FF400=0x00000001)
   3 - Samples per frame (FF400 default is 0x30)
-  4 SPDIF input mode (1=coax?, 0=optical?)
+  4 SPDIF input mode (2=coax?, 1=optical?)
   5 SPDIF output emphasis active
   6 SPDIF output is "professional" (ie: AES/EBU)
-  7 Clock mode (0=master?, 1=autosync?)
+  7 Clock mode (2=master?, 1=autosync?)
   8 SPDIF output is non-audio (eg: AC3 passthrough)
   9 Sync reference
  10 SPDIF output mode (0=coax?, 1=optical?)
@@ -334,8 +342,8 @@ integers.  These are:
  26 Limit bandwidth setting (0=full bandwidth)
  27 - Bandwidth allocated (FF400=0x00000000)
  28 Stop on dropout (FF400=0x00000000)
- 29 Input level (0=lo-gain)
- 30 Output level (0=-10dBV)
+ 29 Input level (0=default, 1=lo-gain, 2=+4dBU, 3=-10dBV ???)
+ 30 Output level (0=default, 1=hi-gain, 2=+4dBU, 3=-10dBV ???)
  31 Mic level [0] - FF400:Phoneslevel-1 / F800:AnalogInput[1]* ???
  32 Mic level [1] - AnalogInput[2] ???
  33 Mic phantom power [4]
@@ -351,7 +359,7 @@ integers.  These are:
  46 Word clock single speed (1=single speed)
  47 - Number of channels (FF400=0x000000f0)
  48 - Dropped samples
- 49 p12db_an[0] - Limiter==0&&AnalogInput[0]==2*: 1 else 0 ???
+ 49 p12db_an[0] - Disable limiter, settable only if input 1 front jack active
  50 - p12db_an[1-9]
 
 "-" = elements not used (under MacOSX at least)

@@ -110,7 +110,7 @@
 // Configuration register 0
 #define CR0_PHANTOM_MIC0        0x00000001
 #define CR0_PHANTOM_MIC2        0x00000002
-#define CR0_SPEAKER_EMU_FPGA    0x00000004
+#define CR0_FILTER_FPGA         0x00000004
 #define CR0_ILEVEL_FPGA_CTRL0   0x00000008
 #define CR0_ILEVEL_FPGA_CTRL1   0x00000010
 #define CR0_ILEVEL_FPGA_CTRL2   0x00000020
@@ -147,16 +147,16 @@
 // Configuration register 1
 #define CR1_ILEVEL_CPLD_CTRL0   0x00000001
 #define CR1_ILEVEL_CPLD_CTRL1   0x00000002
-#define CR1_INPUT0_REAR         0x00000004
+#define CR1_INPUT_OPT0_B        0x00000004    // Input optionset 0, option B
 #define CR1_OLEVEL_CPLD_CTRL0   0x00000008
 #define CR1_OLEVEL_CPLD_CTRL1   0x00000010
-#define CR1_INPUT1_FRONT        0x00000020
-#define CR1_INPUT1_REAR         0x00000040
-#define CR1_INPUT2_FRONT        0x00000080
-#define CR1_INPUT2_REAR         0x00000100
+#define CR1_INPUT_OPT1_A        0x00000020    // Input optionset 1, option A
+#define CR1_INPUT_OPT1_B        0x00000040    // Input optionset 1, option B
+#define CR1_INPUT_OPT2_A        0x00000080    // Input optionset 2, option A
+#define CR1_INPUT_OPT2_B        0x00000100    // Input optionset 2, option B
 #define CR1_INSTR_DRIVE         0x00000200
-#define CR1_ZEROBIT10           0x00000400
-#define CR1_INPUT0_FRONT        0x00000800
+#define CR1_INPUT_OPT0_A1       0x00000400    // Input optionset 0, option A bit 1
+#define CR1_INPUT_OPT0_A0       0x00000800    // Input optionset 0, option A bit 0
 
 #define CR1_ILEVEL_CPLD_LOGAIN  0
 #define CR1_ILEVEL_CPLD_4dBU    CR1_ILEVEL_CPLD_CTRL1
@@ -164,16 +164,25 @@
 #define CR1_OLEVEL_CPLD_m10dBV  CR1_OLEVEL_CPLD_CTRL0
 #define CR1_OLEVEL_CPLD_HIGAIN  CR1_OLEVEL_CPLD_CTRL1
 #define CR1_OLEVEL_CPLD_4dBU    (CR1_OLEVEL_CPLD_CTRL0 | CR1_OLEVEL_CPLD_CTRL1)
-#define CR1_FF800_INPUT1_FRONT  CR1_INPUT0_FRONT
-#define CR1_FF800_INPUT1_REAR   CR1_INPUT0_REAR
-#define CR1_FF800_INPUT7_FRONT  CR1_INPUT1_FRONT
-#define CR1_FF800_INPUT7_REAR   CR1_INPUT1_REAR
-#define CR1_FF800_INPUT8_FRONT  CR1_INPUT2_FRONT
-#define CR1_FF800_INPUT8_REAR   CR1_INPUT2_REAR
+#define CR1_FF800_INPUT7_FRONT  CR1_INPUT_OPT1_A
+#define CR1_FF800_INPUT7_REAR   CR1_INPUT_OPT1_B
+#define CR1_FF800_INPUT8_FRONT  CR1_INPUT_OPT2_A
+#define CR1_FF800_INPUT8_REAR   CR1_INPUT_OPT2_B
+#define CR1_FF400_INPUT3_INSTR  CR1_INPUT_OPT1_B   // To be confirmed
+#define CR1_FF400_INPUT3_PAD    CR1_INPUT_OPT1_A   // To be confirmed
+#define CR1_FF400_INPUT4_INSTR  CR1_INPUT_OPT2_B   // To be confirmed
+#define CR1_FF400_INPUT4_PAD    CR1_INPUT_OPT2_A   // To be confirmed
+
+// The input 1 "front" option is strange on the FF800 in that it is
+// indicated using two bits.  The actual bit set depends, curiously enough,
+// on the "speaker emulation" (aka "filter") setting.  How odd.
+#define CR1_FF800_INPUT1_FRONT              CR1_INPUT_OPT0_A0
+#define CR1_FF800_INPUT1_FRONT_WITH_FILTER  CR1_INPUT_OPT0_A1
+#define CR1_FF800_INPUT1_REAR               CR1_INPUT_OPT0_B
 
 // Configuration register 2
-#define CR2_CLOCKMODE_MASTER    0x00000000
-#define CR2_CLOCKMODE_AUTOSYNC  0x00000001
+#define CR2_CLOCKMODE_AUTOSYNC  0x00000000
+#define CR2_CLOCKMODE_MASTER    0x00000001
 #define CR2_FREQ0               0x00000002
 #define CR2_FREQ1               0x00000004
 #define CR2_DSPEED              0x00000008
@@ -181,15 +190,15 @@
 #define CR2_SPDIF_OUT_PRO       0x00000020
 #define CR2_SPDIF_OUT_EMP       0x00000040
 #define CR2_SPDIF_OUT_NONAUDIO  0x00000080
-#define CR2_SPDIF_OUT_ADAT2     0x00000100
+#define CR2_SPDIF_OUT_ADAT2     0x00000100  // Optical SPDIF on ADAT2 port
 #define CR2_SPDIF_IN_COAX       0x00000000
-#define CR2_SPDIF_IN_ADAT2      0x00000200
+#define CR2_SPDIF_IN_ADAT2      0x00000200  // Optical SPDIF on ADAT2 port
 #define CR2_SYNC_REF0           0x00000400
 #define CR2_SYNC_REF1           0x00000800
 #define CR2_SYNC_REF2           0x00001000
 #define CR2_WORD_CLOCK_1x       0x00002000
 #define CR2_TOGGLE_TCO          0x00004000  // Normally set to 0
-#define CR2_P12DB_AN0           0x00010000  // Normally set to 0
+#define CR2_P12DB_AN0           0x00010000  // Disable soft-limiter.  Normally set to 0
 #define CR2_FF400_BIT           0x04000000  // Set on FF400, clear on FF800
 #define CR2_TMS                 0x40000000  // Unit option, normally 0
 #define CR2_DROP_AND_STOP       0x80000000  // Normally set to 1
@@ -199,6 +208,7 @@
 #define CR2_SYNC_SPDIF          (CR2_SYNC_REF0 | CR2_SYNC_REF1)
 #define CR2_SYNC_WORDCLOCK      (CR2_SYNC_REF2)
 #define CR2_SYNC_TCO            (CR2_SYNC_REF0 | CR2_SYNC_REF2)
+#define CR2_DISABLE_LIMITER     CR2_P12DB_AN0
 
 /* Structure used to store device settings in the device flash RAM.  This
  * structure mirrors the layout in the Fireface's flash, so it cannot be
@@ -250,18 +260,37 @@ typedef struct {
     uint32_t p12db_an[10];
 } FF_device_flash_settings_t;
 
-// Defines used to interpret device flash settings
+// Defines used to interpret device flash settings.  These appear to be
+// arbitary from the device's perspective since the device doesn't appear to
+// directly use these stored settings.  The driver loads the flash settings
+// and then uses them to infer the appropriate values for the configuration
+// registers.  The actual values used here appear to correspond more or less
+// to the "value" returns from the GUI elements used to represent the
+// controls under other systems.
 #define FF_DEV_FLASH_INVALID                   0xffffffff
-#define FF_DEV_FLASH_SPDIF_INPUT_COAX          0x00000001   // To be confirmed
-#define FF_DEV_FLASH_SPDIF_INPUT_OPTICAL       0x00000000   // To be confirmed
+#define FF_DEV_FLASH_SPDIF_INPUT_COAX          0x00000002   // To be confirmed
+#define FF_DEV_FLASH_SPDIF_INPUT_OPTICAL       0x00000001   // To be confirmed
 #define FF_DEV_FLASH_SPDIF_OUTPUT_COAX         0x00000000   // To be confirmed
 #define FF_DEV_FLASH_SPDIF_OUTPUT_OPTICAL      0x00000001   // To be confirmed
 #define FF_DEV_FLASH_SPDIF_OUTPUT_EMPHASIS_ON  0x00000001
 #define FF_DEV_FLASH_SPDIF_OUTPUT_PRO_ON       0x00000001
 #define FF_DEV_FLASH_SPDIF_OUTPUT_NONAUDIO_ON  0x00000001
-#define FF_DEV_FLASH_CLOCK_MODE_MASTER         0x00000000
+#define FF_DEV_FLASH_CLOCK_MODE_MASTER         0x00000002
+#define FF_DEV_FLASH_CLOCK_MODE_AUTOSYNC       0x00000001
 #define FF_DEV_FLASH_CLOCK_MODE_SLAVE          0x00000001
+#define FF_DEV_FLASH_SYNCREF_WORDCLOCK         0x00000001
+#define FF_DEV_FLASH_SYNCREF_ADAT1             0x00000002
+#define FF_DEV_FLASH_SYNCREF_ADAT2             0x00000003
+#define FF_DEV_FLASH_SYNCREF_SPDIF             0x00000004
+#define FF_DEV_FLASH_SYNCREC_TCO               0x00000005
+#define FF_DEV_FLASH_ILEVEL_LOGAIN             0x00000001
+#define FF_DEV_FLASH_ILEVEL_4dBU               0x00000002
+#define FF_DEV_FLASH_ILEVEL_m10dBV             0x00000003
+#define FF_DEV_FLASH_OLEVEL_HIGAIN             0x00000001
+#define FF_DEV_FLASH_OLEVEL_4dBU               0x00000002
+#define FF_DEV_FLASH_OLEVEL_m10dBV             0x00000003
 #define FF_DEV_FLASH_MIC_PHANTOM_ON            0x00000001
+#define FF_DEV_FLAS_WORD_CLOCK_1x              0x00000001
 
 // Structure used by FFADO to keep track of the device status.  This is
 // decoupled from any structures used directly by the device, so it can be
@@ -286,8 +315,51 @@ typedef struct {
     uint32_t instrument;
     uint32_t filter;
     uint32_t fuzz;
+    uint32_t limiter_disable;
     uint32_t sample_rate;
     uint32_t word_clock_single_speed;
+    uint32_t phones_level;             // No equivalent in device flash
+    uint32_t input_opt[3];             // No equivalent in device flash
 } FF_software_settings_t;
 
+// Defines used to interpret the software settings structure.  For now we
+// use the same values as used by the device flash settings to remove the
+// need for translation between reading the flash and copying it to the
+// software settings structure, but in principle different values could be
+// used given translation code.
+#define FF_SWPARAM_INVALID                     FF_DEV_FLASH_INVALID
+#define FF_SWPARAM_SPDIF_INPUT_COAX            FF_DEV_FLASH_SPDIF_INPUT_COAX
+#define FF_SWPARAM_SPDIF_INPUT_OPTICAL         FF_DEV_FLASH_SPDIF_INPUT_OPTICAL
+#define FF_SWPARAM_SPDIF_OUTPUT_COAX           FF_DEV_FLASH_SPDIF_OUTPUT_COAX
+#define FF_SWPARAM_SPDIF_OUTPUT_OPTICAL        FF_DEV_FLASH_SPDIF_OUTPUT_OPTICAL
+#define FF_SWPARAM_SPDIF_OUTPUT_EMPHASIS_ON    FF_DEV_FLASH_SPDIF_OUTPUT_EMPHASIS_ON
+#define FF_SWPARAM_SPDIF_OUTPUT_PRO_ON         FF_DEV_FLASH_SPDIF_OUTPUT_PRO_ON
+#define FF_SWPARAM_SPDIF_OUTPUT_NONAUDIO_ON    FF_DEV_FLASH_SPDIF_OUTPUT_NONAUDIO_ON
+#define FF_SWPARAM_SPDIF_CLOCK_MODE_MASTER     FF_DEV_FLASH_CLOCK_MODE_MASTER
+#define FF_SWPARAM_SPDIF_CLOCK_MODE_AUTOSYNC   FF_DEV_FLASH_CLOCK_MODE_AUTOSYNC
+#define FF_SWPARAM_SPDIF_CLOCK_MODE_SLAVE      FF_DEV_FLASH_CLOCK_MODE_SLAVE
+#define FF_SWPARAM_SYNCREF_WORDCLOCK           FF_DEV_FLASH_SYNCREF_WORDCLOCK
+#define FF_SWPARAM_SYNCREF_ADAT1               FF_DEV_FLASH_SYNCREF_ADAT1
+#define FF_SWPARAM_SYNCREF_ADAT2               FF_DEV_FLASH_SYNCREF_ADAT2
+#define FF_SWPARAM_SYNCREF_SPDIF               FF_DEV_FLASH_SYNCREF_SPDIF
+#define FF_SWPARAM_SYNCREC_TCO                 FF_DEV_FLASH_SYNCREC_TCO
+#define FF_SWPARAM_ILEVEL_LOGAIN               FF_DEV_FLASH_ILEVEL_LOGAIN
+#define FF_SWPARAM_ILEVEL_4dBU                 FF_DEV_FLASH_ILEVEL_4dBU
+#define FF_SWPARAM_ILEVEL_m10dBV               FF_DEV_FLASH_ILEVEL_m10dBV
+#define FF_SWPARAM_OLEVEL_HIGAIN               FF_DEV_FLASH_OLEVEL_HIGAIN
+#define FF_SWPARAM_OLEVEL_4dBU                 FF_DEV_FLASH_OLEVEL_4dBU
+#define FF_SWPARAM_OLEVEL_m10dBV               FF_DEV_FLASH_OLEVEL_m10dBV
+#define FF_SWPARAM_MIC_PHANTOM_ON              FF_DEV_FLASH_MIC_PHANTOM_ON
+#define FF_SWPARAM_WORD_CLOCK_1x               FF_DEV_FLAS_WORD_CLOCK_1x
+//
+// The following defines refer to fields in the software parameter record which have no
+// equivalent in the device flash.
+#define FF_SWPARAM_PHONESLEVEL_HIGAIN          0x00000001
+#define FF_SWPARAM_PHONESLEVEL_4dBU            0x00000002
+#define FF_SWPARAM_PHONESLEVEL_m10dBV          0x00000003
+#define FF_SWPARAM_INPUT_OPT_B                 0x00000001
+#define FF_SWPARAM_INPUT_OPT_A                 0x00000002
+
+#define FF_SWPARAM_FF800_INPUT_OPT_FRONT       FF_SWPARAM_INPUT_OPT_A
+#define FF_SWPARAM_FF800_INPUT_OPT_REAR        FF_SWPARAM_INPUT_OPT_B
 #endif
