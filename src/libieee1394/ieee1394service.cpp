@@ -51,7 +51,7 @@ IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
 Ieee1394Service::Ieee1394Service()
     : m_configuration( NULL )
     , m_handle( 0 )
-    , m_handle_lock( new Util::PosixMutex("SRCVHND") )
+    , m_handle_lock( new Util::PosixMutex("SRVCHND") )
     , m_resetHandle( 0 )
     , m_util_handle( 0 )
     , m_port( -1 )
@@ -79,7 +79,7 @@ Ieee1394Service::Ieee1394Service()
 Ieee1394Service::Ieee1394Service(bool rt, int prio)
     : m_configuration( NULL )
     , m_handle( 0 )
-    , m_handle_lock( new Util::PosixMutex("SRCVHND") )
+    , m_handle_lock( new Util::PosixMutex("SRVCHND") )
     , m_resetHandle( 0 )
     , m_util_handle( 0 )
     , m_port( -1 )
@@ -782,14 +782,6 @@ Ieee1394Service::doFcpTransactionTry()
         }
     }
 
-    // stop listening for FCP responses
-    err = raw1394_stop_fcp_listen(m_handle);
-    if(err) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "could not stop FCP listen (err=%d, errno=%d)\n", err, errno);
-        retval = false;
-        goto out;
-    }
-
     // check the request and figure out what happened
     if(m_fcp_block.status == eFS_Waiting) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response timed out\n");
@@ -803,6 +795,13 @@ Ieee1394Service::doFcpTransactionTry()
     }
 
 out:
+    // stop listening for FCP responses
+    err = raw1394_stop_fcp_listen(m_handle);
+    if(err) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "could not stop FCP listen (err=%d, errno=%d)\n", err, errno);
+        retval = false;
+    }
+
     m_fcp_block.status = eFS_Empty;
     return retval;
 }
