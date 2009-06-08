@@ -72,6 +72,9 @@
 #define RME_FF_STATUS_REG0           0x801c0000    // Read only
 #define RME_FF_STATUS_REG1           0x801c0004    // Read only
 
+#define RME_FF_TCO_READ_REG          0x801f0000
+#define RME_FF_TCO_WRITE_REG         0x810f0020
+
 /* Addresses of various blocks in memory-mapped flash */
 #define RME_FF400_FLASH_SETTINGS_ADDR       0x00060000
 #define RME_FF400_FLASH_MIXER_VOLUME_ADDR   0x00070000
@@ -91,7 +94,7 @@
 #define RME_FF400_FLASH_WRITE_BUFFER        0x80100290
 #define RME_FF400_FLASH_READ_BUFFER         0x80100290
 
-/* Erase control registers on the FF800 */
+/* Flash erase control registers on the FF800 */
 #define RME_FF800_FLASH_ERASE_VOLUME_REG    0x3fffffff4LL
 #define RME_FF800_FLASH_ERASE_SETTINGS_REG  0x3fffffff0LL
 #define RME_FF800_FLASH_ERASE_FIRMWARE_REG  0x3fffffff8LL
@@ -209,6 +212,33 @@
 #define CR2_SYNC_WORDCLOCK      (CR2_SYNC_REF2)
 #define CR2_SYNC_TCO            (CR2_SYNC_REF0 | CR2_SYNC_REF2)
 #define CR2_DISABLE_LIMITER     CR2_P12DB_AN0
+
+/* Defines for the status registers */
+// Status register 0
+#define SR0_ADAT1_LOCK          0x00000400
+#define SR0_ADAT2_LOCK          0x00000800
+#define SR0_ADAT1_SYNC          0x00001000
+#define SR0_ADAT2_SYNC          0x00002000
+#define SR0_F0                  0x00004000
+#define SR0_F1                  0x00008000
+#define SR0_F2                  0x00010000
+#define SR0_F3                  0x00020000
+#define SR0_SPDIF_SYNC          0x00040000
+#define SR0_OVER                0x00080000
+#define SR0_SPDIF_LOCK          0x00100000
+#define SR0_SEL_SYNC_REF0       0x00200000
+#define SR0_SEL_SYNC_REF1       0x00400000
+#define SR0_SEL_SYNC_REF2       0x01000000
+#define SR0_INP_FREQ0           0x02000000
+#define SR0_INP_FREQ0           0x04000000
+#define SR0_INP_FREQ0           0x08000000
+#define SR0_INP_FREQ0           0x10000000
+#define SR0_WC_SYNC             0x20000000
+#define SR0_WC_LOCK             0x40000000
+
+// Status register 1
+#define SR1_TCO_LOCK            0x00800000
+#define SR1_TCO_SYNC            0x00400000
 
 /* Structure used to store device settings in the device flash RAM.  This
  * structure mirrors the layout in the Fireface's flash, so it cannot be
@@ -362,4 +392,20 @@ typedef struct {
 
 #define FF_SWPARAM_FF800_INPUT_OPT_FRONT       FF_SWPARAM_INPUT_OPT_A
 #define FF_SWPARAM_FF800_INPUT_OPT_REAR        FF_SWPARAM_INPUT_OPT_B
+
+// Data structure for the TCO (Time Code Option) state
+typedef struct {
+    uint32_t input;
+    uint32_t frame_rate;
+    uint32_t word_clock;
+    uint32_t sample_rate;
+    uint32_t pull;
+    uint32_t termination;
+    uint32_t MTC;
+} FF_TCO_settings_t;
+
+// Defines used to configure selected quadlets of the TCO write space.  The
+// byte indices referenced in the define names are 0-based.
+#define FF_TCO1_TCO_lock                      0x00000001
+
 #endif
