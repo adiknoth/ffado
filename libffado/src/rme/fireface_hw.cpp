@@ -162,6 +162,8 @@ Device::init_hardware(void)
     // This is hardwired in other drivers
     data[2] |= (CR2_FREQ0 + CR2_FREQ1 + CR2_DSPEED + CR2_QSSPEED);
 
+    // The FF800 limiter applies to the front panel instrument input, so it
+    // only makes sense that it is disabled when that input is in use.
     data[2] |= (settings.limiter_disable && 
                 (settings.input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_FRONT)) ? 
                 CR2_DISABLE_LIMITER : 0;
@@ -177,6 +179,61 @@ data[2] = 0xc400101f;
         return -1;
 
     return -0;
+}
+
+signed int Device::read_tco(quadlet_t *tco_data, signed int size)
+{
+    // Read the TCO registers and return the respective values in *tco_data. 
+    // Return value is 0 on success, or -1 if there is no TCO present. 
+    // "size" is the size (in quadlets) of the array pointed to by tco_data. 
+    // To obtain all TCO data "size" should be at least 4.  If the caller
+    // doesn't care about the data returned by the TCO, tco_data can be
+    // NULL.
+    quadlet_t buf[4];
+    signed int i;
+
+    // The Fireface 400 can't have the TCO fitted
+    if (m_rme_model==RME_MODEL_FIREFACE400)
+        return -1;
+
+    if (readBlock(RME_FF_TCO_READ_REG, buf, 4) != 0)
+        return -1;
+
+    if (tco_data != NULL) {
+        for (i=0; i<(size<4)?size:4; i++)
+            tco_data[i] = buf[i];
+    }
+
+    if ( (buf[0] & 0x80808080) == 0x80808080 &&
+         (buf[1] & 0x80808080) == 0x80808080 &&
+         (buf[2] & 0x80808080) == 0x80808080 &&
+         (buf[3] & 0x8000FFFF) == 0x80008000) {
+        // A TCO is present
+        return 0;
+    }
+
+    return -1;
+}
+
+signed int Device::write_tco(quadlet_t *tco_data, signed int size)
+{
+    // Writes data to the TCO.  No check is made as to whether a TCO
+    // is present in the current device.  Return value is 0 on success
+    // or -1 on error.  The first 4 quadlets of tco_data are significant;
+    // all others are ignored.  If fewer than 4 quadlets are supplied (as
+    // indicated by the "size" parameter, -1 will be returned.
+    if (size < 4)
+        return -1;
+
+    // Don't bother trying to write if the device is a FF400 since the TCO
+    // can't be fitted to this device.
+    if (m_rme_model==RME_MODEL_FIREFACE400)
+        return -1;
+
+    if (writeBlock(RME_FF_TCO_WRITE_REG, tco_data, 4) != 0)
+        return -1;
+
+    return 0;
 }
 
 }

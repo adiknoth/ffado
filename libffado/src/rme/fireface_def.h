@@ -230,9 +230,9 @@
 #define SR0_SEL_SYNC_REF1       0x00400000
 #define SR0_SEL_SYNC_REF2       0x01000000
 #define SR0_INP_FREQ0           0x02000000
-#define SR0_INP_FREQ0           0x04000000
-#define SR0_INP_FREQ0           0x08000000
-#define SR0_INP_FREQ0           0x10000000
+#define SR0_INP_FREQ1           0x04000000
+#define SR0_INP_FREQ2           0x08000000
+#define SR0_INP_FREQ3           0x10000000
 #define SR0_WC_SYNC             0x20000000
 #define SR0_WC_LOCK             0x40000000
 
