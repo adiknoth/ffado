@@ -114,6 +114,7 @@ private:
 
     /* Hardware functions */
     signed int init_hardware(void);
+    signed int set_hardware_params(FF_software_settings_t *sw_settings);
     signed int read_tco(quadlet_t *tco_data, signed int size);
     signed int write_tco(quadlet_t *tco_data, signed int size);
     

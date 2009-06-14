@@ -30,30 +30,50 @@
 
 namespace Rme {
 
-signed int 
+signed int
 Device::init_hardware(void)
 {
-    // Initialises the hardware the state defined by the Device's settings
-    // structure.  This has the side effect of extinguishing the "Host" LED
-    // on the FF400 when done for the first time after the interface has
-    // been powered up.
+    // Initialises the device's settings structure to a known state and then
+    // sets the hardware to reflect this state.
     //
-    // FIXME: currently this is a minimum skeleton to prove basic
-    // functionality.  It requires details to be filled in.
+    // In time this function may read a cached device setup and initialise
+    // based on that.  It may also read the device configuration from the
+    // device flash and adopt that.  For now (for initial testing purposes)
+    // we'll go with a static state.
+    memset(&settings, 0, sizeof(settings));
+    settings.spdif_input_mode = FF_SWPARAM_SPDIF_INPUT_COAX;
+    settings.spdif_output_mode = FF_SWPARAM_SPDIF_OUTPUT_COAX;
+    settings.clock_mode = FF_SWPARAM_SPDIF_CLOCK_MODE_MASTER;
+    settings.sync_ref = FF_SWPARAM_SYNCREF_WORDCLOCK;
+    settings.input_level = FF_SWPARAM_ILEVEL_LOGAIN;
+    settings.output_level = FF_SWPARAM_OLEVEL_HIGAIN;
+
+    return set_hardware_params(&settings);
+}
+
+signed int 
+Device::set_hardware_params(FF_software_settings_t *sw_settings)
+{
+    // Initialises the hardware to the state defined by the supplied
+    // software settings structure (which will usually be the device's
+    // "settings" structure).  This has the side effect of extinguishing the
+    // "Host" LED on the FF400 when done for the first time after the
+    // interface has been powered up.
+
     quadlet_t data[3] = {0, 0, 0};
     unsigned int conf_reg;
 
-    if (settings.mic_phantom[0])
+    if (sw_settings->mic_phantom[0])
       data[0] |= CR0_PHANTOM_MIC0;
-    if (settings.mic_phantom[1])
+    if (sw_settings->mic_phantom[1])
       data[0] |= CR0_PHANTOM_MIC1;
-    if (settings.mic_phantom[2])
+    if (sw_settings->mic_phantom[2])
       data[0] |= CR0_PHANTOM_MIC2;
-    if (settings.mic_phantom[3])
+    if (sw_settings->mic_phantom[3])
       data[0] |= CR0_PHANTOM_MIC3;
 
     /* Phones level */
-    switch (settings.phones_level) {
+    switch (sw_settings->phones_level) {
         case FF_SWPARAM_PHONESLEVEL_HIGAIN:
             data[0] |= CRO_PHLEVEL_HIGAIN;
             break;
@@ -66,7 +86,7 @@ Device::init_hardware(void)
     }
 
     /* Input level */
-    switch (settings.input_level) {
+    switch (sw_settings->input_level) {
         case FF_SWPARAM_ILEVEL_LOGAIN: // Low gain
             data[1] |= CR1_ILEVEL_CPLD_LOGAIN;    // CPLD
             data[0] |= CR0_ILEVEL_FPGA_LOGAIN;    // LED control (used on FF800 only)
@@ -82,7 +102,7 @@ Device::init_hardware(void)
     }
 
     /* Output level */
-    switch (settings.output_level) {
+    switch (sw_settings->output_level) {
         case FF_SWPARAM_OLEVEL_HIGAIN: // High gain
             data[1] |= CR1_OLEVEL_CPLD_HIGAIN;   // CPLD
             data[0] |= CR0_OLEVEL_FPGA_HIGAIN;   // LED control (used on FF800 only)
@@ -100,36 +120,36 @@ Device::init_hardware(void)
     /* Set input options.  The meaning of the options differs between
      * devices, so we use the generic identifiers here.
      */
-    data[1] |= (settings.input_opt[1] & FF_SWPARAM_INPUT_OPT_A) ? CR1_INPUT_OPT1_A : 0;
-    data[1] |= (settings.input_opt[1] & FF_SWPARAM_INPUT_OPT_B) ? CR1_INPUT_OPT1_B : 0;
-    data[1] |= (settings.input_opt[2] & FF_SWPARAM_INPUT_OPT_A) ? CR1_INPUT_OPT2_A : 0;
-    data[1] |= (settings.input_opt[2] & FF_SWPARAM_INPUT_OPT_B) ? CR1_INPUT_OPT2_B : 0;
+    data[1] |= (sw_settings->input_opt[1] & FF_SWPARAM_INPUT_OPT_A) ? CR1_INPUT_OPT1_A : 0;
+    data[1] |= (sw_settings->input_opt[1] & FF_SWPARAM_INPUT_OPT_B) ? CR1_INPUT_OPT1_B : 0;
+    data[1] |= (sw_settings->input_opt[2] & FF_SWPARAM_INPUT_OPT_A) ? CR1_INPUT_OPT2_A : 0;
+    data[1] |= (sw_settings->input_opt[2] & FF_SWPARAM_INPUT_OPT_B) ? CR1_INPUT_OPT2_B : 0;
 
     // Drive the speaker emulation / filter LED via FPGA
-    data[0] |= (settings.filter) ? CR0_FILTER_FPGA : 0;
+    data[0] |= (sw_settings->filter) ? CR0_FILTER_FPGA : 0;
 
     // Set the "rear" option for input 0 if selected
-    data[1] |= (settings.input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_REAR) ? CR1_FF800_INPUT1_REAR : 0;
+    data[1] |= (sw_settings->input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_REAR) ? CR1_FF800_INPUT1_REAR : 0;
 
     // The input 0 "front" option is activated using one of two bits
     // depending on whether the filter (aka "speaker emulation") setting is
     // active.
-    if (settings.input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_FRONT) {
-        data[1] |= (settings.filter) ? CR1_FF800_INPUT1_FRONT_WITH_FILTER : CR1_FF800_INPUT1_FRONT;
+    if (sw_settings->input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_FRONT) {
+        data[1] |= (sw_settings->filter) ? CR1_FF800_INPUT1_FRONT_WITH_FILTER : CR1_FF800_INPUT1_FRONT;
     }
 
-    data[2] |= (settings.spdif_output_emphasis==FF_SWPARAM_SPDIF_OUTPUT_EMPHASIS_ON) ? CR2_SPDIF_OUT_EMP : 0;
-    data[2] |= (settings.spdif_output_pro==FF_SWPARAM_SPDIF_OUTPUT_PRO_ON) ? CR2_SPDIF_OUT_PRO : 0;
-    data[2] |= (settings.spdif_output_nonaudio==FF_SWPARAM_SPDIF_OUTPUT_NONAUDIO_ON) ? CR2_SPDIF_OUT_NONAUDIO : 0;
-    data[2] |= (settings.spdif_output_mode==FF_SWPARAM_SPDIF_OUTPUT_OPTICAL) ? CR2_SPDIF_OUT_ADAT2 : 0;
-    data[2] |= (settings.clock_mode==FF_SWPARAM_SPDIF_CLOCK_MODE_AUTOSYNC) ? CR2_CLOCKMODE_AUTOSYNC : CR2_CLOCKMODE_MASTER;
-    data[2] |= (settings.spdif_input_mode==FF_SWPARAM_SPDIF_INPUT_COAX) ? CR2_SPDIF_IN_COAX : CR2_SPDIF_IN_ADAT2;
-    data[2] |= (settings.word_clock_single_speed=FF_SWPARAM_WORD_CLOCK_1x) ? CR2_WORD_CLOCK_1x : 0;
+    data[2] |= (sw_settings->spdif_output_emphasis==FF_SWPARAM_SPDIF_OUTPUT_EMPHASIS_ON) ? CR2_SPDIF_OUT_EMP : 0;
+    data[2] |= (sw_settings->spdif_output_pro==FF_SWPARAM_SPDIF_OUTPUT_PRO_ON) ? CR2_SPDIF_OUT_PRO : 0;
+    data[2] |= (sw_settings->spdif_output_nonaudio==FF_SWPARAM_SPDIF_OUTPUT_NONAUDIO_ON) ? CR2_SPDIF_OUT_NONAUDIO : 0;
+    data[2] |= (sw_settings->spdif_output_mode==FF_SWPARAM_SPDIF_OUTPUT_OPTICAL) ? CR2_SPDIF_OUT_ADAT2 : 0;
+    data[2] |= (sw_settings->clock_mode==FF_SWPARAM_SPDIF_CLOCK_MODE_AUTOSYNC) ? CR2_CLOCKMODE_AUTOSYNC : CR2_CLOCKMODE_MASTER;
+    data[2] |= (sw_settings->spdif_input_mode==FF_SWPARAM_SPDIF_INPUT_COAX) ? CR2_SPDIF_IN_COAX : CR2_SPDIF_IN_ADAT2;
+    data[2] |= (sw_settings->word_clock_single_speed=FF_SWPARAM_WORD_CLOCK_1x) ? CR2_WORD_CLOCK_1x : 0;
 
     /* TMS / TCO toggle bits in CR2 are not set by other drivers */
 
     /* Drive / fuzz */
-    if (settings.fuzz)
+    if (sw_settings->fuzz)
       data[0] |= CR0_INSTR_DRIVE_FPGA; // FPGA LED control
     else
       data[1] |= CR1_INSTR_DRIVE;      // CPLD
@@ -141,7 +161,7 @@ Device::init_hardware(void)
         data[2] |= CR2_FF400_BIT;
     }
 
-    switch (settings.sync_ref) {
+    switch (sw_settings->sync_ref) {
         case FF_SWPARAM_SYNCREF_WORDCLOCK:
             data[2] |= CR2_SYNC_WORDCLOCK;
             break;
@@ -164,8 +184,8 @@ Device::init_hardware(void)
 
     // The FF800 limiter applies to the front panel instrument input, so it
     // only makes sense that it is disabled when that input is in use.
-    data[2] |= (settings.limiter_disable && 
-                (settings.input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_FRONT)) ? 
+    data[2] |= (sw_settings->limiter_disable && 
+                (sw_settings->input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_FRONT)) ? 
                 CR2_DISABLE_LIMITER : 0;
 
 //This is just for testing - it's a known consistent configuration
