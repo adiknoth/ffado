@@ -22,7 +22,7 @@
  *
  */
 
-#warning RME support is currently useless (detection only)
+#warning RME support is at an early development stage and is not functional
 
 #include "rme/rme_avdevice.h"
 #include "rme/fireface_def.h"
@@ -172,6 +172,8 @@ Device::discover()
     }
 
     init_hardware();
+
+    // This is just for testing
     read_device_settings();
 
     return true;

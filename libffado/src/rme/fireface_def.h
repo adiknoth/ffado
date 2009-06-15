@@ -320,7 +320,7 @@ typedef struct {
 #define FF_DEV_FLASH_OLEVEL_4dBU               0x00000002
 #define FF_DEV_FLASH_OLEVEL_m10dBV             0x00000003
 #define FF_DEV_FLASH_MIC_PHANTOM_ON            0x00000001
-#define FF_DEV_FLASH_WORD_CLOCK_1x              0x00000001
+#define FF_DEV_FLASH_WORD_CLOCK_1x             0x00000001
 
 // Structure used by FFADO to keep track of the device status.  This is
 // decoupled from any structures used directly by the device, so it can be
