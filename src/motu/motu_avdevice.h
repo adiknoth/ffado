@@ -147,23 +147,21 @@ struct PortEntry {
     unsigned int port_offset;
 };
 
+// Structures used for pre-Mark3 device mixer definitions
 struct MixerCtrl {
     const char *name, *label, *desc;
     unsigned int type;
     unsigned int dev_register;
 };
-
 struct MatrixMixBus {
     const char *name;
     unsigned int address;
 };
-
 struct MatrixMixChannel {
     const char *name;
     unsigned int flags;
     unsigned int addr_ofs;
 };
-
 struct MotuMixer {
     const MixerCtrl *mixer_ctrl;
     unsigned int n_mixer_ctrls;
@@ -173,13 +171,21 @@ struct MotuMixer {
     unsigned int n_mixer_channels;
 };
 
+// Structures used for devices which use the "Mark3" mixer protocol
+struct MotuMark3Mixer {
+};
+
 struct DevicePropertyEntry {
     const PortEntry* port_entry;
     unsigned int n_port_entries;
     signed int MaxSampleRate;
+    // A device will set at most one of the *mixer fields
     const struct MotuMixer *mixer;
+    const struct MotuMark3Mixer *m3mixer;
     // Others features can be added here like MIDI port presence.
 };
+
+extern const DevicePropertyEntry DevicesProperty[];
 
 /* Macro to calculate the size of an array */
 #define N_ELEMENTS(_array) (sizeof(_array) / sizeof((_array)[0]))
@@ -243,6 +249,7 @@ protected:
 
 private:
     bool buildMixerAudioControls(void);
+    bool buildMark3MixerAudioControls(void);
     bool addPort(Streaming::StreamProcessor *s_processor,
         char *name,
         enum Streaming::Port::E_Direction direction,
