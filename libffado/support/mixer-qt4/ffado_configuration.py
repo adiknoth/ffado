@@ -34,11 +34,12 @@ class DeviceList:
 		if not filename == "":
 			self.updateFromFile( filename )
 
-	def updateFromFile( self, filename ):
+	def updateFromFile( self, filename, must_exist=False):
 		filename = os.path.expanduser(filename)
 		log.debug("DeviceList::updateFromFile(%s)" % filename)
 		if not os.path.exists( filename ):
-			log.error("cannot open file")
+			if must_exist:
+				log.error("cannot open file")
 			return
 		f = open( filename, "r" )
 
