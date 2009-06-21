@@ -34,6 +34,7 @@
 #include "libstreaming/motu/MotuTransmitStreamProcessor.h"
 
 #include "motu_controls.h"
+#include "motu_mark3_controls.h"
 
 #define MOTU_BASE_ADDR               0xfffff0000000ULL
 

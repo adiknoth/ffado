@@ -23,6 +23,8 @@
  *
  */
 
+/* DBus controls used with devices which utilise a pre-Mark3 mixer interface */
+
 #include "debugmodule/debugmodule.h"
 
 #include "libcontrol/BasicElements.h"
