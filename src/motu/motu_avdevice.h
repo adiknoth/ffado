@@ -89,6 +89,11 @@
 #define MOTU_REG_INPUT_GAIN_PHINV1 0x0c74
 #define MOTU_REG_INPUT_GAIN_PHINV2 0x0c78
 
+/* Mark3 device registers - these don't have MOTU_BASE_ADDR as the base
+ * address so for now we'll define them as absolute addresses.
+ */
+#define MOTU_MARK3_REG_MIXER     0xffff00010000LL
+
 /* Port Active Flags (ports declaration) */
 #define MOTU_PA_RATE_1x          0x0001    /* 44k1 or 48k */
 #define MOTU_PA_RATE_2x          0x0002    /* 88k2 or 96k */
