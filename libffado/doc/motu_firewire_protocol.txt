@@ -2,7 +2,7 @@ Notes on the firewire protocol used by MOTU audio devices
 =========================================================
 
 Author: Jonathan Woithe
-Document version: 20090321-1
+Document version: 20090621-1
 
 
 Audio/MIDI data
@@ -245,8 +245,8 @@ iso data packet.  This is described in detail in the "Audio/MIDI data"
 section.
 
 
-Controlling Cuemix
-------------------
+Controlling Cuemix in pre-Mark3 models
+--------------------------------------
 It has been noted that some mixer settings (particularly registers 0x4yyy)
 have been found to utilise "write enable" bits which when set allow their
 associated part of the control register to be acted upon.  There is no
@@ -328,6 +328,100 @@ or pad setting is altered:
  * Motu sends 0x20ffffff to address offset 0x100000000 on the PC 
  * In response the PC reads register 0x0c1c from the Motu to obtain the new
    gain trim value and pad setting.
+
+
+Controlling Cuemix in Mark3 models
+----------------------------------
+With the introduction of the "Mark3" interface models (Ultralite, Traveler,
+828) MOTU completely changed the method used to control the Cuemix features
+of the interface.  This was partly out of necessity - with the additional
+Cuemix features being added to the "Mark3" models MOTU otherwise faced an
+unbounded expansion in the number of device registers needed.
+
+Protocol analysis of an Ultralite-mk3 was provided by MG and GQ.
+
+The Mark3 interfaces use a variation of a key-value protocol involving block
+writes to register device register 0x10000 (bus address ffc0-ffff-0001-0000
+nominally.  Either 2 or 3 quadlets are written depending on the message
+being sent.  For this documentation we will refer to the bytes within a
+message as b00 .. b11, with b00 being the first byte sent.
+
+Byte b00 and b01 form a heartbeat word.  Precisely how this is constructed
+is not currently known, but it seems it might just be a monotomically
+increasing number probably used by the device to detect missing data or
+something.
+
+Byte b02 seems to be some kind of class identifier.  Currently identified
+classes are:
+  0x66: Faders (including bus master), pan, input trim
+  0x69: Mute/Solo, Routing selection
+
+Specific message formats are described below.
+
+Trim: 3 quadlet message
+  b00-b01 - heartbeat
+  b02     - 0x66
+  b03     - channel select (0x00-0x09)
+  b04     - 0x02 (select trim control)
+  b05-b06 - unknown, TBA
+  b07-b10 - data (big endian float, 0.0 - 24.0)
+  b11     - 0x00
+
+Reverb send: TBA
+
+Channel faders: 3 quadlet message
+  b00-b01 - heartbeat
+  b02     - 0x66
+  b03     - bus select (0x00-0x09)
+  b04     - 0x03 (select fader control)
+  b05     - channel select (0x02-0x09)
+  b06     - 0x02
+  b07-b10 - data (big endian float, 0.0 - 1.0)
+  b11     - 0x00
+
+Pan: 3 quadlet message
+  b00-b01 - heartbeat
+  b02     - 0x66
+  b03     - bus select (0x00-0x09)
+  b04     - 0x02 (select pan control)
+  b05     - channel select (0x02-0x09)
+  b06     - 0x02
+  b07-b10 - data (big endian float, -1.0 - 1.0)
+  b11     - 0x00
+  
+Bus master fader: 3 quadlet message
+  b00-b01 - heartbeat
+  b02     - 0x66
+  b03     - bus select (0x00-0x09)
+  b04-b05 - 0x02-0x00 (select bus master control)
+  b06     - 0x02
+  b07-b10 - data (big endian float, 0.0 - 1.0)
+  b11     - 0x00
+  
+Bus routing: 2 quadlet message
+  b00-b01 - heartbeat
+  b02     - 0x69
+  b03     - output select (0x00-0x06, 0xff=disabled)
+  b04     - bus select (0x00-0x07)
+  b05-b07 - 0x00-0x00-0x02
+
+Mute: 2 quadlet message
+  b00-b01 - heartbeat
+  b02     - 0x69
+  b03     - state (0x00=disable, 0x01=enable)
+  b04     - bus select (0x00-0x07)
+  b05     - 0x00 (select mute control)
+  b06     - channel select (0x01=bus master, 0x02-0x0b)
+  b07     - 0x02
+
+Channel solo: 2 quadlet message
+  b00-b01 - heartbeat          
+  b02     - 0x69
+  b03     - state (0x00=disable, 0x01=enable)
+  b04     - bus select (0x00-0x07)
+  b05     - 0x01 (select solo control)
+  b06     - channel select (0x01=bus master, 0x02-0x0b)
+  b07     - 0x02
 
 
 Controlling sample rate
