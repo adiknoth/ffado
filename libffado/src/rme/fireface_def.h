@@ -406,6 +406,60 @@ typedef struct {
 
 // Defines used to configure selected quadlets of the TCO write space.  The
 // byte indices referenced in the define names are 0-based.
+
+// TCO quadlet 0
+#define FF_TCO0_MTC                           0x80000000
+
+// TCO quadlet 1
 #define FF_TCO1_TCO_lock                      0x00000001
+#define FF_TCO1_WORD_CLOCK_INPUT_RATE0        0x00000002
+#define FF_TCO1_WORD_CLOCK_INPUT_RATE1        0x00000004
+#define FF_TCO1_LTC_INPUT_VALID               0x00000008
+#define FF_TCO1_WORD_CLOCK_INPUT_VALID        0x00000010
+#define FF_TCO1_VIDEO_INPUT_NTSC              0x00000020
+#define FF_TCO1_VIDEO_INPUT_PAL               0x00000040
+#define FF_TCO1_SET_TC                        0x00000100
+#define FF_TCO1_SET_DROPFRAME                 0x00000200
+#define FF_TCO1_LTC_FORMAT0                   0x00000400
+#define FF_TCO1_LTC_FORMAT1                   0x00000800
+
+#define FF_TCO1_WORD_CLOCK_INPUT_1x           0
+#define FF_TCO1_WORD_CLOCK_INPUT_2x           FF_TCO1_WORD_CLOCK_INPUT_RATE0
+#define FF_TCO1_WORD_CLOCK_INPUT_4x           FF_TCO1_WORD_CLOCK_INPUT_RATE1
+#define FF_TC01_LTC_FORMAT_24fps              0
+#define FF_TCO1_LTC_FORMAT_25fps              FF_TCO1_LTC_FORMAT0
+#define FF_TC01_LTC_FORMAT_29_97fps           FF_TCO1_LTC_FORMAT1
+#define FF_TCO1_LTC_FORMAT_29_97dpfs          (FF_TCO1_LTC_FORMAT1|FF_TCO1_SET_DROPFRAME)
+#define FF_TCO1_LTC_FORMAT_30fps              (FF_TCO1_LTC_FORMAT0|FF_TCO1_LTC_FORMAT1)
+#define FF_TCO1_LTC_FORMAT_30dfps             (FF_TCO1_LTC_FORMAT0|FF_TCO1_LTC_FORMAT1|FF_TCO1_SET_DROPFRAME)
+
+// TCO quadlet 2
+#define FF_TCO2_TC_RUN                        0x00010000
+#define FF_TCO2_WORD_CLOCK_CONV0              0x00020000
+#define FF_TCO2_WORD_CLOCK_CONV1              0x00040000
+#define FF_TCO2_NUM_DROPFRAMES0               0x00080000 // Unused
+#define FF_TCO2_NUM_DROPFRAMES1               0x00100000 // Unused
+#define FF_TCO2_SET_JAM_SYNC                  0x00200000
+#define FF_TCO2_SET_FLYWHEEL                  0x00400000
+#define FF_TCO2_SET_01_4                      0x01000000
+#define FF_TCO2_SET_PULLDOWN                  0x02000000
+#define FF_TCO2_SET_PULLUP                    0x04000000
+#define FF_TCO2_SET_FREQ                      0x08000000
+#define FF_TCO2_SET_TERMINATION               0x10000000
+#define FF_TCO2_SET_INPUT0                    0x20000000
+#define FF_TCO2_SET_INPUT1                    0x40000000
+#define FF_TCO2_SET_FREQ_FROM_APP             0x80000000
+
+#define FF_TCO2_WORD_CLOCK_CONV_1_1           0
+#define FF_TCO2_WORD_CLOCK_CONV_44_48         FF_TCO2_WORD_CLOCK_CONV0
+#define FF_TCO2_WORD_CLOCK_CONV_48_44         FF_TCO2_WORD_CLOCK_CONV1
+#define FF_TCO2_PULL_0                        0
+#define FF_TCO2_PULL_UP_01                    FF_TCO2_SET_PULLUP
+#define FF_TCO2_PULL_DOWN_01                  FF_TCO2_SET_PULLDOWN
+#define FF_TCO2_PULL_UP_40                    (FF_TCO2_SET_PULLUP|FF_TCO2_SET_01_4)
+#define FF_TCO2_PULL_DOWN_40                  (FF_TCO2_SET_PULLDOWN|FF_TCO2_SET_01_4)
+#define FF_TCO2_INPUT_LTC                     FF_TCO2_SET_INPUT1
+#define FF_TCO2_INPUT_VIDEO                   FF_TCO2_SET_INPUT0
+#define FF_TCO2_INPUT_WORD_CLOCK              0
 
 #endif

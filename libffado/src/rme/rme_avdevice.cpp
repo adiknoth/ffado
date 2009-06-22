@@ -96,6 +96,7 @@ Device::Device( DeviceManager& d,
     : FFADODevice( d, configRom )
     , m_rme_model( RME_MODEL_NONE )
     , m_ddsFreq( -1 )
+    , tco_present( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
@@ -169,6 +170,11 @@ Device::discover()
     } else {
         debugError("Unsupported model\n");
         return false;
+    }
+
+    // If device is FF800, check to see if the TCO is fitted
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        tco_present = (read_tco(NULL, 0) == 0);
     }
 
     init_hardware();

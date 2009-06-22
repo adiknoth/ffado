@@ -256,4 +256,19 @@ signed int Device::write_tco(quadlet_t *tco_data, signed int size)
     return 0;
 }
 
+signed int Device::write_tco_settings(FF_TCO_settings_t tco_settings)
+{
+    // Writes the supplied application-level settings to the device's TCO
+    // (Time Code Option).  Don't bother doing anything if the device doesn't
+    // have a TCO fitted.  Returns 0 on success, -1 on error.
+
+    quadlet_t tc[4] = {0, 0, 0, 0};
+
+    if (!tco_present) {
+        return -1;
+    }
+
+    return 0;
+}
+
 }

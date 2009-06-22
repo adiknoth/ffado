@@ -92,6 +92,7 @@ protected:
 
     signed int m_ddsFreq;
 
+    signed int tco_present;
     FF_software_settings_t settings;
 
 private:
@@ -117,6 +118,8 @@ private:
     signed int set_hardware_params(FF_software_settings_t *sw_settings);
     signed int read_tco(quadlet_t *tco_data, signed int size);
     signed int write_tco(quadlet_t *tco_data, signed int size);
+
+    signed int write_tco_settings(FF_TCO_settings_t tco_settings);
     
 };
 
