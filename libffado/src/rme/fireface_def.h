@@ -461,5 +461,31 @@ typedef struct {
 #define FF_TCO2_INPUT_LTC                     FF_TCO2_SET_INPUT1
 #define FF_TCO2_INPUT_VIDEO                   FF_TCO2_SET_INPUT0
 #define FF_TCO2_INPUT_WORD_CLOCK              0
+#define FF_TCO2_SRATE_44_1                    0
+#define FF_TCO2_SRATE_48                      FF_TCO2_SET_FREQ
+#define FF_TCO2_SRATE_FROM_APP                FF_TCO2_SET_FREQ_FROM_APP
+
+// Interpretation of the TCO software settings fields
+#define FF_TCOPARAM_INPUT_LTC                 1
+#define FF_TCOPARAM_INPUT_VIDEO               2
+#define FF_TCOPARAM_INPUT_WCK                 3
+#define FF_TCOPARAM_FRAMERATE_24fps           1
+#define FF_TCOPARAM_FRAMERATE_25fps           2
+#define FF_TCOPARAM_FRAMERATE_29_97fps        3
+#define FF_TCOPARAM_FRAMERATE_29_97dfps       4
+#define FF_TCOPARAM_FRAMERATE_30fps           5
+#define FF_TCOPARAM_FRAMERATE_30dfps          6
+#define FF_TCOPARAM_WORD_CLOCK_CONV_1_1       1     // 1:1
+#define FF_TCOPARAM_WORD_CLOCK_CONV_44_48     2     // 44.1 kHz-> 48 kHz
+#define FF_TCOPARAM_WORD_CLOCK_CONV_48_44     3     // 48 kHz -> 44.1 kHz
+#define FF_TCOPARAM_SRATE_44_1                1     // Rate is 44.1 kHz
+#define FF_TCOPARAM_SRATE_48                  2     // Rate is 48 kHz
+#define FF_TCOPARAM_SRATE_FROM_APP            3
+#define FF_TCPPARAM_PULL_NONE                 1
+#define FF_TCOPARAM_PULL_UP_01                2     // +0.1%
+#define FF_TCOPARAM_PULL_DOWN_01              3     // -0.1%
+#define FF_TCOPARAM_PULL_UP_40                4     // +4.0%
+#define FF_TCOPARAM_PULL_DOWN_40              5     // -4.0%
+#define FF_TCOPARAM_TERMINATION_ON            1
 
 #endif

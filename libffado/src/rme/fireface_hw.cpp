@@ -237,10 +237,11 @@ signed int Device::read_tco(quadlet_t *tco_data, signed int size)
 
 signed int Device::write_tco(quadlet_t *tco_data, signed int size)
 {
-    // Writes data to the TCO.  No check is made as to whether a TCO
-    // is present in the current device.  Return value is 0 on success
-    // or -1 on error.  The first 4 quadlets of tco_data are significant;
-    // all others are ignored.  If fewer than 4 quadlets are supplied (as
+    // Writes data to the TCO.  No check is made as to whether a TCO is
+    // present in the current device.  Return value is 0 on success or -1 on
+    // error.  "size" is the size (in quadlets) of the data pointed to by
+    // "tco_data".  The first 4 quadlets of tco_data are significant; all
+    // others are ignored.  If fewer than 4 quadlets are supplied (as
     // indicated by the "size" parameter, -1 will be returned.
     if (size < 4)
         return -1;
@@ -267,6 +268,69 @@ signed int Device::write_tco_settings(FF_TCO_settings_t tco_settings)
     if (!tco_present) {
         return -1;
     }
+
+    if (tco_settings.MTC)
+        tc[0] |= FF_TCO0_MTC;
+
+    switch (tco_settings.input) {
+        case FF_TCOPARAM_INPUT_LTC:
+            tc[2] |= FF_TCO2_INPUT_LTC; break;
+        case FF_TCOPARAM_INPUT_VIDEO:
+            tc[2] |= FF_TCO2_INPUT_VIDEO; break;
+        case FF_TCOPARAM_INPUT_WCK:
+            tc[2] |= FF_TCO2_INPUT_WORD_CLOCK; break;
+    }
+
+    switch (tco_settings.frame_rate) {
+        case FF_TCOPARAM_FRAMERATE_24fps:
+            tc[1] |= FF_TC01_LTC_FORMAT_24fps; break;
+        case FF_TCOPARAM_FRAMERATE_25fps:
+            tc[1] |= FF_TCO1_LTC_FORMAT_25fps; break;
+        case FF_TCOPARAM_FRAMERATE_29_97fps:
+            tc[1] |= FF_TC01_LTC_FORMAT_29_97fps; break;
+        case FF_TCOPARAM_FRAMERATE_29_97dfps:
+            tc[1] |= FF_TCO1_LTC_FORMAT_29_97dpfs; break;
+        case FF_TCOPARAM_FRAMERATE_30fps:
+            tc[1] |= FF_TCO1_LTC_FORMAT_30fps; break;
+        case FF_TCOPARAM_FRAMERATE_30dfps:
+            tc[1] |= FF_TCO1_LTC_FORMAT_30dfps; break;
+    }
+
+    switch (tco_settings.word_clock) {
+        case FF_TCOPARAM_WORD_CLOCK_CONV_1_1:
+            tc[2] |= FF_TCO2_WORD_CLOCK_CONV_1_1; break;
+        case FF_TCOPARAM_WORD_CLOCK_CONV_44_48:
+            tc[2] |= FF_TCO2_WORD_CLOCK_CONV_44_48; break;
+        case FF_TCOPARAM_WORD_CLOCK_CONV_48_44:
+            tc[2] |= FF_TCO2_WORD_CLOCK_CONV_48_44; break;
+    }
+
+    switch (tco_settings.sample_rate) {
+        case FF_TCOPARAM_SRATE_44_1:
+            tc[2] |= FF_TCO2_SRATE_44_1; break;
+        case FF_TCOPARAM_SRATE_48:
+            tc[2] |= FF_TCO2_SRATE_48; break;
+        case FF_TCOPARAM_SRATE_FROM_APP:
+            tc[2] |= FF_TCO2_SRATE_FROM_APP; break;
+    }
+
+    switch (tco_settings.pull) {
+        case FF_TCPPARAM_PULL_NONE:
+            tc[2] |= FF_TCO2_PULL_0; break;
+        case FF_TCOPARAM_PULL_UP_01:
+            tc[2] |= FF_TCO2_PULL_UP_01; break;
+        case FF_TCOPARAM_PULL_DOWN_01:
+            tc[2] |= FF_TCO2_PULL_DOWN_01; break;
+        case FF_TCOPARAM_PULL_UP_40:
+            tc[2] |= FF_TCO2_PULL_UP_40; break;
+        case FF_TCOPARAM_PULL_DOWN_40:
+            tc[2] |= FF_TCO2_PULL_DOWN_40; break;
+    }
+
+    if (tco_settings.termination == FF_TCOPARAM_TERMINATION_ON)
+        tc[2] |= FF_TCO2_SET_TERMINATION;
+
+    return write_tco(tc, 4);
 
     return 0;
 }
