@@ -257,7 +257,67 @@ signed int Device::write_tco(quadlet_t *tco_data, signed int size)
     return 0;
 }
 
-signed int Device::write_tco_settings(FF_TCO_settings_t tco_settings)
+signed int Device::read_tco_state(FF_TCO_state_t *tco_state)
+{
+    // Reads the current TCO state into the supplied state structure
+
+    quadlet_t tc[4];
+    unsigned int PLL_phase;
+
+    if (read_tco(tc, 4) != 0)
+      return -1;
+
+    // The timecode is stored in BCD (binary coded decimal) in register 0.
+    tco_state->frames = (tc[0] & 0xf) + ((tc[0] & 0x30) >> 4)*10;
+    tco_state->seconds = ((tc[0] & 0xf00) >> 8) + ((tc[0] & 0x7000) >> 12)*10;
+    tco_state->minutes = ((tc[0] & 0xf0000) >> 16) + ((tc[0] & 0x700000) >> 20)*10;
+    tco_state->hours = ((tc[0] & 0xf000000) >> 24) + ((tc[0] & 0x30000000) >> 28)*10;
+
+    tco_state->locked = (tc[1] & FF_TCO1_TCO_lock) != 0;
+    tco_state->ltc_valid = (tc[1] & FF_TCO1_LTC_INPUT_VALID) != 0;
+
+    switch (tc[1] & FF_TCO1_LTC_FORMAT_MASK) {
+        case FF_TC01_LTC_FORMAT_24fps: 
+          tco_state->frame_rate = FF_TCOSTATE_FRAMERATE_24fps; break;
+        case FF_TCO1_LTC_FORMAT_25fps: 
+          tco_state->frame_rate = FF_TCOSTATE_FRAMERATE_25fps; break;
+        case FF_TC01_LTC_FORMAT_29_97fps: 
+          tco_state->frame_rate = FF_TCOSTATE_FRAMERATE_29_97fps; break;
+        case FF_TCO1_LTC_FORMAT_30fps: 
+          tco_state->frame_rate = FF_TCOSTATE_FRAMERATE_30fps; break;
+    }
+
+    tco_state->drop_frame = (tc[1] & FF_TCO1_SET_DROPFRAME) != 0;
+
+    switch (tc[1] & FF_TCO1_VIDEO_INPUT_MASK) {
+        case FF_TCO1_VIDEO_INPUT_NTSC:
+            tco_state->video_input = FF_TCOSTATE_VIDEO_NTSC; break;
+        case FF_TCO1_VIDEO_INPUT_PAL:
+            tco_state->video_input = FF_TCOSTATE_VIDEO_PAL; break;
+        default:
+            tco_state->video_input = FF_TCOSTATE_VIDEO_NONE;
+    }
+
+    if ((tc[1] & FF_TCO1_WORD_CLOCK_INPUT_VALID) == 0) {
+        tco_state->word_clock_state = FF_TCOSTATE_WORDCLOCK_NONE;
+    } else {
+        switch (tc[1] & FF_TCO1_WORD_CLOCK_INPUT_MASK) {
+            case FF_TCO1_WORD_CLOCK_INPUT_1x:
+                tco_state->word_clock_state = FF_TCOSTATE_WORDCLOCK_1x; break;
+            case FF_TCO1_WORD_CLOCK_INPUT_2x:
+                tco_state->word_clock_state = FF_TCOSTATE_WORDCLOCK_2x; break;
+            case FF_TCO1_WORD_CLOCK_INPUT_4x:
+                tco_state->word_clock_state = FF_TCOSTATE_WORDCLOCK_4x; break;
+        }
+    }
+
+    PLL_phase = (tc[2] & 0x7f) + ((tc[2] & 0x7f00) >> 1);
+    tco_state->sample_rate = (25000000.0 * 16.0)/PLL_phase;
+
+    return 0;
+}
+
+signed int Device::write_tco_settings(FF_TCO_settings_t *tco_settings)
 {
     // Writes the supplied application-level settings to the device's TCO
     // (Time Code Option).  Don't bother doing anything if the device doesn't
@@ -269,10 +329,10 @@ signed int Device::write_tco_settings(FF_TCO_settings_t tco_settings)
         return -1;
     }
 
-    if (tco_settings.MTC)
+    if (tco_settings->MTC)
         tc[0] |= FF_TCO0_MTC;
 
-    switch (tco_settings.input) {
+    switch (tco_settings->input) {
         case FF_TCOPARAM_INPUT_LTC:
             tc[2] |= FF_TCO2_INPUT_LTC; break;
         case FF_TCOPARAM_INPUT_VIDEO:
@@ -281,7 +341,7 @@ signed int Device::write_tco_settings(FF_TCO_settings_t tco_settings)
             tc[2] |= FF_TCO2_INPUT_WORD_CLOCK; break;
     }
 
-    switch (tco_settings.frame_rate) {
+    switch (tco_settings->frame_rate) {
         case FF_TCOPARAM_FRAMERATE_24fps:
             tc[1] |= FF_TC01_LTC_FORMAT_24fps; break;
         case FF_TCOPARAM_FRAMERATE_25fps:
@@ -296,7 +356,7 @@ signed int Device::write_tco_settings(FF_TCO_settings_t tco_settings)
             tc[1] |= FF_TCO1_LTC_FORMAT_30dfps; break;
     }
 
-    switch (tco_settings.word_clock) {
+    switch (tco_settings->word_clock) {
         case FF_TCOPARAM_WORD_CLOCK_CONV_1_1:
             tc[2] |= FF_TCO2_WORD_CLOCK_CONV_1_1; break;
         case FF_TCOPARAM_WORD_CLOCK_CONV_44_48:
@@ -305,7 +365,7 @@ signed int Device::write_tco_settings(FF_TCO_settings_t tco_settings)
             tc[2] |= FF_TCO2_WORD_CLOCK_CONV_48_44; break;
     }
 
-    switch (tco_settings.sample_rate) {
+    switch (tco_settings->sample_rate) {
         case FF_TCOPARAM_SRATE_44_1:
             tc[2] |= FF_TCO2_SRATE_44_1; break;
         case FF_TCOPARAM_SRATE_48:
@@ -314,7 +374,7 @@ signed int Device::write_tco_settings(FF_TCO_settings_t tco_settings)
             tc[2] |= FF_TCO2_SRATE_FROM_APP; break;
     }
 
-    switch (tco_settings.pull) {
+    switch (tco_settings->pull) {
         case FF_TCPPARAM_PULL_NONE:
             tc[2] |= FF_TCO2_PULL_0; break;
         case FF_TCOPARAM_PULL_UP_01:
@@ -327,7 +387,7 @@ signed int Device::write_tco_settings(FF_TCO_settings_t tco_settings)
             tc[2] |= FF_TCO2_PULL_DOWN_40; break;
     }
 
-    if (tco_settings.termination == FF_TCOPARAM_TERMINATION_ON)
+    if (tco_settings->termination == FF_TCOPARAM_TERMINATION_ON)
         tc[2] |= FF_TCO2_SET_TERMINATION;
 
     return write_tco(tc, 4);

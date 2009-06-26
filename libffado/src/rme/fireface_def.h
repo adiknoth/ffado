@@ -426,12 +426,15 @@ typedef struct {
 #define FF_TCO1_WORD_CLOCK_INPUT_1x           0
 #define FF_TCO1_WORD_CLOCK_INPUT_2x           FF_TCO1_WORD_CLOCK_INPUT_RATE0
 #define FF_TCO1_WORD_CLOCK_INPUT_4x           FF_TCO1_WORD_CLOCK_INPUT_RATE1
+#define FF_TCO1_WORD_CLOCK_INPUT_MASK         (FF_TCO1_WORD_CLOCK_INPUT_RATE0|FF_TCO1_WORD_CLOCK_INPUT_RATE1)
+#define FF_TCO1_VIDEO_INPUT_MASK              (FF_TCO1_VIDEO_INPUT_NTSC|FF_TCO1_VIDEO_INPUT_PAL)
 #define FF_TC01_LTC_FORMAT_24fps              0
 #define FF_TCO1_LTC_FORMAT_25fps              FF_TCO1_LTC_FORMAT0
 #define FF_TC01_LTC_FORMAT_29_97fps           FF_TCO1_LTC_FORMAT1
 #define FF_TCO1_LTC_FORMAT_29_97dpfs          (FF_TCO1_LTC_FORMAT1|FF_TCO1_SET_DROPFRAME)
 #define FF_TCO1_LTC_FORMAT_30fps              (FF_TCO1_LTC_FORMAT0|FF_TCO1_LTC_FORMAT1)
 #define FF_TCO1_LTC_FORMAT_30dfps             (FF_TCO1_LTC_FORMAT0|FF_TCO1_LTC_FORMAT1|FF_TCO1_SET_DROPFRAME)
+#define FF_TCO1_LTC_FORMAT_MASK               (FF_TCO1_LTC_FORMAT0|FF_TCO1_LTC_FORMAT1)
 
 // TCO quadlet 2
 #define FF_TCO2_TC_RUN                        0x00010000
@@ -487,5 +490,29 @@ typedef struct {
 #define FF_TCOPARAM_PULL_UP_40                4     // +4.0%
 #define FF_TCOPARAM_PULL_DOWN_40              5     // -4.0%
 #define FF_TCOPARAM_TERMINATION_ON            1
+
+// The state of the TCO
+typedef struct {
+  unsigned int locked, ltc_valid;
+  unsigned int hours, minutes, seconds, frames;
+  unsigned int frame_rate;
+  unsigned int drop_frame;
+  unsigned int video_input;
+  unsigned int word_clock_state;
+  float sample_rate;
+} FF_TCO_state_t;
+
+// TCO state field defines
+#define FF_TCOSTATE_FRAMERATE_24fps           1
+#define FF_TCOSTATE_FRAMERATE_25fps           2
+#define FF_TCOSTATE_FRAMERATE_29_97fps        3
+#define FF_TCOSTATE_FRAMERATE_30fps           4
+#define FF_TCOSTATE_VIDEO_NONE                0
+#define FF_TCOSTATE_VIDEO_PAL                 1
+#define FF_TCOSTATE_VIDEO_NTSC                2
+#define FF_TCOSTATE_WORDCLOCK_NONE            0
+#define FF_TCOSTATE_WORDCLOCK_1x              1
+#define FF_TCOSTATE_WORDCLOCK_2x              2
+#define FF_TCOSTATE_WORDCLOCK_4x              3
 
 #endif

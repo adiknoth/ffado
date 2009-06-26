@@ -119,7 +119,8 @@ private:
     signed int read_tco(quadlet_t *tco_data, signed int size);
     signed int write_tco(quadlet_t *tco_data, signed int size);
 
-    signed int write_tco_settings(FF_TCO_settings_t tco_settings);
+    signed int read_tco_state(FF_TCO_state_t *tco_state);
+    signed int write_tco_settings(FF_TCO_settings_t *tco_settings);
     
 };
 
