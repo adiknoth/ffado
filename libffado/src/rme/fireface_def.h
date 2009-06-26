@@ -100,7 +100,7 @@
 #define RME_FF800_FLASH_ERASE_FIRMWARE_REG  0x3fffffff8LL
 #define RME_FF800_FLASH_ERASE_CONFIG_REG    0x3fffffffcLL
 
-/* Flags and special values */
+/* Flash erase command values for the FF400 */
 #define RME_FF400_FLASH_CMD_WRITE           0x00000001
 #define RME_FF400_FLASH_CMD_READ            0x00000002
 #define RME_FF400_FLASH_CMD_ERASE_VOLUME    0x0000000e
@@ -108,6 +108,10 @@
 #define RME_FF400_FLASH_CMD_ERASE_CONFIG    0x0000000c
 #define RME_FF400_FLASH_CMD_GET_REVISION    0x0000000f
 
+/* Flags for use with erase_flash() */
+#define RME_FF_FLASH_ERASE_VOLUME           1
+#define RME_FF_FLASH_ERASE_SETTINGS         2
+#define RME_FF_FLASH_ERASE_CONFIG           3
 
 /* Defines for components of the control registers */
 // Configuration register 0

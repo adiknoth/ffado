@@ -81,7 +81,8 @@ Device::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
 {
     // Read "n_quads" quadlets from the Fireface Flash starting at address
     // addr.  The result is written to "buf" which is assumed big enough to
-    // hold the result.  Return 0 on success, -1 on error.
+    // hold the result.  Return 0 on success, -1 on error.  The caller must ensure
+    // that the flash source address makes sense for the device in use.
 
     unsigned int xfer_size;
     unsigned int err = 0;
@@ -101,7 +102,7 @@ Device::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
         // Execute the read and wait for its completion
         err |= writeRegister(RME_FF400_FLASH_CMD_REG, RME_FF400_FLASH_CMD_READ);
         if (!err)
-          wait_while_busy(2);
+            wait_while_busy(2);
         // Read from bounce buffer into final destination
         err |= readBlock(RME_FF400_FLASH_READ_BUFFER, buf, xfer_size);
 
@@ -113,12 +114,107 @@ Device::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
     return err?-1:0;
 }
 
+signed int
+Device::erase_flash(unsigned int flags)
+{
+    // Erase the requested flash block.  "flags" should be one of the 
+    // RME_FF_FLASH_ERASE_* flags.  Return 0 on success, -1 on error.
+
+    fb_nodeaddr_t addr;
+    quadlet_t data;
+    unsigned int err = 0;
+
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        switch (flags) {
+            case RME_FF_FLASH_ERASE_VOLUME:
+                addr = RME_FF800_FLASH_ERASE_VOLUME_REG; break;
+            case RME_FF_FLASH_ERASE_SETTINGS:
+                addr = RME_FF800_FLASH_ERASE_SETTINGS_REG; break;
+            case RME_FF_FLASH_ERASE_CONFIG:
+                addr = RME_FF800_FLASH_ERASE_CONFIG_REG; break;
+            default:
+                debugOutput(DEBUG_LEVEL_WARNING, "unknown flag %d\n", flags);
+                return -1;
+        }
+        data = 0;
+    } else {
+        addr = RME_FF400_FLASH_CMD_REG;
+        switch (flags) {
+            case RME_FF_FLASH_ERASE_VOLUME:
+                data = RME_FF400_FLASH_CMD_ERASE_VOLUME; break;
+            case RME_FF_FLASH_ERASE_SETTINGS:
+                data = RME_FF400_FLASH_CMD_ERASE_SETTINGS; break;
+            case RME_FF_FLASH_ERASE_CONFIG:
+                data = RME_FF400_FLASH_CMD_ERASE_CONFIG; break;
+            default:
+                debugOutput(DEBUG_LEVEL_WARNING, "unknown flag %d\n", flags);
+                return -1;
+        }
+    }
+
+    err |= writeRegister(addr, data);
+    if (!err) {
+        wait_while_busy(500);
+        // After the device is ready, wait a further 20 milliseconds.  The purpose
+        // of this is unclear.  Drivers from other OSes do it, so we should too.
+        usleep(20000);
+    }
+
+    return err?-1:0;
+}
+
+signed int 
+Device::write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
+{
+    // Write "n_quads" quadlets to the Fireface Flash starting at address
+    // addr.  Return 0 on success, -1 on error.  The caller must ensure the
+    // supplied address is appropriate for the device in use.
+
+    unsigned int xfer_size;
+    unsigned int err = 0;
+    quadlet_t block_desc[2];
+    quadlet_t ff400_addr = (addr & 0xffffffff);
+
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        err |= readBlock(addr, buf, n_quads);
+        if (!err)
+            wait_while_busy(5);
+    }
+    // FF400 case follows
+    do {
+        xfer_size = (n_quads > 32)?32:n_quads;
+        // Send data to flash buffer
+        err |= writeBlock(RME_FF400_FLASH_WRITE_BUFFER, buf, xfer_size);
+        // Program the destination address and size
+        block_desc[0] = ff400_addr;
+        block_desc[1] = xfer_size * sizeof(quadlet_t);
+        err |= writeBlock(RME_FF400_FLASH_BLOCK_ADDR_REG, block_desc, 2);
+        // Execute the write and wait for its completion
+        err |= writeRegister(RME_FF400_FLASH_CMD_REG, RME_FF400_FLASH_CMD_WRITE);
+        if (!err)
+            wait_while_busy(2);
+
+        n_quads -= xfer_size;
+        ff400_addr += xfer_size*sizeof(quadlet_t);
+        buf += xfer_size;
+    } while (n_quads>0 && !err);
+
+    return err?-1:0;
+}
+
+
 signed int 
 Device::read_device_settings(void) 
 {
+    // Read the device's configuration flash RAM and use this to set up 
+    // the object's "settings" data member field.
+
     FF_device_flash_settings_t hw_settings;
     signed int i;
     unsigned int rev;
+
+    // FIXME: this is mostly for testing at present.  Still need to interface from
+    // hw_settings to the object's "settings" field.
 
     i = get_revision(&rev);
     if (i != 0) {
@@ -175,6 +271,16 @@ for (i=0; i<32; i++) {
 }
 #endif
 
+    return 0;
+}
+
+signed int 
+Device::write_device_settings(void) 
+{
+    // Write the current settings as held in the "settings" data member to
+    // the device configuration flash.
+
+    // FIXME: fairly obviously the detail needs to be filled in here.
     return 0;
 }
 

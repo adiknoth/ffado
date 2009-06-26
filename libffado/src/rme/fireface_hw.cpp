@@ -201,7 +201,8 @@ data[2] = 0xc400101f;
     return -0;
 }
 
-signed int Device::read_tco(quadlet_t *tco_data, signed int size)
+signed int 
+Device::read_tco(quadlet_t *tco_data, signed int size)
 {
     // Read the TCO registers and return the respective values in *tco_data. 
     // Return value is 0 on success, or -1 if there is no TCO present. 
@@ -235,7 +236,8 @@ signed int Device::read_tco(quadlet_t *tco_data, signed int size)
     return -1;
 }
 
-signed int Device::write_tco(quadlet_t *tco_data, signed int size)
+signed int 
+Device::write_tco(quadlet_t *tco_data, signed int size)
 {
     // Writes data to the TCO.  No check is made as to whether a TCO is
     // present in the current device.  Return value is 0 on success or -1 on
@@ -257,7 +259,8 @@ signed int Device::write_tco(quadlet_t *tco_data, signed int size)
     return 0;
 }
 
-signed int Device::read_tco_state(FF_TCO_state_t *tco_state)
+signed int 
+Device::read_tco_state(FF_TCO_state_t *tco_state)
 {
     // Reads the current TCO state into the supplied state structure
 
@@ -317,7 +320,8 @@ signed int Device::read_tco_state(FF_TCO_state_t *tco_state)
     return 0;
 }
 
-signed int Device::write_tco_settings(FF_TCO_settings_t *tco_settings)
+signed int 
+Device::write_tco_settings(FF_TCO_settings_t *tco_settings)
 {
     // Writes the supplied application-level settings to the device's TCO
     // (Time Code Option).  Don't bother doing anything if the device doesn't

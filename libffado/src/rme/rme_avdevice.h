@@ -109,9 +109,12 @@ private:
     signed int wait_while_busy(unsigned int init_delay);
     signed int get_revision(unsigned int *revision);
     signed int read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads);
+    signed int erase_flash(unsigned int flags);
+    signed int write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads);
 
     /* Upper level flash memory functions */
     signed int read_device_settings(void);
+    signed int write_device_settings(void);
 
     /* Hardware functions */
     signed int init_hardware(void);
