@@ -277,7 +277,7 @@ for (i=0; i<32; i++) {
 signed int 
 Device::write_device_settings(void) 
 {
-    // Write the current settings as held in the "settings" data member to
+    // Write the current settings as held in the "settings" data field to
     // the device configuration flash.
 
     // FIXME: fairly obviously the detail needs to be filled in here.

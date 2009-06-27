@@ -91,6 +91,7 @@ protected:
     enum ERmeModel m_rme_model;
 
     signed int m_ddsFreq;
+    signed int m_streaming_freq;
 
     signed int tco_present;
     FF_software_settings_t settings;

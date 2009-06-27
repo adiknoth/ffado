@@ -96,6 +96,7 @@ Device::Device( DeviceManager& d,
     : FFADODevice( d, configRom )
     , m_rme_model( RME_MODEL_NONE )
     , m_ddsFreq( -1 )
+    , m_streaming_freq( -1 )
     , tco_present( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::Device (NodeID %d)\n",
@@ -198,7 +199,7 @@ Device::getSamplingFrequency( ) {
  * If the device frequency has not been set this function will return -1
  * (the default value of m_ddsFreq).
  */
-    return m_ddsFreq;
+    return m_streaming_freq;
 }
 
 int
@@ -223,6 +224,7 @@ Device::setSamplingFrequency( int samplingFrequency )
  * which is distinct on the FF800.  How the FF800's DDS register will ultimately
  * be controlled is yet to be determined.
  */
+    bool ret;
 
     /* Work out whether the requested rate is supported */
     /* FIXME: the +/- 4% range is only doable if the DDS is engaged */
@@ -239,10 +241,12 @@ Device::setSamplingFrequency( int samplingFrequency )
     }
     
     /* Send the desired frequency to the RME */
-    if (writeRegister(stream_init_reg(), samplingFrequency) != 0)
-      return false;
+    if (m_rme_model == RME_MODEL_FIREFACE400)
+        ret = writeRegister(RME_FF400_STREAM_SRATE, samplingFrequency);
+    else
+        ret = writeRegister(RME_FF800_STREAM_SRATE, samplingFrequency);
 
-    m_ddsFreq = samplingFrequency;
+    m_streaming_freq = samplingFrequency;
     return true;
 }
 
