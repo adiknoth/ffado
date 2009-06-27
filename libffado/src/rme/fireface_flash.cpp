@@ -213,8 +213,8 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
     signed int i, err = 0;
     unsigned int rev;
 
-    // FIXME: this is mostly for testing at present.  Still need to interface from
-    // hw_settings to the object's "settings" field.
+    // FIXME: the debug output in this function is mostly for testing at
+    // present.
 
     i = get_revision(&rev);
     if (i != 0) {
@@ -240,7 +240,7 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         if (hw_settings.sample_rate == FF_DEV_FLASH_INVALID) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: not set in device flash\n");
         } else
-        if (hw_settings.sample_rate == 0) {
+        if (hw_settings.sample_rate == FF_DEV_FLASH_SRATE_DDS_INACTIVE) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: DDS not active\n");
         } else {
             debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: %d Hz (DDS active)\n", hw_settings.sample_rate);

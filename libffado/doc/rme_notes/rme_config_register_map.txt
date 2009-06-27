@@ -1,7 +1,7 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.10
+Version: 0.11
 Author: Jonathan Woithe
 Date: 27 June 2009
 
@@ -375,6 +375,117 @@ turn causes the driver to assume its own default value.  While these
 settings can be changed in real time by writing to the relevant control
 registers, these are not persistent across device power cycles.  To make
 them persistent it is necessary to store them into the flash.
+
+
+TCO (TimeCode Option)
+---------------------
+
+The TCO is an optional card for the FF800 which adds video timecode
+generation and clock locking capabilities to the FF800.  It is controlled by
+writing a block of 4 quadlets to register 0x810f0020 while its status can be
+retrieved by reading a block of 4 quadlets from register 0x801f0000.
+
+The configuration space is as follows.
+
+Quadlet 0 (written to register 0x810f0020):
+  bit 31: MTC active if set to 1
+  bits 30-0: reserved (equal zero)
+
+Quadlet 1 (written to register 0x810f0024):
+  bits 31-12: reserved (equal to zero)
+  bits 11-10: LTC format (00=24fps, 01=25fps, 10=29.97fps, 11=30fps)
+  bit 9: dropframe active
+  bit 8: set timecode request
+  bit 7: reserved (set to 0)
+  bit 6: PAL format video input
+  bit 5: NTSC format video input
+  bit 4-3: reserved (set to 0)
+  bits 2-1: word clock input rate (00=1x, 01=2x, 10=4x)
+  bit 0: reserved (set to 0)
+
+Quadlet 2 (written to register 0x810f0028):
+  bit 31: set sampling frequency from application
+  bits 30-29: input select (00=wordclock, 01=video, 10=LTC)
+  bit 28: input termination active
+  bit 27: Base frequency (0=44.1 kHz, 1=48 kHz)
+  bit 26: Pull up flag
+  bit 25: Pull down flag
+  bit 24: Pull up/down amount (0=0.1%, 1=4.0%)
+  bit 23: reserved (set to 0)
+  bit 22: Flywheel select
+  bit 21: Jam sync select
+  bits 20-19: dropframes select (unused, set to 0)
+  bits 18-17: word clock conversion (00=1:1, 01=44.1->48, 10=48->44.1)
+  bit 16: set TC run
+  bits 15-0: reserved, set to 0.
+
+Quadlet 3:
+  bits 31-0: reserved, set to 0
+
+The 4 quadlets returned by a TCO status query are mapped as follows.
+
+Quadlet 0:
+  bit 31: set to 1
+  bits 30-24: LTC, hours field in BCD(*)
+  bit 23: set to 1
+  bits 22-16: LTC, minutes field in BCD
+  bit 15: set to 1
+  bits 14-8: LTC, seconds field in BCD
+  bit 7: set to 1
+  bits 6-0: LTC, frames field in BCD
+
+Quadlet 1:
+  bit 31: set to 1
+  bits 30-24: reserved (equal to zero)
+  bit 23: set to 1
+  bits 22-16: reserved (equal to zero)
+  bit 15: set to 1
+  bits 14-12: reserved (equal to zero)
+  bits 11-10: LTC format (00=24fps, 01=25fps, 10=29.97fps, 11=30fps)
+  bit 9: dropframe active
+  bit 8: reserved (read as zeros)
+  bit 7: set to 1
+  bit 6: PAL format video input
+  bit 5: NTSC format video input
+  bit 4: Word clock input valid (0=invalid, 1=valid)
+  bit 3: LTC input valid (0=invalid, 1=valid)
+  bits 2-1: reserved (read as zeros)
+  bit 0: TCO lock flag (0=no lock, 1=locked)
+
+Quadlet 2
+  bit 31: set to 1
+  bits 30-24: reserved (equal to zero)
+  bit 23: set to 1
+  bits 22-16: reserved (equal to zero)
+  bit 15: set to 1
+  bits 14-8: upper 7 bits of PLL phase
+  bit 7: set to 1
+  bits 6-0: the lower 7 bits of the PLL phase
+
+Quadlet 3:
+  bit 31: set to 1
+  bits 30-16: reserved
+  bit 15: set to 1
+  bits 14-0: set to 0
+
+Notes:
+ (*) BCD is Binary Coded Decimal.  The high nibble (which is only 3 bits in
+     these cases) contains the "tens" digit while the lower nibble contains
+     the "units" digit.
+
+The calculation of the PLL phase from quadlet 2 (q2) is as follows:
+
+  phase = (q2 & 0x7f) + ((q2 & 0x7f00) >> 1)
+
+which then allows the incoming frequency to be calculated using
+
+  freq = (25000000 * 16) / phase
+
+To detect the presence of a TCO in a FF800, read the 4 TCO status quadlets. 
+If a TCO is present:
+  - bits 31, 23, 15 and 7 in quadlets 0, 1 and 2 will be 1, AND
+  - bits 31 and 15 in quadlet 3 will be 1, AND
+  - bits 14 to 0 in quadlet 3 will be 0
 
 
 Streaming control registers

@@ -325,6 +325,7 @@ typedef struct {
 #define FF_DEV_FLASH_OLEVEL_4dBU               0x00000002
 #define FF_DEV_FLASH_OLEVEL_m10dBV             0x00000003
 #define FF_DEV_FLASH_MIC_PHANTOM_ON            0x00000001
+#define FF_DEV_FLASH_SRATE_DDS_INACTIVE        0x00000000
 #define FF_DEV_FLASH_WORD_CLOCK_1x             0x00000001
 #define FF_DEV_FLASH_PLUG_SELECT_FRONT         0x00000001  // To be confirmed
 #define FF_DEV_FLASH_PLUG_SELECT_REAR          0x00000000  // To be confirmed
@@ -386,6 +387,7 @@ typedef struct {
 #define FF_SWPARAM_OLEVEL_m10dBV               FF_DEV_FLASH_OLEVEL_m10dBV
 #define FF_SWPARAM_MIC_PHANTOM_ON              FF_DEV_FLASH_MIC_PHANTOM_ON
 #define FF_SWPARAM_WORD_CLOCK_1x               FF_DEV_FLASH_WORD_CLOCK_1x
+#define FF_SWPARAM_SRATE_DDS_INACTIVE          FF_DEV_FLASH_SRATE_DDS_INACTIVE
 //
 // The following defines refer to fields in the software parameter record
 // which are derived from one or more fields in device flash.
@@ -409,8 +411,9 @@ typedef struct {
     uint32_t MTC;
 } FF_TCO_settings_t;
 
-// Defines used to configure selected quadlets of the TCO write space.  The
-// byte indices referenced in the define names are 0-based.
+// Defines used to configure selected quadlets of the TCO write space.  Some
+// of these are also used when configuring the TCO.  The byte indices
+// referenced in the define names are 0-based.
 
 // TCO quadlet 0
 #define FF_TCO0_MTC                           0x80000000
