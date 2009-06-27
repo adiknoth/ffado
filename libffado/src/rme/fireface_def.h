@@ -277,9 +277,10 @@ typedef struct {
     uint32_t stop_on_dropout;
     uint32_t input_level;
     uint32_t output_level;
-    uint32_t mic_level[2];
+    uint32_t mic_plug_select[2];     // Front/rear select for FF800 ch 7/8
+                                     // [0] = phones level on FF400
     uint32_t mic_phantom[4];
-    uint32_t instrument;
+    uint32_t instrument_plug_select; // Front/rear select for FF800 ch 1
     uint32_t filter;
     uint32_t fuzz;
     uint32_t unused_sync_align;
@@ -325,6 +326,8 @@ typedef struct {
 #define FF_DEV_FLASH_OLEVEL_m10dBV             0x00000003
 #define FF_DEV_FLASH_MIC_PHANTOM_ON            0x00000001
 #define FF_DEV_FLASH_WORD_CLOCK_1x             0x00000001
+#define FF_DEV_FLASH_PLUG_SELECT_FRONT         0x00000001  // To be confirmed
+#define FF_DEV_FLASH_PLUG_SELECT_REAR          0x00000000  // To be confirmed
 
 // Structure used by FFADO to keep track of the device status.  This is
 // decoupled from any structures used directly by the device, so it can be
@@ -345,15 +348,13 @@ typedef struct {
     uint32_t stop_on_dropout;
     uint32_t input_level;
     uint32_t output_level;
-    uint32_t mic_level[2];
-    uint32_t instrument;
     uint32_t filter;
     uint32_t fuzz;
     uint32_t limiter_disable;
     uint32_t sample_rate;
     uint32_t word_clock_single_speed;
-    uint32_t phones_level;             // No equivalent in device flash
-    uint32_t input_opt[3];             // No equivalent in device flash
+    uint32_t phones_level;             // Derived from fields in device flash
+    uint32_t input_opt[3];             // Derived from fields in device flash
 } FF_software_settings_t;
 
 // Defines used to interpret the software settings structure.  For now we
@@ -386,8 +387,8 @@ typedef struct {
 #define FF_SWPARAM_MIC_PHANTOM_ON              FF_DEV_FLASH_MIC_PHANTOM_ON
 #define FF_SWPARAM_WORD_CLOCK_1x               FF_DEV_FLASH_WORD_CLOCK_1x
 //
-// The following defines refer to fields in the software parameter record which have no
-// equivalent in the device flash.
+// The following defines refer to fields in the software parameter record
+// which are derived from one or more fields in device flash.
 #define FF_SWPARAM_PHONESLEVEL_HIGAIN          0x00000001
 #define FF_SWPARAM_PHONESLEVEL_4dBU            0x00000002
 #define FF_SWPARAM_PHONESLEVEL_m10dBV          0x00000003

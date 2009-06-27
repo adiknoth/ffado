@@ -181,7 +181,7 @@ Device::discover()
     init_hardware();
 
     // This is just for testing
-    read_device_settings();
+    read_device_flash_settings(NULL);
 
     return true;
 }

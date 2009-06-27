@@ -3,7 +3,7 @@ RME Fireface-400 / Fireface-800 register map
 
 Version: 0.10
 Author: Jonathan Woithe
-Date: 29 May 2009
+Date: 27 June 2009
 
 
 Definitions
@@ -344,10 +344,13 @@ integers.  These are:
  28 Stop on dropout (FF400=0x00000000)
  29 Input level (0=default, 1=lo-gain, 2=+4dBU, 3=-10dBV ???)
  30 Output level (0=default, 1=hi-gain, 2=+4dBU, 3=-10dBV ???)
- 31 Mic level [0] - FF400:Phoneslevel-1 / F800:AnalogInput[1]* ???
- 32 Mic level [1] - AnalogInput[2] ???
+ 31 Mic level [0] - FF400: Phoneslevel-1 
+                    FF800: Channel 7 front/rear select (0=rear, 1=front [TBC])
+ 32 Mic level [1] - FF400: unused
+                    FF800: Channel 8 front/rear select (0=rear, 1=front [TBC])
  33 Mic phantom power [4]
- 37 Instrument - AnalogInput[0]-1 ???
+ 37 Instrument - FF400: unused
+                 FF800: Channel 1 front/rear selector (0=rear, 1=font [TBC])
  38 Filter (aka speaker emulation)
  39 Fuzz (aka drive)
  40 - Sync align
@@ -359,7 +362,7 @@ integers.  These are:
  46 Word clock single speed (1=single speed)
  47 - Number of channels (FF400=0x000000f0)
  48 - Dropped samples
- 49 p12db_an[0] - Disable limiter, settable only if input 1 front jack active
+ 49 p12db_an[0] - Disable limiter, settable only if channel 1 front jack active
  50 - p12db_an[1-9]
 
 "-" = elements not used (under MacOSX at least)

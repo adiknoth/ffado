@@ -114,8 +114,8 @@ private:
     signed int write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads);
 
     /* Upper level flash memory functions */
-    signed int read_device_settings(void);
-    signed int write_device_settings(void);
+    signed int read_device_flash_settings(FF_software_settings_t *settings);
+    signed int write_device_flash_settings(FF_software_settings_t *settings);
 
     /* Hardware functions */
     signed int init_hardware(void);

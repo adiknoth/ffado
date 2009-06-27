@@ -204,13 +204,13 @@ Device::write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
 
 
 signed int 
-Device::read_device_settings(void) 
+Device::read_device_flash_settings(FF_software_settings_t *settings) 
 {
     // Read the device's configuration flash RAM and use this to set up 
-    // the object's "settings" data member field.
+    // the given settings structure.
 
     FF_device_flash_settings_t hw_settings;
-    signed int i;
+    signed int i, err = 0;
     unsigned int rev;
 
     // FIXME: this is mostly for testing at present.  Still need to interface from
@@ -224,10 +224,10 @@ Device::read_device_settings(void)
     }
 
     // Read settings flash ram block
-    i = read_flash(m_rme_model==RME_MODEL_FIREFACE800?
+    err = read_flash(m_rme_model==RME_MODEL_FIREFACE800?
       RME_FF800_FLASH_SETTINGS_ADDR:RME_FF400_FLASH_SETTINGS_ADDR, 
         (quadlet_t *)&hw_settings, sizeof(hw_settings)/sizeof(uint32_t));
-    if (i != 0) {
+    if (err != 0) {
         debugOutput(DEBUG_LEVEL_WARNING, "Error reading device flash settings: %d\n", i);
     } else {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Device flash settings:\n");
@@ -244,6 +244,46 @@ Device::read_device_settings(void)
             debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: DDS not active\n");
         } else {
             debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: %d Hz (DDS active)\n", hw_settings.sample_rate);
+        }
+    }
+
+    if (settings != NULL) {
+        memset(settings, 0, sizeof(settings));
+        // Copy hardware details to the software settings structure as
+        // appropriate.
+        for (i=0; i<4; i++)
+            settings->mic_phantom[i] = hw_settings.mic_phantom[i];
+        settings->spdif_input_mode = hw_settings.spdif_input_mode;
+        settings->spdif_output_emphasis = hw_settings.spdif_output_emphasis;
+        settings->spdif_output_pro = hw_settings.spdif_output_pro;
+        settings->spdif_output_nonaudio = hw_settings.spdif_output_nonaudio;
+        settings->spdif_output_mode = hw_settings.spdif_output_mode;
+        settings->clock_mode = hw_settings.clock_mode;
+        settings->sync_ref = hw_settings.sync_ref;
+        settings->tms = hw_settings.tms;
+        settings->limit_bandwidth = hw_settings.limit_bandwidth;
+        settings->stop_on_dropout = hw_settings.stop_on_dropout;
+        settings->input_level = hw_settings.input_level;
+        settings->output_level = hw_settings.output_level;
+        settings->filter = hw_settings.filter;
+        settings->fuzz = hw_settings.fuzz;
+        settings->limiter_disable = (hw_settings.p12db_an[0] == 0)?1:0;
+        settings->sample_rate = hw_settings.sample_rate;
+        settings->word_clock_single_speed = hw_settings.word_clock_single_speed;
+
+        // The FF800 has front/rear selectors for the "instrument" input 
+        // (aka channel 1) and the two "mic" channels (aka channels 7 and 8).
+        // The FF400 does not.  The FF400 borrows the mic0 selector field 
+        // in the flash configuration structure to use for the "phones"
+        // level which the FF800 doesn't have.
+        // The offset of 1 here is to maintain consistency with the values
+        // used in the flash by other operating systems.
+        if (m_rme_model == RME_MODEL_FIREFACE400)
+            settings->phones_level = hw_settings.mic_plug_select[0] + 1;
+        else {
+            settings->input_opt[0] = hw_settings.instrument_plug_select + 1;
+            settings->input_opt[1] = hw_settings.mic_plug_select[0] + 1;
+            settings->input_opt[2] = hw_settings.mic_plug_select[1] + 1;
         }
     }
 
@@ -271,14 +311,13 @@ for (i=0; i<32; i++) {
 }
 #endif
 
-    return 0;
+    return err!=0?-1:0;
 }
 
 signed int 
-Device::write_device_settings(void) 
+Device::write_device_flash_settings(FF_software_settings_t *settings) 
 {
-    // Write the current settings as held in the "settings" data field to
-    // the device configuration flash.
+    // Write the given device settings to the device's configuration flash.
 
     // FIXME: fairly obviously the detail needs to be filled in here.
     return 0;
