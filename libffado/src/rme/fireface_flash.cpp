@@ -248,7 +248,7 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
     }
 
     if (settings != NULL) {
-        memset(settings, 0, sizeof(settings));
+        memset(settings, 0, sizeof(*settings));
         // Copy hardware details to the software settings structure as
         // appropriate.
         for (i=0; i<4; i++)
@@ -319,8 +319,71 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
 {
     // Write the given device settings to the device's configuration flash.
 
-    // FIXME: fairly obviously the detail needs to be filled in here.
-    return 0;
+    FF_device_flash_settings_t hw_settings;
+    signed int i, err = 0;
+
+    if (settings == NULL) {
+        debugOutput(DEBUG_LEVEL_WARNING, "NULL settings parameter\n");
+        return -1;
+    }
+
+    memset(&hw_settings, 0, sizeof(hw_settings));
+
+    // Copy software settings to the hardware structure as appropriate.
+    for (i=0; i<4; i++)
+        hw_settings.mic_phantom[i] = settings->mic_phantom[i];
+    hw_settings.spdif_input_mode = settings->spdif_input_mode;
+    hw_settings.spdif_output_emphasis = settings->spdif_output_emphasis;
+    hw_settings.spdif_output_pro = settings->spdif_output_pro;
+    hw_settings.spdif_output_nonaudio = settings->spdif_output_nonaudio;
+    hw_settings.spdif_output_mode = settings->spdif_output_mode;
+    hw_settings.clock_mode = settings->clock_mode;
+    hw_settings.sync_ref = settings->sync_ref;
+    hw_settings.tms = settings->tms;
+    hw_settings.limit_bandwidth = settings->limit_bandwidth;
+    hw_settings.stop_on_dropout = settings->stop_on_dropout;
+    hw_settings.input_level = settings->input_level;
+    hw_settings.output_level = settings->output_level;
+    hw_settings.filter = settings->filter;
+    hw_settings.fuzz = settings->fuzz;
+    if (m_rme_model==RME_MODEL_FIREFACE800 && settings->limiter_disable==1 && 
+            settings->input_opt[0]==FF_SWPARAM_FF800_INPUT_OPT_FRONT)
+        hw_settings.p12db_an[0] = 1;
+    else
+        hw_settings.p12db_an[0] = 0;
+    hw_settings.sample_rate = settings->sample_rate;
+    hw_settings.word_clock_single_speed = settings->word_clock_single_speed;
+
+    // The FF800 has front/rear selectors for the "instrument" input 
+    // (aka channel 1) and the two "mic" channels (aka channels 7 and 8).
+    // The FF400 does not.  The FF400 borrows the mic0 selector field 
+    // in the flash configuration structure to use for the "phones"
+    // level which the FF800 doesn't have.
+    // The offset of 1 here is to maintain consistency with the values
+    // used in the flash by other operating systems.  See related section of
+    // read_device_flash_settings().
+    if (m_rme_model == RME_MODEL_FIREFACE400)
+        hw_settings.mic_plug_select[0] = settings->phones_level - 1;
+    else {
+        hw_settings.instrument_plug_select = settings->input_opt[0] - 1;
+        hw_settings.mic_plug_select[0] = settings->input_opt[1] - 1;
+        hw_settings.mic_plug_select[1] = settings->input_opt[2] - 1;
+    }
+
+    // The configuration flash block must be erased before we can write to it
+    err = erase_flash(RME_FF_FLASH_ERASE_SETTINGS) != 0;
+    if (err != 0)
+        debugOutput(DEBUG_LEVEL_WARNING, "Error erasing settings flash block: %d\n", i);
+    else {
+        err = write_flash(m_rme_model==RME_MODEL_FIREFACE800?
+                  RME_FF800_FLASH_SETTINGS_ADDR:RME_FF400_FLASH_SETTINGS_ADDR,
+                  (quadlet_t *)&hw_settings, sizeof(hw_settings)/sizeof(uint32_t));
+
+        if (err != 0)
+            debugOutput(DEBUG_LEVEL_WARNING, "Error writing device flash settings: %d\n", i);
+    }
+
+    return err!=0?-1:0;
 }
 
 }
