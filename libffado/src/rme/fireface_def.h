@@ -35,6 +35,11 @@
 #define RME_FF400               0
 #define RME_FF800               1
 
+#define MIN_SPEED               30000
+#define MIN_DOUBLE_SPEED        56000
+#define MIN_QUAD_SPEED          112000
+#define MAX_SPEED               210000
+
 /* The Command Buffer Address (CBA) is different for the two interfaces */
 #define RME_FF400_CMD_BUFFER    0x80100500
 #define RME_FF800_CMD_BUFFER    0xfc88f000
@@ -219,14 +224,15 @@
 
 /* Defines for the status registers */
 // Status register 0
+#define SR0_IS_STREAMING        0x00000001
 #define SR0_ADAT1_LOCK          0x00000400
 #define SR0_ADAT2_LOCK          0x00000800
 #define SR0_ADAT1_SYNC          0x00001000
 #define SR0_ADAT2_SYNC          0x00002000
-#define SR0_F0                  0x00004000
-#define SR0_F1                  0x00008000
-#define SR0_F2                  0x00010000
-#define SR0_F3                  0x00020000
+#define SR0_SPDIF_F0            0x00004000
+#define SR0_SPDIF_F1            0x00008000
+#define SR0_SPDIF_F2            0x00010000
+#define SR0_SPDIF_F3            0x00020000
 #define SR0_SPDIF_SYNC          0x00040000
 #define SR0_OVER                0x00080000
 #define SR0_SPDIF_LOCK          0x00100000
@@ -240,9 +246,49 @@
 #define SR0_WC_SYNC             0x20000000
 #define SR0_WC_LOCK             0x40000000
 
+#define SR0_ADAT1_STATUS_MASK   (SR0_ADAT1_LOCK|SR0_ADAT1_SYNC)
+#define SR0_ADAT1_STATUS_NOLOCK 0
+#define SR0_ADAT1_STATUS_LOCK   SR0_ADAT1_LOCK
+#define SR0_ADAT1_STATUS_SYNC   (SR0_ADAT1_LOCK|SR0_ADAT1_SYNC)
+#define SR0_ADAT2_STATUS_MASK   (SR0_ADAT2_LOCK|SR0_ADAT2_SYNC)
+#define SR0_ADAT2_STATUS_NOLOCK 0
+#define SR0_ADAT2_STATUS_LOCK   SR0_ADAT2_LOCK
+#define SR0_ADAT2_STATUS_SYNC   (SR0_ADAT2_LOCK|SR0_ADAT2_SYNC)
+#define SR0_SPDIF_STATUS_MASK   (SR0_SPDIF_LOCK|SR0_SPDIF_SYNC)
+#define SR0_SPDIF_STATUS_NOLOCK 0
+#define SR0_SPDIF_STATUS_LOCK   SR0_SPDIF_LOCK
+#define SR0_SPDIF_STATUS_SYNC   (SR0_SPDIF_LOCK|SR0_SPDIF_SYNC)
+#define SR0_WCLK_STATUS_MASK    (SR0_WCLK_LOCK|SR0_WCLK_SYNC)
+#define SR0_WCLK_STATUS_NOLOCK  0
+#define SR0_WCLK_STATUS_LOCK    SR0_WCLK_LOCK
+#define SR0_WCLK_STATUS_SYNC    (SR0_WCLK_LOCK|SR0_WCLK_SYNC)
+
+#define SR0_AUTOSYNC_SRC_MASK   (SR0_SEL_SYNC_REF0|SR0_SEL_SYNC_REF1|SR0_SEL_SYNC_REF2)
+#define SR0_AUTOSYNC_SRC_ADAT1  0
+#define SR0_AUTOSYNC_SRC_ADAT2  SR0_SEL_SYNC_REF0
+#define SR0_AUTOSYNC_SRC_SPDIF  (SR0_SEL_SYNC_REF0|SR0_SEL_SYNC_REF1)
+#define SR0_AUTOSYNC_SRC_WCLK   SR0_SEL_SYNC_REF2
+#define SR0_AUTOSYNC_SRC_TCO    (SR0_SEL_SYNC_REF0|SR0_SEL_SYNC_REF2)
+
+#define SR0_AUTOSYNC_FREQ_MASK  (SR0_INP_FREQ0|SR0_INP_FREQ1|SR0_INP_FREQ2|SR0_INP_FREQ3)
+#define SR0_AUTOSYNC_FREQ_32k   SR0_INP_FREQ0
+#define SR0_AUTOSYNC_FREQ_44k1  SR0_INP_FREQ1
+#define SR0_AUTOSYNC_FREQ_48k   (SR0_INP_FREQ0|SR0_INP_FREQ1)
+#define SR0_AUTOSYNC_FREQ_64k   SR0_INP_FREQ2
+#define SR0_AUTOSYNC_FREQ_88k2  (SR0_INP_FREQ0|SR0_INP_FREQ2)
+#define SR0_AUTOSYNC_FREQ_96k   (SR0_INP_FREQ1|SR0_INP_FREQ2)
+#define SR0_AUTOSYNC_FREQ_128k  (SR0_INP_FREQ0|SR0_INP_FREQ1|SR0_INP_FREQ2)
+#define SR0_AUTOSYNC_FREQ_176k4 SR0_INP_FREQ3
+#define SR0_AUTOSYNC_FREQ_192k  (SR0_INP_FREQ0|SR0_INP_FREQ3)
+
 // Status register 1
 #define SR1_TCO_LOCK            0x00800000
 #define SR1_TCO_SYNC            0x00400000
+
+#define SR0_TCO_STATUS_MASK    (SR0_TCO_LOCK|SR0_TCO_SYNC)
+#define SR0_TCO_STATUS_NOLOCK  0
+#define SR0_TCO_STATUS_LOCK    SR0_TCO_LOCK
+#define SR0_TCO_STATUS_SYNC    (SR0_TCO_LOCK|SR0_TCO_SYNC)
 
 /* Structure used to store device settings in the device flash RAM.  This
  * structure mirrors the layout in the Fireface's flash, so it cannot be
@@ -399,6 +445,27 @@ typedef struct {
 
 #define FF_SWPARAM_FF800_INPUT_OPT_FRONT       FF_SWPARAM_INPUT_OPT_A
 #define FF_SWPARAM_FF800_INPUT_OPT_REAR        FF_SWPARAM_INPUT_OPT_B
+
+// The general Fireface state
+typedef struct {
+    uint32_t clock_mode;
+    uint32_t autosync_source;
+    uint32_t autosync_freq;
+    uint32_t spdif_freq;
+    uint32_t adat1_sync_status, adat2_sync_status;
+    uint32_t spdif_sync_status;
+    uint32_t wclk_sync_status, tco_sync_status;
+} FF_state_t;
+
+#define FF_STATE_CLOCKMODE_MASTER              0
+#define FF_STATE_CLOCKMODE_AUTOSYNC            1
+#define FF_STATE_AUTOSYNC_SRC_ADAT1            0x01
+#define FF_STATE_AUTOSYNC_SRC_ADAT2            0x02
+#define FF_STATE_AUTOSYNC_SRC_SPDIF            0x03
+#define FF_STATE_AUTOSYNC_SRC_WCLK             0x04
+#define FF_STATE_AUTOSYNC_SRC_TCO              0x15
+#define FF_STATE_SYNC_LOCKED                   1
+#define FF_STATE_SYNC_SYNCED                   2
 
 // Data structure for the TCO (Time Code Option) state
 typedef struct {

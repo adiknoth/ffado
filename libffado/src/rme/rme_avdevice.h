@@ -90,8 +90,9 @@ public:
 protected:
     enum ERmeModel m_rme_model;
 
-    signed int m_ddsFreq;
-    signed int m_streaming_freq;
+    signed int is_streaming;
+    signed int m_dds_freq;
+    signed int m_software_freq;  // Sampling frequency requested by software
 
     signed int tco_present;
     FF_software_settings_t settings;
@@ -119,13 +120,15 @@ private:
 
     /* Hardware functions */
     signed int init_hardware(void);
+    signed int get_hardware_status(unsigned int *stat0, unsigned int *stat1);
     signed int set_hardware_params(FF_software_settings_t *sw_settings);
     signed int read_tco(quadlet_t *tco_data, signed int size);
     signed int write_tco(quadlet_t *tco_data, signed int size);
 
     signed int read_tco_state(FF_TCO_state_t *tco_state);
     signed int write_tco_settings(FF_TCO_settings_t *tco_settings);
-    
+
+    signed int set_hardware_dds_freq(signed int freq);
 };
 
 }

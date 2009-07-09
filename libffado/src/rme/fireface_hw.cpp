@@ -28,6 +28,14 @@
 
 #include "debugmodule/debugmodule.h"
 
+unsigned int multiplier(unsigned int freq) {
+  if (freq > MIN_QUAD_SPEED)
+    return 4;
+  if (freq > MIN_DOUBLE_SPEED)
+    return 2;
+  return 1;
+}
+
 namespace Rme {
 
 signed int
@@ -49,6 +57,17 @@ Device::init_hardware(void)
     settings.output_level = FF_SWPARAM_OLEVEL_HIGAIN;
 
     return set_hardware_params(&settings);
+}
+
+signed int
+Device::get_hardware_status(unsigned int *stat0, unsigned int *stat1)
+{
+    unsigned int buf[2];
+    if (readBlock(RME_FF_STATUS_REG0, buf, 2) != 0)
+        return -1;
+    *stat0 = buf[0];
+    *stat1 = buf[1];
+    return 0;
 }
 
 signed int 
@@ -397,6 +416,25 @@ Device::write_tco_settings(FF_TCO_settings_t *tco_settings)
     return write_tco(tc, 4);
 
     return 0;
+}
+
+signed int
+Device::set_hardware_dds_freq(signed int freq) 
+{
+    // Set the device's DDS to the given frequency (which in turn determines
+    // the sampling frequency).  Returns 0 on success, -1 on error.
+
+    unsigned int ret = 0;
+
+    if (freq < MIN_SPEED || freq > MAX_SPEED)
+        return -1;
+
+    if (m_rme_model == RME_MODEL_FIREFACE400)
+        ret = writeRegister(RME_FF400_STREAM_SRATE, freq);
+    else
+        ret = writeRegister(RME_FF800_STREAM_SRATE, freq);
+
+    return ret;
 }
 
 }

@@ -95,8 +95,9 @@ Device::Device( DeviceManager& d,
                       std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
     , m_rme_model( RME_MODEL_NONE )
-    , m_ddsFreq( -1 )
-    , m_streaming_freq( -1 )
+    , is_streaming( 0 )
+    , m_dds_freq( -1 )
+    , m_software_freq( -1 )
     , tco_present( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::Device (NodeID %d)\n",
@@ -199,7 +200,7 @@ Device::getSamplingFrequency( ) {
  * If the device frequency has not been set this function will return -1
  * (the default value of m_ddsFreq).
  */
-    return m_streaming_freq;
+    return m_software_freq;
 }
 
 int
@@ -211,75 +212,61 @@ Device::getConfigurationId()
 bool
 Device::setSamplingFrequency( int samplingFrequency )
 {
-/*
- * Set the RME device's samplerate.  The RME can do sampling frequencies of
- * 32k, 44.1k and 48k along with the corresponding 2x and 4x rates. 
- * However, it can also do +/- 4% from any of these "base" frequencies using
- * its DDS.  This makes it a little long-winded to work out whether a given
- * frequency is supported or not.
- *
- * This function is concerned with setting the device up for streaming, so the
- * register we want to write to is in fact the streaming sample rate portion of
- * the streaming initialisation function (as opposed to the DDS frequency register
- * which is distinct on the FF800.  How the FF800's DDS register will ultimately
- * be controlled is yet to be determined.
- */
-    bool ret;
+    // Request a sampling rate on behalf of software.  Software is limited
+    // to sample rates of 32k, 44.1k, 48k and the 2x/4x multiples of these. 
+    // The user may lock the device to a much wider range of frequencies via
+    // the explicit DDS controls in the control panel.  If the explicit DDS
+    // control is active the software is limited to the "standard" speeds
+    // corresponding to the multiplier in use by the DDS.
+    //
+    // Similarly, if the device is externally clocked the software is 
+    // limited to the external clock frequency.
+    //
+    // Otherwise the software has free choice of the software speeds noted
+    // above.
+
+    bool ret = -1;
+    signed int i, j;
+    signed int mult[3] = {1, 2, 4};
+    signed int freq[3] = {32000, 44100, 48000};
 
     /* Work out whether the requested rate is supported */
-    /* FIXME: the +/- 4% range is only doable if the DDS is engaged */
-    if (!((samplingFrequency >= 32000*0.96 && samplingFrequency <= 32000*1.04) ||
-        (samplingFrequency >= 44100*0.96 && samplingFrequency <= 44100*1.04) ||
-        (samplingFrequency >= 48000*0.96 && samplingFrequency <= 48000*1.04) ||
-        (samplingFrequency >= 64000*0.96 && samplingFrequency <= 64000*1.04) ||
-        (samplingFrequency >= 88200*0.96 && samplingFrequency <= 88200*1.04) ||
-        (samplingFrequency >= 96000*0.96 && samplingFrequency <= 96000*1.04) ||
-        (samplingFrequency >= 128000*0.96 && samplingFrequency <= 128000*1.04) ||
-        (samplingFrequency >= 176000*0.96 && samplingFrequency <= 176000*1.04) ||
-        (samplingFrequency >= 192000*0.96 && samplingFrequency <= 192000*1.04))) {
-        return false;
+    for (i=0; i<3; i++) {
+        for (j=0; j<3; i++) {
+            if (samplingFrequency==freq[j]*mult[i]) {
+                ret = 0;
+                break;
+            }
+        }
     }
-    
-    /* Send the desired frequency to the RME */
-    if (m_rme_model == RME_MODEL_FIREFACE400)
-        ret = writeRegister(RME_FF400_STREAM_SRATE, samplingFrequency);
-    else
-        ret = writeRegister(RME_FF800_STREAM_SRATE, samplingFrequency);
+    if (ret == -1)
+        return false;
 
-    m_streaming_freq = samplingFrequency;
+    // FIXME: still have to verify compatibility with current rate if 
+    // running, DDS if set or external clock if relevant.
+
+    if (set_hardware_dds_freq(samplingFrequency) != 0)
+        return false;
+
+    m_software_freq = samplingFrequency;
     return true;
 }
-
-#define RME_CHECK_AND_ADD_SR(v, x) \
-    { \
-    if (((x >= 32000*0.96 && x <= 32000*1.04) || \
-        (x >= 44100*0.96 && x <= 44100*1.04) || \
-        (x >= 48000*0.96 && x <= 48000*1.04) || \
-        (x >= 64000*0.96 && x <= 64000*1.04) || \
-        (x >= 88200*0.96 && x <= 88200*1.04) || \
-        (x >= 96000*0.96 && x <= 96000*1.04) || \
-        (x >= 128000*0.96 && x <= 128000*1.04) || \
-        (x >= 176000*0.96 && x <= 176000*1.04) || \
-        (x >= 192000*0.96 && x <= 192000*1.04))) { \
-        v.push_back(x); \
-    };};
 
 std::vector<int>
 Device::getSupportedSamplingFrequencies()
 {
     std::vector<int> frequencies;
-    /* FIXME: the +/- 4% frequency range is only doable if the DDS is
-     * engaged.
-     */
-    RME_CHECK_AND_ADD_SR(frequencies, 32000);
-    RME_CHECK_AND_ADD_SR(frequencies, 44100);
-    RME_CHECK_AND_ADD_SR(frequencies, 48000);
-    RME_CHECK_AND_ADD_SR(frequencies, 64000);
-    RME_CHECK_AND_ADD_SR(frequencies, 88200);
-    RME_CHECK_AND_ADD_SR(frequencies, 96000);
-    RME_CHECK_AND_ADD_SR(frequencies, 128000);
-    RME_CHECK_AND_ADD_SR(frequencies, 176400);
-    RME_CHECK_AND_ADD_SR(frequencies, 192000);
+    signed int i, j;
+    signed int mult[3] = {1, 2, 4};
+    signed int freq[3] = {32000, 44100, 48000};
+
+    // Generate the list of supported frequencies
+    // FIXME: this could be limited based on the device's current status
+    for (i=0; i<3; i++) {
+        for (j=0; j<3; i++) {
+            frequencies.push_back(freq[j]*mult[i]);
+        }
+    }
     return frequencies;
 }
 
