@@ -459,11 +459,13 @@ typedef struct {
 
 #define FF_STATE_CLOCKMODE_MASTER              0
 #define FF_STATE_CLOCKMODE_AUTOSYNC            1
-#define FF_STATE_AUTOSYNC_SRC_ADAT1            0x01
-#define FF_STATE_AUTOSYNC_SRC_ADAT2            0x02
-#define FF_STATE_AUTOSYNC_SRC_SPDIF            0x03
-#define FF_STATE_AUTOSYNC_SRC_WCLK             0x04
-#define FF_STATE_AUTOSYNC_SRC_TCO              0x15
+#define FF_STATE_AUTOSYNC_SRC_NOLOCK           0
+#define FF_STATE_AUTOSYNC_SRC_ADAT1            1
+#define FF_STATE_AUTOSYNC_SRC_ADAT2            2
+#define FF_STATE_AUTOSYNC_SRC_SPDIF            3
+#define FF_STATE_AUTOSYNC_SRC_WCLK             4
+#define FF_STATE_AUTOSYNC_SRC_TCO              5
+#define FF_STATE_SYNC_NOLOCK                   0
 #define FF_STATE_SYNC_LOCKED                   1
 #define FF_STATE_SYNC_SYNCED                   2
 
