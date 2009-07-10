@@ -179,6 +179,9 @@ Device::discover()
         tco_present = (read_tco(NULL, 0) == 0);
     }
 
+    // Find out the device's streaming status
+    is_streaming = hardware_is_streaming();
+
     init_hardware();
 
     // This is just for testing
@@ -189,17 +192,9 @@ Device::discover()
 
 int
 Device::getSamplingFrequency( ) {
-/*
- * Retrieve the current sample rate from the RME device.  At this stage it
- * seems that the "current rate" can't be retrieved from the device.  Other
- * drivers don't read the DDS control register and there isn't anywhere else
- * where the frequency is sent back to the PC.  Unless we test the DDS
- * control register for readabilty and find it can be read we'll assume it
- * can't and instead cache the DDS frequency.
- *
- * If the device frequency has not been set this function will return -1
- * (the default value of m_ddsFreq).
- */
+
+    // Retrieve the current sample rate.  For practical purposes this
+    // is the software rate currently in use.
     return m_software_freq;
 }
 
@@ -207,6 +202,30 @@ int
 Device::getConfigurationId()
 {
     return 0;
+}
+
+bool
+Device::setDDSFrequency( int dds_freq )
+{
+    // Set a fixed DDS frequency.  If the device is the clock master this
+    // will immediately be copied to the hardware DDS register.  Otherwise
+    // it will take effect as required at the time the sampling rate is 
+    // changed or streaming is started.
+
+    // If the device is streaming, the new DDS rate must have the same
+    // multiplier as the software sample rate
+    if (hardware_is_streaming()) {
+        if (multiplier_of_freq(dds_freq) != multiplier_of_freq(m_software_freq))
+            return false;
+    }
+
+    m_dds_freq = dds_freq;
+    if (settings.clock_mode == FF_STATE_CLOCKMODE_MASTER) {
+        if (set_hardware_dds_freq(dds_freq) != 0)
+            return false;
+    }
+
+    return true;
 }
 
 bool
@@ -228,24 +247,61 @@ Device::setSamplingFrequency( int samplingFrequency )
     bool ret = -1;
     signed int i, j;
     signed int mult[3] = {1, 2, 4};
-    signed int freq[3] = {32000, 44100, 48000};
+    signed int base_freq[3] = {32000, 44100, 48000};
+    signed int freq = samplingFrequency;
+    FF_state_t state;
+    signed int fixed_freq = 0;
 
-    /* Work out whether the requested rate is supported */
-    for (i=0; i<3; i++) {
-        for (j=0; j<3; i++) {
-            if (samplingFrequency==freq[j]*mult[i]) {
+    get_hardware_state(&state);
+
+    // If device is locked to a frequency via external clock, explicit
+    // setting of the DDS or by virtue of streaming being active, get that
+    // frequency.
+    if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
+        // FIXME: if synced to TCO, is autosync_freq valid?
+        fixed_freq = state.autosync_freq;
+    } else
+    if (m_dds_freq > 0) {
+        fixed_freq = m_dds_freq;
+    } else
+    if (hardware_is_streaming()) {
+        fixed_freq = m_software_freq;
+    }
+
+    // If the device is running to a fixed frequency, software can only
+    // request frequencies with the same multiplier.  Similarly, the
+    // multiplier is locked in "master" clock mode if the device is
+    // streaming.
+    if (fixed_freq > 0) {
+        signed int fixed_mult = multiplier_of_freq(fixed_freq);
+        if (multiplier_of_freq(freq) != multiplier_of_freq(fixed_freq))
+            return -1;
+        for (j=0; j<3; j++) {
+            if (freq == base_freq[j]*fixed_mult) {
                 ret = 0;
                 break;
             }
         }
+    } else {
+        for (i=0; i<3; i++) {
+            for (j=0; j<3; j++) {
+                if (freq == base_freq[j]*mult[i]) {
+                    ret = 0;
+                    break;
+                }
+            }
+        }
     }
+    // If requested frequency is unavailable, return -1
     if (ret == -1)
         return false;
 
-    // FIXME: still have to verify compatibility with current rate if 
-    // running, DDS if set or external clock if relevant.
-
-    if (set_hardware_dds_freq(samplingFrequency) != 0)
+    // If a DDS frequency has been explicitly requested this is always
+    // used to programm the hardware DDS regardless of the rate requested
+    // by the software.  Otherwise we use the requested sampling rate.
+    if (m_dds_freq > 0)
+        freq = m_dds_freq;
+    if (set_hardware_dds_freq(freq) != 0)
         return false;
 
     m_software_freq = samplingFrequency;
@@ -259,12 +315,27 @@ Device::getSupportedSamplingFrequencies()
     signed int i, j;
     signed int mult[3] = {1, 2, 4};
     signed int freq[3] = {32000, 44100, 48000};
+    FF_state_t state;
 
-    // Generate the list of supported frequencies
-    // FIXME: this could be limited based on the device's current status
-    for (i=0; i<3; i++) {
-        for (j=0; j<3; i++) {
-            frequencies.push_back(freq[j]*mult[i]);
+    get_hardware_state(&state);
+
+    // Generate the list of supported frequencies.  If the device is
+    // externally clocked the frequency is limited to the external clock
+    // frequency.  If the device is running the multiplier is fixed.
+    if (state.clock_mode == FF_STATE_CLOCKMODE_MASTER) {
+        // FIXME: if synced to TCO, is autosync_freq valid?
+        frequencies.push_back(state.autosync_freq);
+    } else
+    if (hardware_is_streaming()) {
+        unsigned int fixed_mult = multiplier_of_freq(m_software_freq);
+        for (j=0; j<3; j++) {
+            frequencies.push_back(freq[j]*fixed_mult);
+        }
+    } else {
+        for (i=0; i<3; i++) {
+            for (j=0; j<3; j++) {
+                frequencies.push_back(freq[j]*mult[i]);
+            }
         }
     }
     return frequencies;

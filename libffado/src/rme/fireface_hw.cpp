@@ -28,15 +28,17 @@
 
 #include "debugmodule/debugmodule.h"
 
-unsigned int multiplier(unsigned int freq) {
+namespace Rme {
+
+unsigned int
+Device::multiplier_of_freq(unsigned int freq) 
+{
   if (freq > MIN_QUAD_SPEED)
     return 4;
   if (freq > MIN_DOUBLE_SPEED)
     return 2;
   return 1;
 }
-
-namespace Rme {
 
 signed int
 Device::init_hardware(void)
@@ -51,10 +53,15 @@ Device::init_hardware(void)
     memset(&settings, 0, sizeof(settings));
     settings.spdif_input_mode = FF_SWPARAM_SPDIF_INPUT_COAX;
     settings.spdif_output_mode = FF_SWPARAM_SPDIF_OUTPUT_COAX;
-    settings.clock_mode = FF_SWPARAM_SPDIF_CLOCK_MODE_MASTER;
+    settings.clock_mode = FF_SWPARAM_CLOCK_MODE_MASTER;
     settings.sync_ref = FF_SWPARAM_SYNCREF_WORDCLOCK;
     settings.input_level = FF_SWPARAM_ILEVEL_LOGAIN;
     settings.output_level = FF_SWPARAM_OLEVEL_HIGAIN;
+
+    // A default sampling rate.  An explicit DDS frequency is not enabled
+    // by default.
+    m_software_freq = 44100;
+    m_dds_freq = 0;
 
     return set_hardware_params(&settings);
 }
@@ -67,6 +74,108 @@ Device::get_hardware_status(unsigned int *stat0, unsigned int *stat1)
         return -1;
     *stat0 = buf[0];
     *stat1 = buf[1];
+    return 0;
+}
+
+signed int
+Device::get_hardware_state(FF_state_t *state)
+{
+    // Retrieve the hardware status and deduce the device state.  Return
+    // -1 on error, 0 on success.  The given state structure will be 
+    // cleared by this call.
+    unsigned int stat0, stat1;
+    memset(state, 0, sizeof(*state));
+    if (get_hardware_status(&stat0, &stat1) != 0)
+        return -1;
+
+    state->is_streaming = (stat0 & SR0_IS_STREAMING) != 0;
+
+    state->clock_mode = (settings.clock_mode == FF_SWPARAM_CLOCK_MODE_MASTER)?FF_STATE_CLOCKMODE_MASTER:FF_STATE_CLOCKMODE_AUTOSYNC;
+
+    switch (stat0 & SR0_AUTOSYNC_SRC_MASK) {
+        case SR0_AUTOSYNC_SRC_ADAT1:
+            state->autosync_source = FF_STATE_AUTOSYNC_SRC_ADAT1;
+            break;
+        case SR0_AUTOSYNC_SRC_ADAT2:
+            state->autosync_source = FF_STATE_AUTOSYNC_SRC_ADAT2;
+            break;
+        case SR0_AUTOSYNC_SRC_SPDIF:
+            state->autosync_source = FF_STATE_AUTOSYNC_SRC_SPDIF;
+            break;
+        case SR0_AUTOSYNC_SRC_WCLK:
+            state->autosync_source = FF_STATE_AUTOSYNC_SRC_WCLK;
+            break;
+        case SR0_AUTOSYNC_SRC_TCO:
+            state->autosync_source = FF_STATE_AUTOSYNC_SRC_TCO;
+            break;
+        default: state->autosync_source = FF_STATE_AUTOSYNC_SRC_NOLOCK;
+    }
+
+    switch (stat0 & SR0_AUTOSYNC_FREQ_MASK) {
+        case SR0_AUTOSYNC_FREQ_32k:  state->autosync_freq = 32000; break;
+        case SR0_AUTOSYNC_FREQ_44k1: state->autosync_freq = 44100; break;
+        case SR0_AUTOSYNC_FREQ_48k:  state->autosync_freq = 48000; break;
+        case SR0_AUTOSYNC_FREQ_64k:  state->autosync_freq = 64000; break;
+        case SR0_AUTOSYNC_FREQ_88k2: state->autosync_freq = 88200; break;
+        case SR0_AUTOSYNC_FREQ_96k:  state->autosync_freq = 96000; break;
+        case SR0_AUTOSYNC_FREQ_128k: state->autosync_freq = 128000; break;
+        case SR0_AUTOSYNC_FREQ_176k4:state->autosync_freq = 176400; break;
+        case SR0_AUTOSYNC_FREQ_192k: state->autosync_freq = 192000; break;
+    }
+
+    switch (stat0 & SR0_SPDIF_FREQ_MASK) {
+        case SR0_SPDIF_FREQ_32k:  state->spdif_freq = 32000; break;
+        case SR0_SPDIF_FREQ_44k1: state->spdif_freq = 41000; break;
+        case SR0_SPDIF_FREQ_48k:  state->spdif_freq = 48000; break;
+        case SR0_SPDIF_FREQ_64k:  state->spdif_freq = 64000; break;
+        case SR0_SPDIF_FREQ_88k2: state->spdif_freq = 88200; break;
+        case SR0_SPDIF_FREQ_96k:  state->spdif_freq = 96000; break;
+        case SR0_SPDIF_FREQ_128k: state->spdif_freq = 128000; break;
+        case SR0_SPDIF_FREQ_176k4:state->spdif_freq = 176400; break;
+        case SR0_SPDIF_FREQ_192k: state->spdif_freq = 192000; break;
+    }
+
+    switch (stat0 & SR0_ADAT1_STATUS_MASK) {
+        case SR0_ADAT1_STATUS_NOLOCK:
+            state->adat1_sync_status = FF_STATE_SYNC_NOLOCK; break;
+        case SR0_ADAT1_STATUS_LOCK:
+            state->adat1_sync_status = FF_STATE_SYNC_LOCKED; break;
+        case SR0_ADAT1_STATUS_SYNC: 
+            state->adat1_sync_status = FF_STATE_SYNC_SYNCED; break;
+    }
+    switch (stat0 & SR0_ADAT2_STATUS_MASK) {
+        case SR0_ADAT2_STATUS_NOLOCK:
+            state->adat2_sync_status = FF_STATE_SYNC_NOLOCK; break;
+        case SR0_ADAT2_STATUS_LOCK:
+            state->adat2_sync_status = FF_STATE_SYNC_LOCKED; break;
+        case SR0_ADAT2_STATUS_SYNC:
+            state->adat2_sync_status = FF_STATE_SYNC_SYNCED; break;
+    }
+    switch (stat0 & SR0_SPDIF_STATUS_MASK) {
+        case SR0_SPDIF_STATUS_NOLOCK:
+            state->spdif_sync_status = FF_STATE_SYNC_NOLOCK; break;
+        case SR0_SPDIF_STATUS_LOCK:
+            state->spdif_sync_status = FF_STATE_SYNC_LOCKED; break;
+        case SR0_SPDIF_STATUS_SYNC:
+            state->spdif_sync_status = FF_STATE_SYNC_SYNCED; break;
+    }
+    switch (stat0 & SR0_WCLK_STATUS_MASK) {
+        case SR0_WCLK_STATUS_NOLOCK:
+            state->wclk_sync_status = FF_STATE_SYNC_NOLOCK; break;
+        case SR0_WCLK_STATUS_LOCK:
+            state->wclk_sync_status = FF_STATE_SYNC_LOCKED; break;
+        case SR0_WCLK_STATUS_SYNC:
+            state->wclk_sync_status = FF_STATE_SYNC_SYNCED; break;
+    }
+    switch (stat1 & SR1_TCO_STATUS_MASK) {
+       case SR1_TCO_STATUS_NOLOCK:
+           state->tco_sync_status = FF_STATE_SYNC_NOLOCK; break;
+       case SR1_TCO_STATUS_LOCK:
+           state->tco_sync_status = FF_STATE_SYNC_LOCKED; break;
+       case SR1_TCO_STATUS_SYNC:
+           state->tco_sync_status = FF_STATE_SYNC_SYNCED; break;
+    }
+
     return 0;
 }
 
@@ -161,7 +270,7 @@ Device::set_hardware_params(FF_software_settings_t *sw_settings)
     data[2] |= (sw_settings->spdif_output_pro==FF_SWPARAM_SPDIF_OUTPUT_PRO_ON) ? CR2_SPDIF_OUT_PRO : 0;
     data[2] |= (sw_settings->spdif_output_nonaudio==FF_SWPARAM_SPDIF_OUTPUT_NONAUDIO_ON) ? CR2_SPDIF_OUT_NONAUDIO : 0;
     data[2] |= (sw_settings->spdif_output_mode==FF_SWPARAM_SPDIF_OUTPUT_OPTICAL) ? CR2_SPDIF_OUT_ADAT2 : 0;
-    data[2] |= (sw_settings->clock_mode==FF_SWPARAM_SPDIF_CLOCK_MODE_AUTOSYNC) ? CR2_CLOCKMODE_AUTOSYNC : CR2_CLOCKMODE_MASTER;
+    data[2] |= (sw_settings->clock_mode==FF_SWPARAM_CLOCK_MODE_AUTOSYNC) ? CR2_CLOCKMODE_AUTOSYNC : CR2_CLOCKMODE_MASTER;
     data[2] |= (sw_settings->spdif_input_mode==FF_SWPARAM_SPDIF_INPUT_COAX) ? CR2_SPDIF_IN_COAX : CR2_SPDIF_IN_ADAT2;
     data[2] |= (sw_settings->word_clock_single_speed=FF_SWPARAM_WORD_CLOCK_1x) ? CR2_WORD_CLOCK_1x : 0;
 
@@ -276,6 +385,16 @@ Device::write_tco(quadlet_t *tco_data, signed int size)
         return -1;
 
     return 0;
+}
+
+signed int
+Device::hardware_is_streaming(void)
+{
+    // Return 1 if the hardware is streaming, 0 if not.
+    unsigned int s1, s2;
+    if (get_hardware_status(&s1, &s2) != 0)
+        return 0;
+    return (s1 & SR0_IS_STREAMING) != 0;
 }
 
 signed int 

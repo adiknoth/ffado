@@ -64,6 +64,7 @@ public:
 
     virtual void showDevice();
 
+    bool setDDSFrequency( int dds_freq );
     virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
     virtual std::vector<int> getSupportedSamplingFrequencies();
@@ -91,8 +92,8 @@ protected:
     enum ERmeModel m_rme_model;
 
     signed int is_streaming;
-    signed int m_dds_freq;
-    signed int m_software_freq;  // Sampling frequency requested by software
+    signed int m_dds_freq;       // Optionally explicitly set hardware freq
+    signed int m_software_freq;  // Sampling frequency in use by software
 
     signed int tco_present;
     FF_software_settings_t settings;
@@ -119,11 +120,15 @@ private:
     signed int write_device_flash_settings(FF_software_settings_t *settings);
 
     /* Hardware functions */
+    unsigned int multiplier_of_freq(unsigned int freq);
     signed int init_hardware(void);
     signed int get_hardware_status(unsigned int *stat0, unsigned int *stat1);
+    signed int get_hardware_state(FF_state_t *state);
     signed int set_hardware_params(FF_software_settings_t *sw_settings);
+
     signed int read_tco(quadlet_t *tco_data, signed int size);
     signed int write_tco(quadlet_t *tco_data, signed int size);
+    signed int hardware_is_streaming(void);
 
     signed int read_tco_state(FF_TCO_state_t *tco_state);
     signed int write_tco_settings(FF_TCO_settings_t *tco_settings);
