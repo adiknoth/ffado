@@ -209,6 +209,9 @@ public:
             return false;
         }
 
+        // disable running-status
+       snd_midi_event_no_status(m_out_parser, 1);
+
         // create a handler
         HSS1394UserDataHandler *m_input_handler = new HSS1394UserDataHandler(*this);
         if(m_input_handler == NULL) {
@@ -373,6 +376,7 @@ main(int argc, char **argv)
     }
 
     if ( arguments.verbose ) {
+        setDebugLevel(arguments.verbose);
         m_deviceManager->setVerboseLevel(arguments.verbose);
     }
 
