@@ -99,6 +99,9 @@ Device::Device( DeviceManager& d,
     , m_dds_freq( -1 )
     , m_software_freq( -1 )
     , tco_present( 0 )
+    , num_channels( 0 )
+    , samples_per_packet( 0 )
+    , speed800( 0 )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );

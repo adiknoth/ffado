@@ -40,6 +40,10 @@
 #define MIN_QUAD_SPEED          112000
 #define MAX_SPEED               210000
 
+// A flag used to indicate the use of a 800 Mbps bus speed to various
+// streaming registers of the FF800.
+#define RME_FF800_STREAMING_SPEED_800 0x800
+
 /* The Command Buffer Address (CBA) is different for the two interfaces */
 #define RME_FF400_CMD_BUFFER    0x80100500
 #define RME_FF800_CMD_BUFFER    0xfc88f000
@@ -57,17 +61,21 @@
 #define RME_FF800_CONF_REG          (RME_FF800_CMD_BUFFER + RME_FF_CONF1_OFS)
 
 #define RME_FF400_STREAM_INIT_REG   (RME_FF400_CMD_BUFFER)           // 3 quadlets wide
+#define RME_FF400_STREAM_INIT_SIZE  3              // Size in quadlets
 #define RME_FF400_STREAM_SRATE      (RME_FF400_CMD_BUFFER)
 #define RME_FF400_STREAM_CONF0      (RME_FF400_CMD_BUFFER+4)
 #define RME_FF400_STREAM_CONF1      (RME_FF400_CMD_BUFFER+8)
 #define RME_FF800_STREAM_INIT_REG   0x20000001cLL                    // 3 quadlets wide
+#define RME_FF800_STREAM_INIT_SIZE  3              // Size in quadlets
 #define RME_FF800_STREAM_SRATE      0x20000001cLL
 #define RME_FF800_STREAM_CONF0      (0x20000001cLL+4)
 #define RME_FF800_STREAM_CONF1      (0x20000001cLL+8)
 #define RME_FF400_STREAM_START_REG  (RME_FF400_CMD_BUFFER + 0x001c)  // 1 quadlet
 #define RME_FF800_STREAM_START_REG  0x200000028LL                    // 1 quadlet
 #define RME_FF400_STREAM_END_REG    (RME_FF400_CMD_BUFFER + 0x0004)  // 4 quadlets wide
+#define RME_FF400_STREAM_END_SIZE   4              // Size in quadlets
 #define RME_FF800_STREAM_END_REG    0x200000034LL                    // 3 quadlets wide
+#define RME_FF800_STREAM_END_SIZE   3              // Size in quadlets
 
 #define RME_FF800_HOST_LED_REG      0x200000324LL
 
@@ -224,7 +232,6 @@
 
 /* Defines for the status registers */
 // Status register 0
-#define SR0_IS_STREAMING        0x00000001
 #define SR0_ADAT1_LOCK          0x00000400
 #define SR0_ADAT2_LOCK          0x00000800
 #define SR0_ADAT1_SYNC          0x00001000
@@ -236,8 +243,8 @@
 #define SR0_SPDIF_SYNC          0x00040000
 #define SR0_OVER                0x00080000
 #define SR0_SPDIF_LOCK          0x00100000
-#define SR0_SEL_SYNC_REF0       0x00200000
-#define SR0_SEL_SYNC_REF1       0x00400000
+#define SR0_SEL_SYNC_REF0       0x00400000
+#define SR0_SEL_SYNC_REF1       0x00800000
 #define SR0_SEL_SYNC_REF2       0x01000000
 #define SR0_INP_FREQ0           0x02000000
 #define SR0_INP_FREQ1           0x04000000
@@ -245,6 +252,15 @@
 #define SR0_INP_FREQ3           0x10000000
 #define SR0_WCLK_SYNC           0x20000000
 #define SR0_WCLK_LOCK           0x40000000
+
+// It seems the definition of SR0 is a little different depending on whether
+// 2 or 4 status registers are read.  In the case of a request for 2, the
+// following additional bits are defined.
+#define SR0_IS_STREAMING        0x00000001
+// If 4 quadlets are requested (as is done when checking the streaming
+// system status), the lowest 10 bits instead represent sample_rate/250 if
+// locked to an external clock source.
+#define SR0_STREAMING_FREQ_MASK 0x000003ff
 
 #define SR0_ADAT1_STATUS_MASK   (SR0_ADAT1_LOCK|SR0_ADAT1_SYNC)
 #define SR0_ADAT1_STATUS_NOLOCK 0
@@ -291,10 +307,12 @@
 #define SR0_AUTOSYNC_FREQ_128k  (SR0_INP_FREQ0|SR0_INP_FREQ1|SR0_INP_FREQ2)
 #define SR0_AUTOSYNC_FREQ_176k4 SR0_INP_FREQ3
 #define SR0_AUTOSYNC_FREQ_192k  (SR0_INP_FREQ0|SR0_INP_FREQ3)
+#define SR0_AUTOSYNC_FREQ_NONE  0
 
 // Status register 1
-#define SR1_TCO_LOCK            0x00800000
+#define SR1_CLOCK_MODE_MASTER   0x00000001
 #define SR1_TCO_SYNC            0x00400000
+#define SR1_TCO_LOCK            0x00800000
 
 #define SR1_TCO_STATUS_MASK    (SR1_TCO_LOCK|SR1_TCO_SYNC)
 #define SR1_TCO_STATUS_NOLOCK  0

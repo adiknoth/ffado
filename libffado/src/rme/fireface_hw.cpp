@@ -78,6 +78,23 @@ Device::get_hardware_status(unsigned int *stat0, unsigned int *stat1)
 }
 
 signed int
+Device::get_hardware_streaming_status(unsigned int *stat, unsigned int n)
+{
+    // Get the hardware status as it applies to the streaming system.  This
+    // involves a request of 4 quadlets from the status register.  It
+    // appears that the first register's definition is slightly different in
+    // this situation compared to when only 2 quadlets are requested as is
+    // done in get_hardware_status().
+    //
+    // "n" is the size of the passed-in stat array.  It must be >= 4.
+    if (n < 4)
+        return -1;
+    if (readBlock(RME_FF_STATUS_REG0, stat, 4) != 0)
+        return -1;
+    return 0;
+}
+
+signed int
 Device::get_hardware_state(FF_state_t *state)
 {
     // Retrieve the hardware status and deduce the device state.  Return
@@ -554,6 +571,73 @@ Device::set_hardware_dds_freq(signed int freq)
         ret = writeRegister(RME_FF800_STREAM_SRATE, freq);
 
     return ret;
+}
+
+signed int
+Device::hardware_init_streaming(unsigned int sample_rate, 
+    unsigned int tx_channel)
+{
+    // tx_channel is the ISO channel the PC will transmit on.
+    quadlet_t buf[4];
+    fb_nodeaddr_t addr;
+    unsigned int size;
+
+    buf[0] = sample_rate;
+    buf[1] = (num_channels << 11) + tx_channel;
+    buf[2] = num_channels;
+    buf[3] = 0;
+    buf[4] = 0;
+    if (speed800) {
+        buf[2] |= RME_FF800_STREAMING_SPEED_800;
+    }
+
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        addr = RME_FF400_STREAM_INIT_REG;
+        size = RME_FF400_STREAM_INIT_SIZE;
+    } else {
+        addr = RME_FF800_STREAM_INIT_REG;
+        size = RME_FF800_STREAM_INIT_SIZE;
+    }
+
+    return writeBlock(addr, buf, size);
+}
+
+signed int
+Device::hardware_start_streaming(unsigned int listen_channel)
+{
+    // Listen_channel is the ISO channel the PC will listen on for data sent
+    // by the Fireface.
+    fb_nodeaddr_t addr;
+    quadlet_t data = num_channels;
+
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        addr = RME_FF400_STREAM_START_REG;
+        data |= (listen_channel << 5);
+    } else {
+        addr = RME_FF800_STREAM_START_REG;
+        if (speed800)
+            data |= RME_FF800_STREAMING_SPEED_800; // Flag 800 Mbps speed
+    }
+
+    return writeRegister(addr, data);
+}
+
+signed int
+Device::hardware_stop_streaming(void)
+{
+    fb_nodeaddr_t addr;
+    quadlet_t buf[4] = {0, 0, 0, 1};
+    unsigned int size;
+
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+      addr = RME_FF400_STREAM_END_REG;
+      size = RME_FF400_STREAM_END_SIZE;
+    } else {
+      addr = RME_FF800_STREAM_END_REG;
+      size = RME_FF800_STREAM_END_SIZE;
+    }
+
+    return writeBlock(addr, buf, size);
 }
 
 }

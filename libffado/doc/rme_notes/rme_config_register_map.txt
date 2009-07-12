@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.11
+Version: 0.12
 Author: Jonathan Woithe
-Date: 27 June 2009
+Date: 12 July 2009
 
 
 Definitions
@@ -72,35 +72,35 @@ Controlling sample rate (DDS)
 
 Sample rate is controlled by writing the desired sample rate in Hz to the
 sample rate control register located at offset 0 from the command buffer
-address (0xfc88f000 on a FF800).  Rates which have been observed are 32k,
-44.056k, 44.144k, 44.1k, 45.937k, 46.080k, 47.952k, 48k and 48.048k, along
-with corresponding 2x and 4x rates.  This assumes the DDS has been enabled. 
-If DDS is not active it seems the audio system assumes a frequency of 44.1
-kHz which cannot be changed.  The value of disabling the DDS is therefore
-not entirely understood.
+address (0xfc88f000 on a FF800).  The hardware DDS allows a wide range of
+frequencies to be requested (possibly anything from 30 kHz up to 210 kHz).
+The more common rates are of course 32k, 44.1k, 48k, the pull-up/down rates
+(44.056k, 44.144k, 45.937k, 46.080k, 47.952k, 48.048k) and the corresponding
+2x and 4x rates.
 
-The PC does not appear to request the device's current sample rate; in fact,
-it doesn't appear to be available from the device itself (except from the
-flash device setting record in the case where the DDS has been enabled). 
-When requesting the device status, the sample rate returned is based on the
-PC's audio engine sample rate so long as the device status has been read
-without error (if an error occurs the sample rate is hardcoded to 44.1 kHz). 
-It therefore seems that when DDS is in use the PC explicitly sets the device
-to its desired sample rate and then caches the sample rate locally.  If DDS
-is not active it appears at this stage that the only internally generated
-sample rate available is 44.1 kHz.
+Software connecting to the Fireface device is restricted to the normal rates
+of 32k, 44.1k, 48k and the related 2x and 4x rates.
 
-When using an external clock without DDS it's not clear how the PC works out
-what sample rate to use.  Presumedly it remains at 44.1 kHz.
+If the device is in master clock mode and the user has not made an explicit
+DDS setting, the hardware DDS will be determined by the sampling rate
+requested by the application opening the device.  If a DDS frequency has
+been requested by the user the actual rate used by the device will be that
+DDS frequency regardless of what the application has asked for.  In this
+case a device open will only succeed if the software has requested a speed
+whose multiplier matches the DDS configuration.
+
+If the device is locked to an external clock, a device open will succeed
+only if the multiplier of the requested sampling rate matches that of the
+external rate.
+
+The device status registers allow the PC to determine the sampling rate when
+an external clock is in use.  However, there is no way to read the sampling
+rate when in master clock mode.  It is therefore necessary to cache this in
+the driver so it can be provided when requested.
 
 In terms of multipliers the RME treats sample rates greater than 112000 Hz
 as 4x rates, with rates greater than 56000 Hz as 2x rates.  Rates less than
 30000 Hz and greater than 210000 Hz are invalid.
-
-It is not yet known how the driver works out that the DDS is active since
-the device flash settings are not read and in any case, if the device flash
-settings have not been set they won't indicate anything useful about the
-current device state.
 
 
 Configuration registers 1, 2 and 3
@@ -194,6 +194,59 @@ Configuration register 3 (FF800: 0xfc88f01c, FF400: 0x8010051c):
 
 On the FF400, writing to these registers with valid values for the first
 time after power up has the side effect of extingishing the "Host" LED.
+
+
+Device status registers
+-----------------------
+
+There are up to 4 read-only device status registers available, starting at
+address 0x801c0000.  There seems to be a slight difference in the mapping of
+status register 0 depending on the size of the read.  If only 2 registers
+(quadlets) are read the "general" layout is assumed.  If on the other hand 4
+registers are used (used when determining the status of the device's
+streaming system) the layout of register 0 is slightly different.
+
+Status register 0:
+  bit 0: on a 2-quadlet read, this indicates whether the device is streaming
+  bits 1-9: on a 2-quadlet read these bits are all zero
+  bits 9-0: on a 4-quadlet read when in autosync mode, these bits contain
+            SR/250, where SR is the sample rate to be passed to the
+            streaming subsystem when starting streaming.
+  bit 10: ADAT1 lock achieved
+  bit 11: ADAT2 lock achieved
+  bit 12: Device is synced to ADAT1
+  bit 13: Device is synced to ADAT2
+  bits 17-14: SPDIF frequency:
+    0000 = undefined    0101 = 88.2k
+    0001 = 32k          0110 = 96k
+    0010 = 44.1k        0111 = 128k
+    0011 = 48k          1000 = 176.4k
+    0100 = 64k          1001 = 192k
+  bit 18: Device is synced to SPDIF
+  bit 19: Over detected
+  bit 20: SPDIF lock achieved
+  bit 21: undefined (read as zero)
+  bits 24-22: Primary sync source:
+    000 = ADAT1         100 = Word clock
+    001 = ADAT2         101 = TCO
+    011 = SPDIF
+  bits 28-25: autosync (external) frequency (defined as for SPDIF frequency)
+  bit 29: Device is synced to word clock
+  bit 30: Word clock lock achieved
+  bit 31: undefined (read as zero)
+
+Status register 1:
+  bit 0: master clock mode active
+  bits 21-1: undefined
+  bit 22: Device is synced to TCO
+  bit 23: TCO lock achieved
+  bits 31-24: undefined
+
+Status register 2:
+  bits 31-0: (FF800 only) firewire iso channel used for data from FF800 to PC
+
+Status register 3:
+  bits 31-0: unused
 
 
 Interfacing to device flash

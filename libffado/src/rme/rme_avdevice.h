@@ -98,6 +98,10 @@ protected:
     signed int tco_present;
     FF_software_settings_t settings;
 
+    signed int num_channels;
+    signed int samples_per_packet;
+    signed int speed800;
+
 private:
     unsigned long long int cmd_buffer_addr();
     unsigned long long int stream_init_reg();
@@ -123,6 +127,7 @@ private:
     unsigned int multiplier_of_freq(unsigned int freq);
     signed int init_hardware(void);
     signed int get_hardware_status(unsigned int *stat0, unsigned int *stat1);
+    signed int get_hardware_streaming_status(unsigned int *stat, unsigned int n);
     signed int get_hardware_state(FF_state_t *state);
     signed int set_hardware_params(FF_software_settings_t *sw_settings);
 
@@ -134,6 +139,10 @@ private:
     signed int write_tco_settings(FF_TCO_settings_t *tco_settings);
 
     signed int set_hardware_dds_freq(signed int freq);
+
+    signed int hardware_init_streaming(unsigned int sample_rate, unsigned int tx_channel);
+    signed int hardware_start_streaming(unsigned int listen_channel);
+    signed int hardware_stop_streaming(void);
 };
 
 }
