@@ -172,6 +172,7 @@ rme_source = env.Split( '\
 	rme/rme_avdevice.cpp \
 	rme/fireface_flash.cpp \
 	rme/fireface_hw.cpp \
+	rme/fireface_settings_ctrls.cpp \
 ' )
 
 amdtp_source = env.Split( '\
