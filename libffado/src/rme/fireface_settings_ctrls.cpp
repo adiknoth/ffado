@@ -42,10 +42,48 @@ namespace Rme {
 #define RME_CTRL_INPUT1_OPTIONS        0x0d
 #define RME_CTRL_INPUT2_OPTIONS        0x0e
 
-RmeSettingsCtrl::RmeSettingsCtrl(Device &parent, unsigned int type)
+RmeSettingsCtrl::RmeSettingsCtrl(Device &parent, unsigned int type, 
+    unsigned int info)
 : Control::Discrete(&parent)
 , m_parent(parent)
+, m_type(type)
+, m_value(0)
+, m_info(info)
 {
+}
+
+RmeSettingsCtrl::RmeSettingsCtrl(Device &parent, unsigned int type,
+    unsigned int info,
+    std::string name, std::string label, std::string descr)
+: Control::Discrete(&parent)
+, m_parent(parent)
+, m_type(type)
+, m_value(0)
+, m_info(info)
+{
+    setName(name);
+    setLabel(label);
+    setDescription(descr);
+}
+
+bool
+RmeSettingsCtrl::setValue(int v) {
+
+    switch (m_type) {
+        case RME_CTRL_PHANTOM_SW:
+            break;
+    }
+    return true;
+}
+
+int
+RmeSettingsCtrl::getValue() {
+
+    switch (m_type) {
+        case RME_CTRL_PHANTOM_SW:
+            break;
+    }
+    return 0;
 }
 
 }

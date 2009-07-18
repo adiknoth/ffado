@@ -34,10 +34,16 @@ class RmeSettingsCtrl
     : public Control::Discrete
 {
 public:
-    RmeSettingsCtrl(Device &parent, unsigned int type);
+    RmeSettingsCtrl(Device &parent, unsigned int type, unsigned int info);
+    RmeSettingsCtrl(Device &parent, unsigned int type, unsigned int info,
+        std::string name, std::string label, std::string descr);
+    virtual bool setValue(int v);
+    virtual int getValue();
 
 protected:
     Device &m_parent;
+    unsigned int m_type;
+    unsigned int m_value, m_info;
 };
 
 }
