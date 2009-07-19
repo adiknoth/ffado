@@ -91,6 +91,9 @@ public:
     /* Device control functions */
     signed int setPhantom(unsigned int channel, unsigned int status);
 
+    /* General information functions */
+    signed int getRmeModel(void) { return m_rme_model; }
+
 protected:
     enum ERmeModel m_rme_model;
 

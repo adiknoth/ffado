@@ -28,6 +28,25 @@
 
 namespace Rme {
 
+#define RME_CTRL_NONE                  0x0000
+#define RME_CTRL_PHANTOM_SW            0x0001
+#define RME_CTRL_SPDIF_INPUT_MODE      0x0002
+#define RME_CTRL_SPDIF_OUTPUT_OPTIONS  0x0003
+#define RME_CTRL_CLOCK_MODE            0x0004
+#define RME_CTRL_SYNC_REF              0x0005
+#define RME_CTRL_DEV_OPTIONS           0x0006
+#define RME_CTRL_LIMIT_BANDWIDTH       0x0007
+#define RME_CTRL_INPUT_LEVEL           0x0008
+#define RME_CTRL_OUTPUT_LEVEL          0x0009
+#define RME_CTRL_INSTRUMENT_OPTIONS    0x000a
+#define RME_CTRL_WCLK_SINGLE_SPEED     0x000b
+#define RME_CTRL_PHONES_LEVEL          0x000c
+#define RME_CTRL_INPUT0_OPTIONS        0x000d
+#define RME_CTRL_INPUT1_OPTIONS        0x000e
+#define RME_CTRL_INPUT2_OPTIONS        0x000f
+
+#define RME_CTRL_INFO_MODEL            0x0100
+
 class Device;
 
 class RmeSettingsCtrl

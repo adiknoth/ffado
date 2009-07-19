@@ -26,22 +26,6 @@
 
 namespace Rme {
 
-#define RME_CTRL_PHANTOM_SW            0x00
-#define RME_CTRL_SPDIF_INPUT_MODE      0x01
-#define RME_CTRL_SPDIF_OUTPUT_OPTIONS  0x02
-#define RME_CTRL_CLOCK_MODE            0x03
-#define RME_CTRL_SYNC_REF              0x04
-#define RME_CTRL_DEV_OPTIONS           0x05
-#define RME_CTRL_LIMIT_BANDWIDTH       0x06
-#define RME_CTRL_INPUT_LEVEL           0x07
-#define RME_CTRL_OUTPUT_LEVEL          0x08
-#define RME_CTRL_INSTRUMENT_OPTIONS    0x09
-#define RME_CTRL_WCLK_SINGLE_SPEED     0x0a
-#define RME_CTRL_PHONES_LEVEL          0x0b
-#define RME_CTRL_INPUT0_OPTIONS        0x0c
-#define RME_CTRL_INPUT1_OPTIONS        0x0d
-#define RME_CTRL_INPUT2_OPTIONS        0x0e
-
 RmeSettingsCtrl::RmeSettingsCtrl(Device &parent, unsigned int type, 
     unsigned int info)
 : Control::Discrete(&parent)
@@ -73,6 +57,10 @@ signed int i;
 signed int err = 0;
 
     switch (m_type) {
+        case RME_CTRL_NONE:
+            debugOutput(DEBUG_LEVEL_ERROR, "control has no type set\n");
+            err = 1;
+            break;
         case RME_CTRL_PHANTOM_SW:
             // Lowest 16 bits are phantom status bits (max 16 channels). 
             // High 16 bits are "write enable" bits for the correspoding
@@ -100,6 +88,17 @@ signed int err = 0;
                 }
             }
             break;
+
+        // All RME_CTRL_INFO_* controls are read-only.  Warn on attempts to
+        // set these.
+        case RME_CTRL_INFO_MODEL:
+            debugOutput(DEBUG_LEVEL_ERROR, "Attempt to set readonly info control 0x%08x\n", m_type);
+            err = 1;
+            break;
+
+        default:
+            debugOutput(DEBUG_LEVEL_ERROR, "Unknown control type 0x%08x\n", m_type);
+            err = 1;
     }
 
     return err==0?true:false;
@@ -109,10 +108,22 @@ int
 RmeSettingsCtrl::getValue() {
 
     switch (m_type) {
+        case RME_CTRL_NONE:
+            debugOutput(DEBUG_LEVEL_ERROR, "control has no type set\n");
+            break;
+
         case RME_CTRL_PHANTOM_SW:
             return m_value;
             break;
+
+        case RME_CTRL_INFO_MODEL:
+            return m_parent.getRmeModel();
+            break;
+
+        default:
+            debugOutput(DEBUG_LEVEL_ERROR, "Unknown control type 0x%08x\n", m_type);
     }
+
     return 0;
 }
 
