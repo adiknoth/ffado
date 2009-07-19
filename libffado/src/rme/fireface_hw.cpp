@@ -197,16 +197,25 @@ Device::get_hardware_state(FF_state_t *state)
 }
 
 signed int 
-Device::set_hardware_params(FF_software_settings_t *sw_settings)
+Device::set_hardware_params(FF_software_settings_t *use_settings)
 {
     // Initialises the hardware to the state defined by the supplied
     // software settings structure (which will usually be the device's
     // "settings" structure).  This has the side effect of extinguishing the
     // "Host" LED on the FF400 when done for the first time after the
     // interface has been powered up.
+    //
+    // If use_settings is NULL, the device's current settings structure will
+    // be used to source the configuration information.
 
+    FF_software_settings_t *sw_settings;
     quadlet_t data[3] = {0, 0, 0};
     unsigned int conf_reg;
+
+    if (use_settings == NULL)
+      sw_settings = &settings;
+    else
+      sw_settings = use_settings;
 
     if (sw_settings->mic_phantom[0])
       data[0] |= CR0_PHANTOM_MIC0;

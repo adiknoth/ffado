@@ -88,6 +88,9 @@ public:
     signed int writeRegister(fb_nodeaddr_t reg, quadlet_t data);
     signed int writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads);
 
+    /* Device control functions */
+    signed int setPhantom(unsigned int channel, unsigned int status);
+
 protected:
     enum ERmeModel m_rme_model;
 
@@ -123,13 +126,13 @@ private:
     signed int read_device_flash_settings(FF_software_settings_t *settings);
     signed int write_device_flash_settings(FF_software_settings_t *settings);
 
-    /* Hardware functions */
+    /* Low-level hardware functions */
     unsigned int multiplier_of_freq(unsigned int freq);
     signed int init_hardware(void);
     signed int get_hardware_status(unsigned int *stat0, unsigned int *stat1);
     signed int get_hardware_streaming_status(unsigned int *stat, unsigned int n);
     signed int get_hardware_state(FF_state_t *state);
-    signed int set_hardware_params(FF_software_settings_t *sw_settings);
+    signed int set_hardware_params(FF_software_settings_t *use_settings = NULL);
 
     signed int read_tco(quadlet_t *tco_data, signed int size);
     signed int write_tco(quadlet_t *tco_data, signed int size);

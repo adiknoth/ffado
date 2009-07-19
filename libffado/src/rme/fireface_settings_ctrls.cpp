@@ -69,11 +69,40 @@ RmeSettingsCtrl::RmeSettingsCtrl(Device &parent, unsigned int type,
 bool
 RmeSettingsCtrl::setValue(int v) {
 
+signed int i;
+signed int err = 0;
+
     switch (m_type) {
         case RME_CTRL_PHANTOM_SW:
+            // Lowest 16 bits are phantom status bits (max 16 channels). 
+            // High 16 bits are "write enable" bits for the correspoding
+            // channel represented in the low 16 bits.  This way changes can
+            // be made to one channel without needing to first read the
+            // existing value.
+            //
+            // At present there are at most 4 phantom-capable channels.
+            // Flag attempts to write to the bits corresponding to channels
+            // beyond this.
+            if (v & 0xfff00000) {
+                debugOutput(DEBUG_LEVEL_WARNING, "Ignored out-of-range phantom set request: mask=0x%04x, value=0x%04x\n",
+                  (v >> 16) & 0xfff0, v && 0xfff0);
+            }
+
+            for (i=0; i<4; i++) {
+                if (v & (0x00010000 << i)) {
+                    unsigned int on = (v & (0x00000001 << i)) != 0;
+                    err = m_parent.setPhantom(i, on);
+                    if (!err && on) {
+                        m_value |= (0x01 << i);
+                    } else {
+                        m_value &= ~(0x01 << i);
+                    }
+                }
+            }
             break;
     }
-    return true;
+
+    return err==0?true:false;
 }
 
 int
@@ -81,6 +110,7 @@ RmeSettingsCtrl::getValue() {
 
     switch (m_type) {
         case RME_CTRL_PHANTOM_SW:
+            return m_value;
             break;
     }
     return 0;
