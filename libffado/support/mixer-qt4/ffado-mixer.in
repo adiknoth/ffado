@@ -161,6 +161,7 @@ if __name__ == "__main__":
     logging.getLogger('edirolfa101').setLevel(debug_level)
     logging.getLogger('edirolfa66').setLevel(debug_level)
     logging.getLogger('motu').setLevel(debug_level)
+    logging.getLogger('rme').setLevel(debug_level)
     logging.getLogger('phase24').setLevel(debug_level)
     logging.getLogger('phase88').setLevel(debug_level)
     logging.getLogger('quatafire').setLevel(debug_level)

@@ -45,6 +45,7 @@ from mixer_edirolfa101 import *
 from mixer_mackie_onyxmixer import *
 from mixer_quatafire import *
 from mixer_motu import *
+from mixer_rme import *
 from mixer_dummy import *
 from mixer_global import GlobalMixer
 
@@ -287,6 +288,14 @@ class PanelManager(QWidget):
             # using.
             if vendorId == 0x1f2:
                 modelId = 0x00000000
+
+            # The RME devices use unitVersion to differentiate models. 
+            # Therefore in the configuration file we use the config file's
+            # modelid field to store the unit version.  As a result we must
+            # override the modelId with the unit version here so the correct
+            # configuration file entry (and hense mixer widget) is identified.
+            if vendorId == 0xa35:
+                modelId = unitVersion;
 
             dev = self.devices.getDeviceById( vendorId, modelId )
 

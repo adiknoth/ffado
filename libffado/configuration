@@ -297,6 +297,7 @@ device_definitions = (
     vendorname = "RME";
     modelname = "FireFace800";
     driver = 40;
+    mixer = "RmeMixer";
 },
 {
     vendorid = 0x000a35;
@@ -307,6 +308,7 @@ device_definitions = (
     vendorname = "RME";
     modelname = "FireFace400";
     driver = 40;
+    mixer = "RmeMixer";
 },
 {
     vendorid = 0x000166;

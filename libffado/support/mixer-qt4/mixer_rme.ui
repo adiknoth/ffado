@@ -1,0 +1,84 @@
+<ui version="4.0" >
+ <class>RmeMixerUI</class>
+ <widget class="QWidget" name="RmeMixerUI" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>814</width>
+    <height>624</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>RmeMixer</string>
+  </property>
+  <widget class="QTabWidget" name="tabWidget" >
+   <property name="geometry" >
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>751</width>
+     <height>561</height>
+    </rect>
+   </property>
+   <property name="currentIndex" >
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="control" >
+    <attribute name="title" >
+     <string>Control</string>
+    </attribute>
+    <widget class="QGroupBox" name="groupBox" >
+     <property name="geometry" >
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>78</width>
+       <height>133</height>
+      </rect>
+     </property>
+     <property name="title" >
+      <string>Phantom</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout" >
+      <item>
+       <widget class="QCheckBox" name="phantom_0" >
+        <property name="text" >
+         <string>Mic 1</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="phantom_1" >
+        <property name="text" >
+         <string>Mic 2</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="phantom_2" >
+        <property name="text" >
+         <string>Mic 3</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="phantom_3" >
+        <property name="text" >
+         <string>Mic 4</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="mixer" >
+    <attribute name="title" >
+     <string>Mixer</string>
+    </attribute>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
