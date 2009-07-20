@@ -31,10 +31,7 @@
 #ifndef _FIREFACE_DEF
 #define _FIREFACE_DEF
 
-/* Identifiers for the Fireface models */
-#define RME_FF400               0
-#define RME_FF800               1
-
+/* Boundaries between the speed multipliers */
 #define MIN_SPEED               30000
 #define MIN_DOUBLE_SPEED        56000
 #define MIN_QUAD_SPEED          112000

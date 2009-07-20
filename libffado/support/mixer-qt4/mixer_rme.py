@@ -27,9 +27,10 @@ from mixer_rmeui import *
 import logging
 log = logging.getLogger('rme')
 
-# Model defines.  These must agree with what is used in fireface_def.h.
-RME_MODEL_FF400     = 0x0000
+# Model defines.  These must agree with what is used in rme_avdevice.h.
+RME_MODEL_NONE      = 0x0000
 RME_MODEL_FF800     = 0x0001
+RME_MODEL_FF400     = 0x0002
 
 class RmeMixer(QWidget, Ui_RmeMixerUI):
     def __init__(self,parent = None):
