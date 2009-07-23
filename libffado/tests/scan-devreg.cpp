@@ -43,8 +43,7 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 
 #define MAX_ARGS 1000
 
-// #define SCAN_BASE_ADDR 0xffff00000000ULL
-#define SCAN_BASE_ADDR 0xFFFFE0200000ULL
+#define SCAN_BASE_ADDR 0xfffff0000000ULL
 // If changing these be sure to update the option help text
 #define DEFAULT_SCAN_START_REG 0x0b00
 #define DEFAULT_SCAN_LENGTH    0x0200
@@ -83,10 +82,10 @@ struct arguments
     int          nargs;
     signed int   verbose;
     bool         test;
-    signed int             port;
-    signed int             node;
-    signed long long int   scan_start;
-    signed long long int   scan_length;
+    signed int   port;
+    signed int   node;
+    signed int   scan_start;
+    signed int   scan_length;
 } arguments;
 
 // Parse a single option.
@@ -112,7 +111,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
         break;
     case 's':
         errno = 0;
-        arguments->scan_start = strtoll(arg, &tail, 0);
+        arguments->scan_start = strtol(arg, &tail, 0);
         if (errno) {
             perror("argument parsing failed:");
             return errno;
@@ -124,7 +123,7 @@ parse_opt( int key, char* arg, struct argp_state* state )
         break;
     case 'l':
         errno = 0;
-        arguments->scan_length = strtoll(arg, &tail, 0);
+        arguments->scan_length = strtol(arg, &tail, 0);
         if (errno) {
             perror("argument parsing failed:");
             return errno;
@@ -231,8 +230,7 @@ main(int argc, char **argv)
             // Stop at the first audio device found.  Currently we detect
             // only MOTU devices but this can be expanded on an as-needs
             // basis.
-//             if (configRom->getNodeVendorId() == 0x1f2) {
-            if (configRom->getNodeVendorId() == 0x0000130E) {
+            if (configRom->getNodeVendorId() == 0x1f2) {
                 node_id = node;
                 port = i;
                 break;
@@ -262,63 +260,40 @@ main(int argc, char **argv)
     }
 
     quadlet_t old_vals[arguments.scan_length/4+1], quadlet;
-    char present[arguments.scan_length/4+1];
+    char present[arguments.scan_length/(4*32)+1];
     memset(old_vals, 0x00, sizeof(old_vals));
     // Assume all registers are present until proven otherwise
     memset(present, 0xff, sizeof(present));
     
-    printf("Scanning from %012llX to %012llX (len: %lld)\n",
+    printf("Scanning from %012llX to %012llX (len: %d)\n",
            SCAN_BASE_ADDR + arguments.scan_start,
            SCAN_BASE_ADDR + arguments.scan_start + arguments.scan_length,
            arguments.scan_length);
     printf("Scanning initial register values, please wait\n");
     chr[0] = 0;
     while(chr[0]!='q') {
-        for (signed long long int reg=arguments.scan_start;
+        for (signed int reg=arguments.scan_start;
              reg < arguments.scan_start + arguments.scan_length; reg+=4) {
-            unsigned long long int reg_index = (reg - arguments.scan_start)/4;
+            unsigned int reg_index = (reg - arguments.scan_start)/4;
+            unsigned int pres_index = (reg - arguments.scan_start)/(4*32);
+            unsigned int pres_bit = ((reg - arguments.scan_start)/4) & 0x1f;
 
-            if (present[reg_index] == 0) {
+            if (!(present[pres_index] & (1<<pres_bit))) {
                 continue;
             }
 
             if (m_1394Service->read(0xffc0 | node_id, SCAN_BASE_ADDR+reg, 1, &quadlet) <= 0) {
                 // Flag the register as not being present so we don't keep trying to read it
-                present[reg_index] = 0;
-                printf("Register %012llX: failed\n", SCAN_BASE_ADDR+reg);
+                present[pres_index] &= ~(1<<pres_bit);
+                // printf("Register %012llX: failed\n", SCAN_BASE_ADDR+reg);
                 continue;
             } else {
                 quadlet = CondSwapFromBus32(quadlet);
-                char bitvector[33];
-                bitvector[32] = 0;
-                for (int i=0; i<32; i++) {
-                    if (quadlet & (1<<(31-i))) {
-                        bitvector[i] = '1';
-                    } else {
-                        bitvector[i] = '0';
-                    }
-                }
-                char bitvector_spaced[33+7];
-                bitvector_spaced[32+7] = 0;
-                int cnt=0;
-                for (int i=0; i<32; i++) {
-                    if (i % 4 == 0 && i) {
-                        bitvector_spaced[cnt] = ' ';
-                        cnt++;
-                    }
-                    bitvector_spaced[cnt] = bitvector[i];
-                    cnt++;
-                }
-                printf("Register [%06lld] %012llX: %08X [%10u] [%s] [%10d %10d]\n", 
-                       (reg-arguments.scan_start)/4, SCAN_BASE_ADDR+reg, 
-                       quadlet, quadlet, 
-                       bitvector_spaced,
-                       (quadlet>>16) & 0xFFFF, quadlet & 0xFFFF);
             }
 
             if (old_vals[reg_index] != quadlet) {
                 if (loop != 0) {
-                    printf("0x%012llx changed from %08X to %08X\n", SCAN_BASE_ADDR+reg,  old_vals[reg_index], quadlet);
+                    printf("0x%04x changed from %08X to %08X\n", reg,  old_vals[reg_index], quadlet);
                 }
                 old_vals[reg_index] = quadlet;
             }
