@@ -76,21 +76,6 @@ ByteSwapFromDevice32(uint32_t d)
 }
 #endif
 
-// Template for an RME Device object method which intelligently returns a
-// register or value applicable to the connected model and warns if something
-// isn't quite right.
-#define MODEL_SELECTOR(_name,_ff400_arg,_ff800_arg) \
-unsigned long long int \
-Device::_name() { \
-    switch (m_rme_model) { \
-        case RME_MODEL_FIREFACE400: return _ff400_arg; \
-        case RME_MODEL_FIREFACE800: return _ff800_arg; \
-    default: \
-      debugOutput( DEBUG_LEVEL_WARNING, "Bad RME model %d\n", m_rme_model ); \
-  } \
-  return 0xffffffffffffffffLL; \
-}
-
 Device::Device( DeviceManager& d,
                       std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
@@ -111,15 +96,6 @@ Device::~Device()
 {
 
 }
-
-MODEL_SELECTOR(cmd_buffer_addr, RME_FF400_CMD_BUFFER, RME_FF800_CMD_BUFFER)
-MODEL_SELECTOR(stream_init_reg, RME_FF400_STREAM_INIT_REG, RME_FF800_STREAM_INIT_REG)
-MODEL_SELECTOR(stream_start_reg, RME_FF400_STREAM_START_REG, RME_FF800_STREAM_START_REG)
-MODEL_SELECTOR(stream_end_reg, RME_FF400_STREAM_END_REG, RME_FF800_STREAM_END_REG)
-MODEL_SELECTOR(flash_settings_addr, RME_FF400_FLASH_SETTINGS_ADDR, RME_FF800_FLASH_SETTINGS_ADDR)
-MODEL_SELECTOR(flash_mixer_vol_addr, RME_FF400_FLASH_MIXER_VOLUME_ADDR, RME_FF800_FLASH_MIXER_VOLUME_ADDR)
-MODEL_SELECTOR(flash_mixer_pan_addr, RME_FF400_FLASH_MIXER_PAN_ADDR, RME_FF800_FLASH_MIXER_PAN_ADDR)
-MODEL_SELECTOR(flash_mixer_hw_addr, RME_FF400_FLASH_MIXER_HW_ADDR, RME_FF800_FLASH_MIXER_HW_ADDR)
 
 bool
 Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
