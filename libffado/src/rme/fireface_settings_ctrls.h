@@ -59,6 +59,11 @@ public:
     virtual bool setValue(int v);
     virtual int getValue();
 
+    virtual bool setValue(int idx, int v) { return setValue(v); };
+    virtual int getValue(int idx) { return getValue(); };
+    virtual int getMinimum() {return 0; };
+    virtual int getMaximum() {return 0; };
+
 protected:
     Device &m_parent;
     unsigned int m_type;

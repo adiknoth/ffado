@@ -56,6 +56,9 @@ public:
                std::auto_ptr<ConfigRom>( configRom ));
     virtual ~Device();
 
+    virtual bool buildMixer();
+    virtual bool destroyMixer();
+
     static bool probe( Util::Configuration& c, ConfigRom& configRom, bool generic = false );
     static FFADODevice * createDevice( DeviceManager& d,
                                         std::auto_ptr<ConfigRom>( configRom ));
@@ -149,6 +152,9 @@ private:
     signed int hardware_init_streaming(unsigned int sample_rate, unsigned int tx_channel);
     signed int hardware_start_streaming(unsigned int listen_channel);
     signed int hardware_stop_streaming(void);
+
+    Control::Container *m_MixerContainer;
+    Control::Container *m_ControlContainer;
 };
 
 }

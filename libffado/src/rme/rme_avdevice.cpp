@@ -26,6 +26,7 @@
 
 #include "rme/rme_avdevice.h"
 #include "rme/fireface_def.h"
+#include "rme/fireface_settings_ctrls.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -94,7 +95,78 @@ Device::Device( DeviceManager& d,
 
 Device::~Device()
 {
+    destroyMixer();
+}
 
+bool
+Device::buildMixer() {
+    bool result = true;
+
+    destroyMixer();
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Building an RME mixer...\n");
+
+
+    // Non-mixer device controls
+    m_ControlContainer = new Control::Container(this, "Control");
+    if (!m_ControlContainer) {
+        debugError("Could not create control container\n");
+        destroyMixer();
+        return false;
+    }
+
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_PHANTOM_SW, 0,
+            "Phantom", "Phantom switches", ""));
+
+    if (!result) {
+        debugWarning("One or more device control elements could not be created\n");
+        destroyMixer();
+        return false;
+    }
+
+    if (!addElement(m_ControlContainer)) {
+        debugWarning("Could not register mixer to device\n");
+        // clean up
+        destroyMixer();
+        return false;
+    }
+
+    return true;
+}
+
+bool
+Device::destroyMixer() {
+    bool ret = true;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "destroy mixer...\n");
+
+    if (m_MixerContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no mixer to destroy...\n");
+    } else
+    if (!deleteElement(m_MixerContainer)) {
+        debugError("Mixer present but not registered to the avdevice\n");
+        ret = false;
+    } else {
+        // remove and delete (as in free) child control elements
+        m_MixerContainer->clearElements(true);
+        delete m_MixerContainer;
+        m_MixerContainer = NULL;
+    }
+
+    // remove control container
+    if (m_ControlContainer == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "no controls to destroy...\n");
+    } else
+    if (!deleteElement(m_ControlContainer)) {
+        debugError("Controls present but not registered to the avdevice\n");
+        ret = false;
+    } else {
+        // remove and delete (as in free) child control elements
+        m_ControlContainer->clearElements(true);
+        delete m_ControlContainer;
+        m_ControlContainer = NULL;
+    }
+
+    return false;
 }
 
 bool
@@ -162,6 +234,10 @@ Device::discover()
     is_streaming = hardware_is_streaming();
 
     init_hardware();
+
+    if (!buildMixer()) {
+        debugWarning("Could not build mixer\n");
+    }
 
     // This is just for testing
     read_device_flash_settings(NULL);

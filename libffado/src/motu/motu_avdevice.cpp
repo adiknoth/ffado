@@ -826,10 +826,10 @@ MotuDevice::buildMixerAudioControls(void) {
 bool
 MotuDevice::buildMixer() {
     bool result = true;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Building a MOTU mixer...\n");
 
     destroyMixer();
-        
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Building a MOTU mixer...\n");
+
     // create the mixer object container
     m_MixerContainer = new Control::Container(this, "Mixer");
     if (!m_MixerContainer) {
@@ -861,13 +861,14 @@ MotuDevice::buildMixer() {
     m_ControlContainer = new Control::Container(this, "Control");
     if (!m_ControlContainer) {
         debugError("Could not create control container...\n");
+        destroyMixer();
         return false;
     }
 
     // Special controls get added here
 
     if (!result) {
-        debugWarning("One or more device control elements could not be created.");
+        debugWarning("One or more device control elements could not be created\n");
         // clean up those that couldn't be created
         destroyMixer();
         return false;
@@ -885,40 +886,36 @@ MotuDevice::buildMixer() {
 
 bool
 MotuDevice::destroyMixer() {
+    bool ret = true;
     debugOutput(DEBUG_LEVEL_VERBOSE, "destroy mixer...\n");
 
     if (m_MixerContainer == NULL) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "no mixer to destroy...\n");
-        return true;
-    }
-    
+    } else
     if (!deleteElement(m_MixerContainer)) {
         debugError("Mixer present but not registered to the avdevice\n");
-        return false;
+        ret = false;
+    } else {
+        // remove and delete (as in free) child control elements
+        m_MixerContainer->clearElements(true);
+        delete m_MixerContainer;
+        m_MixerContainer = NULL;
     }
-
-    // remove and delete (as in free) child control elements
-    m_MixerContainer->clearElements(true);
-    delete m_MixerContainer;
-    m_MixerContainer = NULL;
 
     // remove control container
     if (m_ControlContainer == NULL) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "no controls to destroy...\n");
-        return true;
-    }
-    
+    } else
     if (!deleteElement(m_ControlContainer)) {
         debugError("Controls present but not registered to the avdevice\n");
-        return false;
+        ret = false;
+    } else {
+        // remove and delete (as in free) child control elements
+        m_ControlContainer->clearElements(true);
+        delete m_ControlContainer;
+        m_ControlContainer = NULL;
     }
-    
-    // remove and delete (as in free) child control elements
-    m_ControlContainer->clearElements(true);
-    delete m_ControlContainer;
-    m_ControlContainer = NULL;
-
-    return true;
+    return ret;
 }
 
 bool
