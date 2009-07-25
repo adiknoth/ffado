@@ -92,10 +92,12 @@ public:
     signed int writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads);
 
     /* Device control functions */
+    signed int getPhantom(unsigned int channel);
     signed int setPhantom(unsigned int channel, unsigned int status);
 
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }
+    signed int getTcoPresent(void) { return tco_present; }
 
 protected:
     enum ERmeModel m_rme_model;
@@ -106,6 +108,7 @@ protected:
 
     signed int tco_present;
     FF_software_settings_t settings;
+    FF_TCO_settings_t tco_settings;
 
     signed int num_channels;
     signed int samples_per_packet;

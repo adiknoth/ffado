@@ -80,10 +80,12 @@ signed int err = 0;
                 if (v & (0x00010000 << i)) {
                     unsigned int on = (v & (0x00000001 << i)) != 0;
                     err = m_parent.setPhantom(i, on);
-                    if (!err && on) {
-                        m_value |= (0x01 << i);
-                    } else {
-                        m_value &= ~(0x01 << i);
+                    if (!err) {
+                        if (on) {
+                            m_value |= (0x01 << i);
+                        } else {
+                            m_value &= ~(0x01 << i);
+                        }
                     }
                 }
             }
@@ -92,6 +94,7 @@ signed int err = 0;
         // All RME_CTRL_INFO_* controls are read-only.  Warn on attempts to
         // set these.
         case RME_CTRL_INFO_MODEL:
+        case RME_CTRL_INFO_TCO_PRESENT:
             debugOutput(DEBUG_LEVEL_ERROR, "Attempt to set readonly info control 0x%08x\n", m_type);
             err = 1;
             break;
@@ -107,18 +110,26 @@ signed int err = 0;
 int
 RmeSettingsCtrl::getValue() {
 
+signed int i;
+signed int val = 0;
+
     switch (m_type) {
         case RME_CTRL_NONE:
             debugOutput(DEBUG_LEVEL_ERROR, "control has no type set\n");
             break;
 
         case RME_CTRL_PHANTOM_SW:
-            return m_value;
+            for (i=0; i<3; i++)
+                val |= (m_parent.getPhantom(i) << i);
+            return val;
             break;
 
         case RME_CTRL_INFO_MODEL:
             return m_parent.getRmeModel();
             break;
+
+        case RME_CTRL_INFO_TCO_PRESENT:
+            return m_parent.getTcoPresent();
 
         default:
             debugOutput(DEBUG_LEVEL_ERROR, "Unknown control type 0x%08x\n", m_type);

@@ -28,6 +28,17 @@
 namespace Rme {
 
 signed int
+Device::getPhantom(unsigned int channel) {
+
+    if (channel > 3) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Channel %d phantom power not supported\n", channel);
+        return -1;
+    }
+
+    return settings.mic_phantom[channel] != 0;
+}
+
+signed int
 Device::setPhantom(unsigned int channel, unsigned int status) {
 
     if (channel > 3) {

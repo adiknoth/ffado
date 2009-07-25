@@ -88,9 +88,13 @@ Device::Device( DeviceManager& d,
     , num_channels( 0 )
     , samples_per_packet( 0 )
     , speed800( 0 )
+    , m_MixerContainer( NULL )
+    , m_ControlContainer( NULL )
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
+    memset(&settings, 0, sizeof(settings));
+    memset(&tco_settings, 0, sizeof(tco_settings));
 }
 
 Device::~Device()
@@ -113,6 +117,13 @@ Device::buildMixer() {
         destroyMixer();
         return false;
     }
+
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_INFO_MODEL, 0,
+            "Model", "Model ID", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_INFO_TCO_PRESENT, 0,
+            "TCO_present", "TCO is present", ""));
 
     result &= m_ControlContainer->addElement(
         new RmeSettingsCtrl(*this, RME_CTRL_PHANTOM_SW, 0,
@@ -229,6 +240,8 @@ Device::discover()
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         tco_present = (read_tco(NULL, 0) == 0);
     }
+    debugOutput(DEBUG_LEVEL_VERBOSE, "TCO present: %s\n",
+      tco_present?"yes":"no");
 
     // Find out the device's streaming status
     is_streaming = hardware_is_streaming();

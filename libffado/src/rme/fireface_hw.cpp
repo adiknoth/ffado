@@ -63,7 +63,17 @@ Device::init_hardware(void)
     m_software_freq = 44100;
     m_dds_freq = 0;
 
-    return set_hardware_params(&settings);
+    if (set_hardware_params(&settings) != 0)
+        return -1;
+
+    // Also configure the TCO (Time Code Option) settings for those devices
+    // which have a TCO.
+    if (tco_present) {
+        memset(&tco_settings, 0, sizeof(tco_settings));
+        return write_tco_settings(&tco_settings);
+    }
+
+    return 0;
 }
 
 signed int
@@ -344,9 +354,11 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
 
 //This is just for testing - it's a known consistent configuration
 //data[0] = 0x00020811;      // Phantom off
-data[0] = 0x00020811;      // Phantom on
-data[1] = 0x0000031e;
-data[2] = 0xc400101f;
+//data[0] = 0x00020811;      // Phantom on
+//data[1] = 0x0000031e;
+//data[2] = 0xc400101f;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "set hardware registers: 0x%08x 0x%08x 0x%08x\n",
+      data[0], data[1], data[2]);
 
     conf_reg = (m_rme_model==RME_MODEL_FIREFACE800)?RME_FF800_CONF_REG:RME_FF400_CONF_REG;
     if (writeBlock(conf_reg, data, 3) != 0)

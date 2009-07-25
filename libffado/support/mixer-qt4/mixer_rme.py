@@ -41,10 +41,27 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
 
     def init(self):
 
+        self.PhantomSwitches={
+            self.phantom_0: ['/Control/Phantom', 0],
+            self.phantom_1: ['/Control/Phantom', 1],
+            self.phantom_2: ['/Control/Phantom', 2],
+            self.phantom_3: ['/Control/Phantom', 3],
+        }
+
         # Other mixer variables
         self.is_streaming = 0
         self.sample_rate = 0
         self.model = 0
+        self.tco_present = 0
+
+    # Public slot: update phantom power hardware switchs
+    def updatePhantomSwitch(self, a0):
+        sender = self.sender()
+        # Value is the phantom switch value, with a corresponding enable
+        # bit in the high 16 bit word
+        val = (a0 << self.PhantomSwitches[sender][1]) | (0x00010000 << self.PhantomSwitches[sender][1])
+        log.debug("phantom switch %d set to %d" % (self.PhantomSwitches[sender][1], a0))
+        self.hw.setDiscrete(self.PhantomSwitches[sender][0], val)
 
     # Hide and disable a control
     def disable_hide(self,widget):
@@ -59,7 +76,27 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
 
         # Retrieve other device settings as needed and customise the UI
         # based on these options.
-        #self.model = self.hw.getDiscrete('/Mixer/Info/Model')
-        #log.debug("device model identifier: %d" % (self.model))
+        self.model = self.hw.getDiscrete('/Control/Model')
+        log.debug("device model identifier: %d" % (self.model))
+        self.tco_present = self.hw.getDiscrete('/Control/TCO_present')
+        log.debug("device has TCO: %d" % (self.tco_present))
         #self.sample_rate = self.hw.getDiscrete('/Mixer/Info/SampleRate')
         #log.debug("device sample rate: %d" % (self.sample_rate))
+
+        # The Fireface-400 only has 2 phantom-capable channels
+        if (self.model == RME_MODEL_FF400):
+            self.phantom_2.setEnabled(False)
+            self.phantom_3.setEnabled(False)
+
+        # Get current hardware values and connect GUI element signals to 
+        # their respective slots
+        for ctrl, info in self.PhantomSwitches.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            val = (self.hw.getDiscrete(info[0]) >> info[1]) & 0x01
+            log.debug("phantom switch %d is %d" % (info[1], val))
+            if val:
+                ctrl.setChecked(True)
+            else:
+                ctrl.setChecked(False)
+            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updatePhantomSwitch)

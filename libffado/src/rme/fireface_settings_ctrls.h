@@ -46,6 +46,7 @@ namespace Rme {
 #define RME_CTRL_INPUT2_OPTIONS        0x000f
 
 #define RME_CTRL_INFO_MODEL            0x0100
+#define RME_CTRL_INFO_TCO_PRESENT      0x0200
 
 class Device;
 
@@ -68,6 +69,7 @@ protected:
     Device &m_parent;
     unsigned int m_type;
     unsigned int m_value, m_info;
+
 };
 
 }
