@@ -85,8 +85,13 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
 
         # The Fireface-400 only has 2 phantom-capable channels
         if (self.model == RME_MODEL_FF400):
-            self.phantom_2.setEnabled(False)
-            self.phantom_3.setEnabled(False)
+            self.disable_hide(self.phantom_2)
+            self.disable_hide(self.phantom_3)
+        else:
+            self.phantom_0.setText("Mic 7")
+            self.phantom_1.setText("Mic 8")
+            self.phantom_2.setText("Mic 9")
+            self.phantom_3.setText("Mic 10")
 
         # Get current hardware values and connect GUI element signals to 
         # their respective slots
