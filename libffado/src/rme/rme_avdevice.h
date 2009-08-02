@@ -94,6 +94,10 @@ public:
     /* Device control functions */
     signed int getPhantom(unsigned int channel);
     signed int setPhantom(unsigned int channel, unsigned int status);
+    signed int getInputPadOpt(unsigned int channel);
+    signed int setInputPadOpt(unsigned int channel, unsigned int status);
+    signed int getInputInstrOpt(unsigned int channel);
+    signed int setInputInstrOpt(unsigned int channel, unsigned int status);
 
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }

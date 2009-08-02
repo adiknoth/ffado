@@ -63,7 +63,7 @@ signed int err = 0;
             break;
         case RME_CTRL_PHANTOM_SW:
             // Lowest 16 bits are phantom status bits (max 16 channels). 
-            // High 16 bits are "write enable" bits for the correspoding
+            // High 16 bits are "write enable" bits for the corresponding
             // channel represented in the low 16 bits.  This way changes can
             // be made to one channel without needing to first read the
             // existing value.
@@ -88,6 +88,18 @@ signed int err = 0;
                         }
                     }
                 }
+            }
+            break;
+        case RME_CTRL_FF400_PAD_SW:
+            // Object's "m_info" field is the channel
+            if (m_parent.setInputPadOpt(m_info, v)) {
+                m_value = (v != 0);
+            }
+            break;
+        case RME_CTRL_FF400_INSTR_SW:
+            // Object's "m_info" field is the channel
+            if (m_parent.setInputInstrOpt(m_info, v)) {
+                m_value = (v != 0);
             }
             break;
 
@@ -122,6 +134,12 @@ signed int val = 0;
             for (i=0; i<3; i++)
                 val |= (m_parent.getPhantom(i) << i);
             return val;
+            break;
+        case RME_CTRL_FF400_PAD_SW:
+            return m_parent.getInputPadOpt(m_info);
+            break;
+        case RME_CTRL_FF400_INSTR_SW:
+            return m_parent.getInputInstrOpt(m_info);
             break;
 
         case RME_CTRL_INFO_MODEL:

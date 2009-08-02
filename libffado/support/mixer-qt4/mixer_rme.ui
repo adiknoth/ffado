@@ -488,7 +488,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QGroupBox" name="groupBox_13" >
+    <widget class="QGroupBox" name="phones_level_group" >
      <property name="geometry" >
       <rect>
        <x>620</x>
@@ -581,14 +581,14 @@
        </widget>
       </item>
       <item row="0" column="2" >
-       <widget class="QCheckBox" name="checkBox_9" >
+       <widget class="QCheckBox" name="ff400_chan3_opt_instr" >
         <property name="text" >
          <string>Instr</string>
         </property>
        </widget>
       </item>
       <item row="0" column="3" >
-       <widget class="QCheckBox" name="checkBox_11" >
+       <widget class="QCheckBox" name="ff400_chan3_opt_pad" >
         <property name="text" >
          <string>Pad</string>
         </property>
@@ -602,14 +602,14 @@
        </widget>
       </item>
       <item row="2" column="3" >
-       <widget class="QCheckBox" name="checkBox_12" >
+       <widget class="QCheckBox" name="ff400_chan4_opt_pad" >
         <property name="text" >
          <string>Pad</string>
         </property>
        </widget>
       </item>
       <item row="2" column="2" >
-       <widget class="QCheckBox" name="checkBox_10" >
+       <widget class="QCheckBox" name="ff400_chan4_opt_instr" >
         <property name="text" >
          <string>Instr</string>
         </property>

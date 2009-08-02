@@ -48,13 +48,20 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             self.phantom_3: ['/Control/Phantom', 3],
         }
 
+        self.Switches={
+            self.ff400_chan3_opt_instr: ['/Control/Chan3_opt_instr'],
+            self.ff400_chan3_opt_pad:   ['/Control/Chan3_opt_pad'],
+            self.ff400_chan4_opt_instr: ['/Control/Chan4_opt_instr'],
+            self.ff400_chan4_opt_pad:   ['/Control/Chan4_opt_pad'],
+        }
+
         # Other mixer variables
         self.is_streaming = 0
         self.sample_rate = 0
         self.model = 0
         self.tco_present = 0
 
-    # Public slot: update phantom power hardware switchs
+    # Public slot: update phantom power hardware switches
     def updatePhantomSwitch(self, a0):
         sender = self.sender()
         # Value is the phantom switch value, with a corresponding enable
@@ -62,6 +69,12 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
         val = (a0 << self.PhantomSwitches[sender][1]) | (0x00010000 << self.PhantomSwitches[sender][1])
         log.debug("phantom switch %d set to %d" % (self.PhantomSwitches[sender][1], a0))
         self.hw.setDiscrete(self.PhantomSwitches[sender][0], val)
+
+    # Public slot: update generic switches
+    def updateSwitch(self, a0):
+        sender = self.sender()
+        log.debug("switch %s set to %d" % (self.Switches[sender][0], a0))
+        self.hw.setDiscrete(self.Switches[sender][0], a0)
 
     # Hide and disable a control
     def disable_hide(self,widget):
@@ -117,3 +130,14 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             else:
                 ctrl.setChecked(False)
             QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updatePhantomSwitch)
+
+        for ctrl, info in self.Switches.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            val = self.hw.getDiscrete(info[0])
+            log.debug("switch %s is %d" % (info[0], val))
+            if val:
+                ctrl.setChecked(True)
+            else:
+                ctrl.setChecked(False)
+            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateSwitch)

@@ -104,6 +104,7 @@ Device::~Device()
 
 bool
 Device::buildMixer() {
+    signed int i;
     bool result = true;
 
     destroyMixer();
@@ -128,6 +129,21 @@ Device::buildMixer() {
     result &= m_ControlContainer->addElement(
         new RmeSettingsCtrl(*this, RME_CTRL_PHANTOM_SW, 0,
             "Phantom", "Phantom switches", ""));
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        for (i=3; i<=4; i++) {
+            char path[32], desc[64];
+            snprintf(path, sizeof(path), "Chan%d_opt_instr", i);
+            snprintf(desc, sizeof(desc), "Chan%d instrument option", i);
+            result &= m_ControlContainer->addElement(
+                new RmeSettingsCtrl(*this, RME_CTRL_FF400_INSTR_SW, i,
+                    path, desc, ""));
+            snprintf(path, sizeof(path), "Chan%d_opt_pad", i);
+            snprintf(desc, sizeof(desc), "Chan%d pad option", i);
+            result &= m_ControlContainer->addElement(
+                new RmeSettingsCtrl(*this, RME_CTRL_FF400_PAD_SW, i,
+                    path, desc, ""));
+        }
+    }
 
     if (!result) {
         debugWarning("One or more device control elements could not be created\n");

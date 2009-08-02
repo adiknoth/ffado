@@ -52,5 +52,45 @@ Device::setPhantom(unsigned int channel, unsigned int status) {
     return 0;
 }
 
+signed int 
+Device::getInputPadOpt(unsigned int channel) {
+    if (m_rme_model!=RME_MODEL_FIREFACE400 || channel<3 || channel>4) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input pad option not supported for model %d\n", channel, m_rme_model);
+        return -1;
+    }
+    return settings.ff400_input_pad[channel-3] != 0;
+}
+
+signed int 
+Device::setInputPadOpt(unsigned int channel, unsigned int status) {
+    if (m_rme_model!=RME_MODEL_FIREFACE400 || channel<3 || channel>4) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input pad option not supported for model %d\n", channel, m_rme_model);
+        return -1;
+    }
+    settings.ff400_input_pad[channel-3] = (status != 0);
+    set_hardware_params();
+    return 0;
+}
+
+signed int 
+Device::getInputInstrOpt(unsigned int channel) {
+    if (m_rme_model!=RME_MODEL_FIREFACE400 || channel<3 || channel>4) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument option not supported for model %d\n", channel, m_rme_model);
+        return -1;
+    }
+    return settings.ff400_instr_input[channel-3] != 0;
+}
+
+signed int 
+Device::setInputInstrOpt(unsigned int channel, unsigned int status) {
+    if (m_rme_model!=RME_MODEL_FIREFACE400 || channel<3 || channel>4) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument option not supported for model %d\n", channel, m_rme_model);
+        return -1;
+    }
+    settings.ff400_instr_input[channel-3] = (status != 0);
+    set_hardware_params();
+    return 0;
+}
+                
 
 }

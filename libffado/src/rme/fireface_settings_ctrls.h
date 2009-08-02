@@ -44,6 +44,8 @@ namespace Rme {
 #define RME_CTRL_INPUT0_OPTIONS        0x000d
 #define RME_CTRL_INPUT1_OPTIONS        0x000e
 #define RME_CTRL_INPUT2_OPTIONS        0x000f
+#define RME_CTRL_FF400_PAD_SW          0x0010
+#define RME_CTRL_FF400_INSTR_SW        0x0011
 
 #define RME_CTRL_INFO_MODEL            0x0100
 #define RME_CTRL_INFO_TCO_PRESENT      0x0200
