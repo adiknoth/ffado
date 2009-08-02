@@ -231,10 +231,17 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
       data[0] |= CR0_PHANTOM_MIC0;
     if (sw_settings->mic_phantom[1])
       data[0] |= CR0_PHANTOM_MIC1;
-    if (sw_settings->mic_phantom[2])
-      data[0] |= CR0_PHANTOM_MIC2;
-    if (sw_settings->mic_phantom[3])
-      data[0] |= CR0_PHANTOM_MIC3;
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        if (sw_settings->mic_phantom[2])
+            data[0] |= CR0_FF800_PHANTOM_MIC9;
+        if (sw_settings->mic_phantom[3])
+            data[0] |= CR0_FF800_PHANTOM_MIC10;
+    } else {
+        if (sw_settings->ff400_input_pad[0])
+            data[0] |= CR0_FF400_CH3_PAD;
+        if (sw_settings->ff400_input_pad[1])
+            data[0] |= CR0_FF400_CH4_PAD;
+    }
 
     /* Phones level */
     switch (sw_settings->phones_level) {
@@ -289,8 +296,13 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
     data[1] |= (sw_settings->input_opt[2] & FF_SWPARAM_INPUT_OPT_A) ? CR1_INPUT_OPT2_A : 0;
     data[1] |= (sw_settings->input_opt[2] & FF_SWPARAM_INPUT_OPT_B) ? CR1_INPUT_OPT2_B : 0;
 
-    // Drive the speaker emulation / filter LED via FPGA
-    data[0] |= (sw_settings->filter) ? CR0_FILTER_FPGA : 0;
+    // Drive the speaker emulation / filter LED via FPGA in FF800.  In FF400
+    // the same bit controls the channel 4 "instrument" option.
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        data[0] |= (sw_settings->filter) ? CR0_FF800_FILTER_FPGA : 0;
+    } else {
+        data[0] |= (sw_settings->ff400_instr_input[1]) ? CR0_FF400_CH4_INSTR : 0;
+    }
 
     // Set the "rear" option for input 0 if selected
     data[1] |= (sw_settings->input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_REAR) ? CR1_FF800_INPUT1_REAR : 0;
@@ -312,11 +324,17 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
 
     /* TMS / TCO toggle bits in CR2 are not set by other drivers */
 
-    /* Drive / fuzz */
-    if (sw_settings->fuzz)
-      data[0] |= CR0_INSTR_DRIVE_FPGA; // FPGA LED control
-    else
-      data[1] |= CR1_INSTR_DRIVE;      // CPLD
+    /* Drive / fuzz in FF800.  In FF400, the CR0 bit used by "Drive" controls
+     * the channel 3 "instrument" option.
+     */
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        if (sw_settings->fuzz)
+            data[0] |= CR0_FF800_DRIVE_FPGA; // FPGA LED control
+        else
+            data[1] |= CR1_INSTR_DRIVE;      // CPLD
+    } else {
+        data[0] |= (sw_settings->ff400_instr_input[0]) ? CR0_FF400_CH3_INSTR : 0;
+    }
 
     /* Drop-and-stop is hardwired on in other drivers */
     data[2] |= CR2_DROP_AND_STOP;

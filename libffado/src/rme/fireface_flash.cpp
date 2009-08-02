@@ -251,8 +251,16 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         memset(settings, 0, sizeof(*settings));
         // Copy hardware details to the software settings structure as
         // appropriate.
-        for (i=0; i<4; i++)
+        for (i=0; i<2; i++)
             settings->mic_phantom[i] = hw_settings.mic_phantom[i];
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
+            for (i=2; i<4; i++)
+                settings->mic_phantom[i] = hw_settings.mic_phantom[i];
+        } else {
+            // TODO: confirm this is true
+            for (i=2; i<4; i++)
+                settings->ff400_input_pad[i-2] = hw_settings.mic_phantom[i];
+        }
         settings->spdif_input_mode = hw_settings.spdif_input_mode;
         settings->spdif_output_emphasis = hw_settings.spdif_output_emphasis;
         settings->spdif_output_pro = hw_settings.spdif_output_pro;
@@ -265,8 +273,14 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         settings->stop_on_dropout = hw_settings.stop_on_dropout;
         settings->input_level = hw_settings.input_level;
         settings->output_level = hw_settings.output_level;
-        settings->filter = hw_settings.filter;
-        settings->fuzz = hw_settings.fuzz;
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
+            settings->filter = hw_settings.filter;
+            settings->fuzz = hw_settings.fuzz;
+        } else {
+            // TODO: confirm this is true
+            settings->ff400_instr_input[0] = hw_settings.fuzz;
+            settings->ff400_instr_input[1] = hw_settings.filter;
+        }
         settings->limiter_disable = (hw_settings.p12db_an[0] == 0)?1:0;
         settings->sample_rate = hw_settings.sample_rate;
         settings->word_clock_single_speed = hw_settings.word_clock_single_speed;

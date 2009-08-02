@@ -126,16 +126,18 @@
 /* Defines for components of the control registers */
 // Configuration register 0
 #define CR0_PHANTOM_MIC0        0x00000001
+
 #define CR0_PHANTOM_MIC2        0x00000002
 #define CR0_FILTER_FPGA         0x00000004
+#define CR0_BIT01               0x00000002  // Use depends on model - see below
+#define CR0_BIT02               0x00000004  // Use depends on model - see below
 #define CR0_ILEVEL_FPGA_CTRL0   0x00000008
 #define CR0_ILEVEL_FPGA_CTRL1   0x00000010
 #define CR0_ILEVEL_FPGA_CTRL2   0x00000020
 #define CR0_ZEROBIT06           0x00000040
 #define CR0_PHANTOM_MIC1        0x00000080
-#define CR0_PHANTOM_MIC3        0x00000100
-#define CR0_ZEROBIT09           0x00000200
-#define CR0_INSTR_DRIVE_FPGA    0x00000200
+#define CR0_BIT08               0x00000100  // Use depends on model - see below
+#define CR0_BIT09               0x00000200  // Use depends on model - see below
 #define CRO_OLEVEL_FPGA_CTRL_0  0x00000400
 #define CRO_OLEVEL_FPGA_CTRL_1  0x00000800
 #define CRO_OLEVEL_FPGA_CTRL_2  0x00001000
@@ -145,12 +147,18 @@
 #define CRO_PHLEVEL_CTRL0       0x00010000
 #define CRO_PHLEVEL_CTRL1       0x00020000
 
-#define CR0_PHANTOM_FF400_MIC0  CR0_PHANTOM_MIC0
-#define CR0_PHANTOM_FF400_MIC1  CR0_PHANTOM_MIC1
-#define CR0_PHANTOM_FF800_MIC7  CR0_PHANTOM_MIC0
-#define CR0_PHANTOM_FF800_MIC8  CR0_PHANTOM_MIC1
-#define CR0_PHANTOM_FF800_MIC9  CR0_PHANTOM_MIC2
-#define CR0_PHANTOM_FF800_MIC10 CR0_PHANTOM_MIC3
+#define CR0_FF400_PHANTOM_MIC0  CR0_PHANTOM_MIC0
+#define CR0_FF400_PHANTOM_MIC1  CR0_PHANTOM_MIC1
+#define CR0_FF400_CH3_PAD       CR0_BIT08
+#define CR0_FF400_CH3_INSTR     CR0_BIT09
+#define CR0_FF400_CH4_PAD       CR0_BIT01
+#define CR0_FF400_CH4_INSTR     CR0_BIT02
+#define CR0_FF800_PHANTOM_MIC7  CR0_PHANTOM_MIC0
+#define CR0_FF800_PHANTOM_MIC8  CR0_PHANTOM_MIC1
+#define CR0_FF800_PHANTOM_MIC9  CR0_BIT01
+#define CR0_FF800_PHANTOM_MIC10 CR0_BIT08
+#define CR0_FF800_FILTER_FPGA   CR0_BIT02
+#define CR0_FF800_DRIVE_FPGA    CR0_BIT09
 #define CR0_ILEVEL_FPGA_LOGAIN  CR0_ILEVEL_FPGA_CTRL0
 #define CR0_ILEVEL_FPGA_4dBU    CR0_ILEVEL_FPGA_CTRL1
 #define CR0_ILEVEL_FPGA_m10dBV  CR0_ILEVEL_FPGA_CTRL2
@@ -426,6 +434,8 @@ typedef struct {
     uint32_t limiter_disable;
     uint32_t sample_rate;
     uint32_t word_clock_single_speed;
+    uint32_t ff400_input_pad[2];       // Channels 3/4, FF400 only
+    uint32_t ff400_instr_input[2];     // Channels 3/4, FF400 only
     uint32_t phones_level;             // Derived from fields in device flash
     uint32_t input_opt[3];             // Derived from fields in device flash
 } FF_software_settings_t;

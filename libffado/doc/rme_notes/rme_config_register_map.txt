@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.12
+Version: 0.13
 Author: Jonathan Woithe
-Date: 12 July 2009
+Date: 2 August 2009
 
 
 Definitions
@@ -118,7 +118,7 @@ In essence the configuration registers start at CBA+5*4 for both interfaces.
 When making a configuration change these registers are always written in a
 block of 12 bytes starting at 0xfc88f014 with a block write operation.
 
-Configuration register 1 (FF800: 0xfc88f014, FF400: 0x8010014):
+Configuration register 1 (FF800: 0xfc88f014, FF400: 0x80100514):
 
   bits 31-18: unknown, set to 0
   bits 17-16: Phones level:
@@ -130,17 +130,21 @@ Configuration register 1 (FF800: 0xfc88f014, FF400: 0x8010014):
     001 = hi-gain
     010 = +4dBU
     100 = -10dBV
-  bit 9: Instrument option: Drive (part 1 of 2: FPGA LED drive) (active = 1)
-  bit 8: Phantom power, mic 10 (active = 1)
+  bit 9: FF800: Instr option: Drive (part 1 of 2: FPGA LED drive) (active = 1)
+         FF400: Channel 3 "instrument" switch
+  bit 8: FF800: Phantom power, mic 10 (active = 1)
+         FF400: Channel 3 "pad" switch
   bit 7: Phantom power, mic 8 (active = 1)
   bit 6: unknown, set to 0
   bits 5-3: Input level control (part 1 of 2: FPGA LED drive):
     001 = lo-gain
     010 = +4dBU
     100 = -10dbV
-  bit 2: Instrument option: speaker emulation (part 1 of 2: FPGA LED drive)
-    (active = 1)
-  bit 1: Phantom power, mic 9 (active = 1)
+  bit 2: FF800: Instrument option: speaker emulation (aka "filter") (part 1 
+           of 2: FPGA LED drive) (active = 1)
+         FF400: Channel 4 "instrument" switch
+  bit 1: FF800: Phantom power, mic 9 (active = 1)
+         FF400: Channel 4 "pad" switch
   bit 0: Phantom power, mic 7 (active = 1)
 
 Configuration register 2 (FF800: 0xfc88f018, FF400: 0x80100518):
