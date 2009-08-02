@@ -93,6 +93,18 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             self.phantom_2.setText("Mic 9")
             self.phantom_3.setText("Mic 10")
 
+        # Instrument options, input jack selection controls and an ADAT2
+        # input are applicable only to the FF800
+        if (self.model != RME_MODEL_FF800):
+            self.instrument_options_group.setEnabled(False)
+            self.input_plug_select_group.setEnabled(False)
+            self.sync_ref_adat2.setEnabled(False)
+
+        # Only the FF400 has specific channel 3/4 options
+        if (self.model != RME_MODEL_FF400):
+            self.channel_3_4_options_group.setEnabled(False)
+            self.phones_level_group.setEnabled(False)
+
         # Get current hardware values and connect GUI element signals to 
         # their respective slots
         for ctrl, info in self.PhantomSwitches.iteritems():

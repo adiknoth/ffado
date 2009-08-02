@@ -232,28 +232,28 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_4" >
          <item>
-          <widget class="QRadioButton" name="radioButton_5" >
+          <widget class="QRadioButton" name="sync_ref_wordclk" >
            <property name="text" >
             <string>Word clock</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="radioButton_6" >
+          <widget class="QRadioButton" name="sync_ref_adat1" >
            <property name="text" >
             <string>ADAT1 in</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="radioButton_7" >
+          <widget class="QRadioButton" name="sync_ref_adat2" >
            <property name="text" >
             <string>ADAT2 in</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QRadioButton" name="radioButton_8" >
+          <widget class="QRadioButton" name="sync_ref_spdif" >
            <property name="text" >
             <string>SPDIF in</string>
            </property>
@@ -524,7 +524,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QGroupBox" name="groupBox_14" >
+    <widget class="QGroupBox" name="instrument_options_group" >
      <property name="geometry" >
       <rect>
        <x>100</x>
@@ -560,7 +560,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QGroupBox" name="groupBox_15" >
+    <widget class="QGroupBox" name="channel_3_4_options_group" >
      <property name="geometry" >
       <rect>
        <x>270</x>
@@ -651,7 +651,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QGroupBox" name="groupBox_17" >
+    <widget class="QGroupBox" name="input_plug_select_group" >
      <property name="geometry" >
       <rect>
        <x>460</x>
