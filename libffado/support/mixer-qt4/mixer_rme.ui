@@ -28,7 +28,7 @@
     <attribute name="title" >
      <string>Control</string>
     </attribute>
-    <widget class="QGroupBox" name="groupBox" >
+    <widget class="QGroupBox" name="phantom_group" >
      <property name="geometry" >
       <rect>
        <x>10</x>
@@ -88,7 +88,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout" >
       <item>
-       <widget class="QGroupBox" name="groupBox_2" >
+       <widget class="QGroupBox" name="spdif_in_group" >
         <property name="title" >
          <string>SPDIF in</string>
         </property>
@@ -111,7 +111,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox_3" >
+       <widget class="QGroupBox" name="clock_mode_group" >
         <property name="title" >
          <string>Clock mode</string>
         </property>
@@ -134,7 +134,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox_4" >
+       <widget class="QGroupBox" name="autosync_ref_group" >
         <property name="title" >
          <string>Autosync ref</string>
         </property>
@@ -189,7 +189,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2" >
       <item>
-       <widget class="QGroupBox" name="groupBox_5" >
+       <widget class="QGroupBox" name="spdif_out_group" >
         <property name="title" >
          <string>SPDIF out</string>
         </property>
@@ -226,7 +226,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox_6" >
+       <widget class="QGroupBox" name="sync_ref_group" >
         <property name="title" >
          <string>Pref sync ref</string>
         </property>
@@ -263,7 +263,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox_7" >
+       <widget class="QGroupBox" name="sync_check_group" >
         <property name="title" >
          <string>Sync check</string>
         </property>
@@ -297,14 +297,14 @@
           </widget>
          </item>
          <item row="2" column="0" >
-          <widget class="QLabel" name="label_9" >
+          <widget class="QLabel" name="sync_check_adat2_label" >
            <property name="text" >
             <string>ADAT2</string>
            </property>
           </widget>
          </item>
          <item row="2" column="1" >
-          <widget class="QLabel" name="label_10" >
+          <widget class="QLabel" name="sync_check_adat2_status" >
            <property name="text" >
             <string>No lock</string>
            </property>
@@ -416,7 +416,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QGroupBox" name="groupBox_11" >
+    <widget class="QGroupBox" name="level_in_group" >
      <property name="geometry" >
       <rect>
        <x>610</x>
@@ -452,7 +452,7 @@
       </item>
      </layout>
     </widget>
-    <widget class="QGroupBox" name="groupBox_12" >
+    <widget class="QGroupBox" name="level_out_group" >
      <property name="geometry" >
       <rect>
        <x>510</x>

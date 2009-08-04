@@ -112,6 +112,8 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             self.instrument_options_group.setEnabled(False)
             self.input_plug_select_group.setEnabled(False)
             self.sync_ref_adat2.setEnabled(False)
+            self.sync_check_adat2_label.setEnabled(False)
+            self.sync_check_adat2_status.setEnabled(False)
 
         # Only the FF400 has specific channel 3/4 options
         if (self.model != RME_MODEL_FF400):
