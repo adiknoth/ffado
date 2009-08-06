@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.13
+Version: 0.14
 Author: Jonathan Woithe
-Date: 2 August 2009
+Date: 6 August 2009
 
 
 Definitions
@@ -655,8 +655,74 @@ through.  In other words, the "current frame" is not necessarily constant
 for all samples in a packet.
 
 
-Mixer controls
---------------
+Input preamp / output amp gain control
+--------------------------------------
+
+On the Fireface-400 the gain of the mic/instrument preamps and output
+amplifiers can be set.  Mic channel gain is in steps of 1 dB from 10 dB up to
+65 dB, with 0dB also available.  Instrument input gain ranges from 0 dB to
+18 dB in 0.5 dB steps.  Output gains range from +6 dB down to -58 dB in
+steps of 1 dB, with compete "mute" also available.
+
+The gains are set using the register at 0x801c0180.
+
+  bits 31-24:
+  bits 23-16: channel being set (0=mic1, 1=mic2, 2=inst3, 4=inst4)
+  bits 15-8:
+  bits 7-0: the gain value
+
+For mic channels the gain value is the dB value.  For instrument channels, a
+value of 2G is written for a gain value of G (thereby allowing a stepsize of
+0.5 dB).  For output gain, 0 = +6 dB, 0x3b = -53 dB, 0x3f = mute.
+
+The definition of the "channel being set" is as follows.
+  0 = mic input 1 gain
+  1 = mic input 2 gain
+  2 = instrument input 3 gain
+  3 = instrument input 4 gain
+  4-9 = analog outputs 1-6 level
+  10-11 = phones output level
+  12-13 = SPDIF output level
+  14-21 = ADAT outputs 1-8 level
+
+
+Firefice-400 mixer controls
+---------------------------
+
+The Fireface-400 matrix mixer is controlled using a block of registers
+starting at 0x80080000.  An 18x18 matrix mixer is implemented allowing any
+hardware input to be sent to any device output.  Pan control is effected by
+manipulating the "left/right" controls within an output pair.
+
+For each input channel block the order of channels is Analog 1-8, SPDIF 1-2,
+ADAT 1-8.
+
+0x80080000 - 0x80080044: input channel sends to Analog 1 output.
+0x80080048 - 0x8008008c: playback channel sends to Analog 1 output.
+0x80080090 - 0x800800d4: input channel sends to Analog 2 output.
+0x800800d8 - 0x8008011c: playback channel sends to Analog 2 output.
+:
+0x80080990 - 0x800809d4: input channel sends to ADAT 8 output.
+0x800809d8 - 0x80080a1c: playback channel sends to ADAT 8 output.
+
+0x80080f80: matrix mixer analog 1 output fader
+0x80080f84: matrix mixer analog 2 output fader 
+:
+0x80080fc4: matrix mixer ADAT 8 output fader
+
+Each fader control ranges from 0x00000000 (-inf) through 0x00008000 (0.0 dB)
+up to a maximum of 0x00100000 (+6.0 dB).  The precise scale is still to be
+worked out: -52.7 dB appears to correspond to a value of 0x0000004c, -46.6 dB 
+is 0x00000099.
+
+When setting the output fader controls, the associated output amplifier 
+gain control (see previous section) are generally kept in sync.  That is, if
+register 0x80080f80 (analog 1 output fader) is set to 0 dB, so is the analog
+output 1 level via register 0x801c0180.
+
+
+Fireface-800 mixer controls
+---------------------------
 
 The matrix mixer on the Fireface-800 is controlled using a block of
 registers starting at 0x80080000.  A 28x28 matrix mixer is implemented
