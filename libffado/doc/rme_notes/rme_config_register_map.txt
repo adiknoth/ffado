@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.14
+Version: 0.15
 Author: Jonathan Woithe
-Date: 6 August 2009
+Date: 8 August 2009
 
 
 Definitions
@@ -661,14 +661,14 @@ Input preamp / output amp gain control
 On the Fireface-400 the gain of the mic/instrument preamps and output
 amplifiers can be set.  Mic channel gain is in steps of 1 dB from 10 dB up to
 65 dB, with 0dB also available.  Instrument input gain ranges from 0 dB to
-18 dB in 0.5 dB steps.  Output gains range from +6 dB down to -58 dB in
-steps of 1 dB, with compete "mute" also available.
+18 dB in 0.5 dB steps.  Output gains range from +6 dB down to -53 dB (a 58
+dB range) in steps of 1 dB, with compete "mute" also available.
 
 The gains are set using the register at 0x801c0180.
 
-  bits 31-24:
+  bits 31-24: unknown (set to 0)
   bits 23-16: channel being set (0=mic1, 1=mic2, 2=inst3, 4=inst4)
-  bits 15-8:
+  bits 15-8: unknown (set to 0)
   bits 7-0: the gain value
 
 For mic channels the gain value is the dB value.  For instrument channels, a
@@ -711,9 +711,16 @@ ADAT 1-8.
 0x80080fc4: matrix mixer ADAT 8 output fader
 
 Each fader control ranges from 0x00000000 (-inf) through 0x00008000 (0.0 dB)
-up to a maximum of 0x00100000 (+6.0 dB).  The precise scale is still to be
-worked out: -52.7 dB appears to correspond to a value of 0x0000004c, -46.6 dB 
-is 0x00000099.
+up to a maximum of 0x00010000 (+6.0 dB).  -52.7 dB appears to correspond to
+a value of 0x0000004c, -46.6 dB is 0x00000099.  From this we can see that if
+v is the value being written, the dB gain applied can be found using
+
+  dB = 20.log10(v/32768)
+
+Alternatively, to set the gain to G dB, one calculates the value to send to
+the device (v) using
+
+  v = 32768 * exp10(G/20)
 
 When setting the output fader controls, the associated output amplifier 
 gain control (see previous section) are generally kept in sync.  That is, if
@@ -745,8 +752,12 @@ is, Analog 1-10, SPDIF, ADAT1 1-8, ADAT2 1-8.
 :
 0x80081fec: maxtrix mixer ADAT2-8 output fader
 
-Each fader control ranges from 0x00000000 (-inf) through 0x00008000 (0.0dB)
-and up to a maximum setting of 0x00010000 (+6.5dB).
+Each fader control ranges from 0x00000000 (-inf) through 0x00008000 (0.0 dB)
+and up to a maximum setting of 0x00010000 (+6.0 dB).  As for the
+Fireface-400, if v is the value being written, the dB gain applied can be
+found using
+
+  dB = 20.log(v/32768)
 
 Mute is synthesised by setting the respective send value to -inf (0). 
 Conversely, solo is synthesised by muting all sends to the selected bus
