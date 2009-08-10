@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.15
+Version: 0.16
 Author: Jonathan Woithe
-Date: 8 August 2009
+Date: 10 August 2009
 
 
 Definitions
@@ -211,8 +211,7 @@ registers are used (used when determining the status of the device's
 streaming system) the layout of register 0 is slightly different.
 
 Status register 0:
-  bit 0: on a 2-quadlet read, this indicates whether the device is streaming
-  bits 1-9: on a 2-quadlet read these bits are all zero
+  bits 9-0: on a 2-quadlet read these bits are all zero
   bits 9-0: on a 4-quadlet read when in autosync mode, these bits contain
             SR/250, where SR is the sample rate to be passed to the
             streaming subsystem when starting streaming.

@@ -406,11 +406,11 @@ Device::getSupportedSamplingFrequencies()
     // Generate the list of supported frequencies.  If the device is
     // externally clocked the frequency is limited to the external clock
     // frequency.  If the device is running the multiplier is fixed.
-    if (state.clock_mode == FF_STATE_CLOCKMODE_MASTER) {
+    if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
         // FIXME: if synced to TCO, is autosync_freq valid?
         frequencies.push_back(state.autosync_freq);
     } else
-    if (hardware_is_streaming()) {
+    if (state.is_streaming) {
         unsigned int fixed_mult = multiplier_of_freq(m_software_freq);
         for (j=0; j<3; j++) {
             frequencies.push_back(freq[j]*fixed_mult);

@@ -115,7 +115,7 @@ Device::get_hardware_state(FF_state_t *state)
     if (get_hardware_status(&stat0, &stat1) != 0)
         return -1;
 
-    state->is_streaming = (stat0 & SR0_IS_STREAMING) != 0;
+    state->is_streaming = is_streaming;
 
     state->clock_mode = (settings.clock_mode == FF_SWPARAM_CLOCK_MODE_MASTER)?FF_STATE_CLOCKMODE_MASTER:FF_STATE_CLOCKMODE_AUTOSYNC;
 
@@ -447,10 +447,7 @@ signed int
 Device::hardware_is_streaming(void)
 {
     // Return 1 if the hardware is streaming, 0 if not.
-    unsigned int s1, s2;
-    if (get_hardware_status(&s1, &s2) != 0)
-        return 0;
-    return (s1 & SR0_IS_STREAMING) != 0;
+    return is_streaming;
 }
 
 signed int 

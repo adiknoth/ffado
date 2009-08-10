@@ -115,9 +115,11 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             self.sync_check_adat2_label.setEnabled(False)
             self.sync_check_adat2_status.setEnabled(False)
 
-        # Only the FF400 has specific channel 3/4 options
+        # Only the FF400 has specific channel 3/4 options, input gain
+        # controls and switchable phones level
         if (self.model != RME_MODEL_FF400):
-            self.channel_3_4_options_group.setEnabled(False)
+            self.disable_hide(self.input_gains_group)
+            self.disable_hide(self.channel_3_4_options_group)
             self.phones_level_group.setEnabled(False)
 
         # Get current hardware values and connect GUI element signals to 

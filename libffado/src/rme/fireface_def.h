@@ -258,13 +258,8 @@
 #define SR0_WCLK_SYNC           0x20000000
 #define SR0_WCLK_LOCK           0x40000000
 
-// It seems the definition of SR0 is a little different depending on whether
-// 2 or 4 status registers are read.  In the case of a request for 2, the
-// following additional bits are defined.
-#define SR0_IS_STREAMING        0x00000001
-// If 4 quadlets are requested (as is done when checking the streaming
-// system status), the lowest 10 bits instead represent sample_rate/250 if
-// locked to an external clock source.
+// The lowest 10 bits of SR0 represent sample_rate/250 if locked to an
+// external clock source.
 #define SR0_STREAMING_FREQ_MASK 0x000003ff
 
 #define SR0_ADAT1_STATUS_MASK   (SR0_ADAT1_LOCK|SR0_ADAT1_SYNC)
