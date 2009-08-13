@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.16
+Version: 0.17
 Author: Jonathan Woithe
-Date: 10 August 2009
+Date: 13 August 2009
 
 
 Definitions
@@ -666,7 +666,7 @@ dB range) in steps of 1 dB, with compete "mute" also available.
 The gains are set using the register at 0x801c0180.
 
   bits 31-24: unknown (set to 0)
-  bits 23-16: channel being set (0=mic1, 1=mic2, 2=inst3, 4=inst4)
+  bits 23-16: channel being set (see below)
   bits 15-8: unknown (set to 0)
   bits 7-0: the gain value
 

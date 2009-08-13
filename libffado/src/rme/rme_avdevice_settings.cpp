@@ -91,6 +91,34 @@ Device::setInputInstrOpt(unsigned int channel, unsigned int status) {
     set_hardware_params();
     return 0;
 }
-                
+
+signed int
+Device::getAmpGain(unsigned int index) {
+    if (m_rme_model != RME_MODEL_FIREFACE400) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Amp gains only supported on FF400\n");
+        return -1;
+    }
+    if (index > 21) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Amp gain index %d invalid\n", index);
+         return -1;
+    }
+    return settings.amp_gains[index];
+}
+
+signed int
+Device::setAmpGain(unsigned int index, signed int val) {
+    quadlet_t regval = 0;
+
+    if (m_rme_model != RME_MODEL_FIREFACE400) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Amp gains only supported on FF400\n");
+        return -1;
+    }
+    if (index > 21) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Amp gain index %d invalid\n", index);
+         return -1;
+    }
+    settings.amp_gains[index] = val & 0xff;
+    return set_hardware_ampgain(index, val);
+}
 
 }

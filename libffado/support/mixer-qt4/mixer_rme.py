@@ -55,6 +55,13 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             self.ff400_chan4_opt_pad:   ['/Control/Chan4_opt_pad'],
         }
 
+        self.Gains={
+            self.gain_mic1: ['/Control/Gains', 0],
+            self.gain_mic2: ['/Control/Gains', 1],
+            self.gain_input3: ['/Control/Gains', 2],
+            self.gain_input4: ['/Control/Gains', 3],
+        }
+
         # Other mixer variables
         self.is_streaming = 0
         self.sample_rate = 0
@@ -75,6 +82,12 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
         sender = self.sender()
         log.debug("switch %s set to %d" % (self.Switches[sender][0], a0))
         self.hw.setDiscrete(self.Switches[sender][0], a0)
+
+    # Public slot: update gains
+    def updateGain(self, a0):
+        sender = self.sender()
+        log.debug("gain %s[%d] set to %d" % (self.Gains[sender][0], self.Gains[sender][1], a0))
+        self.hw.setMatrixMixerValue(self.Gains[sender][0], 0, self.Gains[sender][1], a0)
 
     # Hide and disable a control
     def disable_hide(self,widget):
@@ -145,3 +158,11 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             else:
                 ctrl.setChecked(False)
             QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateSwitch)
+
+        for ctrl, info in self.Gains.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            val = self.hw.getMatrixMixerValue(info[0], 0, info[1])
+            log.debug("gain %s[%d] is %d" % (info[0], info[1], val))
+            ctrl.setValue(val);
+            QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateGain)

@@ -98,6 +98,8 @@ public:
     signed int setInputPadOpt(unsigned int channel, unsigned int status);
     signed int getInputInstrOpt(unsigned int channel);
     signed int setInputInstrOpt(unsigned int channel, unsigned int status);
+    signed int getAmpGain(unsigned int index);
+    signed int setAmpGain(unsigned int index, signed int val);
 
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }
@@ -159,6 +161,8 @@ private:
     signed int hardware_init_streaming(unsigned int sample_rate, unsigned int tx_channel);
     signed int hardware_start_streaming(unsigned int listen_channel);
     signed int hardware_stop_streaming(void);
+
+    signed int set_hardware_ampgain(unsigned int index, signed int val);
 
     Control::Container *m_MixerContainer;
     Control::Container *m_ControlContainer;

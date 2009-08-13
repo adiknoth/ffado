@@ -59,6 +59,12 @@
              </item>
              <item row="0" column="1" >
               <widget class="QSlider" name="gain_mic1" >
+               <property name="maximum" >
+                <number>65</number>
+               </property>
+               <property name="singleStep" >
+                <number>1</number>
+               </property>
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -79,6 +85,9 @@
              </item>
              <item row="1" column="1" >
               <widget class="QSlider" name="gain_mic2" >
+               <property name="maximum" >
+                <number>65</number>
+               </property>
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -99,6 +108,12 @@
              </item>
              <item row="2" column="1" >
               <widget class="QSlider" name="gain_input3" >
+               <property name="minimum" >
+                <number>0</number>
+               </property>
+               <property name="maximum" >
+                <number>36</number>
+               </property>
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -119,6 +134,12 @@
              </item>
              <item row="3" column="1" >
               <widget class="QSlider" name="gain_input4" >
+               <property name="minimum" >
+                <number>0</number>
+               </property>
+               <property name="maximum" >
+                <number>36</number>
+               </property>
                <property name="orientation" >
                 <enum>Qt::Horizontal</enum>
                </property>
@@ -1065,7 +1086,6 @@
       <zorder>frame</zorder>
       <zorder>frame_2</zorder>
       <zorder>frame_3</zorder>
-      <zorder>verticalSpacer_17</zorder>
       <zorder>frame_5</zorder>
      </widget>
      <widget class="QWidget" name="mixer" >
@@ -1076,7 +1096,6 @@
     </widget>
    </item>
   </layout>
-  <zorder>tabWidget</zorder>
  </widget>
  <resources/>
  <connections/>

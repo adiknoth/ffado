@@ -28,6 +28,7 @@
 
 namespace Rme {
 
+/* Control types for an RmeSettingsCtrl object */
 #define RME_CTRL_NONE                  0x0000
 #define RME_CTRL_PHANTOM_SW            0x0001
 #define RME_CTRL_SPDIF_INPUT_MODE      0x0002
@@ -49,6 +50,10 @@ namespace Rme {
 
 #define RME_CTRL_INFO_MODEL            0x0100
 #define RME_CTRL_INFO_TCO_PRESENT      0x0200
+
+/* Control types for an RmeSettingsMatrixCtrl object */
+#define RME_MATRIXCTRL_NONE            0x0000
+#define RME_MATRIXCTRL_GAINS           0x0001
 
 class Device;
 
@@ -72,6 +77,30 @@ protected:
     unsigned int m_type;
     unsigned int m_value, m_info;
 
+};
+
+class RmeSettingsMatrixCtrl
+    : public Control::MatrixMixer
+{
+public:
+    RmeSettingsMatrixCtrl(Device &parent, unsigned int type);
+    RmeSettingsMatrixCtrl(Device &parent, unsigned int type,
+        std::string name);
+
+    virtual void show();
+
+    virtual std::string getRowName(const int row);
+    virtual std::string getColName(const int col);
+    virtual int canWrite( const int, const int ) { return true; }
+    virtual int getRowCount();
+    virtual int getColCount();
+
+    virtual double setValue(const int row, const int col, const double val);
+    virtual double getValue(const int row, const int col);
+
+protected:
+    Device &m_parent;
+    unsigned int m_type;
 };
 
 }

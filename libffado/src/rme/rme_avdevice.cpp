@@ -130,6 +130,7 @@ Device::buildMixer() {
         new RmeSettingsCtrl(*this, RME_CTRL_PHANTOM_SW, 0,
             "Phantom", "Phantom switches", ""));
     if (m_rme_model == RME_MODEL_FIREFACE400) {
+        // Instrument input options
         for (i=3; i<=4; i++) {
             char path[32], desc[64];
             snprintf(path, sizeof(path), "Chan%d_opt_instr", i);
@@ -143,6 +144,10 @@ Device::buildMixer() {
                 new RmeSettingsCtrl(*this, RME_CTRL_FF400_PAD_SW, i,
                     path, desc, ""));
         }
+
+        // Input/output gains
+        result &= m_ControlContainer->addElement(
+            new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_GAINS, "Gains"));
     }
 
     if (!result) {

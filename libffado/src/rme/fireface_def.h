@@ -85,6 +85,8 @@
 #define RME_FF_TCO_READ_REG          0x801f0000
 #define RME_FF_TCO_WRITE_REG         0x810f0020
 
+#define RME_FF400_GAIN_REG           0x801c0180
+
 /* Addresses of various blocks in memory-mapped flash */
 #define RME_FF400_FLASH_SETTINGS_ADDR       0x00060000
 #define RME_FF400_FLASH_MIXER_VOLUME_ADDR   0x00070000
@@ -433,6 +435,9 @@ typedef struct {
     uint32_t ff400_instr_input[2];     // Channels 3/4, FF400 only
     uint32_t phones_level;             // Derived from fields in device flash
     uint32_t input_opt[3];             // Derived from fields in device flash
+
+    // Other "settings" fields which are not necessarily stored in device flash
+    int32_t amp_gains[22];             // FF400: gains of input/output amps
 } FF_software_settings_t;
 
 // Defines used to interpret the software settings structure.  For now we
@@ -476,6 +481,31 @@ typedef struct {
 
 #define FF_SWPARAM_FF800_INPUT_OPT_FRONT       FF_SWPARAM_INPUT_OPT_A
 #define FF_SWPARAM_FF800_INPUT_OPT_REAR        FF_SWPARAM_INPUT_OPT_B
+
+// Indices into the amp_gains array
+#define FF400_AMPGAIN_MIC1      0
+#define FF400_AMPGAIN_MIC2      1
+#define FF400_AMPGAIN_INPUT3    2
+#define FF400_AMPGAIN_INPUT4    3
+#define FF400_AMPGAIN_OUTPUT1   4
+#define FF400_AMPGAIN_OUTPUT2   5
+#define FF400_AMPGAIN_OUTPUT3   6
+#define FF400_AMPGAIN_OUTPUT4   7
+#define FF400_AMPGAIN_OUTPUT5   8
+#define FF400_AMPGAIN_OUTPUT6   9
+#define FF400_AMPGAIN_PHONES_L 10
+#define FF400_AMPGAIN_PHONES_R 11
+#define FF400_AMPGAIN_SPDIF1   12
+#define FF400_AMPGAIN_SPDIF2   13
+#define FF400_AMPGAIN_ADAT1_1  14
+#define FF400_AMPGAIN_ADAT1_2  15
+#define FF400_AMPGAIN_ADAT1_3  16
+#define FF400_AMPGAIN_ADAT1_4  17
+#define FF400_AMPGAIN_ADAT1_5  18
+#define FF400_AMPGAIN_ADAT1_6  19
+#define FF400_AMPGAIN_ADAT1_7  20
+#define FF400_AMPGAIN_ADAT1_8  21
+#define FF400_AMPGAIN_NUM      22
 
 // The general Fireface state
 typedef struct {

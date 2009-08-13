@@ -58,6 +58,14 @@ Device::init_hardware(void)
     settings.input_level = FF_SWPARAM_ILEVEL_LOGAIN;
     settings.output_level = FF_SWPARAM_OLEVEL_HIGAIN;
 
+    // Set amplifier gains
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        signed int i;
+        for (i=0; i<FF400_AMPGAIN_NUM; i++) {
+            set_hardware_ampgain(i, settings.amp_gains[i]);
+        }
+    }
+
     // A default sampling rate.  An explicit DDS frequency is not enabled
     // by default.
     m_software_freq = 44100;
@@ -674,6 +682,31 @@ Device::hardware_stop_streaming(void)
     }
 
     return writeBlock(addr, buf, size);
+}
+
+signed int
+Device::set_hardware_ampgain(unsigned int index, signed int val) {
+// "val" is in dB except for inputs 3/4 where it's in units of 0.5 dB. This
+// function is responsible for converting to/from the scale used by the
+// device.
+    quadlet_t regval = 0;
+    signed int devval = 0;
+    if (index <= FF400_AMPGAIN_MIC2) {
+        if (val >= 10)
+            devval = val;
+        else
+            devval = 0;
+    } else
+    if (index <= FF400_AMPGAIN_INPUT4) {
+        devval = val;
+    } else {
+        devval = 6 - val;
+        if (devval > 53)
+            devval = 0x3f;  // Mute
+    }
+    regval |= devval;
+    regval |= (index << 16);
+    return writeRegister(RME_FF400_GAIN_REG, regval);
 }
 
 }

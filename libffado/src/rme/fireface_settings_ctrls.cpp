@@ -156,4 +156,95 @@ signed int val = 0;
     return 0;
 }
 
+
+RmeSettingsMatrixCtrl::RmeSettingsMatrixCtrl(Device &parent, unsigned int type)
+: Control::MatrixMixer(&parent)
+, m_parent(parent)
+, m_type(type)
+{
+}
+
+RmeSettingsMatrixCtrl::RmeSettingsMatrixCtrl(Device &parent, unsigned int type,
+    std::string name)
+: Control::MatrixMixer(&parent)
+, m_parent(parent)
+, m_type(type)
+{
+    setName(name);
+}
+
+void RmeSettingsMatrixCtrl::show()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "RME matrix mixer type %d\n", m_type);
+}
+
+std::string RmeSettingsMatrixCtrl::getRowName(const int row)
+{
+    char buf[64];
+    snprintf(buf, sizeof(buf), "RmeSettingsMatrixCtrl type %d, row %d", m_type, row);
+    return buf;
+}
+
+std::string RmeSettingsMatrixCtrl::getColName(const int col)
+{
+    char buf[64];
+    snprintf(buf, sizeof(buf), "RmeSettingsMatrixCtrl type %d, column %d", m_type, col);
+    return buf;
+}
+
+int RmeSettingsMatrixCtrl::getRowCount() 
+{
+    switch (m_type) {
+        case RME_MATRIXCTRL_GAINS:
+            if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400)
+                return 1;
+            break;
+    }
+
+    return 0;
+}
+
+int RmeSettingsMatrixCtrl::getColCount() 
+{
+    switch (m_type) {
+        case RME_MATRIXCTRL_GAINS:
+            if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400)
+                return 22;
+            break;
+    }
+
+    return 0;
+}
+
+double RmeSettingsMatrixCtrl::setValue(const int row, const int col, const double val) 
+{
+    signed int ret = true;
+    signed int i;
+
+    switch (m_type) {
+        case RME_MATRIXCTRL_GAINS:
+            i = val;
+            if (i >= 0)
+                ret = m_parent.setAmpGain(col, val);
+            else
+                ret = -1;
+            break;
+    }
+
+    return ret;
+}
+
+double RmeSettingsMatrixCtrl::getValue(const int row, const int col) 
+{
+    double val = 0.0;
+    switch (m_type) {
+        case RME_MATRIXCTRL_GAINS:
+            val = m_parent.getAmpGain(col);
+            break;
+    }
+
+    return val;
+}
+      
+
 }
