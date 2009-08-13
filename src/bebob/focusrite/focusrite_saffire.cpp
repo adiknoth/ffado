@@ -707,7 +707,7 @@ void SaffireMatrixMixer::init()
 
 void SaffireMatrixMixer::show()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "Saffire Matrix mixer type %d\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "Saffire Matrix mixer type %d\n", m_type);
 }
 
 } // Focusrite
