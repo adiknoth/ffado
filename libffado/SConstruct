@@ -245,7 +245,7 @@ if not env.GetOption('clean'):
 	for pkg in pkgs:
 		name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
 		env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, pkgs[pkg] )
-		print '%s_FLAGS' % name2
+		#print '%s_FLAGS' % name2
 		if env['%s_FLAGS'%name2] == 0:
 			allpresent &= 0
 
@@ -570,7 +570,11 @@ if env['BUILD_TESTS']:
 	subdirs.append('tests')
 
 if build_base:
-	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
+	#env.SConscript( dirs=subdirs, exports="env", build_dir=build_base )
+	builddirs = list()
+	for dir in subdirs:
+		builddirs.append( build_base + dir )
+	env.SConscript( dirs=subdirs, exports="env", build_dir=builddirs )
 else:
 	env.SConscript( dirs=subdirs, exports="env" )
 
