@@ -57,6 +57,7 @@ Device::init_hardware(void)
     settings.sync_ref = FF_SWPARAM_SYNCREF_WORDCLOCK;
     settings.input_level = FF_SWPARAM_ILEVEL_LOGAIN;
     settings.output_level = FF_SWPARAM_OLEVEL_HIGAIN;
+    settings.phones_level = FF_SWPARAM_PHONESLEVEL_HIGAIN;
 
     // Set amplifier gains
     if (m_rme_model == RME_MODEL_FIREFACE400) {

@@ -129,6 +129,16 @@ Device::buildMixer() {
     result &= m_ControlContainer->addElement(
         new RmeSettingsCtrl(*this, RME_CTRL_PHANTOM_SW, 0,
             "Phantom", "Phantom switches", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_INPUT_LEVEL, 0,
+            "Input_level", "Input level", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_OUTPUT_LEVEL, 0,
+            "Output_level", "Output level", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_PHONES_LEVEL, 0,
+            "Phones_level", "Phones level", ""));
+
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         // Instrument input options
         for (i=3; i<=4; i++) {

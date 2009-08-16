@@ -52,6 +52,60 @@ Device::setPhantom(unsigned int channel, unsigned int status) {
     return 0;
 }
 
+signed int
+Device::getInputLevel(void) {
+    return settings.input_level;
+}
+
+signed int
+Device::setInputLevel(unsigned int level) {
+
+    if (level<FF_SWPARAM_ILEVEL_LOGAIN || level>FF_SWPARAM_ILEVEL_m10dBV) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Invalid input level ID %d\n", level);
+        return -1;
+    }
+    settings.input_level = level;
+    set_hardware_params();
+
+    return 0;
+}
+
+signed int
+Device::getOutputLevel(void) {
+    return settings.output_level;
+}
+
+signed int
+Device::setOutputLevel(unsigned int level) {
+
+    if (level<FF_SWPARAM_OLEVEL_HIGAIN || level>FF_SWPARAM_OLEVEL_m10dBV) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Invalid output level ID %d\n", level);
+        return -1;
+    }
+    settings.output_level = level;
+    set_hardware_params();
+
+    return 0;
+}
+
+signed int
+Device::getPhonesLevel(void) {
+    return settings.phones_level;
+}
+
+signed int
+Device::setPhonesLevel(unsigned int level) {
+
+    if (level<FF_SWPARAM_PHONESLEVEL_HIGAIN || level>FF_SWPARAM_PHONESLEVEL_m10dBV) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Invalid phones level ID %d\n", level);
+        return -1;
+    }
+    settings.phones_level = level;
+    set_hardware_params();
+
+    return 0;
+}
+
 signed int 
 Device::getInputPadOpt(unsigned int channel) {
     if (m_rme_model!=RME_MODEL_FIREFACE400 || channel<3 || channel>4) {
@@ -107,7 +161,6 @@ Device::getAmpGain(unsigned int index) {
 
 signed int
 Device::setAmpGain(unsigned int index, signed int val) {
-    quadlet_t regval = 0;
 
     if (m_rme_model != RME_MODEL_FIREFACE400) {
         debugOutput(DEBUG_LEVEL_WARNING, "Amp gains only supported on FF400\n");

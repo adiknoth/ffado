@@ -90,6 +90,16 @@ signed int err = 0;
                 }
             }
             break;
+        case RME_CTRL_INPUT_LEVEL:
+            if (m_parent.setInputLevel(v)) {
+                m_value = v;
+            }
+            break;
+        case RME_CTRL_OUTPUT_LEVEL:
+            if (m_parent.setOutputLevel(v)) {
+                m_value = v;
+            }
+            break;
         case RME_CTRL_FF400_PAD_SW:
             // Object's "m_info" field is the channel
             if (m_parent.setInputPadOpt(m_info, v)) {
@@ -100,6 +110,11 @@ signed int err = 0;
             // Object's "m_info" field is the channel
             if (m_parent.setInputInstrOpt(m_info, v)) {
                 m_value = (v != 0);
+            }
+            break;
+        case RME_CTRL_PHONES_LEVEL:
+            if (m_parent.setPhonesLevel(v)) {
+                m_value = v;
             }
             break;
 
@@ -135,11 +150,20 @@ signed int val = 0;
                 val |= (m_parent.getPhantom(i) << i);
             return val;
             break;
+        case RME_CTRL_INPUT_LEVEL:
+            return m_parent.getInputLevel();
+            break;
+        case RME_CTRL_OUTPUT_LEVEL:
+            return m_parent.getOutputLevel();
+            break;
         case RME_CTRL_FF400_PAD_SW:
             return m_parent.getInputPadOpt(m_info);
             break;
         case RME_CTRL_FF400_INSTR_SW:
             return m_parent.getInputInstrOpt(m_info);
+            break;
+        case RME_CTRL_PHONES_LEVEL:
+            return m_parent.getPhonesLevel();
             break;
 
         case RME_CTRL_INFO_MODEL:

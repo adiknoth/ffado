@@ -94,6 +94,12 @@ public:
     /* Device control functions */
     signed int getPhantom(unsigned int channel);
     signed int setPhantom(unsigned int channel, unsigned int status);
+    signed int getInputLevel(void);
+    signed int setInputLevel(unsigned int level);
+    signed int getOutputLevel(void);
+    signed int setOutputLevel(unsigned int level);
+    signed int getPhonesLevel(void);
+    signed int setPhonesLevel(unsigned int level);
     signed int getInputPadOpt(unsigned int channel);
     signed int setInputPadOpt(unsigned int channel, unsigned int status);
     signed int getInputInstrOpt(unsigned int channel);

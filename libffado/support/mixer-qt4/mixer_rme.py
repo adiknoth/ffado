@@ -55,6 +55,21 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             self.ff400_chan4_opt_pad:   ['/Control/Chan4_opt_pad'],
         }
 
+        self.Radiobuttons={
+            self.level_in_lo_gain: ['/Control/Input_level', 1],
+            self.level_in_p4dBu:   ['/Control/Input_level', 2],
+            self.level_in_m10dBV:  ['/Control/Input_level', 3],
+
+            self.level_out_hi_gain: ['/Control/Output_level', 1],
+            self.level_out_p4dBu:   ['/Control/Output_level', 2],
+            self.level_out_m10dBV:  ['/Control/Output_level', 3],
+
+            self.phones_hi_gain: ['/Control/Phones_level', 1],
+            self.phones_p4dBu:   ['/Control/Phones_level', 2],
+            self.phones_m10dBV:  ['/Control/Phones_level', 3],
+        }
+
+
         self.Gains={
             self.gain_mic1: ['/Control/Gains', 0],
             self.gain_mic2: ['/Control/Gains', 1],
@@ -82,6 +97,14 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
         sender = self.sender()
         log.debug("switch %s set to %d" % (self.Switches[sender][0], a0))
         self.hw.setDiscrete(self.Switches[sender][0], a0)
+
+    # Public slot: update generic radiobuttons
+    def updateRadiobutton(self, a0):
+        sender = self.sender()
+        if (a0 != 0):
+            # Only change the control state on a button being "checked"
+            log.debug("radiobutton group %s set to %d" % (self.Radiobuttons[sender][0], self.Radiobuttons[sender][1]))
+            self.hw.setDiscrete(self.Radiobuttons[sender][0], self.Radiobuttons[sender][1])
 
     # Public slot: update gains
     def updateGain(self, a0):
@@ -158,6 +181,23 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             else:
                 ctrl.setChecked(False)
             QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateSwitch)
+
+        for ctrl, info in self.Radiobuttons.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue;
+            # This is a touch wasteful since it means we retrieve the control
+            # value once per radio button rather than once per radio button
+            # group.  In time we might introduce radiobutton groupings in the
+            # self.* datastructures to avoid this, but for the moment this is
+            # easy and it works.
+            val = self.hw.getDiscrete(info[0])
+            if (val == info[1]):
+                val = 1
+            else:
+                val = 0
+            ctrl.setChecked(val)
+            log.debug("Radiobutton %s[%d] is %d" % (info[0], info[1], val))
+            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateRadiobutton)
 
         for ctrl, info in self.Gains.iteritems():
             if (not(ctrl.isEnabled())):

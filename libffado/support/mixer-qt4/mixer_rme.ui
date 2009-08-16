@@ -281,21 +281,21 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_8" >
              <item>
-              <widget class="QRadioButton" name="radioButton_9" >
+              <widget class="QRadioButton" name="level_in_lo_gain" >
                <property name="text" >
                 <string>Lo gain</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_10" >
+              <widget class="QRadioButton" name="level_in_p4dBu" >
                <property name="text" >
                 <string>+4 dBu</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_11" >
+              <widget class="QRadioButton" name="level_in_m10dBV" >
                <property name="text" >
                 <string>-10 dBV</string>
                </property>
@@ -564,21 +564,21 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_9" >
              <item>
-              <widget class="QRadioButton" name="radioButton_12" >
+              <widget class="QRadioButton" name="level_out_hi_gain" >
                <property name="text" >
                 <string>Hi gain</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_13" >
+              <widget class="QRadioButton" name="level_out_p4dBu" >
                <property name="text" >
                 <string>+4 dBu</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_14" >
+              <widget class="QRadioButton" name="level_out_m10dBV" >
                <property name="text" >
                 <string>-10 dBV</string>
                </property>
@@ -610,21 +610,21 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_10" >
              <item>
-              <widget class="QRadioButton" name="radioButton_15" >
+              <widget class="QRadioButton" name="phones_hi_gain" >
                <property name="text" >
                 <string>Hi gain</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_16" >
+              <widget class="QRadioButton" name="phones_p4dBu" >
                <property name="text" >
                 <string>+4 dBU</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_17" >
+              <widget class="QRadioButton" name="phones_m10dBV" >
                <property name="text" >
                 <string>-10 dBV</string>
                </property>
