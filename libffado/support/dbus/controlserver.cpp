@@ -627,7 +627,7 @@ Enum::Enum( DBus::Connection& connection, std::string p, Element* parent, Contro
 DBus::Int32
 Enum::select( const DBus::Int32& idx )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "select(%d)\n", idx );
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "select(%d)\n", idx );
     return  m_Slave.select(idx);
 }
 
@@ -635,7 +635,7 @@ DBus::Int32
 Enum::selected()
 {
     int retval = m_Slave.selected();
-    debugOutput( DEBUG_LEVEL_VERBOSE, "selected() => %d\n", retval );
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "selected() => %d\n", retval );
     return retval;
 }
 
@@ -651,7 +651,7 @@ DBus::String
 Enum::getEnumLabel( const DBus::Int32 & idx )
 {
     std::string retval = m_Slave.getEnumLabel(idx);
-    debugOutput( DEBUG_LEVEL_VERBOSE, "getEnumLabel(%d) => %s\n", idx, retval.c_str() );
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "getEnumLabel(%d) => %s\n", idx, retval.c_str() );
     return retval;
 }
 
@@ -667,7 +667,7 @@ AttributeEnum::AttributeEnum( DBus::Connection& connection, std::string p, Eleme
 DBus::Int32
 AttributeEnum::select( const DBus::Int32& idx )
 {
-    debugOutput( DEBUG_LEVEL_VERBOSE, "select(%d)\n", idx );
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "select(%d)\n", idx );
     return  m_Slave.select(idx);
 }
 
@@ -675,7 +675,7 @@ DBus::Int32
 AttributeEnum::selected()
 {
     int retval = m_Slave.selected();
-    debugOutput( DEBUG_LEVEL_VERBOSE, "selected() => %d\n", retval );
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "selected() => %d\n", retval );
     return retval;
 }
 
@@ -699,7 +699,7 @@ DBus::String
 AttributeEnum::getEnumLabel( const DBus::Int32 & idx )
 {
     std::string retval = m_Slave.getEnumLabel(idx);
-    debugOutput( DEBUG_LEVEL_VERBOSE, "getEnumLabel(%d) => %s\n", idx, retval.c_str() );
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "getEnumLabel(%d) => %s\n", idx, retval.c_str() );
     return retval;
 }
 
