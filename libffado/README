@@ -109,10 +109,10 @@ qjackctl (>= 0.2.20.10), http://sourceforge.net/projects/qjackctl
 
 To build the optional ffado device mixer control utility you also require:
 
-Qt          (>= 4.0),     http://trolltech.com/products/qt
-SIP         (>= 4.7.0),   http://www.riverbankcomputing.co.uk/sip/index.php
-PyQt        (note below), http://www.riverbankcomputing.co.uk/pyqt/
-dbus-python (>= 0.82.0),  http://dbus.freedesktop.org/releases/dbus-python/
+Qt  >= 4.0,            http://trolltech.com/products/qt
+SIP >= 4.7.0,          http://www.riverbankcomputing.co.uk/software/sip/intro
+PyQt (note below),     http://www.riverbankcomputing.co.uk/software/pyqt/intro 
+dbus-python >= 0.82.0, http://dbus.freedesktop.org/releases/dbus-python/
 
 The mixer applets are available for both QT3 and QT4. However, the QT3 versions
 are no longer actively developed. The build script will automatically fallback
