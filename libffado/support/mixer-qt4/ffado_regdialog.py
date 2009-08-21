@@ -22,7 +22,7 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QDialog
-from ffado_regdialogui import Ui_ffadoRegDialogUI
+from ffadomixer_config import *
 
 import logging
 log = logging.getLogger('registration')
@@ -45,12 +45,12 @@ Note: This registration can also be performed on-line at
 <a href="http://www.ffado.org/?q=usage">http://www.ffado.org/?q=usage</a>.</p></body></html>
 """
 
-class ffadoRegDialog(QDialog, Ui_ffadoRegDialogUI):
+class ffadoRegDialog(QDialog):
     def __init__(self, vendor_name, vendor_id, model_name, model_id,
                  guid, version, email="(optional)",
                  parent = None):
         QDialog.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("ffado_regdialog", self)
         self.txtVendorName.setText(vendor_name)
         self.txtVendorId.setText(vendor_id)
         self.txtModelName.setText(model_name)
@@ -80,3 +80,5 @@ class ffadoRegDialog(QDialog, Ui_ffadoRegDialogUI):
 
     def getEmail(self):
         return self.txtEmail.text()
+
+# vim: et

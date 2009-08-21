@@ -22,11 +22,8 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget, QHBoxLayout
+from ffadomixer_config import *
 from mixer_saffire_base import SaffireMixerBase
-from mixer_saffire_stereoui import Ui_SaffireMixerStereoUI
-from mixer_saffire_monoui import Ui_SaffireMixerMonoUI
-from mixer_saffirele_smallui import Ui_SaffireLEMixerSmallUI
-from mixer_saffirele_largeui import Ui_SaffireLEMixerLargeUI
 
 import logging
 log = logging.getLogger('saffire')
@@ -160,11 +157,11 @@ class SaffireMixer(QWidget):
             else:
                 self.stereo.polledUpdate()
 
-class SaffireMixerStereo(QWidget, Ui_SaffireMixerStereoUI, SaffireMixerBase):
+class SaffireMixerStereo(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_saffire_stereo", self)
         SaffireMixerBase.__init__(self)
         QObject.connect(self.btnRefresh, SIGNAL('clicked()'), self.updateValues)
         QObject.connect(self.btnSwitchStereoMode, SIGNAL('clicked()'), self.switchStereoMode)
@@ -288,11 +285,11 @@ class SaffireMixerStereo(QWidget, Ui_SaffireMixerStereoUI, SaffireMixerBase):
         self.my_parent.setMonoMode(1)
         self.my_parent.selectCorrectMode()
 
-class SaffireMixerMono(QWidget, Ui_SaffireMixerMonoUI, SaffireMixerBase):
+class SaffireMixerMono(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_saffire_stereo", self)
         SaffireMixerBase.__init__(self)
         QObject.connect(self.btnRefresh, SIGNAL('clicked()'), self.updateValues)
         QObject.connect(self.btnSwitchStereoMode, SIGNAL('clicked()'), self.switchStereoMode)
@@ -433,11 +430,11 @@ class SaffireMixerMono(QWidget, Ui_SaffireMixerMonoUI, SaffireMixerBase):
         self.my_parent.setMonoMode(0)
         self.my_parent.selectCorrectMode()
 
-class SaffireLEMixerLarge(QWidget, Ui_SaffireLEMixerLargeUI, SaffireMixerBase):
+class SaffireLEMixerLarge(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_saffirele_large", self)
         SaffireMixerBase.__init__(self)
 
         log.debug("Init large Saffire LE mixer window")
@@ -556,11 +553,11 @@ class SaffireLEMixerLarge(QWidget, Ui_SaffireLEMixerLargeUI, SaffireMixerBase):
     def updateValues(self):
         SaffireMixerBase.updateValues(self)
 
-class SaffireLEMixerSmall(QWidget, Ui_SaffireLEMixerSmallUI, SaffireMixerBase):
+class SaffireLEMixerSmall(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_saffirele_small", self)
         SaffireMixerBase.__init__(self)
 
         log.debug("Init small Saffire LE mixer window")
@@ -636,3 +633,5 @@ class SaffireLEMixerSmall(QWidget, Ui_SaffireLEMixerSmallUI, SaffireMixerBase):
 
     def updateValues(self):
         SaffireMixerBase.updateValues(self)
+
+# vim: et

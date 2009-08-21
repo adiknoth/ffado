@@ -76,16 +76,15 @@ if env.has_key('PYUIC4'):
     for m in e['MIXERGUIS']:
         app = "mixer_" + m
         if os.path.exists( app+".ui" ):
-            e.PyUIC4( source=app+".ui", target=app+"ui.py" )
-            e.Install( "$pythondir", app+"ui.py" )
+            e.Install( "$pythondir", app+".ui" )
     for m in e['MIXERAPPS']:
         app = "mixer_" + m
         e.Install( "$pythondir", app+".py" )
 
     for app in e['OTHERGUIS']:
         if os.path.exists( app+".ui" ):
-            e.PyUIC4( source=app+".ui", target=app+"ui.py" )
-            e.Install( "$pythondir", app+"ui.py" )
+            e.Install( "$pythondir", app+".ui" )
+
     for app in e['OTHERAPPS']:
         e.Install( "$pythondir", app+".py" )
 
@@ -101,3 +100,5 @@ if env.has_key('PYUIC4'):
     e.Install( "$bindir", "ffado-mixer" )
 
     e.Install( "$sharedir/icons", "../xdg/hi64-apps-ffado.png" )
+
+# vim: et

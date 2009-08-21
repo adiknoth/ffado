@@ -154,3 +154,5 @@ class SaffireMixerBase:
 
         for ctrl, info in self.ComboControls.iteritems():
             QObject.connect(ctrl, SIGNAL('activated(int)'), self.selectCombo)
+
+# vim: et

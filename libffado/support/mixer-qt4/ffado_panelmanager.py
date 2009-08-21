@@ -27,12 +27,10 @@ from ffadomixer_config import * #FFADO_VERSION, FFADO_DBUS_SERVER, FFADO_DBUS_BA
 from PyQt4.QtGui import QFrame, QWidget, QTabWidget, QVBoxLayout, QMainWindow, QIcon, QAction, qApp, QStyleOptionTabWidgetFrame
 from PyQt4.QtCore import QTimer
 
-from ffado_panelmanagerstatusui import Ui_PanelManagerStatusUI
-
 from ffado_dbus_util import *
 from ffado_registration import *
 
-from ffado_configuration import DeviceList
+from ffado_configuration import *
 
 from mixer_phase88 import *
 from mixer_phase24 import *
@@ -74,10 +72,10 @@ class HLine( QFrame ):
         self.setLineWidth( 2 )
         self.setMinimumHeight( 10 )
 
-class PanelManagerStatus(QWidget, Ui_PanelManagerStatusUI):
+class PanelManagerStatus(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("ffado_panelmanagerstatus", self)
 
 class OwnTabWidget(QTabWidget):
     def __init__(self,parent):
@@ -97,7 +95,7 @@ class OwnTabWidget(QTabWidget):
 
 class PanelManager(QWidget):
     def __init__(self, parent, devmgr=None):
-        QMainWindow.__init__(self, parent)
+        QWidget.__init__(self, parent)
         self.setObjectName("PanelManager")
 
         # maps a device GUID to a QT panel

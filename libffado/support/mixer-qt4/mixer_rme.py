@@ -22,7 +22,7 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
 from PyQt4.QtGui import QWidget, QApplication
-from mixer_rmeui import *
+from ffadomixer_config import *
 
 import logging
 log = logging.getLogger('rme')
@@ -32,10 +32,10 @@ RME_MODEL_NONE      = 0x0000
 RME_MODEL_FF800     = 0x0001
 RME_MODEL_FF400     = 0x0002
 
-class RmeMixer(QWidget, Ui_RmeMixerUI):
+class RmeMixer(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_rme", self)
 
         self.init()
 
@@ -206,3 +206,5 @@ class RmeMixer(QWidget, Ui_RmeMixerUI):
             log.debug("gain %s[%d] is %d" % (info[0], info[1], val))
             ctrl.setValue(val);
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateGain)
+
+# vim: et

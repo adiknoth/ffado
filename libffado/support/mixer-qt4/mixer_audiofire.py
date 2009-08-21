@@ -24,20 +24,19 @@ from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
 from PyQt4.QtGui import QWidget, QHBoxLayout, QVBoxLayout, \
                         QGroupBox, QTabWidget, QLabel, \
                         QPushButton, QSpacerItem, QSizePolicy
-from mixer_audiofire_stripui import Ui_AfMonitorWidget
-from mixer_audiofire_settingsui import Ui_AfSettingsWidget
+from ffadomixer_config import *
 import logging
 log = logging.getLogger('audiofire')
 
-class AfMonitorWidget(QWidget, Ui_AfMonitorWidget):
+class AfMonitorWidget(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_audiofire_strip", self)
 
-class AfSettingsWidget(QWidget, Ui_AfSettingsWidget):
+class AfSettingsWidget(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_audiofire_settings", self)
 
 class AudioFireMixer(QWidget):
     def __init__(self,parent = None):
@@ -357,3 +356,5 @@ class AudioFireMixer(QWidget):
 
             # connect the UI element
             QObject.connect(ctrl,SIGNAL('toggled(bool)'),self.updateSPDIFmodeControl)
+
+# vim: et

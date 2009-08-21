@@ -17,3 +17,19 @@ USER_CONFIG_FILE = "$USER_CONFIG_FILE"
 SYSTEM_CONFIG_FILE = "$SYSTEM_CONFIG_FILE"
 
 DEBUG = $DEBUG
+
+UIDIR = PYTHONDIR
+import os.path
+if os.path.exists('support/mixer-qt4/mixer_global.ui'):
+    UIDIR = "support/mixer-qt4"
+if os.path.exists('mixer_global.ui'):
+    UIDIR = "."
+
+import os.path
+from PyQt4 import uic
+def uicLoad(file, object):
+    if not file.endswith(".ui"):
+        file += ".ui"
+    uic.loadUi(os.path.join(UIDIR,file), object)
+
+# vim: et

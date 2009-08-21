@@ -22,15 +22,15 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from mixer_edirolfa101ui import *
+from ffadomixer_config import *
 
 import logging
 log = logging.getLogger('edirolfa101')
 
-class EdirolFa101Control(QWidget, Ui_EdirolFa101ControlUI):
+class EdirolFa101Control(QWidget):
     def __init__(self, parent = None):
         QWidget.__init__(self, parent)
-        self.setupUi(self)
+        uicLoad("mixer_edirolfa101", self)
 
     def setVolumeIn1(self, vol):
         self.setValue('vol1', vol)
@@ -171,3 +171,5 @@ class EdirolFa101Control(QWidget, Ui_EdirolFa101ControlUI):
                 val = -32768
             log.debug("%s value is %d" % (name , val))
             widget.setValue(val)
+
+# vim: et

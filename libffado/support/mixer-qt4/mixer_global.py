@@ -22,15 +22,15 @@
 
 from PyQt4.QtCore import QObject, pyqtSignature
 from PyQt4.QtGui import QWidget, QMessageBox
-from mixer_globalui import Ui_GlobalMixerUi
+from ffadomixer_config import *
 
 import logging
 log = logging.getLogger('global')
 
-class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
-    def __init__( self, parent, name=None ):
-        QWidget.__init__( self, parent )
-        self.setupUi(self)
+class GlobalMixer(QWidget):
+    def __init__(self, parent, name=None):
+        QWidget.__init__(self, parent)
+        uicLoad("mixer_global", self)
         self.setName(name)
 
     def setName(self,name):
@@ -133,3 +133,4 @@ class GlobalMixer( QWidget, Ui_GlobalMixerUi ):
             self.chkStreamIn.setChecked(True)
             self.chkStreamOut.setChecked(True)
 
+# vim: et

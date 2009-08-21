@@ -22,12 +22,14 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from mixer_mackie_onyxmixerui import *
+from ffadomixer_config import *
 
-class MackieOnyxMixer(QWidget, Ui_MackieOnyxMixerUI):
+class MackieOnyxMixer(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_mackie_onyxmixer", self)
 
     def initValues(self):
         pass
+
+# vim: et

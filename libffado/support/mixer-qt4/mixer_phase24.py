@@ -22,15 +22,15 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from mixer_phase24ui import *
+from ffadomixer_config import *
 
 import logging
 log = logging.getLogger('phase24')
 
-class Phase24Control(QWidget, Ui_Phase24ControlUI):
+class Phase24Control(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_phase24", self)
 
         self.VolumeControls={
             'analogin' :      ['/Mixer/Feature_Volume_6', self.sldLineIn],
@@ -156,3 +156,5 @@ class Phase24Control(QWidget, Ui_Phase24ControlUI):
                 self.cmbLineLevel.setCurrentIndex(4)
             else:
                 self.cmbLineLevel.setCurrentIndex(val)
+
+# vim: et

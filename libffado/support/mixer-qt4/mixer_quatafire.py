@@ -22,15 +22,15 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from mixer_quatafireui import *
+from ffadomixer_config import *
 
 import logging
 log = logging.getLogger('quatafire')
 
-class QuataFireMixer(QWidget, Ui_QuataFireMixerUI):
+class QuataFireMixer(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_quatafire", self)
 
         self.VolumeControls={
                 self.sldCh1: ['/Mixer/Feature_Volume_1', 1],
@@ -101,3 +101,4 @@ class QuataFireMixer(QWidget, Ui_QuataFireMixerUI):
             # connect the UI element
             QObject.connect(ctrl,SIGNAL('valueChanged(int)'),self.updatePan)
 
+# vim: et

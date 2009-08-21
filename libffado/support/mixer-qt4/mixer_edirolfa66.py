@@ -22,15 +22,15 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from mixer_edirolfa66ui import *
+from ffadomixer_config import *
 
 import logging
 log = logging.getLogger('edirolfa66')
 
-class EdirolFa66Control(QWidget, Ui_EdirolFa66ControlUI):
+class EdirolFa66Control(QWidget):
     def __init__(self, parent = None):
         QWidget.__init__(self, parent)
-        self.setupUi(self)
+        uicLoad("mixer_edirolfa66", self)
 
         self.VolumeControls = {
             #          feature name, channel, qt slider
@@ -106,3 +106,5 @@ class EdirolFa66Control(QWidget, Ui_EdirolFa66ControlUI):
                     val = -32768
 
             ctrl[2].setValue(val)
+
+# vim: et

@@ -23,7 +23,7 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
 from PyQt4.QtGui import QWidget, QApplication
-from mixer_motuui import *
+from ffadomixer_config import *
 
 import logging
 log = logging.getLogger('motu')
@@ -37,10 +37,10 @@ MOTU_MODEL_8PRE     = 0x0004
 MOTU_MODEL_828MkI   = 0x0005
 MOTU_MODEL_896HD    = 0x0006
 
-class MotuMixer(QWidget, Ui_MotuMixerUI):
+class MotuMixer(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_motu", self)
 
         self.init()
 
@@ -820,3 +820,5 @@ class MotuMixer(QWidget, Ui_MotuMixerUI):
         # settings (which won't happen if they're disabled).  However, on
         # the other hand it may be more convenient to leave all controls
         # active at all times.  We'll see.
+
+# vim: et

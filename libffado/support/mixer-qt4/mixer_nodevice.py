@@ -29,3 +29,5 @@ class NoDeviceMixer(QWidget, Ui_NoDeviceMixerUI):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
         self.setupUi(self)
+
+# vim: et

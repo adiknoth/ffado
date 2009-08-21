@@ -353,3 +353,5 @@ class TextInterface:
         self.iface.setValue(text)
     def canChangeValue(self):
         return self.iface_element.canChangeValue()
+
+# vim: et

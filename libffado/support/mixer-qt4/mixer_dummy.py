@@ -22,12 +22,14 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from mixer_dummyui import *
+from ffadomixer_config import *
 
-class DummyMixer(QWidget, Ui_DummyMixerUI):
+class DummyMixer(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_dummy", self)
 
     def initValues(self):
         pass
+
+# vim: et

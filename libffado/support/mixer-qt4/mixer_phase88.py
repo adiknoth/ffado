@@ -22,15 +22,15 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from mixer_phase88ui import *
+from ffadomixer_config import *
 
 import logging
 log = logging.getLogger('phase88')
 
-class Phase88Control(QWidget, Ui_Phase88ControlUI):
+class Phase88Control(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        self.setupUi(self)
+        uicLoad("mixer_phase88", self)
 
         self.VolumeControls={
             'master':    ['/Mixer/Feature_Volume_1', self.sldInputMaster], 
@@ -108,3 +108,5 @@ class Phase88Control(QWidget, Ui_Phase88ControlUI):
             state = self.hw.getDiscrete(ctrl[0])
             log.debug("%s state is %d" % (name , state))
             ctrl[1].setCurrentIndex(state)
+
+# vim: et

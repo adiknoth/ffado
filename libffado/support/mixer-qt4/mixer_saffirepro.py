@@ -21,9 +21,8 @@
 #
 
 from PyQt4.QtGui import QWidget, QHBoxLayout, QMessageBox
+from ffadomixer_config import *
 from mixer_saffire_base import SaffireMixerBase
-from mixer_saffirepro_largeui import Ui_SaffireProMixerLargeUI
-from mixer_saffirepro_smallui import Ui_SaffireProMixerSmallUI
 
 import logging
 log = logging.getLogger('saffirepro')
@@ -107,12 +106,12 @@ class SaffireProMixer(QWidget):
         else:
             self.small.polledUpdate()
 
-class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase):
+class SaffireProMixerLarge(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
         SaffireMixerBase.__init__(self)
-        self.setupUi(self)
+        uicLoad("mixer_saffirepro_large", self)
         self.have_adat = False
         log.debug("Init large Saffire Pro mixer window")
 
@@ -366,12 +365,12 @@ class SaffireProMixerLarge(QWidget, Ui_SaffireProMixerLargeUI, SaffireMixerBase)
         else:
             volctrl.setEnabled(True)
 
-class SaffireProMixerSmall(QWidget, Ui_SaffireProMixerSmallUI, SaffireMixerBase):
+class SaffireProMixerSmall(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
         SaffireMixerBase.__init__(self)
-        self.setupUi(self)
+        uicLoad("mixer_saffirepro_small", self)
         log.debug("Init small Saffire Pro mixer window")
 
         self.VolumeControls={
@@ -558,3 +557,5 @@ class SaffireProMixerSmall(QWidget, Ui_SaffireProMixerSmallUI, SaffireMixerBase)
             volctrl.setEnabled(False)
         else:
             volctrl.setEnabled(True)
+
+# vim: et

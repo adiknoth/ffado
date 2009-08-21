@@ -155,3 +155,5 @@ class ffado_registration:
         f = open(self.config_filename, "w+")
         self.parser.write(f)
         f.close()
+
+# vim: et
