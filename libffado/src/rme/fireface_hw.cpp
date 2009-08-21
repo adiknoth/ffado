@@ -50,20 +50,20 @@ Device::init_hardware(void)
     // based on that.  It may also read the device configuration from the
     // device flash and adopt that.  For now (for initial testing purposes)
     // we'll go with a static state.
-    memset(&settings, 0, sizeof(settings));
-    settings.spdif_input_mode = FF_SWPARAM_SPDIF_INPUT_COAX;
-    settings.spdif_output_mode = FF_SWPARAM_SPDIF_OUTPUT_COAX;
-    settings.clock_mode = FF_SWPARAM_CLOCK_MODE_MASTER;
-    settings.sync_ref = FF_SWPARAM_SYNCREF_WORDCLOCK;
-    settings.input_level = FF_SWPARAM_ILEVEL_LOGAIN;
-    settings.output_level = FF_SWPARAM_OLEVEL_HIGAIN;
-    settings.phones_level = FF_SWPARAM_PHONESLEVEL_HIGAIN;
+    memset(settings, 0, sizeof(*settings));
+    settings->spdif_input_mode = FF_SWPARAM_SPDIF_INPUT_COAX;
+    settings->spdif_output_mode = FF_SWPARAM_SPDIF_OUTPUT_COAX;
+    settings->clock_mode = FF_SWPARAM_CLOCK_MODE_MASTER;
+    settings->sync_ref = FF_SWPARAM_SYNCREF_WORDCLOCK;
+    settings->input_level = FF_SWPARAM_ILEVEL_LOGAIN;
+    settings->output_level = FF_SWPARAM_OLEVEL_HIGAIN;
+    settings->phones_level = FF_SWPARAM_PHONESLEVEL_HIGAIN;
 
     // Set amplifier gains
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         signed int i;
         for (i=0; i<FF400_AMPGAIN_NUM; i++) {
-            set_hardware_ampgain(i, settings.amp_gains[i]);
+            set_hardware_ampgain(i, settings->amp_gains[i]);
         }
     }
 
@@ -72,14 +72,14 @@ Device::init_hardware(void)
     m_software_freq = 44100;
     m_dds_freq = 0;
 
-    if (set_hardware_params(&settings) != 0)
+    if (set_hardware_params(settings) != 0)
         return -1;
 
     // Also configure the TCO (Time Code Option) settings for those devices
     // which have a TCO.
     if (tco_present) {
-        memset(&tco_settings, 0, sizeof(tco_settings));
-        return write_tco_settings(&tco_settings);
+        memset(tco_settings, 0, sizeof(*tco_settings));
+        return write_tco_settings(tco_settings);
     }
 
     return 0;
@@ -126,7 +126,7 @@ Device::get_hardware_state(FF_state_t *state)
 
     state->is_streaming = is_streaming;
 
-    state->clock_mode = (settings.clock_mode == FF_SWPARAM_CLOCK_MODE_MASTER)?FF_STATE_CLOCKMODE_MASTER:FF_STATE_CLOCKMODE_AUTOSYNC;
+    state->clock_mode = (settings->clock_mode == FF_SWPARAM_CLOCK_MODE_MASTER)?FF_STATE_CLOCKMODE_MASTER:FF_STATE_CLOCKMODE_AUTOSYNC;
 
     switch (stat0 & SR0_AUTOSYNC_SRC_MASK) {
         case SR0_AUTOSYNC_SRC_ADAT1:
@@ -232,7 +232,7 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
     unsigned int conf_reg;
 
     if (use_settings == NULL)
-      sw_settings = &settings;
+      sw_settings = settings;
     else
       sw_settings = use_settings;
 

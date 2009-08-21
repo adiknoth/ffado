@@ -35,7 +35,7 @@ Device::getPhantom(unsigned int channel) {
         return -1;
     }
 
-    return settings.mic_phantom[channel] != 0;
+    return settings->mic_phantom[channel] != 0;
 }
 
 signed int
@@ -46,7 +46,7 @@ Device::setPhantom(unsigned int channel, unsigned int status) {
         return -1;
     }
 
-    settings.mic_phantom[channel] = (status != 0);
+    settings->mic_phantom[channel] = (status != 0);
     set_hardware_params();
 
     return 0;
@@ -54,7 +54,7 @@ Device::setPhantom(unsigned int channel, unsigned int status) {
 
 signed int
 Device::getInputLevel(void) {
-    return settings.input_level;
+    return settings->input_level;
 }
 
 signed int
@@ -64,7 +64,7 @@ Device::setInputLevel(unsigned int level) {
         debugOutput(DEBUG_LEVEL_WARNING, "Invalid input level ID %d\n", level);
         return -1;
     }
-    settings.input_level = level;
+    settings->input_level = level;
     set_hardware_params();
 
     return 0;
@@ -72,7 +72,7 @@ Device::setInputLevel(unsigned int level) {
 
 signed int
 Device::getOutputLevel(void) {
-    return settings.output_level;
+    return settings->output_level;
 }
 
 signed int
@@ -82,7 +82,7 @@ Device::setOutputLevel(unsigned int level) {
         debugOutput(DEBUG_LEVEL_WARNING, "Invalid output level ID %d\n", level);
         return -1;
     }
-    settings.output_level = level;
+    settings->output_level = level;
     set_hardware_params();
 
     return 0;
@@ -90,7 +90,7 @@ Device::setOutputLevel(unsigned int level) {
 
 signed int
 Device::getPhonesLevel(void) {
-    return settings.phones_level;
+    return settings->phones_level;
 }
 
 signed int
@@ -100,7 +100,7 @@ Device::setPhonesLevel(unsigned int level) {
         debugOutput(DEBUG_LEVEL_WARNING, "Invalid phones level ID %d\n", level);
         return -1;
     }
-    settings.phones_level = level;
+    settings->phones_level = level;
     set_hardware_params();
 
     return 0;
@@ -112,7 +112,7 @@ Device::getInputPadOpt(unsigned int channel) {
         debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input pad option not supported for model %d\n", channel, m_rme_model);
         return -1;
     }
-    return settings.ff400_input_pad[channel-3] != 0;
+    return settings->ff400_input_pad[channel-3] != 0;
 }
 
 signed int 
@@ -121,7 +121,7 @@ Device::setInputPadOpt(unsigned int channel, unsigned int status) {
         debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input pad option not supported for model %d\n", channel, m_rme_model);
         return -1;
     }
-    settings.ff400_input_pad[channel-3] = (status != 0);
+    settings->ff400_input_pad[channel-3] = (status != 0);
     set_hardware_params();
     return 0;
 }
@@ -132,7 +132,7 @@ Device::getInputInstrOpt(unsigned int channel) {
         debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument option not supported for model %d\n", channel, m_rme_model);
         return -1;
     }
-    return settings.ff400_instr_input[channel-3] != 0;
+    return settings->ff400_instr_input[channel-3] != 0;
 }
 
 signed int 
@@ -141,7 +141,7 @@ Device::setInputInstrOpt(unsigned int channel, unsigned int status) {
         debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument option not supported for model %d\n", channel, m_rme_model);
         return -1;
     }
-    settings.ff400_instr_input[channel-3] = (status != 0);
+    settings->ff400_instr_input[channel-3] = (status != 0);
     set_hardware_params();
     return 0;
 }
@@ -156,7 +156,7 @@ Device::getAmpGain(unsigned int index) {
         debugOutput(DEBUG_LEVEL_WARNING, "Amp gain index %d invalid\n", index);
          return -1;
     }
-    return settings.amp_gains[index];
+    return settings->amp_gains[index];
 }
 
 signed int
@@ -170,7 +170,7 @@ Device::setAmpGain(unsigned int index, signed int val) {
         debugOutput(DEBUG_LEVEL_WARNING, "Amp gain index %d invalid\n", index);
          return -1;
     }
-    settings.amp_gains[index] = val & 0xff;
+    settings->amp_gains[index] = val & 0xff;
     return set_hardware_ampgain(index, val);
 }
 

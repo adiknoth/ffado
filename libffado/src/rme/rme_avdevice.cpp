@@ -93,6 +93,10 @@ Device::Device( DeviceManager& d,
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
+
+    settings = &settings_localobj;
+    tco_settings = &tco_settings_localobj;
+
     memset(&settings, 0, sizeof(settings));
     memset(&tco_settings, 0, sizeof(tco_settings));
 }
@@ -319,7 +323,7 @@ Device::setDDSFrequency( int dds_freq )
     }
 
     m_dds_freq = dds_freq;
-    if (settings.clock_mode == FF_STATE_CLOCKMODE_MASTER) {
+    if (settings->clock_mode == FF_STATE_CLOCKMODE_MASTER) {
         if (set_hardware_dds_freq(dds_freq) != 0)
             return false;
     }
