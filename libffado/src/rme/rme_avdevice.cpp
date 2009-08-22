@@ -93,17 +93,22 @@ Device::Device( DeviceManager& d,
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Rme::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
-
-    settings = &settings_localobj;
-    tco_settings = &tco_settings_localobj;
-
-    memset(&settings, 0, sizeof(settings));
-    memset(&tco_settings, 0, sizeof(tco_settings));
 }
 
 Device::~Device()
 {
     destroyMixer();
+
+    if (shared_data != NULL) {
+        switch (rme_shm_close(shared_data)) {
+            case RSO_CLOSE:
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Configuration shared data object closed\n");
+                break;
+            case RSO_CLOSE_DELETE:
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Configuration shared data object closed and deleted (no other users)\n");
+                break;
+        }
+    }
 }
 
 bool
@@ -245,6 +250,7 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 bool
 Device::discover()
 {
+    signed int i;
     unsigned int vendorId = getConfigRom().getNodeVendorId();
     // See note in Device::probe() about why we use the unit version here.
     unsigned int unitVersion = getConfigRom().getUnitVersion();
@@ -269,6 +275,25 @@ Device::discover()
     } else {
         debugError("Unsupported model\n");
         return false;
+    }
+
+    // Set up the shared data object for configuration data
+    i = rme_shm_open(&shared_data);
+    if (i == RSO_OPEN_CREATED) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "New configuration shared data object created\n");
+    } else
+    if (i == RSO_OPEN_ATTACHED) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Attached to existing configuration shared data object\n");
+    }
+    if (shared_data == NULL) {
+        debugOutput( DEBUG_LEVEL_WARNING, "Could not create/access shared configuration memory object, using process-local storage\n");
+        settings = &settings_localobj;
+        tco_settings = &tco_settings_localobj;
+        memset(settings, 0, sizeof(*settings));
+        memset(tco_settings, 0, sizeof(*tco_settings));
+    } else {
+        settings = &shared_data->settings;
+        tco_settings = &shared_data->tco_settings;
     }
 
     // If device is FF800, check to see if the TCO is fitted

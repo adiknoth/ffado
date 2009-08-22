@@ -35,6 +35,8 @@
 #include "fireface_def.h"
 // #include "libstreaming/rme/RmeStreamProcessor.h"
 
+#include "rme_shm.h"
+
 class ConfigRom;
 class Ieee1394Service;
 
@@ -122,6 +124,7 @@ protected:
     FF_software_settings_t *settings;
     FF_TCO_settings_t *tco_settings;
 
+    rme_shm_t *shared_data;
     FF_software_settings_t settings_localobj;
     FF_TCO_settings_t tco_settings_localobj;
 

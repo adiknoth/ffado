@@ -32,16 +32,27 @@
 
 typedef struct rme_shm_t {
     signed int ref_count;
-    signed int valid;
+    signed int settings_valid, tco_settings_valid;
     FF_software_settings_t settings;
     FF_TCO_settings_t tco_settings;
 
     pthread_mutex_t lock;
 } rme_shm_t;
 
+/* Return values from rme_shm_open().  RSO = Rme Shared Object. */
+#define RSO_ERR_MMAP      -3
+#define RSO_ERR_SHM       -2
+#define RSO_ERROR         -1
+#define RSO_OPEN_CREATED   0
+#define RSO_OPEN_ATTACHED  1
+
+/* Return values from rme_shm_close() */
+#define RSO_CLOSE          0
+#define RSO_CLOSE_DELETE   1
+
 /* Functions */
 
-rme_shm_t *rme_shm_open(void);
-void rme_shm_close(rme_shm_t *shm_data);
+signed int rme_shm_open(rme_shm_t **shm_data);
+signed int rme_shm_close(rme_shm_t *shm_data);
 
 #endif

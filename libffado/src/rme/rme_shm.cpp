@@ -72,11 +72,16 @@ static void rme_shm_unlock(signed int lockfd) {
     shm_unlink(RME_SHM_LOCKNAME);
 }
 
-rme_shm_t *rme_shm_open(void) {
+signed int rme_shm_open(rme_shm_t **shm_data) {
 
     signed int shmfd, lockfd;
     rme_shm_t *data;
     signed int created = 0;
+
+    if (shm_data == NULL) {
+        return RSO_ERROR;
+    }
+    *shm_data = NULL;
 
     lockfd = rme_shm_lock();
 
@@ -85,20 +90,20 @@ rme_shm_t *rme_shm_open(void) {
         if (errno == ENOENT) {
             shmfd = shm_open(RME_SHM_NAME, O_RDWR | O_CREAT | O_EXCL, 0644);
             if (shmfd < 0)
-                return NULL;
+                return RSO_ERR_SHM;
             else {
                 ftruncate(shmfd, RME_SHM_SIZE);
                 created = 1;
             }
         } else
-            return NULL;
+            return RSO_ERR_SHM;
     }
 
     data = (rme_shm_t *)mmap(NULL, RME_SHM_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, shmfd, 0);
     close(shmfd);
 
     if (data == MAP_FAILED)
-        return NULL;
+        return RSO_ERR_MMAP;
 
     if (created) {
         pthread_mutex_init(&data->lock, NULL);
@@ -106,16 +111,15 @@ rme_shm_t *rme_shm_open(void) {
 
     pthread_mutex_lock(&data->lock);
     data->ref_count++;
-    if (created)
-        data->valid++;
     pthread_mutex_unlock(&data->lock);
 
     rme_shm_unlock(lockfd);
 
-    return data;
+    *shm_data = data;
+    return created?RSO_OPEN_CREATED:RSO_OPEN_ATTACHED;
 }
 
-void rme_shm_close(rme_shm_t *shm_data) {
+signed int rme_shm_close(rme_shm_t *shm_data) {
 
     signed int unlink = 0;
     signed int lockfd;
@@ -124,7 +128,6 @@ void rme_shm_close(rme_shm_t *shm_data) {
 
     pthread_mutex_lock(&shm_data->lock);
     shm_data->ref_count--;
-    shm_data->valid = 0;
     unlink = (shm_data->ref_count == 0);
     pthread_mutex_unlock(&shm_data->lock);
 
@@ -140,4 +143,6 @@ void rme_shm_close(rme_shm_t *shm_data) {
         shm_unlink(RME_SHM_NAME);
 
     rme_shm_unlock(lockfd);
+
+    return unlink?RSO_CLOSE_DELETE:RSO_CLOSE;
 }
