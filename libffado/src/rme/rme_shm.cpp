@@ -43,6 +43,8 @@
 #define RME_SHM_NAME  "/ffado:rme_shm"
 #define RME_SHM_SIZE  sizeof(rme_shm_t)
 
+#define RME_SHM_LOCKNAME "/ffado:rme_shm_lock"
+
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -51,29 +53,45 @@
 
 #include "rme_shm.h"
 
+static signed int rme_shm_lock(void) {
+signed lockfd;
+
+    do {
+        // The check for existance and shm creation are atomic so it's save
+        // to use this as the basis for a global lock.
+        lockfd = shm_open(RME_SHM_LOCKNAME, O_RDWR | O_CREAT | O_EXCL, 0644);
+        if (lockfd < 0)
+            usleep(10000);
+    } while (lockfd < 0);
+
+    return lockfd;
+}
+
+static void rme_shm_unlock(signed int lockfd) {
+    close(lockfd);
+    shm_unlink(RME_SHM_LOCKNAME);
+}
+
 rme_shm_t *rme_shm_open(void) {
 
-    signed int shmfd;
+    signed int shmfd, lockfd;
     rme_shm_t *data;
     signed int created = 0;
 
-    // There is a small race condition here - if another RME FFADO process
-    // closes between the first and second shm_open() calls and in doing so
-    // removes the shm object, the current process will end up without a shm
-    // object since the second shm_open() call will fail.  At this point the
-    // practical likelihood of this is low, so we'll live with it.
-    shmfd = shm_open(RME_SHM_NAME, O_RDWR | O_CREAT | O_EXCL, 0644);
+    lockfd = rme_shm_lock();
+
+    shmfd = shm_open(RME_SHM_NAME, O_RDWR, 0644);
     if (shmfd < 0) {
-        if (errno==EEXIST) {
-            shmfd = shm_open(RME_SHM_NAME, O_RDWR, 0644);
-            if (shmfd < 0) 
+        if (errno == ENOENT) {
+            shmfd = shm_open(RME_SHM_NAME, O_RDWR | O_CREAT | O_EXCL, 0644);
+            if (shmfd < 0)
                 return NULL;
-        } else {
+            else {
+                ftruncate(shmfd, RME_SHM_SIZE);
+                created = 1;
+            }
+        } else
             return NULL;
-        }
-    } else {
-        ftruncate(shmfd, RME_SHM_SIZE);
-        created = 1;
     }
 
     data = (rme_shm_t *)mmap(NULL, RME_SHM_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, shmfd, 0);
@@ -86,17 +104,13 @@ rme_shm_t *rme_shm_open(void) {
         pthread_mutex_init(&data->lock, NULL);
     }
 
-    // There's another unlikely race condition here.  If another process has
-    // done rme_shm_close() which results in a zero reference count between
-    // our second shm_open() call and here, we will be mapped to a shared
-    // object which is inaccessible to any subsequent processes due to the
-    // shm_unlink() call in rme_shm_close().  Again though, the practical
-    // changes of this occurring are low.
     pthread_mutex_lock(&data->lock);
     data->ref_count++;
     if (created)
         data->valid++;
     pthread_mutex_unlock(&data->lock);
+
+    rme_shm_unlock(lockfd);
 
     return data;
 }
@@ -104,6 +118,9 @@ rme_shm_t *rme_shm_open(void) {
 void rme_shm_close(rme_shm_t *shm_data) {
 
     signed int unlink = 0;
+    signed int lockfd;
+
+    lockfd = rme_shm_lock();
 
     pthread_mutex_lock(&shm_data->lock);
     shm_data->ref_count--;
@@ -111,12 +128,16 @@ void rme_shm_close(rme_shm_t *shm_data) {
     unlink = (shm_data->ref_count == 0);
     pthread_mutex_unlock(&shm_data->lock);
 
-    // There's nothing to gain by explicitly calling pthread_mutex_destroy()
-    // on shm_data->lock, and doing so could cause issues for other processes
-    // which were waiting on the lock during the previous code block.
+    if (unlink) {
+        // This is safe: if the reference count is zero there can't be any
+        // other process using the lock at this point.
+        pthread_mutex_destroy(&shm_data->lock);
+    }
 
     munmap(shm_data, RME_SHM_SIZE);
 
     if (unlink)
         shm_unlink(RME_SHM_NAME);
+
+    rme_shm_unlock(lockfd);
 }

@@ -169,6 +169,7 @@ metric_halo_source = env.Split( '\
 ' )
 
 rme_source = env.Split( '\
+	rme/rme_shm.cpp \
 	rme/rme_avdevice.cpp \
 	rme/rme_avdevice_settings.cpp \
 	rme/fireface_flash.cpp \
