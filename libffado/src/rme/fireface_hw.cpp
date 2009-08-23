@@ -50,7 +50,7 @@ Device::init_hardware(void)
     // based on that.  It may also read the device configuration from the
     // device flash and adopt that.  For now (for initial testing purposes)
     // we'll go with a static state.
-    if (shared_data==NULL || shared_data->settings_valid==0) {
+    if (shared_data->settings_valid==0) {
         memset(settings, 0, sizeof(*settings));
         settings->spdif_input_mode = FF_SWPARAM_SPDIF_INPUT_COAX;
         settings->spdif_output_mode = FF_SWPARAM_SPDIF_OUTPUT_COAX;
@@ -68,8 +68,7 @@ Device::init_hardware(void)
             }
         }
 
-        if (shared_data != NULL)
-            shared_data->settings_valid = 1;
+        shared_data->settings_valid = 1;
     }
 
     // A default sampling rate.  An explicit DDS frequency is not enabled
@@ -82,13 +81,12 @@ Device::init_hardware(void)
 
     // Also configure the TCO (Time Code Option) settings for those devices
     // which have a TCO.
-    if (shared_data==NULL || shared_data->tco_settings_valid==0) {
+    if (shared_data->tco_settings_valid==0) {
         if (tco_present) {
             memset(tco_settings, 0, sizeof(*tco_settings));
             write_tco_settings(tco_settings);
         }
-        if (shared_data != NULL)
-            shared_data->tco_settings_valid = 1;
+        shared_data->tco_settings_valid = 1;
     }
     return 0;
 }

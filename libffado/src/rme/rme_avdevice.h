@@ -124,9 +124,7 @@ protected:
     FF_software_settings_t *settings;
     FF_TCO_settings_t *tco_settings;
 
-    rme_shm_t *shared_data;
-    FF_software_settings_t settings_localobj;
-    FF_TCO_settings_t tco_settings_localobj;
+    rme_shm_t *shared_data, local_data_obj;
 
     signed int num_channels;
     signed int samples_per_packet;

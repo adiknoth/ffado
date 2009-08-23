@@ -287,14 +287,11 @@ Device::discover()
     }
     if (shared_data == NULL) {
         debugOutput( DEBUG_LEVEL_WARNING, "Could not create/access shared configuration memory object, using process-local storage\n");
-        settings = &settings_localobj;
-        tco_settings = &tco_settings_localobj;
-        memset(settings, 0, sizeof(*settings));
-        memset(tco_settings, 0, sizeof(*tco_settings));
-    } else {
-        settings = &shared_data->settings;
-        tco_settings = &shared_data->tco_settings;
+        memset(&local_data_obj, 0, sizeof(local_data_obj));
+        shared_data = &local_data_obj;
     }
+    settings = &shared_data->settings;
+    tco_settings = &shared_data->tco_settings;
 
     // If device is FF800, check to see if the TCO is fitted
     if (m_rme_model == RME_MODEL_FIREFACE800) {
