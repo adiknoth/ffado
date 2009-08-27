@@ -164,6 +164,11 @@ byteSwapToBus(quadlet_t *data, unsigned int nb_elements)
         data++;
         nb_elements--;
     }
+
+    if(nb_elements == 0) {
+        return;
+    }
+
     assert((((unsigned long)data) & 0xF) == 0);
 
     // now do the SSE based conversion
@@ -212,6 +217,11 @@ byteSwapFromBus(quadlet_t *data, unsigned int nb_elements)
         data++;
         nb_elements--;
     }
+
+    if(nb_elements == 0) {
+        return;
+    }
+
     assert((((unsigned long)data) & 0xF) == 0);
 
     // now do the SSE based conversion
