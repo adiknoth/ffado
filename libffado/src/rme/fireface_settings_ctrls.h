@@ -98,6 +98,10 @@ public:
     virtual double setValue(const int row, const int col, const double val);
     virtual double getValue(const int row, const int col);
 
+    // functions to access the entire coefficient map at once
+    virtual bool getCoefficientMap(int &) {return false;};
+    virtual bool storeCoefficientMap(int &) {return false;};
+
 protected:
     Device &m_parent;
     unsigned int m_type;

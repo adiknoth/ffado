@@ -162,6 +162,9 @@ public:
      */
     const ElementVector & getElementVector();
 
+    Element * getElementByName(std::string name);
+
+
     virtual void show();
     virtual void setVerboseLevel(int l);
 

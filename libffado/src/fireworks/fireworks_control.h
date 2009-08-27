@@ -68,6 +68,10 @@ public:
     virtual int getRowCount( );
     virtual int getColCount( );
 
+    // full map updates are unsupported
+    virtual bool getCoefficientMap(int &) {return false;};
+    virtual bool storeCoefficientMap(int &) {return false;};
+
 protected:
     enum eMonitorControl        m_control;
     FireWorks::Device&          m_ParentDevice;

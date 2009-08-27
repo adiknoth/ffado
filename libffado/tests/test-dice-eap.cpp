@@ -33,6 +33,9 @@
 #include "libieee1394/ieee1394service.h"
 #include "libutil/Configuration.h"
 
+#include "libcontrol/MatrixMixer.h"
+#include "libcontrol/CrossbarRouter.h"
+
 #include "dice/dice_avdevice.h"
 using namespace Dice;
 
@@ -40,6 +43,14 @@ using namespace Dice;
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+
+#include <signal.h>
+int run;
+
+static void sighandler(int sig)
+{
+    run = 0;
+}
 
 using namespace std;
 using namespace Util;
@@ -142,6 +153,11 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 int
 main(int argc, char **argv)
 {
+    run=1;
+
+    signal (SIGINT, sighandler);
+    signal (SIGPIPE, sighandler);
+
     // arg parsing
     if ( argp_parse ( &argp, argc, argv, 0, 0, &arguments ) ) {
         printMessage("Could not parse command line\n" );
@@ -212,20 +228,73 @@ main(int argc, char **argv)
         return -1;
     }
     printMessage("device supports EAP\n");
-    
-    Device::EAP eap = Device::EAP(*avDevice);
 
-    if(!eap.init()) {
-        printMessage("Could not init EAP\n");
-        delete m_deviceManager;
-        return -1;
-    }
+    Device::EAP &eap = *(avDevice->getEAP());
 
     eap.show();
+    eap.lockControl();
+    Control::Element *e = eap.getElementByName("MatrixMixer");
+    if(e == NULL) {
+        printMessage("Could not get MatrixMixer control element\n");
+    } else {
+        Control::MatrixMixer *m = dynamic_cast<Control::MatrixMixer *>(e);
+        if(m == NULL) {
+            printMessage("Element is not a MatrixMixer control element\n");
+        } else {
+            for(int row=0; row < 16; row++) {
+                for(int col=0; col < 18; col++) {
+//                     m->setValue(row, col, 0);
+                }
+            }
+        }
+    }
+    // after unlocking, these should not be used anymore
+    e = NULL;
+    eap.unlockControl();
 
-    Device::EAP::Mixer m = Device::EAP::Mixer(eap);
-    m.init();
-    m.show();
+    int cnt = 0;
+
+    while(run) {
+        eap.lockControl();
+        Control::Element *e = eap.getElementByName("Router");
+        if(e == NULL) {
+            printMessage("Could not get CrossbarRouter control element\n");
+        } else {
+            Control::CrossbarRouter *c = dynamic_cast<Control::CrossbarRouter *>(e);
+            if(c == NULL) {
+                printMessage("Element is not a CrossbarRouter control element\n");
+            } else {
+//                 if(cnt == 0) {
+//                     Control::CrossbarRouter::NameVector n;
+//                     n = c->getSourceNames();
+//                     for(int i=0; i<n.size(); i++) {
+//                         printMessage("Src  %02d: %s\n", i, n.at(i).c_str());
+//                     }
+//                     n = c->getDestinationNames();
+//                     for(int i=0; i<n.size(); i++) {
+//                         printMessage("Dest %02d: %s\n", i, n.at(i).c_str());
+//                     }
+//                 }
+                #define NELEMS 10
+                double peaks[NELEMS];
+                int srcids[NELEMS];
+                int dstidx = c->getDestinationIndex("MixerIn:00");
+                for(int i=0; i<NELEMS; i++) {
+                    srcids[i] = c->getSourceForDestination(dstidx + i);
+                    peaks[i] = c->getPeakValue(srcids[i], dstidx + i);
+                }
+                for(int i=0; i<NELEMS; i++) {
+                    std::string srcname = c->getSourceName(srcids[i]);
+                    std::string dstname = c->getDestinationName(dstidx + i);
+                    printMessage("Peak %3d (%10s => %10s): %f\n", i, srcname.c_str(), dstname.c_str(), peaks[i]);
+                }
+            }
+        }
+        // after unlocking, these should not be used anymore
+        e = NULL;
+        eap.unlockControl();
+        sleep(1);
+    }
 
     // cleanup
     delete m_deviceManager;

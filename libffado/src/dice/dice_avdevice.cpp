@@ -45,12 +45,15 @@
 #include "libutil/Configuration.h"
 #include "devicemanager.h"
 
+#include "focusrite/saffire_pro40.h"
+
 using namespace std;
 
 namespace Dice {
 
 Device::Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
+    , m_eap( NULL )
     , m_global_reg_offset (0xFFFFFFFFLU)
     , m_global_reg_size (0xFFFFFFFFLU)
     , m_tx_reg_offset (0xFFFFFFFFLU)
@@ -90,6 +93,11 @@ Device::~Device()
     if (m_notifier) {
         unlock();
     }
+
+    if(m_eap) {
+        delete m_eap;
+    }
+
 }
 
 bool
@@ -110,7 +118,21 @@ Device::probe( Util::Configuration& c, ConfigRom& configRom, bool generic )
 FFADODevice *
 Device::createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 {
-    return new Device( d, configRom );
+    unsigned int vendorId = configRom->getNodeVendorId();
+    unsigned int modelId = configRom->getModelId();
+
+    switch (vendorId) {
+        case FW_VENDORID_FOCUSRITE:
+            switch(modelId) {
+                case 0x00000005:
+                    return new Focusrite::SaffirePro40(d, configRom);
+                default: // return a plain Dice device
+                    return new Device(d, configRom);
+           }
+        default:
+            return new Device(d, configRom);
+    }
+    return NULL;
 }
 
 bool
@@ -136,11 +158,46 @@ Device::discover()
         return false;
     }
 
+    bool supports_eap = Device::EAP::supportsEAP(*this);
+    if (supports_eap) { // FIXME: move to buildMixer() ??
+        m_eap = new Device::EAP(*this);
+        if(m_eap == NULL) {
+            debugError("Failed to allocate EAP.\n");
+            return false;
+        }
+        if(!m_eap->init()) {
+            debugError("Could not init EAP\n");
+            delete m_eap;
+            m_eap = NULL;
+            return false;
+        }
+        // register the EAP controls to the control structure
+        if(!addElement(m_eap)) {
+            debugError("Failed to add the EAP controls to the control tree\n");
+            return false;
+        }
+    }
     return true;
 }
 
+enum Device::eDiceConfig
+Device::getCurrentConfig()
+{
+    int samplerate = getSamplingFrequency();
+    if(samplerate > 31999 && samplerate <= 48000) {
+        return eDC_Low;
+    }
+    if(samplerate > 48000 && samplerate <= 96000) {
+        return eDC_Mid;
+    }
+    if(samplerate > 96000 && samplerate <= 192000) {
+        return eDC_High;
+    }
+    return eDC_Unknown;
+}
+
 int
-Device::getSamplingFrequency( ) {
+Device::getSamplingFrequency() {
     int samplingFrequency;
 
     fb_quadlet_t clockreg;
@@ -1743,7 +1800,7 @@ Device::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
         #endif
 
         if(!get1394Service().read( nodeId, curr_addr, quads_todo, curr_data ) ) {
-            debugError("Could not read %d quadlets from node 0x%04X addr 0x%012llX\n", nodeId, quads_todo, curr_addr);
+            debugError("Could not read %d quadlets from node 0x%04X addr 0x%012llX\n", quads_todo, nodeId, curr_addr);
             return false;
         }
         quads_done += quads_todo;
@@ -1787,7 +1844,7 @@ Device::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
         #endif
 
         if(!get1394Service().write( nodeId, addr, quads_todo, curr_data ) ) {
-            debugError("Could not write %d quadlets to node 0x%04X addr 0x%012llX\n", nodeId, quads_todo, curr_addr);
+            debugError("Could not write %d quadlets to node 0x%04X addr 0x%012llX\n", quads_todo, nodeId, curr_addr);
             return false;
         }
         quads_done += quads_todo;

@@ -25,6 +25,7 @@
 #include "libcontrol/Element.h"
 #include "libcontrol/BasicElements.h"
 #include "libcontrol/MatrixMixer.h"
+#include "libcontrol/CrossbarRouter.h"
 #include "libutil/Time.h"
 #include "libutil/PosixMutex.h"
 
@@ -422,6 +423,13 @@ Container::createHandler(Element *parent, Control::Element& e) {
                 parent, *dynamic_cast<Control::MatrixMixer *>(&e));
         }
         
+        if (dynamic_cast<Control::CrossbarRouter *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::CrossbarRouter\n");
+            
+            return new CrossbarRouter(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<Control::CrossbarRouter *>(&e));
+        }
+        
         debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Element\n");
         return new Element(conn(), std::string(path()+"/"+e.getName()), parent, e);
     } catch (...) {
@@ -809,5 +817,170 @@ DBus::Int32
 MatrixMixer::getColCount( ) {
     return m_Slave.getColCount();
 }
+
+// --- CrossbarRouter
+
+CrossbarRouter::CrossbarRouter( DBus::Connection& connection, std::string p, Element* parent, Control::CrossbarRouter &slave)
+: Element(connection, p, parent, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created CrossbarRouter on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::String
+CrossbarRouter::getSourceName(const DBus::Int32 &idx)
+{
+    return m_Slave.getSourceName(idx);
+}
+
+DBus::String
+CrossbarRouter::getDestinationName(const DBus::Int32 &idx)
+{
+    return m_Slave.getDestinationName(idx);
+}
+
+DBus::Int32
+CrossbarRouter::getSourceIndex(const DBus::String &name)
+{
+    return m_Slave.getSourceIndex(name);
+}
+
+DBus::Int32
+CrossbarRouter::getDestinationIndex(const DBus::String &name)
+{
+    return m_Slave.getDestinationIndex(name);
+}
+
+std::vector< DBus::String >
+CrossbarRouter::getSourceNames()
+{
+    return m_Slave.getSourceNames();
+}
+
+std::vector< DBus::String >
+CrossbarRouter::getDestinationNames()
+{
+    return m_Slave.getDestinationNames();
+}
+
+std::vector< DBus::Int32 >
+CrossbarRouter::getDestinationsForSource(const DBus::Int32 &idx)
+{
+    return m_Slave.getDestinationsForSource(idx);
+}
+
+DBus::Int32
+CrossbarRouter::getSourceForDestination(const DBus::Int32 &idx)
+{
+    return m_Slave.getSourceForDestination(idx);
+}
+
+DBus::Int32
+CrossbarRouter::canConnect(const DBus::Int32 &source, const DBus::Int32 &dest)
+{
+    return m_Slave.canConnect(source, dest);
+}
+
+DBus::Int32
+CrossbarRouter::setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Int32 &enable)
+{
+    return m_Slave.setConnectionState(source, dest, enable);
+}
+
+DBus::Int32
+CrossbarRouter::getConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest)
+{
+    return m_Slave.getConnectionState(source, dest);
+}
+
+DBus::Int32
+CrossbarRouter::canConnectNamed(const DBus::String& source, const DBus::String& dest)
+{
+    return m_Slave.canConnect(source, dest);
+}
+
+DBus::Int32
+CrossbarRouter::setConnectionStateNamed(const DBus::String &source, const DBus::String &dest, const DBus::Int32 &enable)
+{
+    return m_Slave.setConnectionState(source, dest, enable);
+}
+
+DBus::Int32
+CrossbarRouter::getConnectionStateNamed(const DBus::String &source, const DBus::String &dest)
+{
+    return m_Slave.getConnectionState(source, dest);
+}
+
+DBus::Int32
+CrossbarRouter::clearAllConnections()
+{
+    return m_Slave.clearAllConnections();
+}
+
+DBus::Int32
+CrossbarRouter::getNbSources()
+{
+    return m_Slave.getNbSources();
+}
+
+DBus::Int32
+CrossbarRouter::getNbDestinations()
+{
+    return m_Slave.getNbDestinations();
+}
+
+DBus::Int32
+CrossbarRouter::hasPeakMetering()
+{
+    return m_Slave.hasPeakMetering();
+}
+
+DBus::Double
+CrossbarRouter::getPeakValue(const DBus::Int32 &source, const DBus::Int32 &dest)
+{
+    return m_Slave.getPeakValue(source, dest);
+}
+
+std::vector< DBus::Int32 >
+CrossbarRouter::getConnectionMap()
+{
+    std::vector< DBus::Int32 >connmap;
+    unsigned int nb_sources = m_Slave.getNbSources();
+    unsigned int nb_destinations = m_Slave.getNbDestinations();
+    unsigned int nb_entries = nb_sources * nb_destinations;
+
+    int map_data[nb_entries];
+
+    if(!m_Slave.getConnectionMap(map_data)) {
+        debugError("Could not fetch connection map\n");
+        return connmap;
+    }
+
+    for(unsigned int i=0; i<nb_entries; i++) {
+        connmap.push_back(map_data[i]);
+    }
+    return connmap;
+}
+
+DBus::Int32
+CrossbarRouter::setConnectionMap(const std::vector< DBus::Int32 >&connmap)
+{
+    unsigned int nb_sources = m_Slave.getNbSources();
+    unsigned int nb_destinations = m_Slave.getNbDestinations();
+    unsigned int nb_entries = nb_sources * nb_destinations;
+
+    if(connmap.size() != nb_entries) {
+        debugError("bogus map size\n");
+        return false;
+    }
+
+    int map_data[nb_entries];
+    for (unsigned int i=0; i<nb_entries; i++) {
+        map_data[i] = connmap.at(i);
+    }
+    return m_Slave.setConnectionMap(map_data);
+}
+
 
 } // end of namespace Control

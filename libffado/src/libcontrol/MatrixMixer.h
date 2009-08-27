@@ -46,13 +46,18 @@ public:
 
     virtual void show() = 0;
 
-    virtual std::string getRowName( const int ) = 0;
-    virtual std::string getColName( const int ) = 0;
-    virtual int canWrite( const int, const int ) = 0;
-    virtual double setValue( const int, const int, const double ) = 0;
-    virtual double getValue( const int, const int ) = 0;
-    virtual int getRowCount( ) = 0;
-    virtual int getColCount( ) = 0;
+    // per-coefficient access
+    virtual std::string getRowName(const int) = 0;
+    virtual std::string getColName(const int) = 0;
+    virtual int canWrite(const int, const int) = 0;
+    virtual double setValue(const int, const int, const double) = 0;
+    virtual double getValue(const int, const int) = 0;
+    virtual int getRowCount() = 0;
+    virtual int getColCount() = 0;
+
+    // functions to access the entire coefficient map at once
+    virtual bool getCoefficientMap(int &) = 0;
+    virtual bool storeCoefficientMap(int &) = 0;
 
 protected:
 

@@ -36,6 +36,7 @@
 
 namespace Control {
     class MatrixMixer;
+    class CrossbarRouter;
 };
 
 namespace DBusControl {
@@ -315,6 +316,49 @@ public:
 
 private:
     Control::MatrixMixer &m_Slave;
+};
+
+class CrossbarRouter
+: public org::ffado::Control::Element::CrossbarRouter
+, public Element
+{
+public:
+    CrossbarRouter(  DBus::Connection& connection,
+                  std::string p, Element *,
+                  Control::CrossbarRouter &slave );
+
+    DBus::String getSourceName(const DBus::Int32 &);
+    DBus::String getDestinationName(const DBus::Int32 &);
+    DBus::Int32 getSourceIndex(const DBus::String &);
+    DBus::Int32 getDestinationIndex(const DBus::String &);
+
+    std::vector< DBus::String > getSourceNames();
+    std::vector< DBus::String > getDestinationNames();
+
+    std::vector< DBus::Int32 > getDestinationsForSource(const DBus::Int32 &);
+    DBus::Int32 getSourceForDestination(const DBus::Int32 &);
+
+    DBus::Int32 canConnect(const DBus::Int32 &source, const DBus::Int32 &dest);
+    DBus::Int32 setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Int32 &enable);
+    DBus::Int32 getConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest);
+
+    DBus::Int32 canConnectNamed(const DBus::String&, const DBus::String&);
+    DBus::Int32 setConnectionStateNamed(const DBus::String&, const DBus::String&, const DBus::Int32 &enable);
+    DBus::Int32 getConnectionStateNamed(const DBus::String&, const DBus::String&);
+
+    DBus::Int32 clearAllConnections();
+
+    DBus::Int32 getNbSources();
+    DBus::Int32 getNbDestinations();
+
+    DBus::Int32 hasPeakMetering();
+    DBus::Double getPeakValue(const DBus::Int32 &source, const DBus::Int32 &dest);
+
+    std::vector< DBus::Int32 > getConnectionMap();
+    DBus::Int32 setConnectionMap(const std::vector< DBus::Int32 >&);
+
+private:
+    Control::CrossbarRouter &m_Slave;
 };
 
 }

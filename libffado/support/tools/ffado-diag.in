@@ -35,7 +35,7 @@ from listirqinfo import IRQ,SoftIRQ,IRQInfo
 from helpstrings import HelpStrings
 
 ## message strings
-FFADODIAG_VERSION = "0.1"
+FFADODIAG_VERSION = "$VERSION-$REVISION"
 
 welcome_msg = """
 
@@ -76,12 +76,12 @@ def check_for_module_loaded(modulename):
     f.close()
     for l in lines:
         mod = l.split()[0]
-        if mod == modulename:
+        if mod == modulename or mod == modulename.replace('-', '_'):
             log.info(" found")
             return True
     log.info(" not found")
     return False
-    
+
 def check_for_module_present(modulename):
     log.info("Checking if module '%s' is present... " % modulename)
     kver = get_kernel_version()
@@ -117,17 +117,17 @@ def check_1394oldstack_present():
 
 def check_1394newstack_loaded():
     retval = True
-    if not check_for_module_loaded('fw-core'):
+    if not check_for_module_loaded('firewire-core'):
         retval = False
-    if not check_for_module_loaded('fw-ohci'):
+    if not check_for_module_loaded('firewire-ohci'):
         retval = False
     return retval
 
 def check_1394newstack_present():
     retval = True
-    if not check_for_module_present('fw-core'):
+    if not check_for_module_present('firewire-core'):
         retval = False
-    if not check_for_module_present('fw-ohci'):
+    if not check_for_module_present('firewire-ohci'):
         retval = False
     return retval
 

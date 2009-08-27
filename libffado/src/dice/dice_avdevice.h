@@ -35,6 +35,12 @@
 
 #include "libieee1394/ieee1394service.h"
 
+#include "libcontrol/Element.h"
+#include "libcontrol/MatrixMixer.h"
+#include "libcontrol/CrossbarRouter.h"
+
+#include "dice_eap.h"
+
 #include <string>
 #include <vector>
 
@@ -51,9 +57,394 @@ class Notifier;
 
 class Device : public FFADODevice {
 // private:
+    typedef std::vector< std::string > diceNameVector;
+    typedef std::vector< std::string >::iterator diceNameVectorIterator;
+
 public:
     class Notifier;
     class EAP;
+
+    /**
+     * this class represents the EAP interface
+     * available on some devices
+     */
+    class EAP : public Control::Container
+    {
+    public:
+        enum eWaitReturn {
+            eWR_Error,
+            eWR_Timeout,
+            eWR_Busy,
+            eWR_Done,
+        };
+        enum eRegBase {
+            eRT_Base,
+            eRT_Capability,
+            eRT_Command,
+            eRT_Mixer,
+            eRT_Peak,
+            eRT_NewRouting,
+            eRT_NewStreamCfg,
+            eRT_CurrentCfg,
+            eRT_Standalone,
+            eRT_Application,
+            eRT_None,
+        };
+        enum eRouteSource {
+            eRS_AES = 0,
+            eRS_ADAT = 1,
+            eRS_Mixer = 2,
+            eRS_InS0 = 4,
+            eRS_InS1 = 5,
+            eRS_ARM = 10,
+            eRS_ARX0 = 11,
+            eRS_ARX1 = 12,
+            eRS_Muted = 15,
+            eRS_Invalid = 16,
+        };
+        enum eRouteDestination {
+            eRD_AES = 0,
+            eRD_ADAT = 1,
+            eRD_Mixer0 = 2,
+            eRD_Mixer1 = 3,
+            eRD_InS0 = 4,
+            eRD_InS1 = 5,
+            eRD_ARM = 10,
+            eRD_ATX0 = 11,
+            eRD_ATX1 = 12,
+            eRD_Muted = 15,
+            eRD_Invalid = 16,
+        };
+
+    public:
+
+        // ----------
+        class RouterConfig {
+        public:
+            struct Route
+            {
+                enum eRouteSource src;
+                int srcChannel;
+                enum eRouteDestination dst;
+                int dstChannel;
+                int peak;
+            };
+            typedef std::vector<RouterConfig::Route> RouteVector;
+            typedef std::vector<RouterConfig::Route>::iterator RouteVectorIterator;
+            RouterConfig(EAP &);
+            RouterConfig(EAP &, enum eRegBase, unsigned int offset);
+            virtual ~RouterConfig();
+
+            virtual bool read() {return read(m_base, m_offset);};
+            virtual bool write() {return write(m_base, m_offset);};
+            virtual bool read(enum eRegBase b, unsigned offset);
+            virtual bool write(enum eRegBase b, unsigned offset);
+            virtual void show();
+
+
+            bool insertRoute(struct Route r)
+                {return insertRoute(r, m_routes.size());};
+            bool insertRoute(struct Route r, unsigned int index);
+            bool replaceRoute(unsigned int old_index, struct Route new_route);
+            bool replaceRoute(struct Route old_route, struct Route new_route);
+            bool removeRoute(struct Route r);
+            bool removeRoute(unsigned int index);
+            int getRouteIndex(struct Route r);
+            struct Route getRoute(unsigned int index);
+
+            unsigned int getNbRoutes() {return m_routes.size();};
+
+            struct Route getRouteForDestination(enum eRouteDestination dst, int channel);
+            RouteVector getRoutesForSource(enum eRouteSource src, int channel);
+
+            struct Route decodeRoute(uint32_t val);
+            uint32_t encodeRoute(struct Route r);
+        public:
+            static enum eRouteDestination intToRouteDestination(int);
+            static enum eRouteSource intToRouteSource(int);
+        protected:
+            EAP &m_eap;
+            enum eRegBase m_base;
+            unsigned int m_offset;
+            RouteVector m_routes;
+        protected:
+            DECLARE_DEBUG_MODULE_REFERENCE;
+        };
+
+        // ----------
+        // the peak space is a special version of a router config
+        class PeakSpace : public RouterConfig {
+        public:
+            PeakSpace(EAP &p) : RouterConfig(p, eRT_Peak, 0) {};
+            virtual ~PeakSpace() {};
+
+            virtual bool read() {return read(m_base, m_offset);};
+            virtual bool write() {return write(m_base, m_offset);};
+            virtual bool read(enum eRegBase b, unsigned offset);
+            virtual bool write(enum eRegBase b, unsigned offset);
+            virtual void show();
+        };
+
+        // ----------
+        class StreamConfig {
+        public:
+            struct ConfigBlock { // FIXME: somewhere in the DICE avdevice this is present too
+                uint32_t nb_audio;
+                uint32_t nb_midi;
+                uint32_t names[DICE_EAP_CHANNEL_CONFIG_NAMESTR_LEN_QUADS];
+                uint32_t ac3_map;
+            };
+            void showConfigBlock(struct ConfigBlock &);
+            diceNameVector getNamesForBlock(struct ConfigBlock &b);
+        public:
+            StreamConfig(EAP &, enum eRegBase, unsigned int offset);
+            ~StreamConfig();
+
+            bool read() {return read(m_base, m_offset);};
+            bool write() {return write(m_base, m_offset);};
+            bool read(enum eRegBase b, unsigned offset);
+            bool write(enum eRegBase b, unsigned offset);
+
+            void show();
+
+        private:
+            EAP &m_eap;
+            enum eRegBase m_base;
+            unsigned int m_offset;
+
+            uint32_t m_nb_tx;
+            uint32_t m_nb_rx;
+
+            struct ConfigBlock *m_tx_configs;
+            struct ConfigBlock *m_rx_configs;
+
+            DECLARE_DEBUG_MODULE_REFERENCE;
+        };
+
+    public: // mixer control subclass
+        class Mixer : public Control::MatrixMixer {
+        public:
+            Mixer(EAP &);
+            ~Mixer();
+
+            bool init();
+            void show();
+
+            void updateNameCache();
+            /**
+             * load the coefficients from the device into the local cache
+             * @return 
+             */
+            bool loadCoefficients();
+            /**
+             * Stores the coefficients from the cache to the device
+             * @return 
+             */
+            bool storeCoefficients();
+
+            virtual std::string getRowName( const int );
+            virtual std::string getColName( const int );
+            virtual int canWrite( const int, const int );
+            virtual double setValue( const int, const int, const double );
+            virtual double getValue( const int, const int );
+            virtual int getRowCount( );
+            virtual int getColCount( );
+        
+            // full map updates are unsupported
+            virtual bool getCoefficientMap(int &);
+            virtual bool storeCoefficientMap(int &);
+
+        private:
+            EAP &         m_eap;
+            fb_quadlet_t *m_coeff;
+
+            std::map<int, RouterConfig::Route> m_input_route_map;
+            std::map<int, RouterConfig::RouteVector> m_output_route_map;
+
+            DECLARE_DEBUG_MODULE_REFERENCE;
+        };
+
+        // ----------
+        class Router : public Control::CrossbarRouter {
+        private:
+            struct Source {
+                std::string name;
+                enum eRouteSource src;
+                int srcChannel;
+            };
+            typedef std::vector<Source> SourceVector;
+            typedef std::vector<Source>::iterator SourceVectorIterator;
+
+            struct Destination {
+                std::string name;
+                enum eRouteDestination dst;
+                int dstChannel;
+            };
+            typedef std::vector<Destination> DestinationVector;
+            typedef std::vector<Destination>::iterator DestinationVectorIterator;
+
+        public:
+            Router(EAP &);
+            ~Router();
+
+            void show();
+
+            // to be subclassed by the implementing
+            // devices
+            virtual void setupSources();
+            virtual void setupDestinations();
+
+            void setupDestinationsAddDestination(const char *name, enum eRouteDestination dstid,
+                                                 unsigned int base, unsigned int cnt);
+            void setupSourcesAddSource(const char *name, enum eRouteSource srcid,
+                                       unsigned int base, unsigned int cnt);
+
+            int getDestinationIndex(enum eRouteDestination dstid, int channel);
+            int getSourceIndex(enum eRouteSource srcid, int channel);
+
+            // per-coefficient access
+            virtual std::string getSourceName(const int);
+            virtual std::string getDestinationName(const int);
+            virtual int getSourceIndex(std::string);
+            virtual int getDestinationIndex(std::string);
+            virtual NameVector getSourceNames();
+            virtual NameVector getDestinationNames();
+
+            virtual IntVector getDestinationsForSource(const int);
+            virtual int getSourceForDestination(const int);
+
+            virtual bool canConnect( const int source, const int dest);
+            virtual bool setConnectionState( const int source, const int dest, const bool enable);
+            virtual bool getConnectionState( const int source, const int dest );
+
+            virtual bool canConnect(std::string, std::string);
+            virtual bool setConnectionState(std::string, std::string, const bool enable);
+            virtual bool getConnectionState(std::string, std::string);
+
+            virtual bool clearAllConnections();
+
+            virtual int getNbSources();
+            virtual int getNbDestinations();
+
+            // functions to access the entire routing map at once
+            // idea is that the row/col nodes that are 1 get a routing entry
+            virtual bool getConnectionMap(int *);
+            virtual bool setConnectionMap(int *);
+
+            // peak metering support
+            virtual bool hasPeakMetering();
+            virtual bool getPeakValues(double &) {return false;};
+            virtual double getPeakValue(const int source, const int dest);
+
+        private:
+            EAP &m_eap;
+            // these contain the sources and destinations available for this
+            // router
+            SourceVector      m_sources;
+            DestinationVector m_destinations;
+
+            PeakSpace &m_peak;
+
+            DECLARE_DEBUG_MODULE_REFERENCE;
+        };
+
+    public:
+        EAP(Device &);
+        virtual ~EAP();
+
+        static bool supportsEAP(Device &);
+        bool init();
+
+        void show();
+        enum eWaitReturn operationBusy();
+        enum eWaitReturn waitForOperationEnd(int max_wait_time_ms = 100);
+
+        bool updateConfigurationCache();
+        RouterConfig * getActiveRouterConfig();
+        StreamConfig * getActiveStreamConfig();
+
+        bool updateRouterConfig(RouterConfig&, bool low, bool mid, bool high);
+        bool updateCurrentRouterConfig(RouterConfig&);
+        bool updateStreamConfig(StreamConfig&, bool low, bool mid, bool high);
+        bool updateStreamConfig(RouterConfig&, StreamConfig&, bool low, bool mid, bool high);
+
+        bool loadFlashConfig();
+        bool storeFlashConfig();
+
+    private:
+        bool loadRouterConfig(bool low, bool mid, bool high);
+        bool loadStreamConfig(bool low, bool mid, bool high);
+        bool loadRouterAndStreamConfig(bool low, bool mid, bool high);
+    private:
+        bool     m_router_exposed;
+        bool     m_router_readonly;
+        bool     m_router_flashstored;
+        uint16_t m_router_nb_entries;
+
+        bool     m_mixer_exposed;
+        bool     m_mixer_readonly;
+        bool     m_mixer_flashstored;
+        uint8_t  m_mixer_tx_id;
+        uint8_t  m_mixer_rx_id;
+        uint8_t  m_mixer_nb_tx;
+        uint8_t  m_mixer_nb_rx;
+
+        bool     m_general_support_dynstream;
+        bool     m_general_support_flash;
+        bool     m_general_peak_enabled;
+        uint8_t  m_general_max_tx;
+        uint8_t  m_general_max_rx;
+        bool     m_general_stream_cfg_stored;
+        uint16_t m_general_chip;
+
+        bool commandHelper(fb_quadlet_t cmd);
+
+        bool readReg(enum eRegBase, unsigned offset, quadlet_t *);
+        bool writeReg(enum eRegBase, unsigned offset, quadlet_t);
+        bool readRegBlock(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
+        bool writeRegBlock(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
+        bool readRegBlockSwapped(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
+        bool writeRegBlockSwapped(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
+        fb_nodeaddr_t offsetGen(enum eRegBase, unsigned, size_t);
+
+    private:
+        DECLARE_DEBUG_MODULE_REFERENCE;
+
+    private:
+        Device & m_device;
+        Mixer*   m_mixer;
+        Router*  m_router;
+        RouterConfig m_current_cfg_routing_low;
+        RouterConfig m_current_cfg_routing_mid;
+        RouterConfig m_current_cfg_routing_high;
+        StreamConfig m_current_cfg_stream_low;
+        StreamConfig m_current_cfg_stream_mid;
+        StreamConfig m_current_cfg_stream_high;
+    public:
+        Mixer*  getMixer() {return m_mixer;};
+        Router* getRouter() {return m_router;};
+
+    private:
+
+        fb_quadlet_t m_capability_offset;
+        fb_quadlet_t m_capability_size;
+        fb_quadlet_t m_cmd_offset;
+        fb_quadlet_t m_cmd_size;
+        fb_quadlet_t m_mixer_offset;
+        fb_quadlet_t m_mixer_size;
+        fb_quadlet_t m_peak_offset;
+        fb_quadlet_t m_peak_size;
+        fb_quadlet_t m_new_routing_offset;
+        fb_quadlet_t m_new_routing_size;
+        fb_quadlet_t m_new_stream_cfg_offset;
+        fb_quadlet_t m_new_stream_cfg_size;
+        fb_quadlet_t m_curr_cfg_offset;
+        fb_quadlet_t m_curr_cfg_size;
+        fb_quadlet_t m_standalone_offset;
+        fb_quadlet_t m_standalone_size;
+        fb_quadlet_t m_app_offset;
+        fb_quadlet_t m_app_size;
+    };
 
 public:
     Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
@@ -93,7 +484,6 @@ public:
     virtual bool setNickname(std::string name);
 
 protected:
-
     // streaming stuff
     typedef std::vector< Streaming::StreamProcessor * > StreamProcessorVector;
     typedef std::vector< Streaming::StreamProcessor * >::iterator StreamProcessorVectorIterator;
@@ -120,6 +510,16 @@ private: // streaming & port helpers
     int allocateIsoChannel(unsigned int packet_size);
     bool deallocateIsoChannel(int channel);
 
+private: // active config
+    enum eDiceConfig {
+        eDC_Unknown,
+        eDC_Low,
+        eDC_Mid,
+        eDC_High,
+    };
+
+    enum eDiceConfig getCurrentConfig();
+
 private: // helper functions
     bool enableIsoStreaming();
     bool disableIsoStreaming();
@@ -128,8 +528,6 @@ private: // helper functions
     bool maskedCheckZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask);
     bool maskedCheckNotZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask);
 
-    typedef std::vector< std::string > diceNameVector;
-    typedef std::vector< std::string >::iterator diceNameVectorIterator;
     diceNameVector splitNameString(std::string in);
     diceNameVector getTxNameString(unsigned int i);
     diceNameVector getRxNameString(unsigned int i);
@@ -140,6 +538,12 @@ private: // helper functions
     enum eClockSourceType  clockIdToType(unsigned int id);
     bool isClockSourceIdLocked(unsigned int id, quadlet_t ext_status_reg);
     bool isClockSourceIdSlipping(unsigned int id, quadlet_t ext_status_reg);
+
+// EAP stuff
+private:
+    EAP*         m_eap;
+public:
+    EAP* getEAP() {return m_eap;};
 
 private: // register I/O routines
     bool initIoFunctions();
@@ -204,138 +608,7 @@ public:
         Device &m_device;
     };
 
-    /**
-     * this class represents the EAP interface
-     * available on some devices
-     */
-    class EAP
-    {
-    public:
-        class Router;
-        class Mixer;
 
-    private:
-        enum eWaitReturn {
-            eWR_Error,
-            eWR_Timeout,
-            eWR_Busy,
-            eWR_Done,
-        };
-        enum eRegBase {
-            eRT_Base,
-            eRT_Capability,
-            eRT_Command,
-            eRT_Mixer,
-            eRT_Peak,
-            eRT_NewRouting,
-            eRT_NewStreamCfg,
-            eRT_CurrentCfg,
-            eRT_Standalone,
-            eRT_Application,
-        };
-
-    public:
-        EAP(Device &);
-        virtual ~EAP();
-
-        static bool supportsEAP(Device &);
-        bool init();
-
-        void show();
-        enum eWaitReturn operationBusy();
-        enum eWaitReturn waitForOperationEnd(int max_wait_time_ms = 100);
-        bool loadRouterConfig(bool low, bool mid, bool high);
-        bool loadStreamConfig(bool low, bool mid, bool high);
-        bool loadRouterAndStreamConfig(bool low, bool mid, bool high);
-        bool loadFlashConfig();
-        bool storeFlashConfig();
-        
-    private:
-        bool     m_router_exposed;
-        bool     m_router_readonly;
-        bool     m_router_flashstored;
-        uint16_t m_router_nb_entries;
-
-        bool     m_mixer_exposed;
-        bool     m_mixer_readonly;
-        bool     m_mixer_flashstored;
-        uint8_t  m_mixer_input_id;
-        uint8_t  m_mixer_output_id;
-        uint8_t  m_mixer_nb_inputs;
-        uint8_t  m_mixer_nb_outputs;
-
-        bool     m_general_support_dynstream;
-        bool     m_general_support_flash;
-        bool     m_general_peak_enabled;
-        uint8_t  m_general_max_tx;
-        uint8_t  m_general_max_rx;
-        bool     m_general_stream_cfg_stored;
-        uint16_t m_general_chip;
-
-        bool commandHelper(fb_quadlet_t cmd);
-
-        bool readReg(enum eRegBase, unsigned offset, quadlet_t *);
-        bool writeReg(enum eRegBase, unsigned offset, quadlet_t);
-        bool readRegBlock(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
-        bool writeRegBlock(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
-        bool readRegBlockSwapped(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
-        bool writeRegBlockSwapped(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
-        fb_nodeaddr_t offsetGen(enum eRegBase, unsigned, size_t);
-
-        Device &m_device;
-        DECLARE_DEBUG_MODULE_REFERENCE;
-
-        fb_quadlet_t m_capability_offset;
-        fb_quadlet_t m_capability_size;
-        fb_quadlet_t m_cmd_offset;
-        fb_quadlet_t m_cmd_size;
-        fb_quadlet_t m_mixer_offset;
-        fb_quadlet_t m_mixer_size;
-        fb_quadlet_t m_peak_offset;
-        fb_quadlet_t m_peak_size;
-        fb_quadlet_t m_new_routing_offset;
-        fb_quadlet_t m_new_routing_size;
-        fb_quadlet_t m_new_stream_cfg_offset;
-        fb_quadlet_t m_new_stream_cfg_size;
-        fb_quadlet_t m_curr_cfg_offset;
-        fb_quadlet_t m_curr_cfg_size;
-        fb_quadlet_t m_standalone_offset;
-        fb_quadlet_t m_standalone_size;
-        fb_quadlet_t m_app_offset;
-        fb_quadlet_t m_app_size;
-
-    public: // mixer subclass
-        class Mixer {
-        public:
-            Mixer(EAP &);
-            ~Mixer();
-
-            bool init();
-            void show();
-            bool updateCoefficients();
-
-        private:
-            EAP &m_parent;
-            fb_quadlet_t *m_coeff;
-
-            DECLARE_DEBUG_MODULE_REFERENCE;
-        };
-
-        class Router {
-        public:
-            Router(EAP &);
-            ~Router();
-
-            bool init();
-            void show();
-
-        private:
-            EAP &m_parent;
-
-            DECLARE_DEBUG_MODULE_REFERENCE;
-        };
-
-    };
 
 };
 

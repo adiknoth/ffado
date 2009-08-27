@@ -215,6 +215,31 @@ Container::getElementVector()
     return m_Children;
 }
 
+/**
+ * Finds an element by name
+ * Note that you have to run this with the lock held,
+ * otherwise there is no guarantee that the element will
+ * not be deleted from the tree by an async event (e.g. busreset)
+ *
+ * @param name element name
+ * @return element or null if not found
+ */
+Element *
+Container::getElementByName(std::string name) {
+    if(!getLock().isLocked()) debugWarning("Getting a Config::Element without locking the control tree, dangerous!\n");
+    for ( ElementVectorIterator it = m_Children.begin();
+      it != m_Children.end();
+      ++it )
+    {
+        if((*it)->getName() == name) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Found Element %s (%s) \n",
+                (*it)->getName().c_str(), (*it)->getDescription().c_str());
+            return *it;
+        }
+    }
+    return NULL;
+}
+
 bool
 Container::addElement(Element *e)
 {
