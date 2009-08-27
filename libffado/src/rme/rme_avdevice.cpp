@@ -81,10 +81,6 @@ Device::Device( DeviceManager& d,
                       std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
     , m_rme_model( RME_MODEL_NONE )
-    , is_streaming( 0 )
-    , m_dds_freq( -1 )
-    , m_software_freq( -1 )
-    , tco_present( 0 )
     , num_channels( 0 )
     , samples_per_packet( 0 )
     , speed800( 0 )
@@ -99,8 +95,8 @@ Device::~Device()
 {
     destroyMixer();
 
-    if (shared_data != NULL) {
-        switch (rme_shm_close(shared_data)) {
+    if (dev_config != NULL) {
+        switch (rme_shm_close(dev_config)) {
             case RSO_CLOSE:
                 debugOutput( DEBUG_LEVEL_VERBOSE, "Configuration shared data object closed\n");
                 break;
@@ -278,30 +274,27 @@ Device::discover()
     }
 
     // Set up the shared data object for configuration data
-    i = rme_shm_open(&shared_data);
+    i = rme_shm_open(&dev_config);
     if (i == RSO_OPEN_CREATED) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "New configuration shared data object created\n");
     } else
     if (i == RSO_OPEN_ATTACHED) {
         debugOutput( DEBUG_LEVEL_VERBOSE, "Attached to existing configuration shared data object\n");
     }
-    if (shared_data == NULL) {
+    if (dev_config == NULL) {
         debugOutput( DEBUG_LEVEL_WARNING, "Could not create/access shared configuration memory object, using process-local storage\n");
-        memset(&local_data_obj, 0, sizeof(local_data_obj));
-        shared_data = &local_data_obj;
+        memset(&local_dev_config_obj, 0, sizeof(local_dev_config_obj));
+        dev_config = &local_dev_config_obj;
     }
-    settings = &shared_data->settings;
-    tco_settings = &shared_data->tco_settings;
+    settings = &dev_config->settings;
+    tco_settings = &dev_config->tco_settings;
 
     // If device is FF800, check to see if the TCO is fitted
     if (m_rme_model == RME_MODEL_FIREFACE800) {
-        tco_present = (read_tco(NULL, 0) == 0);
+        dev_config->tco_present = (read_tco(NULL, 0) == 0);
     }
     debugOutput(DEBUG_LEVEL_VERBOSE, "TCO present: %s\n",
-      tco_present?"yes":"no");
-
-    // Find out the device's streaming status
-    is_streaming = hardware_is_streaming();
+      dev_config->tco_present?"yes":"no");
 
     init_hardware();
 
@@ -320,7 +313,7 @@ Device::getSamplingFrequency( ) {
 
     // Retrieve the current sample rate.  For practical purposes this
     // is the software rate currently in use.
-    return m_software_freq;
+    return dev_config->software_freq;
 }
 
 int
@@ -340,11 +333,11 @@ Device::setDDSFrequency( int dds_freq )
     // If the device is streaming, the new DDS rate must have the same
     // multiplier as the software sample rate
     if (hardware_is_streaming()) {
-        if (multiplier_of_freq(dds_freq) != multiplier_of_freq(m_software_freq))
+        if (multiplier_of_freq(dds_freq) != multiplier_of_freq(dev_config->software_freq))
             return false;
     }
 
-    m_dds_freq = dds_freq;
+    dev_config->dds_freq = dds_freq;
     if (settings->clock_mode == FF_STATE_CLOCKMODE_MASTER) {
         if (set_hardware_dds_freq(dds_freq) != 0)
             return false;
@@ -386,11 +379,11 @@ Device::setSamplingFrequency( int samplingFrequency )
         // FIXME: if synced to TCO, is autosync_freq valid?
         fixed_freq = state.autosync_freq;
     } else
-    if (m_dds_freq > 0) {
-        fixed_freq = m_dds_freq;
+    if (dev_config->dds_freq > 0) {
+        fixed_freq = dev_config->dds_freq;
     } else
     if (hardware_is_streaming()) {
-        fixed_freq = m_software_freq;
+        fixed_freq = dev_config->software_freq;
     }
 
     // If the device is running to a fixed frequency, software can only
@@ -424,12 +417,12 @@ Device::setSamplingFrequency( int samplingFrequency )
     // If a DDS frequency has been explicitly requested this is always
     // used to programm the hardware DDS regardless of the rate requested
     // by the software.  Otherwise we use the requested sampling rate.
-    if (m_dds_freq > 0)
-        freq = m_dds_freq;
+    if (dev_config->dds_freq > 0)
+        freq = dev_config->dds_freq;
     if (set_hardware_dds_freq(freq) != 0)
         return false;
 
-    m_software_freq = samplingFrequency;
+    dev_config->software_freq = samplingFrequency;
     return true;
 }
 
@@ -452,7 +445,7 @@ Device::getSupportedSamplingFrequencies()
         frequencies.push_back(state.autosync_freq);
     } else
     if (state.is_streaming) {
-        unsigned int fixed_mult = multiplier_of_freq(m_software_freq);
+        unsigned int fixed_mult = multiplier_of_freq(dev_config->software_freq);
         for (j=0; j<3; j++) {
             frequencies.push_back(freq[j]*fixed_mult);
         }

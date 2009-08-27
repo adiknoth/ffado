@@ -111,20 +111,15 @@ public:
 
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }
-    signed int getTcoPresent(void) { return tco_present; }
+    signed int getTcoPresent(void) { return dev_config->tco_present; }
 
 protected:
     enum ERmeModel m_rme_model;
 
-    signed int is_streaming;
-    signed int m_dds_freq;       // Optionally explicitly set hardware freq
-    signed int m_software_freq;  // Sampling frequency in use by software
-
-    signed int tco_present;
     FF_software_settings_t *settings;
     FF_TCO_settings_t *tco_settings;
 
-    rme_shm_t *shared_data, local_data_obj;
+    rme_shm_t *dev_config, local_dev_config_obj;
 
     signed int num_channels;
     signed int samples_per_packet;
@@ -153,6 +148,8 @@ private:
 
     /* Low-level hardware functions */
     unsigned int multiplier_of_freq(unsigned int freq);
+    void config_lock(void);
+    void config_unlock(void);
     signed int init_hardware(void);
     signed int get_hardware_status(unsigned int *stat0, unsigned int *stat1);
     signed int get_hardware_streaming_status(unsigned int *stat, unsigned int n);

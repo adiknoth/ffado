@@ -34,7 +34,13 @@ typedef struct rme_shm_t {
     signed int ref_count;
     signed int settings_valid, tco_settings_valid;
     FF_software_settings_t settings;
+    signed int tco_present;
     FF_TCO_settings_t tco_settings;
+
+    signed int dds_freq;      // Optionally explicitly set hardware freq
+    signed int software_freq; // Sampling frequency in use by software
+
+    signed int is_streaming;
 
     pthread_mutex_t lock;
 } rme_shm_t;
@@ -52,6 +58,8 @@ typedef struct rme_shm_t {
 
 /* Functions */
 
+void rme_shm_lock(rme_shm_t *shm_data);
+void rme_shm_unlock(rme_shm_t *shm_data);
 signed int rme_shm_open(rme_shm_t **shm_data);
 signed int rme_shm_close(rme_shm_t *shm_data);
 

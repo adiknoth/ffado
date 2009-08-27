@@ -53,11 +53,11 @@
 
 #include "rme_shm.h"
 
-static signed int rme_shm_lock(void) {
+static signed int rme_shm_lock_for_setup(void) {
 signed lockfd;
 
     do {
-        // The check for existance and shm creation are atomic so it's save
+        // The check for existance and shm creation are atomic so it's safe
         // to use this as the basis for a global lock.
         lockfd = shm_open(RME_SHM_LOCKNAME, O_RDWR | O_CREAT | O_EXCL, 0644);
         if (lockfd < 0)
@@ -67,9 +67,17 @@ signed lockfd;
     return lockfd;
 }
 
-static void rme_shm_unlock(signed int lockfd) {
+static void rme_shm_unlock_for_setup(signed int lockfd) {
     close(lockfd);
     shm_unlink(RME_SHM_LOCKNAME);
+}
+
+void rme_shm_lock(rme_shm_t *shm_data) {
+    pthread_mutex_lock(&shm_data->lock);
+}
+
+void rme_shm_unlock(rme_shm_t *shm_data) {
+    pthread_mutex_unlock(&shm_data->lock);
 }
 
 signed int rme_shm_open(rme_shm_t **shm_data) {
@@ -83,7 +91,7 @@ signed int rme_shm_open(rme_shm_t **shm_data) {
     }
     *shm_data = NULL;
 
-    lockfd = rme_shm_lock();
+    lockfd = rme_shm_lock_for_setup();
 
     shmfd = shm_open(RME_SHM_NAME, O_RDWR, 0644);
     if (shmfd < 0) {
@@ -109,11 +117,11 @@ signed int rme_shm_open(rme_shm_t **shm_data) {
         pthread_mutex_init(&data->lock, NULL);
     }
 
-    pthread_mutex_lock(&data->lock);
+    rme_shm_lock(data);
     data->ref_count++;
-    pthread_mutex_unlock(&data->lock);
+    rme_shm_unlock(data);
 
-    rme_shm_unlock(lockfd);
+    rme_shm_unlock_for_setup(lockfd);
 
     *shm_data = data;
     return created?RSO_OPEN_CREATED:RSO_OPEN_ATTACHED;
@@ -124,12 +132,12 @@ signed int rme_shm_close(rme_shm_t *shm_data) {
     signed int unlink = 0;
     signed int lockfd;
 
-    lockfd = rme_shm_lock();
+    lockfd = rme_shm_lock_for_setup();
 
-    pthread_mutex_lock(&shm_data->lock);
+    rme_shm_lock(shm_data);
     shm_data->ref_count--;
     unlink = (shm_data->ref_count == 0);
-    pthread_mutex_unlock(&shm_data->lock);
+    rme_shm_unlock(shm_data);
 
     if (unlink) {
         // This is safe: if the reference count is zero there can't be any
@@ -142,7 +150,7 @@ signed int rme_shm_close(rme_shm_t *shm_data) {
     if (unlink)
         shm_unlink(RME_SHM_NAME);
 
-    rme_shm_unlock(lockfd);
+    rme_shm_unlock_for_setup(lockfd);
 
     return unlink?RSO_CLOSE_DELETE:RSO_CLOSE;
 }

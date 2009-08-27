@@ -33,24 +33,38 @@ namespace Rme {
 unsigned int
 Device::multiplier_of_freq(unsigned int freq) 
 {
-  if (freq > MIN_QUAD_SPEED)
-    return 4;
-  if (freq > MIN_DOUBLE_SPEED)
-    return 2;
-  return 1;
+    if (freq > MIN_QUAD_SPEED)
+      return 4;
+    if (freq > MIN_DOUBLE_SPEED)
+      return 2;
+    return 1;
+}
+
+void
+Device::config_lock(void) {
+    rme_shm_lock(dev_config);
+}
+
+void
+Device::config_unlock(void) {
+    rme_shm_unlock(dev_config);
 }
 
 signed int
 Device::init_hardware(void)
 {
+    signed int ret = 0;
+
     // Initialises the device's settings structure to a known state and then
     // sets the hardware to reflect this state.
-    //
+
+    config_lock();
+
     // In time this function may read a cached device setup and initialise
     // based on that.  It may also read the device configuration from the
     // device flash and adopt that.  For now (for initial testing purposes)
     // we'll go with a static state.
-    if (shared_data->settings_valid==0) {
+    if (dev_config->settings_valid==0) {
         memset(settings, 0, sizeof(*settings));
         settings->spdif_input_mode = FF_SWPARAM_SPDIF_INPUT_COAX;
         settings->spdif_output_mode = FF_SWPARAM_SPDIF_OUTPUT_COAX;
@@ -68,27 +82,30 @@ Device::init_hardware(void)
             }
         }
 
-        shared_data->settings_valid = 1;
+        dev_config->settings_valid = 1;
     }
 
     // A default sampling rate.  An explicit DDS frequency is not enabled
     // by default.
-    m_software_freq = 44100;
-    m_dds_freq = 0;
+    dev_config->software_freq = 44100;
+    dev_config->dds_freq = 0;
 
     if (set_hardware_params(settings) != 0)
-        return -1;
+        ret = -1;
 
     // Also configure the TCO (Time Code Option) settings for those devices
     // which have a TCO.
-    if (shared_data->tco_settings_valid==0) {
-        if (tco_present) {
+    if (ret==0 && dev_config->tco_settings_valid==0) {
+        if (dev_config->tco_present) {
             memset(tco_settings, 0, sizeof(*tco_settings));
             write_tco_settings(tco_settings);
         }
-        shared_data->tco_settings_valid = 1;
+        dev_config->tco_settings_valid = 1;
     }
-    return 0;
+
+    config_unlock();
+
+    return ret;
 }
 
 signed int
@@ -130,7 +147,7 @@ Device::get_hardware_state(FF_state_t *state)
     if (get_hardware_status(&stat0, &stat1) != 0)
         return -1;
 
-    state->is_streaming = is_streaming;
+    state->is_streaming = dev_config->is_streaming;
 
     state->clock_mode = (settings->clock_mode == FF_SWPARAM_CLOCK_MODE_MASTER)?FF_STATE_CLOCKMODE_MASTER:FF_STATE_CLOCKMODE_AUTOSYNC;
 
@@ -462,7 +479,7 @@ signed int
 Device::hardware_is_streaming(void)
 {
     // Return 1 if the hardware is streaming, 0 if not.
-    return is_streaming;
+    return dev_config->is_streaming;
 }
 
 signed int 
@@ -535,7 +552,7 @@ Device::write_tco_settings(FF_TCO_settings_t *tco_settings)
 
     quadlet_t tc[4] = {0, 0, 0, 0};
 
-    if (!tco_present) {
+    if (!dev_config->tco_present) {
         return -1;
     }
 
