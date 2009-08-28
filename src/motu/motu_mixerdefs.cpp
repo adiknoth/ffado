@@ -253,6 +253,46 @@ const MixerCtrl MixerCtrls_828Mk2[] = {
     {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
 };
 
+const MatrixMixBus MixerBuses_8pre[] = {
+    {"Mix 1", 0x4000, },
+    {"Mix 2", 0x4100, },
+    {"Mix 3", 0x4200, },
+    {"Mix 4", 0x4300, },
+};
+
+const MatrixMixChannel MixerChannels_8pre[] = {
+    {"Analog 1", MOTU_CTRL_STD_CHANNEL, 0x0000, },
+    {"Analog 2", MOTU_CTRL_STD_CHANNEL, 0x0004, },
+    {"Analog 3", MOTU_CTRL_STD_CHANNEL, 0x0008, },
+    {"Analog 4", MOTU_CTRL_STD_CHANNEL, 0x000c, },
+    {"Analog 5", MOTU_CTRL_STD_CHANNEL, 0x0010, },
+    {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
+    {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
+    {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    {"ADAT 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
+    {"ADAT 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
+    {"ADAT 3", MOTU_CTRL_STD_CHANNEL, 0x0028, },
+    {"ADAT 4", MOTU_CTRL_STD_CHANNEL, 0x002c, },
+    {"ADAT 5", MOTU_CTRL_STD_CHANNEL, 0x0030, },
+    {"ADAT 6", MOTU_CTRL_STD_CHANNEL, 0x0034, },
+    {"ADAT 7", MOTU_CTRL_STD_CHANNEL, 0x0038, },
+    {"ADAT 8", MOTU_CTRL_STD_CHANNEL, 0x003c, },
+};
+
+const MixerCtrl MixerCtrls_8pre[] = {
+    {"Mix1/Mix_", "Mix 1 ", "", MOTU_CTRL_STD_MIX, 0x0c20, },
+    {"Mix2/Mix_", "Mix 2 ", "", MOTU_CTRL_STD_MIX, 0x0c24, },
+    {"Mix3/Mix_", "Mix 3 ", "", MOTU_CTRL_STD_MIX, 0x0c28, },
+    {"Mix4/Mix_", "Mix 4 ", "", MOTU_CTRL_STD_MIX, 0x0c2c, },
+
+    /* For phones source control, "register" is currently unused */
+    {"Control/Phones_", "Phones source", "", MOTU_CTRL_PHONES_SRC, 0},
+
+    /* For optical mode controls, the "register" is used to indicate direction */
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
+};
+
 const MotuMixer Mixer_Traveler = MOTUMIXER(
     MixerCtrls_Traveler, MixerBuses_Traveler, MixerChannels_Traveler);
 
@@ -264,5 +304,8 @@ const MotuMixer Mixer_828Mk2 = MOTUMIXER(
 
 const MotuMixer Mixer_896HD = MOTUMIXER(
     MixerCtrls_896HD, MixerBuses_896HD, MixerChannels_896HD);
+
+const MotuMixer Mixer_8pre = MOTUMIXER(
+    MixerCtrls_8pre, MixerBuses_8pre, MixerChannels_8pre);
 
 }
