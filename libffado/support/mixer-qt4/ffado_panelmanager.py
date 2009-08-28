@@ -36,6 +36,7 @@ from mixer_phase88 import *
 from mixer_phase24 import *
 from mixer_saffire import SaffireMixer
 from mixer_saffirepro import SaffireProMixer
+from mixer_saffire_dice import Saffire_Dice
 from mixer_audiofire import AudioFireMixer
 from mixer_bcoaudio5 import *
 from mixer_edirolfa66 import *
