@@ -313,7 +313,7 @@ const DevicePropertyEntry DevicesProperty[] = {
     { Ports_828MKII,   N_ELEMENTS( Ports_828MKII ),    96000, &Mixer_828Mk2, NULL, },
     { Ports_TRAVELER,  N_ELEMENTS( Ports_TRAVELER ),  192000, &Mixer_Traveler, NULL, },
     { Ports_ULTRALITE, N_ELEMENTS( Ports_ULTRALITE ),  96000, &Mixer_Ultralite, NULL, },
-    { Ports_8PRE,      N_ELEMENTS( Ports_8PRE ),       96000 },
+    { Ports_8PRE,      N_ELEMENTS( Ports_8PRE ),       96000, &Mixer_8pre, NULL, },
     { Ports_828MKI,    N_ELEMENTS( Ports_828MKI ),     48000 },
     { Ports_896HD,     N_ELEMENTS( Ports_896HD ),     192000, &Mixer_896HD, NULL, },
     { Ports_828mk3,    N_ELEMENTS( Ports_828mk3 ),    192000 },
