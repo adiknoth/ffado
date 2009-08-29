@@ -1,9 +1,0 @@
-#!/usr/bin/python
-#coding: utf-8
-
-REGISTER_URL = '$REGISTRATION_URL'
-INI_FILE_PATH = "$CONFIGDIR/registration.ini"
-
-FFADO_CONFIG_DIR = "$CONFIGDIR"
-
-FFADO_VERSION="$VERSION-$REVISION"

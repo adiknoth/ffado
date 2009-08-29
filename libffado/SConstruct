@@ -293,23 +293,21 @@ if conf.CheckForApp( 'which pyuic4' ) and conf.CheckForPyModule( 'dbus' ) and co
 	env['PYUIC4'] = True
 	build_mixer = True
 
-if conf.CheckForApp( 'which pyuic' ) and conf.CheckForPyModule( 'dbus' ) and conf.CheckForPyModule( 'qt' ):
-	env['PYUIC'] = True
-	build_mixer = True
-
 if conf.CheckForApp( 'xdg-desktop-menu --help' ):
 	env['XDG_TOOLS'] = True
 else:
 	print """
 I couldn't find the program 'xdg-desktop-menu'. Together with xdg-icon-resource
-this is needed to add the fancy entry to your menu. But the mixer will be installed, you can start it by executing "ffado-mixer".
+this is needed to add the fancy entry to your menu. But if the mixer will be
+installed, you can start it by executing "ffado-mixer".
 """
 
 if not build_mixer and not env.GetOption('clean'):
 	print """
-I couldn't find all the prerequisites ('pyuic' / 'pyuic4' and the python-modules 'dbus' and
-'qt' / 'PyQt4', the packages could be named like dbus-python and PyQt) to build the mixer.
-Therefor neither the qt3 nor the qt4 mixer will get installed.
+I couldn't find all the prerequisites ('pyuic4' and the python-modules 'dbus'
+and 'PyQt4', the packages could be named like dbus-python and PyQt) to build the
+mixer.
+Therefor the qt4 mixer will not get installed.
 """
 
 # ALSA checks
@@ -638,3 +636,17 @@ if 'NoCache' in dir(env):
 if env.GetOption( "clean" ):
 	env.Execute( "rm cache/objects -Rf" )
 
+#
+# Temporary code to remove the installed qt3 mixer
+#
+import shutil
+if os.path.exists( os.path.join( env['BINDIR'], "ffado-mixer-qt3" ) ):
+    print "Removing the old qt3-mixer from the installation..."
+    os.remove( os.path.join( env['BINDIR'], "ffado-mixer-qt3" ) )
+if os.path.exists( os.path.join( env['SHAREDIR'], 'python-qt3' ) ):
+    print "Removing the old qt3-mixer files from the installation..."
+    shutil.rmtree( os.path.join( env['SHAREDIR'], 'python-qt3' ) )
+
+
+#
+# vim: ts=4 ws=4 et
