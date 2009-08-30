@@ -26,12 +26,13 @@
 # QT 4 version
 #
 
-import sys
+import sys, os
 
-# Add the path of the installed ffado-mixer-modules
-sys.path.append( "$PYTHONDIR" )
+# Add the path of the installed ffado-modules
+# for path in sys.path:
+sys.path.append( "$PYPKGDIR" )
 
-from ffadomixer_config import * #POLL_SLEEP_TIME_MSEC, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
+from ffado.config import * #POLL_SLEEP_TIME_MSEC, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
 
 import os
 import time
@@ -39,11 +40,11 @@ import time
 from PyQt4.QtCore import SIGNAL, SLOT, QObject, QTimer, Qt
 from PyQt4.QtGui import * #QApplication, QMessageBox, QIcon
 
-from ffado_dbus_util import *
+from ffado.dbus_util import *
 
-from ffado_panelmanager import PanelManager
+from ffado.panelmanager import PanelManager
 
-from ffado_logginghandler import *
+from ffado.logginghandler import *
 
 """Just a small helper to ask the retry-question without a blocking messagebox"""
 class StartDialog(QWidget):
@@ -152,7 +153,7 @@ if __name__ == "__main__":
     logging.getLogger('dbus').setLevel(debug_level)
     logging.getLogger('registration').setLevel(debug_level)
     logging.getLogger('panelmanager').setLevel(debug_level)
-    logging.getLogger('configparser').setLevel(debug_level)
+    logging.getLogger('configparser').setLevel(logging.INFO)
 
     logging.getLogger('global').setLevel(debug_level)
 
@@ -180,7 +181,7 @@ if __name__ == "__main__":
 
     # rock & roll
     mainwindow.show()
-    QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
+    #QObject.connect(app,SIGNAL("lastWindowClosed()"),app,SLOT("quit()"))
     app.exec_()
 
 #

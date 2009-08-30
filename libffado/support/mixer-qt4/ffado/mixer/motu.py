@@ -23,7 +23,7 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
 from PyQt4.QtGui import QWidget, QApplication
-from ffadomixer_config import *
+from ffado.config import *
 
 import logging
 log = logging.getLogger('motu')
@@ -40,7 +40,7 @@ MOTU_MODEL_896HD    = 0x0006
 class MotuMixer(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        uicLoad("mixer_motu", self)
+        uicLoad("ffado/mixer/motu", self)
 
         self.init()
 

@@ -24,19 +24,19 @@ from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
 from PyQt4.QtGui import QWidget, QHBoxLayout, QVBoxLayout, \
                         QGroupBox, QTabWidget, QLabel, \
                         QPushButton, QSpacerItem, QSizePolicy
-from ffadomixer_config import *
+from ffado.config import *
 import logging
 log = logging.getLogger('audiofire')
 
 class AfMonitorWidget(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        uicLoad("mixer_audiofire_strip", self)
+        uicLoad("ffado/mixer/audiofire_strip", self)
 
 class AfSettingsWidget(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        uicLoad("mixer_audiofire_settings", self)
+        uicLoad("ffado/mixer/audiofire_settings", self)
 
 class AudioFireMixer(QWidget):
     def __init__(self,parent = None):

@@ -22,12 +22,12 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from ffadomixer_config import *
+from ffado.config import *
 
 class DummyMixer(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        uicLoad("mixer_dummy", self)
+        uicLoad("ffado/mixer/dummy", self)
 
     def initValues(self):
         pass

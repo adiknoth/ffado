@@ -22,7 +22,7 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QDialog
-from ffadomixer_config import *
+from ffado.config import *
 
 import logging
 log = logging.getLogger('registration')

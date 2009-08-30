@@ -10,7 +10,7 @@ FFADO_DBUS_BASEPATH = '/org/ffado/Control'
 
 POLL_SLEEP_TIME_MSEC = 100 # 100ms
 
-PYTHONDIR = "$PYTHONDIR"
+PYTHONDIR = "$PYPKGDIR"
 SHAREDIR = "$SHAREDIR"
 
 USER_CONFIG_FILE = "$USER_CONFIG_FILE"
@@ -20,9 +20,9 @@ DEBUG = $DEBUG
 
 UIDIR = PYTHONDIR
 import os.path
-if os.path.exists('support/mixer-qt4/mixer_global.ui'):
+if os.path.exists('support/mixer-qt4/ffado/mixer/globalmixer.ui'):
     UIDIR = "support/mixer-qt4"
-if os.path.exists('mixer_global.ui'):
+if os.path.exists('ffado/mixer/globalmixer.ui'):
     UIDIR = "."
 
 import os.path

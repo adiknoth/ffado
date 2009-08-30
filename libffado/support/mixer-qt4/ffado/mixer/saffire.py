@@ -22,8 +22,8 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget, QHBoxLayout
-from ffadomixer_config import *
-from mixer_saffire_base import SaffireMixerBase
+from ffado.config import *
+from ffado.mixer.saffire_base import SaffireMixerBase
 
 import logging
 log = logging.getLogger('saffire')
@@ -161,7 +161,7 @@ class SaffireMixerStereo(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
-        uicLoad("mixer_saffire_stereo", self)
+        uicLoad("ffado/mixer/saffire_stereo", self)
         SaffireMixerBase.__init__(self)
         QObject.connect(self.btnRefresh, SIGNAL('clicked()'), self.updateValues)
         QObject.connect(self.btnSwitchStereoMode, SIGNAL('clicked()'), self.switchStereoMode)
@@ -289,7 +289,7 @@ class SaffireMixerMono(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
-        uicLoad("mixer_saffire_stereo", self)
+        uicLoad("ffado/mixer/saffire_stereo", self)
         SaffireMixerBase.__init__(self)
         QObject.connect(self.btnRefresh, SIGNAL('clicked()'), self.updateValues)
         QObject.connect(self.btnSwitchStereoMode, SIGNAL('clicked()'), self.switchStereoMode)
@@ -434,7 +434,7 @@ class SaffireLEMixerLarge(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
-        uicLoad("mixer_saffirele_large", self)
+        uicLoad("ffado/mixer/saffirele_large", self)
         SaffireMixerBase.__init__(self)
 
         log.debug("Init large Saffire LE mixer window")
@@ -557,7 +557,7 @@ class SaffireLEMixerSmall(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
-        uicLoad("mixer_saffirele_small", self)
+        uicLoad("ffado/mixer/saffirele_small", self)
         SaffireMixerBase.__init__(self)
 
         log.debug("Init small Saffire LE mixer window")

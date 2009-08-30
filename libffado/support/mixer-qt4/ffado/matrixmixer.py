@@ -34,9 +34,6 @@ class MatrixNode(QtGui.QFrame):
         self.layout = QtGui.QGridLayout(self)
         self.setLayout(self.layout)
 
-        #self.lbl = QtGui.QLabel("(%i,%i)" % (row,col), self)
-        #self.layout.addWidget(self.lbl, 0, 0)
-
         self.dial = QtGui.QDial(self)
         self.dial.setRange(0,pow(2,16-1))
         self.connect(self.dial, QtCore.SIGNAL("valueChanged(int)"), self.valueChanged)
@@ -75,10 +72,9 @@ class MatrixMixer(QtGui.QWidget):
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
 
-        palette = self.palette()
-        print palette.color( QtGui.QPalette.Window ).name()
-        palette.setColor( QtGui.QPalette.Window, palette.color( QtGui.QPalette.Window ).darker() );
-        print self.palette().color( QtGui.QPalette.Window ).name()
+        #print self.palette().color( QtGui.QPalette.Window ).name()
+        self.palette().setColor( QtGui.QPalette.Window, self.palette().color( QtGui.QPalette.Window ).darker() );
+        #print self.palette().color( QtGui.QPalette.Window ).name()
 
         rows = self.interface.getRowCount()
         cols = self.interface.getColCount()
@@ -114,25 +110,6 @@ class MatrixMixer(QtGui.QWidget):
     def paintEvent(self, event):
         p = QtGui.QPainter(self)
         p.fillRect(event.rect(), self.palette().window())
-
-class Saffire_Dice(QtGui.QWidget):
-    def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        self.layout = QtGui.QGridLayout(self)
-        self.setLayout(self.layout)
-        self.mixerwidget = QtGui.QScrollArea(self)
-        self.mixerwidget.setWidgetResizable(True)
-        self.layout.addWidget(self.mixerwidget)
-
-    def buildMixer(self):
-        #print self.hw
-        #print self.hw.getText("/Generic/Nickname")
-        self.matrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/EAP/MatrixMixer", self)
-        self.mixerwidget.setWidget(self.matrix)
-
-    #def getDisplayTitle(self):
-    #    return "Experimental EAP Mixer"
-
 
 #
 # vim: et ts=4 sw=4

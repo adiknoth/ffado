@@ -22,7 +22,7 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from ffadomixer_config import *
+from ffado.config import *
 
 import logging
 log = logging.getLogger('phase88')
@@ -30,7 +30,7 @@ log = logging.getLogger('phase88')
 class Phase88Control(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        uicLoad("mixer_phase88", self)
+        uicLoad("ffado/mixer/phase88", self)
 
         self.VolumeControls={
             'master':    ['/Mixer/Feature_Volume_1', self.sldInputMaster], 

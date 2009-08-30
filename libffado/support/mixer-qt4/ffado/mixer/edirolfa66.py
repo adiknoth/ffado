@@ -22,7 +22,7 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from ffadomixer_config import *
+from ffado.config import *
 
 import logging
 log = logging.getLogger('edirolfa66')
@@ -30,7 +30,7 @@ log = logging.getLogger('edirolfa66')
 class EdirolFa66Control(QWidget):
     def __init__(self, parent = None):
         QWidget.__init__(self, parent)
-        uicLoad("mixer_edirolfa66", self)
+        uicLoad("ffado/mixer/edirolfa66", self)
 
         self.VolumeControls = {
             #          feature name, channel, qt slider

@@ -21,8 +21,8 @@
 #
 
 from PyQt4.QtGui import QWidget, QHBoxLayout, QMessageBox
-from ffadomixer_config import *
-from mixer_saffire_base import SaffireMixerBase
+from ffado.config import *
+from ffado.mixer.saffire_base import SaffireMixerBase
 
 import logging
 log = logging.getLogger('saffirepro')
@@ -111,7 +111,7 @@ class SaffireProMixerLarge(QWidget, SaffireMixerBase):
         self.my_parent = parent
         QWidget.__init__(self,parent)
         SaffireMixerBase.__init__(self)
-        uicLoad("mixer_saffirepro_large", self)
+        uicLoad("ffado/mixer/saffirepro_large", self)
         self.have_adat = False
         log.debug("Init large Saffire Pro mixer window")
 
@@ -370,7 +370,7 @@ class SaffireProMixerSmall(QWidget, SaffireMixerBase):
         self.my_parent = parent
         QWidget.__init__(self,parent)
         SaffireMixerBase.__init__(self)
-        uicLoad("mixer_saffirepro_small", self)
+        uicLoad("ffado/mixer/saffirepro_small", self)
         log.debug("Init small Saffire Pro mixer window")
 
         self.VolumeControls={

@@ -22,7 +22,7 @@
 
 from PyQt4.QtCore import QObject, pyqtSignature
 from PyQt4.QtGui import QWidget, QMessageBox
-from ffadomixer_config import *
+from ffado.config import *
 
 import logging
 log = logging.getLogger('global')
@@ -30,7 +30,7 @@ log = logging.getLogger('global')
 class GlobalMixer(QWidget):
     def __init__(self, parent, name=None):
         QWidget.__init__(self, parent)
-        uicLoad("mixer_global", self)
+        uicLoad("ffado/mixer/globalmixer", self)
         self.setName(name)
 
     def setName(self,name):

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2007-2008 Arnold Krille
+# Copyright (C) 2007-2009 Arnold Krille
 # Copyright (C) 2007-2008 Pieter Palmers
 #
 # This file is part of FFADO
@@ -28,75 +28,26 @@ Import( 'env' )
 
 if env.has_key('PYUIC4'):
     e = env.Clone()
-    e['MIXERGUIS'] = [
-                        'phase24', 
-                        'phase88',
-                        'saffire_mono', 'saffire_stereo',
-                        'saffirepro_large', 'saffirepro_small',
-                        'saffirele_large', 'saffirele_small',
-                        'audiofire_strip', 'audiofire_settings',
-                        'bcoaudio5',
-                        'edirolfa101', 'edirolfa66',
-                        'quatafire',
-                        'mackie_onyxmixer',
-                        'motu',
-                        'rme',
-                        'global', 'dummy'
-                     ]
-    e['MIXERAPPS'] = [
-                        'phase24',
-                        'phase88',
-                        'saffire',
-                        'saffirepro',
-                        'audiofire',
-                        'bcoaudio5',
-                        'edirolfa101', 'edirolfa66',
-                        'quatafire',
-                        'mackie_onyxmixer',
-                        'motu',
-                        'rme',
-                        'global', 'dummy'
-                     ]
 
-    e['OTHERGUIS'] = ['ffado_regdialog', 'ffado_panelmanagerstatus']
-    e['OTHERAPPS'] = ['ffado_dbus_util',
-                      'ffado_regdialog',
-                      'ffado_panelmanager',
-                      'ffado_configuration',
-                      'ffado_logginghandler',
-                      'mixer_saffire_base'
-                     ]
+    def findfiles( arg, dirname, names ):
+        for name in names:
+            if name.startswith("."):
+                names.remove(name)
+        for name in names:
+            if '.pyc' not in name and '.in' not in name:
+                arg.append( os.path.join( dirname, name ) )
 
-    #
-    # For the ffadomixer.in
-    e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substitute( e )
-    # For the installation of the stuff
-    e['pythondir'] = Template( os.path.join( e['sharedir'], 'python' ) ).safe_substitute( e )
+    pythonfiles = [ 'ffado/config.py' ]
+    os.path.walk( "ffado", findfiles, pythonfiles )
 
-    for m in e['MIXERGUIS']:
-        app = "mixer_" + m
-        if os.path.exists( app+".ui" ):
-            e.Install( "$pythondir", app+".ui" )
-    for m in e['MIXERAPPS']:
-        app = "mixer_" + m
-        e.Install( "$pythondir", app+".py" )
-
-    for app in e['OTHERGUIS']:
-        if os.path.exists( app+".ui" ):
-            e.Install( "$pythondir", app+".ui" )
-
-    for app in e['OTHERAPPS']:
-        e.Install( "$pythondir", app+".py" )
-
-    e.Install( "$pythondir", "ffado_registration.py" )
-
-    e.ScanReplace( "ffadomixer_config.py.in" )
-    e.Depends( "ffadomixer_config.py", "#/config.h" )
-    e.Install( "$pythondir", "ffadomixer_config.py" )
+    e.ScanReplace( "ffado/config.py.in" )
+    e.Depends( "ffado/config.py", "#/SConstruct" )
+    for file in pythonfiles:
+        e.InstallAs( os.path.join(e['pypkgdir'], file), file )
 
     e.ScanReplace( "ffado-mixer.in" )
-    e.Depends( "ffado-mixer", "#/config.h" )
     e.Depends( "ffado-mixer", "SConscript" )
+    e.Depends( "ffado-mixer", "#/SConstruct" )
     e.Install( "$bindir", "ffado-mixer" )
 
     e.Install( "$sharedir/icons", "../xdg/hi64-apps-ffado.png" )

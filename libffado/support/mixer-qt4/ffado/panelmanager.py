@@ -22,31 +22,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from ffadomixer_config import * #FFADO_VERSION, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
+from ffado.config import * #FFADO_VERSION, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
 
 from PyQt4.QtGui import QFrame, QWidget, QTabWidget, QVBoxLayout, QMainWindow, QIcon, QAction, qApp, QStyleOptionTabWidgetFrame
 from PyQt4.QtCore import QTimer
 
-from ffado_dbus_util import *
-from ffado_registration import *
+from ffado.dbus_util import *
+from ffado.registration import *
 
-from ffado_configuration import *
+from ffado.configuration import *
 
-from mixer_phase88 import *
-from mixer_phase24 import *
-from mixer_saffire import SaffireMixer
-from mixer_saffirepro import SaffireProMixer
-from mixer_saffire_dice import Saffire_Dice
-from mixer_audiofire import AudioFireMixer
-from mixer_bcoaudio5 import *
-from mixer_edirolfa66 import *
-from mixer_edirolfa101 import *
-from mixer_mackie_onyxmixer import *
-from mixer_quatafire import *
-from mixer_motu import *
-from mixer_rme import *
-from mixer_dummy import *
-from mixer_global import GlobalMixer
+from ffado.mixer.phase88 import *
+from ffado.mixer.phase24 import *
+from ffado.mixer.saffire import SaffireMixer
+from ffado.mixer.saffirepro import SaffireProMixer
+from ffado.mixer.saffire_dice import Saffire_Dice
+from ffado.mixer.audiofire import AudioFireMixer
+from ffado.mixer.bcoaudio5 import *
+from ffado.mixer.edirolfa66 import *
+from ffado.mixer.edirolfa101 import *
+from ffado.mixer.mackie_onyxmixer import *
+from ffado.mixer.quatafire import *
+from ffado.mixer.motu import *
+from ffado.mixer.rme import *
+from ffado.mixer.dummy import *
+from ffado.mixer.globalmixer import GlobalMixer
 
 import time
 
@@ -76,7 +76,7 @@ class HLine( QFrame ):
 class PanelManagerStatus(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self,parent)
-        uicLoad("ffado_panelmanagerstatus", self)
+        uicLoad("ffado/panelmanagerstatus", self)
 
 class OwnTabWidget(QTabWidget):
     def __init__(self,parent):

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2008 by Arnold Krille
+# Copyright (C) 2008-2009 by Arnold Krille
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux

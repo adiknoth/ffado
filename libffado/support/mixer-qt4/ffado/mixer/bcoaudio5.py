@@ -22,14 +22,14 @@
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
-from ffadomixer_config import *
+from ffado.config import *
 import logging
 log = logging.getLogger('bridgeco')
 
 class BCoAudio5Control(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
-        uicLoad("mixer_bcoaudio5", self)
+        uicLoad("ffado/mixer/bcoaudio5", self)
 
         self.VolumeControls={
             'in_line12'  :   ['/Mixer/Feature_Volume_1', self.sldInput12],
