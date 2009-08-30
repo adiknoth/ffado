@@ -21,22 +21,35 @@
 from PyQt4 import QtGui, QtCore
 import dbus
 
-from ffado.matrixmixer import *
+from ffado.widgets.matrixmixer import MatrixMixer
+from ffado.widgets.crossbarrouter import *
 
 class Saffire_Dice(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.layout = QtGui.QGridLayout(self)
         self.setLayout(self.layout)
-        self.mixerwidget = QtGui.QScrollArea(self)
-        self.mixerwidget.setWidgetResizable(True)
-        self.layout.addWidget(self.mixerwidget)
+        self.tabs = QtGui.QTabWidget(self)
+        self.layout.addWidget(self.tabs)
+        #self.mixerwidget = QtGui.QScrollArea(self)
+        #self.mixerwidget.setWidgetResizable(True)
+        #self.layout.addWidget(self.mixerwidget)
 
     def buildMixer(self):
         #print self.hw
         #print self.hw.getText("/Generic/Nickname")
         self.matrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/EAP/MatrixMixer", self)
-        self.mixerwidget.setWidget(self.matrix)
+        #self.mixerwidget.setWidget(self.matrix)
+        scrollarea = QtGui.QScrollArea(self.tabs)
+        scrollarea.setWidgetResizable(True)
+        scrollarea.setWidget(self.matrix)
+        self.tabs.addTab(scrollarea, "Matrix")
+
+        self.router = CrossbarRouter(self.hw.servername, self.hw.basepath+"/EAP/Router", self)
+        scrollarea = QtGui.QScrollArea(self.tabs)
+        scrollarea.setWidgetResizable(True)
+        scrollarea.setWidget(self.router)
+        self.tabs.addTab(scrollarea, "Routing")
 
     #def getDisplayTitle(self):
     #    return "Experimental EAP Mixer"
