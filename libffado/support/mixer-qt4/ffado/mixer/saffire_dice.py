@@ -31,15 +31,11 @@ class Saffire_Dice(QtGui.QWidget):
         self.setLayout(self.layout)
         self.tabs = QtGui.QTabWidget(self)
         self.layout.addWidget(self.tabs)
-        #self.mixerwidget = QtGui.QScrollArea(self)
-        #self.mixerwidget.setWidgetResizable(True)
-        #self.layout.addWidget(self.mixerwidget)
 
     def buildMixer(self):
         #print self.hw
         #print self.hw.getText("/Generic/Nickname")
         self.matrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/EAP/MatrixMixer", self)
-        #self.mixerwidget.setWidget(self.matrix)
         scrollarea = QtGui.QScrollArea(self.tabs)
         scrollarea.setWidgetResizable(True)
         scrollarea.setWidget(self.matrix)
