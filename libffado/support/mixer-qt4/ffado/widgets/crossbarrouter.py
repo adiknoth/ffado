@@ -21,21 +21,46 @@
 from PyQt4 import QtGui, QtCore
 import dbus
 
+class InGroupMenu(QtGui.QMenu):
+    def __init__(self, interface, outname, inname, insize, parent, exclusiveGroup = None):
+        QtGui.QMenu.__init__(self, inname, parent)
+        self.interface = interface
+        self.outname = str(outname)
+        self.inname = str(inname)
+        self.insize = insize
+        self.connect(self, QtCore.SIGNAL("aboutToShow()"), self.showMenu)
 
-class CrossbarState(QtGui.QAbstractButton):
-    def __init__(self, title, parent=None):
-        QtGui.QAbstractButton.__init__(self, parent)
-        self.setText(title)
-        self.setToolTip(title)
+        self.lock = False
+        if exclusiveGroup:
+            self.exclusiveGroup = exclusiveGroup
+        else:
+            self.exclusiveGroup = QtGui.QActionGroup(self)
 
-        self.setMinimumSize(QtCore.QSize(10, 10))
+    def showMenu(self):
+        #print "About to show the menu"
+        if len(self.actions()) < self.insize:
+            # Do a lazy init of the sub-items.
+            for i in range(self.insize):
+                action = QtGui.QAction("%s:%02i" % (self.inname,i), self)
+                action.setCheckable(True)
+                self.connect(action, QtCore.SIGNAL("toggled(bool)"), self.connectionSwitched)
+                self.exclusiveGroup.addAction(action)
+                self.addAction(action)
+                idx = self.interface.getDestinationIndex(self.outname)
+                sourceidx = self.interface.getSourceForDestination(idx)
+                #print self.interface.getConnectionState(sourceidx, idx)
+                source = self.interface.getSourceName(sourceidx)
+                self.lock = True
+                for action in self.actions():
+                    action.setChecked(action.text() == source)
+                self.lock = False
 
-    def paintEvent(self, event):
-        p = QtGui.QPainter(self)
-        color = QtGui.QColor(0, 255, 0)
-        if self.isChecked():
-            color = QtGui.QColor(255, 0, 0)
-        p.fillRect(self.rect(), color)
+    def connectionSwitched(self, checked):
+        if self.lock: return
+        print "connectionSwitched( %s ) sender: %s" % (str(checked),str(self.sender()))
+        inname = str(self.sender().text())
+        print " source=%s destination=%s  possible? %s" % (inname, self.outname, self.interface.canConnectNamed(inname, self.outname))
+        print " connectionState is now %s" % self.interface.setConnectionStateNamed(inname, self.outname, checked)
 
 
 class CrossbarRouter(QtGui.QWidget):
@@ -61,50 +86,39 @@ class CrossbarRouter(QtGui.QWidget):
         self.ingroups = {}
         for ch in self.sources:
             tmp = ch.split(":")[0]
-            if not tmp in self.ingroups:
-                self.ingroups[tmp] = 0
-                self.innames.append(tmp)
-            self.ingroups[tmp] = self.ingroups[tmp] + 1
+            if True: #tmp[0] == "M" or tmp[0] == "I":
+                if not tmp in self.ingroups:
+                    self.ingroups[tmp] = 0
+                    self.innames.append(tmp)
+                self.ingroups[tmp] = self.ingroups[tmp] + 1
         print self.ingroups
         self.outnames = []
         self.outgroups = {}
         for ch in self.destinations:
             tmp = ch.split(":")[0]
-            if not tmp in self.outgroups:
-                self.outgroups[tmp] = 0
-                self.outnames.append(tmp)
-            self.outgroups[tmp] = self.outgroups[tmp] + 1
+            if True: #tmp == "MixerIn":
+                if not tmp in self.outgroups:
+                    self.outgroups[tmp] = 0
+                    self.outnames.append(tmp)
+                self.outgroups[tmp] = self.outgroups[tmp] + 1
         print self.outgroups
 
         self.layout = QtGui.QGridLayout(self)
         self.setLayout(self.layout)
 
-        tmp = 1
-        for group in self.innames:
-            lbl = QtGui.QLabel(group, self)
-            self.layout.addWidget(lbl, 0, tmp + self.innames.index(group), 1, self.ingroups[group])
-            tmp += self.ingroups[group]
-        tmp = 1
-        for group in self.outnames:
-            lbl = QtGui.QLabel(group, self)
-            self.layout.addWidget(lbl, tmp + self.outnames.index(group), 0, self.outgroups[group], 1)
-            tmp += self.outgroups[group]
-        #for i in range(len(self.sources)):
-        #    lbl = QtGui.QLabel(self.sources[i], self)
-        #    self.layout.addWidget(lbl, 0, i+1)
-        #for i in range(len(self.destinations)):
-        #    lbl = QtGui.QLabel(self.destinations[i], self)
-        #    self.layout.addWidget(lbl, i+1, 0)
+        for group in self.outgroups.keys():
+            for i in range(self.outgroups[group]):
+                outname = "%s:%02i" % (group,i)
+                #print "Creating buttons for %s" % outname
+                btn = QtGui.QPushButton("%s" % outname, self)
+                outidx = self.destinations.index(outname)
+                self.layout.addWidget(btn, i, self.outnames.index(group))
+                menu = QtGui.QMenu(self)
+                btn.setMenu(menu)
+                exclusiveGroup = QtGui.QActionGroup(btn)
+                for x in self.ingroups:
+                    submenu = InGroupMenu(self.interface, outname, x, self.ingroups[x], self, exclusiveGroup)
+                    menu.addMenu(submenu)
 
-        for i in range(0, min(600, len(self.sources))):
-            print "Checking connections for source %s" % self.sources[i]
-            for j in range(0, min(600, len(self.destinations))):
-                if self.interface.canConnect(i, j) and self.sources[i].split(":")[0] != self.destinations[j].split(":")[0]:
-                    #checkbox = QtGui.QPushButton("%s->%s" % (self.sources[i], self.destinations[j]), self)
-                    checkbox = CrossbarState("%s->%s" % (self.sources[i], self.destinations[j]), self)
-                    checkbox.setCheckable(True)
-                    checkbox.setChecked(self.interface.getConnectionState(i, j))
-                    #self.layout.addWidget(checkbox, j, i)
-                    self.layout.addWidget(checkbox, j+1, i+1)
 #
 # vim: sw=4 ts=4 et
