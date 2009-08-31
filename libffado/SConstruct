@@ -510,7 +510,7 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
         needs_fPIC = True
     else:
         print "Doing a 32-bit build"
-    env.MergeFlags( "-m32" )
+        env.MergeFlags( "-m32" )
 
 if needs_fPIC or '-fPIC' in env['OS_CFLAGS'] or "-fPIC" in env['OS_CCFLAGS']:
     env.MergeFlags( "-fPIC" )
