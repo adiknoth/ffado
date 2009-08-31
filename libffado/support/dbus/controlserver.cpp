@@ -876,43 +876,43 @@ CrossbarRouter::getSourceForDestination(const DBus::Int32 &idx)
     return m_Slave.getSourceForDestination(idx);
 }
 
-DBus::Int32
+DBus::Bool
 CrossbarRouter::canConnect(const DBus::Int32 &source, const DBus::Int32 &dest)
 {
     return m_Slave.canConnect(source, dest);
 }
 
-DBus::Int32
+DBus::Bool
 CrossbarRouter::setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Int32 &enable)
 {
     return m_Slave.setConnectionState(source, dest, enable);
 }
 
-DBus::Int32
+DBus::Bool
 CrossbarRouter::getConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest)
 {
     return m_Slave.getConnectionState(source, dest);
 }
 
-DBus::Int32
+DBus::Bool
 CrossbarRouter::canConnectNamed(const DBus::String& source, const DBus::String& dest)
 {
     return m_Slave.canConnect(source, dest);
 }
 
-DBus::Int32
+DBus::Bool
 CrossbarRouter::setConnectionStateNamed(const DBus::String &source, const DBus::String &dest, const DBus::Int32 &enable)
 {
     return m_Slave.setConnectionState(source, dest, enable);
 }
 
-DBus::Int32
+DBus::Bool
 CrossbarRouter::getConnectionStateNamed(const DBus::String &source, const DBus::String &dest)
 {
     return m_Slave.getConnectionState(source, dest);
 }
 
-DBus::Int32
+DBus::Bool
 CrossbarRouter::clearAllConnections()
 {
     return m_Slave.clearAllConnections();
@@ -930,7 +930,7 @@ CrossbarRouter::getNbDestinations()
     return m_Slave.getNbDestinations();
 }
 
-DBus::Int32
+DBus::Bool
 CrossbarRouter::hasPeakMetering()
 {
     return m_Slave.hasPeakMetering();

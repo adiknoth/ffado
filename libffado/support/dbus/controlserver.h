@@ -338,20 +338,20 @@ public:
     std::vector< DBus::Int32 > getDestinationsForSource(const DBus::Int32 &);
     DBus::Int32 getSourceForDestination(const DBus::Int32 &);
 
-    DBus::Int32 canConnect(const DBus::Int32 &source, const DBus::Int32 &dest);
-    DBus::Int32 setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Int32 &enable);
-    DBus::Int32 getConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest);
+    DBus::Bool  canConnect(const DBus::Int32 &source, const DBus::Int32 &dest);
+    DBus::Bool  setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Int32 &enable);
+    DBus::Bool  getConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest);
 
-    DBus::Int32 canConnectNamed(const DBus::String&, const DBus::String&);
-    DBus::Int32 setConnectionStateNamed(const DBus::String&, const DBus::String&, const DBus::Int32 &enable);
-    DBus::Int32 getConnectionStateNamed(const DBus::String&, const DBus::String&);
+    DBus::Bool  canConnectNamed(const DBus::String&, const DBus::String&);
+    DBus::Bool  setConnectionStateNamed(const DBus::String&, const DBus::String&, const DBus::Int32 &enable);
+    DBus::Bool  getConnectionStateNamed(const DBus::String&, const DBus::String&);
 
-    DBus::Int32 clearAllConnections();
+    DBus::Bool  clearAllConnections();
 
     DBus::Int32 getNbSources();
     DBus::Int32 getNbDestinations();
 
-    DBus::Int32 hasPeakMetering();
+    DBus::Bool  hasPeakMetering();
     DBus::Double getPeakValue(const DBus::Int32 &source, const DBus::Int32 &dest);
 
     std::vector< DBus::Int32 > getConnectionMap();

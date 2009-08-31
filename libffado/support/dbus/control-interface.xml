@@ -238,37 +238,37 @@
       <method name="canConnect">
           <arg type="i" name="srcid" direction="in"/>
           <arg type="i" name="dstid" direction="in"/>
-          <arg type="i" name="canconnect" direction="out"/>
+          <arg type="b" name="canconnect" direction="out"/>
       </method>
       <method name="setConnectionState">
           <arg type="i" name="srcid" direction="in"/>
           <arg type="i" name="dstid" direction="in"/>
           <arg type="i" name="state" direction="in"/>
-          <arg type="i" name="result" direction="out"/>
+          <arg type="b" name="result" direction="out"/>
       </method>
       <method name="getConnectionState">
           <arg type="i" name="srcid" direction="in"/>
           <arg type="i" name="dstid" direction="in"/>
-          <arg type="i" name="state" direction="out"/>
+          <arg type="b" name="state" direction="out"/>
       </method>
       <method name="canConnectNamed">
           <arg type="s" name="srcname" direction="in"/>
           <arg type="s" name="dstname" direction="in"/>
-          <arg type="i" name="canconnect" direction="out"/>
+          <arg type="b" name="canconnect" direction="out"/>
       </method>
       <method name="setConnectionStateNamed">
           <arg type="s" name="srcname" direction="in"/>
           <arg type="s" name="dstname" direction="in"/>
           <arg type="i" name="state" direction="in"/>
-          <arg type="i" name="result" direction="out"/>
+          <arg type="b" name="result" direction="out"/>
       </method>
       <method name="getConnectionStateNamed">
           <arg type="s" name="srcname" direction="in"/>
           <arg type="s" name="dstname" direction="in"/>
-          <arg type="i" name="state" direction="out"/>
+          <arg type="b" name="state" direction="out"/>
       </method>
       <method name="clearAllConnections">
-          <arg type="i" name="state" direction="out"/>
+          <arg type="b" name="state" direction="out"/>
       </method>
       <method name="getNbSources">
           <arg type="i" name="state" direction="out"/>
@@ -284,7 +284,7 @@
           <arg type="i" name="state" direction="out"/>
       </method>
       <method name="hasPeakMetering">
-          <arg type="i" name="hasmetering" direction="out"/>
+          <arg type="b" name="hasmetering" direction="out"/>
       </method>
       <method name="getPeakValue">
           <arg type="i" name="srcid" direction="in"/>
