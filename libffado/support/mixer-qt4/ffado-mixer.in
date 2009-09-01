@@ -63,7 +63,7 @@ class FFADOWindow(QMainWindow):
 
         self.textlogger = QTextLogger(self)
         dock = QDockWidget("Log Messages",self)
-        dock.setWidget(self.textlogger)
+        dock.setWidget(self.textlogger.textedit)
         logging.getLogger('').addHandler(self.textlogger)
         self.addDockWidget(Qt.BottomDockWidgetArea, dock)
 

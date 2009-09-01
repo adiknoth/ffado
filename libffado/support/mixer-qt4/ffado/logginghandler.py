@@ -37,13 +37,14 @@ class QStatusLogger( QObject, logging.Handler ):
     def emit( self, record ):
         QObject.emit( self, SIGNAL("log(QString,int)"), "%s: %s" % (record.name, record.getMessage()), 5000 )
 
-class QTextLogger( QTextEdit, logging.Handler ):
+class QTextLogger( logging.Handler ):
     def __init__( self, parent, level=logging.NOTSET ):
-        QTextEdit.__init__( self, parent )
         logging.Handler.__init__( self, level )
 
-        self.setReadOnly( True )
-        self.setAcceptRichText( True )
+        self.textedit = QTextEdit( parent )
+
+        self.textedit.setReadOnly( True )
+        self.textedit.setAcceptRichText( True )
 
     def emit( self, record ):
         color = QColor( "#000000" )
@@ -53,10 +54,10 @@ class QTextLogger( QTextEdit, logging.Handler ):
             color = QColor( "#ff0000" )
         if record.levelno <= 10:
             color = QColor( "#808080" )
-        self.setTextColor( color )
+        self.textedit.setTextColor( color )
         tmp = "%s %s: %s" % (record.asctime, record.name, record.getMessage())
-        self.append( tmp )
-        self.verticalScrollBar().triggerAction( QAbstractSlider.SliderToMaximum )
+        self.textedit.append( tmp )
+        self.textedit.verticalScrollBar().triggerAction( QAbstractSlider.SliderToMaximum )
 
 #
 # vim: et
