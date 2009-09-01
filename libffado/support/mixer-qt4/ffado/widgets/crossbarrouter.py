@@ -21,6 +21,48 @@
 from PyQt4 import QtGui, QtCore
 import dbus
 
+class OutputSwitcher(QtGui.QFrame):
+    """
+The name is a bit misleading. This widget selectes sources for a specified
+destination.
+
+In mixer-usage this widget is at the top of the input-channel. Because the input
+of the mixer is an available output from the routers point.
+"""
+    def __init__(self, interface, outname, parent):
+        QtGui.QFrame.__init__(self, parent)
+        self.interface = interface
+        self.outname = outname
+
+        self.setLineWidth(1)
+
+        self.layout = QtGui.QGridLayout(self)
+        self.setLayout(self.layout)
+
+        self.lbl = QtGui.QLabel(self.outname, self)
+        self.layout.addWidget(self.lbl, 0, 0, 1, 2)
+
+        self.btn = QtGui.QPushButton("Sel.", self)
+        self.layout.addWidget(self.btn, 1, 0)
+
+        self.exclusiveGroup = QtGui.QActionGroup(self)
+
+        sources = self.interface.getSourceNames()
+        self.ingroups = {}
+        for ch in sources:
+            tmp = str(ch).split(":")[0]
+            if tmp not in self.ingroups:
+                self.ingroups[tmp] = 0
+            self.ingroups[tmp] += 1
+        #print "Detected ingroups: %s" % str(self.ingroups)
+
+        self.menu = QtGui.QMenu(self)
+        self.btn.setMenu(self.menu)
+
+        for group in self.ingroups:
+            submenu = InGroupMenu(self.interface, self.outname, group, self.ingroups[group], self, self.exclusiveGroup)
+            self.menu.addMenu(submenu)
+
 class InGroupMenu(QtGui.QMenu):
     def __init__(self, interface, outname, inname, insize, parent, exclusiveGroup = None):
         QtGui.QMenu.__init__(self, inname, parent)
@@ -70,55 +112,19 @@ class CrossbarRouter(QtGui.QWidget):
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.CrossbarRouter")
 
-        sources = self.interface.getSourceNames()
-        self.sources = []
-        for source in sources:
-            self.sources.append(str(source))
         destinations = self.interface.getDestinationNames()
-        self.destinations = []
-        for dest in destinations:
-            self.destinations.append(str(dest))
-
-        print "Available sources (%i=?%i) %s" % (self.interface.getNbSources(), len(self.sources), str(self.sources))
-        print "Available destinations (%i=?%i) %s" % (self.interface.getNbDestinations(), len(self.destinations), str(self.destinations))
-
-        self.innames = []
-        self.ingroups = {}
-        for ch in self.sources:
-            tmp = ch.split(":")[0]
-            if True: #tmp[0] == "M" or tmp[0] == "I":
-                if not tmp in self.ingroups:
-                    self.ingroups[tmp] = 0
-                    self.innames.append(tmp)
-                self.ingroups[tmp] = self.ingroups[tmp] + 1
-        print self.ingroups
-        self.outnames = []
-        self.outgroups = {}
-        for ch in self.destinations:
-            tmp = ch.split(":")[0]
-            if True: #tmp == "MixerIn":
-                if not tmp in self.outgroups:
-                    self.outgroups[tmp] = 0
-                    self.outnames.append(tmp)
-                self.outgroups[tmp] = self.outgroups[tmp] + 1
-        print self.outgroups
+        self.outgroups = []
+        for ch in destinations:
+            tmp = str(ch).split(":")[0]
+            if not tmp in self.outgroups:
+                self.outgroups.append(tmp)
 
         self.layout = QtGui.QGridLayout(self)
         self.setLayout(self.layout)
 
-        for group in self.outgroups.keys():
-            for i in range(self.outgroups[group]):
-                outname = "%s:%02i" % (group,i)
-                #print "Creating buttons for %s" % outname
-                btn = QtGui.QPushButton("%s" % outname, self)
-                outidx = self.destinations.index(outname)
-                self.layout.addWidget(btn, i, self.outnames.index(group))
-                menu = QtGui.QMenu(self)
-                btn.setMenu(menu)
-                exclusiveGroup = QtGui.QActionGroup(btn)
-                for x in self.ingroups:
-                    submenu = InGroupMenu(self.interface, outname, x, self.ingroups[x], self, exclusiveGroup)
-                    menu.addMenu(submenu)
+        for out in destinations:
+            btn = OutputSwitcher(self.interface, out, self)
+            self.layout.addWidget(btn, int(out.split(":")[-1]), self.outgroups.index(out.split(":")[0]))
 
 #
 # vim: sw=4 ts=4 et
