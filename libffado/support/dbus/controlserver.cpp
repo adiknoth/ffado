@@ -883,7 +883,7 @@ CrossbarRouter::canConnect(const DBus::Int32 &source, const DBus::Int32 &dest)
 }
 
 DBus::Bool
-CrossbarRouter::setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Int32 &enable)
+CrossbarRouter::setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Bool &enable)
 {
     return m_Slave.setConnectionState(source, dest, enable);
 }
@@ -901,7 +901,7 @@ CrossbarRouter::canConnectNamed(const DBus::String& source, const DBus::String& 
 }
 
 DBus::Bool
-CrossbarRouter::setConnectionStateNamed(const DBus::String &source, const DBus::String &dest, const DBus::Int32 &enable)
+CrossbarRouter::setConnectionStateNamed(const DBus::String &source, const DBus::String &dest, const DBus::Bool &enable)
 {
     return m_Slave.setConnectionState(source, dest, enable);
 }

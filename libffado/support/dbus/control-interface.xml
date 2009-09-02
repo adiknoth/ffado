@@ -243,7 +243,7 @@
       <method name="setConnectionState">
           <arg type="i" name="srcid" direction="in"/>
           <arg type="i" name="dstid" direction="in"/>
-          <arg type="i" name="state" direction="in"/>
+          <arg type="b" name="state" direction="in"/>
           <arg type="b" name="result" direction="out"/>
       </method>
       <method name="getConnectionState">
@@ -259,7 +259,7 @@
       <method name="setConnectionStateNamed">
           <arg type="s" name="srcname" direction="in"/>
           <arg type="s" name="dstname" direction="in"/>
-          <arg type="i" name="state" direction="in"/>
+          <arg type="b" name="state" direction="in"/>
           <arg type="b" name="result" direction="out"/>
       </method>
       <method name="getConnectionStateNamed">

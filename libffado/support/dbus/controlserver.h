@@ -339,11 +339,11 @@ public:
     DBus::Int32 getSourceForDestination(const DBus::Int32 &);
 
     DBus::Bool  canConnect(const DBus::Int32 &source, const DBus::Int32 &dest);
-    DBus::Bool  setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Int32 &enable);
+    DBus::Bool  setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Bool &enable);
     DBus::Bool  getConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest);
 
     DBus::Bool  canConnectNamed(const DBus::String&, const DBus::String&);
-    DBus::Bool  setConnectionStateNamed(const DBus::String&, const DBus::String&, const DBus::Int32 &enable);
+    DBus::Bool  setConnectionStateNamed(const DBus::String&, const DBus::String&, const DBus::Bool &enable);
     DBus::Bool  getConnectionStateNamed(const DBus::String&, const DBus::String&);
 
     DBus::Bool  clearAllConnections();
