@@ -51,6 +51,14 @@ public:
     typedef std::vector<int> IntVector;
     typedef std::vector<int>::iterator IntVectorIterator;
 
+    struct PeakValue
+    {
+        int source;
+        int destination;
+        double peakvalue;
+    };
+    typedef std::vector<PeakValue> PeakValues;
+
     virtual std::string getSourceName(const int) = 0;
     virtual std::string getDestinationName(const int) = 0;
     virtual int getSourceIndex(std::string) = 0;
@@ -84,6 +92,7 @@ public:
     virtual bool hasPeakMetering() = 0;
     virtual double getPeakValue(const int source, const int dest) = 0;
     virtual bool getPeakValues(double &) = 0;
+    virtual PeakValues getPeakValues() = 0;
 
 protected:
 

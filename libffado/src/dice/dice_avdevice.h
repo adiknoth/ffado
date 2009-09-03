@@ -335,6 +335,7 @@ public:
             virtual bool hasPeakMetering();
             virtual bool getPeakValues(double &) {return false;};
             virtual double getPeakValue(const int source, const int dest);
+            virtual Control::CrossbarRouter::PeakValues getPeakValues();
 
         private:
             EAP &m_eap;

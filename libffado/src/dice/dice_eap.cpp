@@ -1562,6 +1562,13 @@ Device::EAP::Router::getPeakValue(const int source, const int dest)
 
 }
 
+Control::CrossbarRouter::PeakValues
+Device::EAP::Router::getPeakValues()
+{
+    // To be implemented by ppalmers
+    return PeakValues();
+}
+
 void
 Device::EAP::Router::show()
 {

@@ -354,6 +354,8 @@ public:
     DBus::Bool  hasPeakMetering();
     DBus::Double getPeakValue(const DBus::Int32 &source, const DBus::Int32 &dest);
 
+    std::vector< DBus::Struct<int, int, double> > getPeakValues();
+
     std::vector< DBus::Int32 > getConnectionMap();
     DBus::Int32 setConnectionMap(const std::vector< DBus::Int32 >&);
 
