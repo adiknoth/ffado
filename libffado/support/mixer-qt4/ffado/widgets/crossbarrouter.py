@@ -21,6 +21,38 @@
 from PyQt4 import QtGui, QtCore
 import dbus
 
+class VuMeter(QtGui.QFrame):
+    def __init__(self, interface, output, input=None, parent=None):
+        QtGui.QFrame.__init__(self, parent)
+        self.setLineWidth(1)
+        self.setFrameStyle(QtGui.QFrame.Panel|QtGui.QFrame.Sunken)
+        self.setMinimumSize(20, 20)
+
+        self.level = 0
+
+        self.interface = interface
+
+        self.output = output
+        if input is None:
+            input = int(self.interface.getSourceForDestination(output))
+        self.setInput(input)
+
+    def setInput(self, input):
+        #print "VuMeter.setInput() %i->%i" % (self.output, input)
+        self.input = input
+
+    def updateLevel(self, value):
+        self.level = value
+        self.update()
+
+    def paintEvent(self, event):
+        p = QtGui.QPainter(self)
+        value = self.level/4096
+        r = self.rect()
+        r.setHeight(r.height() * value)
+        r.moveBottom(self.rect().height())
+        p.fillRect(r, self.palette().highlight())
+
 class OutputSwitcher(QtGui.QFrame):
     """
 The name is a bit misleading. This widget selectes sources for a specified
@@ -35,12 +67,16 @@ of the mixer is an available output from the routers point.
         self.outname = outname
 
         self.setLineWidth(1)
+        self.setFrameStyle(QtGui.QFrame.Sunken|QtGui.QFrame.Panel)
 
         self.layout = QtGui.QGridLayout(self)
         self.setLayout(self.layout)
 
         self.lbl = QtGui.QLabel(self.outname, self)
-        self.layout.addWidget(self.lbl, 0, 0, 1, 2)
+        self.layout.addWidget(self.lbl, 0, 0)
+
+        self.vu = VuMeter(self.interface, self.interface.getDestinationIndex(outname), parent=self)
+        self.layout.addWidget(self.vu, 0, 1, 2, 1)
 
         self.btn = QtGui.QPushButton("Sel.", self)
         self.layout.addWidget(self.btn, 1, 0)
@@ -62,6 +98,10 @@ of the mixer is an available output from the routers point.
         for group in self.ingroups:
             submenu = InGroupMenu(self.interface, self.outname, group, self.ingroups[group], self, self.exclusiveGroup)
             self.menu.addMenu(submenu)
+
+    def peakValue(self, value):
+        self.vu.updateLevel(value)
+
 
 class InGroupMenu(QtGui.QMenu):
     def __init__(self, interface, outname, inname, insize, parent, exclusiveGroup = None):
@@ -122,9 +162,23 @@ class CrossbarRouter(QtGui.QWidget):
         self.layout = QtGui.QGridLayout(self)
         self.setLayout(self.layout)
 
+        self.switchers = {}
         for out in destinations:
             btn = OutputSwitcher(self.interface, out, self)
             self.layout.addWidget(btn, int(out.split(":")[-1]), self.outgroups.index(out.split(":")[0]))
+            self.switchers[self.interface.getDestinationIndex(out)] = btn
+
+        self.timer = QtCore.QTimer(self)
+        self.timer.setInterval(200)
+        self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.updateLevels)
+        self.timer.start()
+
+    def updateLevels(self):
+        #print "CrossbarRouter.updateLevels()"
+        peakvalues = self.interface.getPeakValues()
+        #print "Got %i peaks" % len(peakvalues)
+        for peak in peakvalues:
+            self.switchers[peak[0]].peakValue(peak[1])
 
 #
 # vim: sw=4 ts=4 et
