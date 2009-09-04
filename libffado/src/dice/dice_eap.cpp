@@ -1565,8 +1565,16 @@ Device::EAP::Router::getPeakValue(const int source, const int dest)
 Control::CrossbarRouter::PeakValues
 Device::EAP::Router::getPeakValues()
 {
-    // To be implemented by ppalmers
-    return PeakValues();
+    m_peak.read();
+    Control::CrossbarRouter::PeakValues values;
+    for (unsigned int i=0; i<m_peak.getNbRoutes(); ++i) {
+        Control::CrossbarRouter::PeakValue tmp;
+        RouterConfig::Route route = m_peak.getRoute(i);
+        tmp.destination = getDestinationIndex(route.dst, route.dstChannel);
+        tmp.peakvalue = route.peak;
+        values.push_back(tmp);
+    }
+    return values;
 }
 
 void

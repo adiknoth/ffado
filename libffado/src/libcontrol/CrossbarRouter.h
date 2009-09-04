@@ -53,7 +53,6 @@ public:
 
     struct PeakValue
     {
-        int source;
         int destination;
         double peakvalue;
     };
