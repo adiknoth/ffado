@@ -292,7 +292,7 @@
           <arg type="d" name="value" direction="out"/>
       </method>
       <method name="getPeakValues">
-          <arg type="a(iid)" name="values" direction="out"/>
+          <arg type="a(id)" name="values" direction="out"/>
       </method>
   </interface>
 
