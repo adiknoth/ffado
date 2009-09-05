@@ -335,6 +335,9 @@ public:
     std::vector< DBus::String > getSourceNames();
     std::vector< DBus::String > getDestinationNames();
 
+    std::vector< DBus::Struct<DBus::String, int> > getSources();
+    std::vector< DBus::Struct<DBus::String, int> > getDestinations();
+
     std::vector< DBus::Int32 > getDestinationsForSource(const DBus::Int32 &);
     DBus::Int32 getSourceForDestination(const DBus::Int32 &);
 

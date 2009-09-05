@@ -224,6 +224,12 @@
       <method name="getSourceNames">
           <arg type="as" name="sourcenames" direction="out"/>
       </method>
+      <method name="getSources">
+          <arg type="a(si)" name="sources" direction="out"/>
+      </method>
+      <method name="getDestinations">
+          <arg type="a(si)" name="sources" direction="out"/>
+      </method>
       <method name="getDestinationNames">
           <arg type="as" name="destinationnames" direction="out"/>
       </method>

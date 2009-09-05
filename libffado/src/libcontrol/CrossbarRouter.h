@@ -58,6 +58,13 @@ public:
     };
     typedef std::vector<PeakValue> PeakValues;
 
+    struct Group
+    {
+        std::string name;
+        int nbchannels;
+    };
+    typedef std::vector<Group> Groups;
+
     virtual std::string getSourceName(const int) = 0;
     virtual std::string getDestinationName(const int) = 0;
     virtual int getSourceIndex(std::string) = 0;
@@ -65,6 +72,9 @@ public:
 
     virtual NameVector getSourceNames() = 0;
     virtual NameVector getDestinationNames() = 0;
+
+    virtual Groups getSources() = 0;
+    virtual Groups getDestinations() = 0;
 
     virtual IntVector getDestinationsForSource(const int) = 0;
     virtual int getSourceForDestination(const int) = 0;

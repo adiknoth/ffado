@@ -864,6 +864,18 @@ CrossbarRouter::getDestinationNames()
     return m_Slave.getDestinationNames();
 }
 
+std::vector< DBus::Struct<DBus::String, int> >
+CrossbarRouter::getSources()
+{
+    return std::vector< DBus::Struct<DBus::String, int> >();
+}
+
+std::vector< DBus::Struct<DBus::String, int> >
+CrossbarRouter::getDestinations()
+{
+    return std::vector< DBus::Struct<DBus::String, int> >();
+}
+
 std::vector< DBus::Int32 >
 CrossbarRouter::getDestinationsForSource(const DBus::Int32 &idx)
 {

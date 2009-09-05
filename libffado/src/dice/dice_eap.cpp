@@ -1228,6 +1228,20 @@ Device::EAP::Router::getDestinationNames()
     return n;
 }
 
+Control::CrossbarRouter::Groups
+Device::EAP::Router::getSources()
+{
+    debugError("Device::EAP::Router::getSources() is not yet implemented!");
+    return Control::CrossbarRouter::Groups();
+}
+
+Control::CrossbarRouter::Groups
+Device::EAP::Router::getDestinations()
+{
+    debugError("Device::EAP::Router::getDestinations() is not yet implemented!");
+    return Control::CrossbarRouter::Groups();
+}
+
 Control::CrossbarRouter::IntVector
 Device::EAP::Router::getDestinationsForSource(const int srcid)
 {

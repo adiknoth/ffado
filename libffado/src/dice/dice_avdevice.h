@@ -310,6 +310,9 @@ public:
             virtual NameVector getSourceNames();
             virtual NameVector getDestinationNames();
 
+            virtual Control::CrossbarRouter::Groups getSources();
+            virtual Control::CrossbarRouter::Groups getDestinations();
+
             virtual IntVector getDestinationsForSource(const int);
             virtual int getSourceForDestination(const int);
 
