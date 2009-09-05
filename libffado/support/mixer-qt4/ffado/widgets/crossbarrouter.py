@@ -152,6 +152,8 @@ class CrossbarRouter(QtGui.QWidget):
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.CrossbarRouter")
 
+        print self.interface.getDestinations()
+
         destinations = self.interface.getDestinationNames()
         self.outgroups = []
         for ch in destinations:
@@ -159,19 +161,39 @@ class CrossbarRouter(QtGui.QWidget):
             if not tmp in self.outgroups:
                 self.outgroups.append(tmp)
 
-        self.layout = QtGui.QGridLayout(self)
-        self.setLayout(self.layout)
+        self.biglayout = QtGui.QVBoxLayout(self)
+        self.setLayout(self.biglayout)
+
+        self.toplayout = QtGui.QHBoxLayout()
+        self.biglayout.addLayout(self.toplayout)
+
+        btn = QtGui.QPushButton("Switch VU", self)
+        btn.setCheckable(True)
+        btn.setChecked(True)
+        self.connect(btn, QtCore.SIGNAL("toggled(bool)"), self.runVu)
+        self.toplayout.addWidget(btn)
+
+        self.layout = QtGui.QGridLayout()
+        self.biglayout.addLayout(self.layout)
 
         self.switchers = {}
         for out in destinations:
             btn = OutputSwitcher(self.interface, out, self)
-            self.layout.addWidget(btn, int(out.split(":")[-1]), self.outgroups.index(out.split(":")[0]))
+            self.layout.addWidget(btn, int(out.split(":")[-1]) + 1, self.outgroups.index(out.split(":")[0]))
             self.switchers[self.interface.getDestinationIndex(out)] = btn
 
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(200)
         self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.updateLevels)
-        self.timer.start()
+        self.runVu(True)
+
+    def runVu(self, run=True):
+        if run:
+            self.timer.start()
+        else:
+            self.timer.stop()
+            for sw in self.switchers:
+                self.switchers[sw].peakValue(0)
 
     def updateLevels(self):
         #print "CrossbarRouter.updateLevels()"
