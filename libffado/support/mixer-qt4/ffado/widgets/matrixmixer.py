@@ -21,49 +21,126 @@
 from PyQt4 import QtGui, QtCore
 import dbus
 
-class MatrixNode(QtGui.QFrame):
-    def __init__(self, row, col, parent):
-        QtGui.QFrame.__init__(self,parent)
-        self.row = row
-        self.connect(self.row, QtCore.SIGNAL("hide"), self.setHidden)
-        self.column = col
-        self.connect(self.column, QtCore.SIGNAL("hide"), self.setHidden)
-
-        self.setLineWidth(1)
+class MixerNode(QtGui.QFrame):
+    def __init__(self, inputs, outputs, parent):
+        """inputs  = list of input-channel numbers
+           outputs = list of output-channel numbers
+           """
+        QtGui.QFrame.__init__(self, parent)
+        self.setLineWidth(2)
         self.setFrameStyle(QtGui.QFrame.Panel|QtGui.QFrame.Raised)
+
+        self.inputs = []
+        self.outputs = []
+
+        self.inputbalance = QtGui.QLabel("Input Balance", self)
+        self.outputbalance = QtGui.QLabel("Output Balance", self)
+
+        #self.fader = QtGui.QLabel("Fader", self)
+        self.fader = QtGui.QDial(self)
+        self.fader.setRange(0,pow(2,16)-1)
+        self.connect(self.fader, QtCore.SIGNAL("valueChanged(int)"), self.valuesChanged)
+
         self.layout = QtGui.QGridLayout(self)
         self.setLayout(self.layout)
 
-        self.dial = QtGui.QDial(self)
-        self.dial.setRange(0,pow(2,16-1))
-        self.connect(self.dial, QtCore.SIGNAL("valueChanged(int)"), self.valueChanged)
-        self.layout.addWidget(self.dial, 0, 0)
+        self.layout.addWidget(self.inputbalance, 0, 0)
+        self.layout.addWidget(self.fader, 1, 0)
+        self.layout.addWidget(self.outputbalance, 2, 0)
 
-    def valueChanged(self, n):
-        self.emit(QtCore.SIGNAL("valueChanged"), self.row.number, self.column.number, n)
+        self.addInputs(inputs)
+        self.addOutputs(outputs)
 
-    def setHidden(self, hide):
-        if not hide:
-            if self.row.hidden or self.column.hidden:
-                return
-        QtGui.QFrame.setHidden(self, hide)
+    def valuesChanged(self):
+        fader = self.fader.value()
+        values = []
+        while len(values) < len(self.inputs):
+            tmp = []
+            while len(tmp) < len(self.outputs):
+                tmp.append(fader)
+            values.append(tmp)
+        #print values
+        if len(self.inputs) == len(self.outputs):
+            for i in range(len(self.inputs)):
+                for j in range(len(self.outputs)):
+                    values[i][j] *= (i==j)
+        #print values
+        ret = []
+        for i in range(len(self.inputs)):
+            for j in range(len(self.outputs)):
+                ret.append( (self.inputs[i], self.outputs[j], values[i][j]) )
+        #print ret
+        self.emit(QtCore.SIGNAL("valueChanged"), ret)
 
-class MatrixChannel(QtGui.QWidget):
+    def addInputs(self, inputs):
+        if isinstance(inputs, list):
+            self.inputs += inputs
+        else:
+            self.inputs.append(inputs)
+        self.checkWidgets()
+    def removeInputs(self, inputs):
+        if isinstance(inputs, list):
+            for item in inputs:
+                self.inputs.remove(item)
+        else:
+            self.inputs.remove(inputs)
+        self.checkWidgets()
+
+    def addOutputs(self, outputs):
+        if isinstance(outputs, list):
+            self.outputs += outputs
+        else:
+            self.outputs.append(outputs)
+        self.checkWidgets()
+    def removeOutputs(self, outputs):
+        if isinstance(outputs, list):
+            for item in outputs:
+                self.outputs.remove(item)
+        else:
+            self.outputs.remove(outputs)
+        self.checkWidgets()
+
+    def checkWidgets(self):
+        if len(self.inputs)>1:
+            self.inputbalance.show()
+        else:
+            self.inputbalance.hide()
+        if len(self.outputs)>1:
+            self.outputbalance.show()
+        else:
+            self.outputbalance.hide()
+
+
+class MixerChannel(QtGui.QWidget):
     def __init__(self, number, parent=None):
         QtGui.QWidget.__init__(self, parent)
         layout = QtGui.QGridLayout(self)
         self.number = number
-        self.btn = QtGui.QPushButton("%i" % self.number, self)
-        self.btn.setCheckable(True)
-        self.connect(self.btn, QtCore.SIGNAL("clicked(bool)"), self.hideChannel)
-        layout.addWidget(self.btn, 0, 0)
+        self.lbl = QtGui.QLabel("Ch. %i" % self.number, self)
+        layout.addWidget(self.lbl, 0, 0, 1, 2)
 
-        self.hidden = False
+        self.btnHide = QtGui.QToolButton(self)
+        self.btnHide.setText("Hide")
+        self.btnHide.setCheckable(True)
+        self.connect(self.btnHide, QtCore.SIGNAL("clicked(bool)"), self.hideChannel)
+        layout.addWidget(self.btnHide, 1, 0)
+
+        self.btnCouple = QtGui.QToolButton(self)
+        self.btnCouple.setText("Stereo")
+        self.btnCouple.setCheckable(True)
+        self.connect(self.btnCouple, QtCore.SIGNAL("toggled(bool)"), self.coupleWithNext)
+        layout.addWidget(self.btnCouple, 1, 1)
 
     def hideChannel(self, hide):
-        #print "MatrixChannel.hideChannel( %s )" % str(hide)
-        self.hidden = hide
-        self.emit(QtCore.SIGNAL("hide"), hide)
+        self.btnCouple.setHidden(hide)
+        self.emit(QtCore.SIGNAL("hide"), self.number, hide)
+
+    def coupleWithNext(self, couple):
+        self.emit(QtCore.SIGNAL("couple"), self.number, couple)
+
+    def canCouple(self, cancouple):
+        #self.btnCouple.setEnabled(cancouple)
+        self.btnCouple.setHidden(not cancouple)
 
 class MatrixMixer(QtGui.QWidget):
     def __init__(self, servername, basepath, parent=None):
@@ -72,9 +149,9 @@ class MatrixMixer(QtGui.QWidget):
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
 
-        #print self.palette().color( QtGui.QPalette.Window ).name()
-        self.palette().setColor( QtGui.QPalette.Window, self.palette().color( QtGui.QPalette.Window ).darker() );
-        #print self.palette().color( QtGui.QPalette.Window ).name()
+        palette = self.palette()
+        palette.setColor(QtGui.QPalette.Window, palette.color(QtGui.QPalette.Window).darker());
+        self.setPalette(palette)
 
         rows = self.interface.getRowCount()
         cols = self.interface.getColCount()
@@ -82,34 +159,96 @@ class MatrixMixer(QtGui.QWidget):
         layout = QtGui.QGridLayout(self)
         self.setLayout(layout)
 
-        self.columns = []
-        self.rows = []
+        self.rowHeaders = []
+        self.columnHeaders = []
+        self.items = []
 
         # Add row/column headers
         for i in range(cols):
-            ch = MatrixChannel(i, self)
+            ch = MixerChannel(i, self)
+            self.connect(ch, QtCore.SIGNAL("couple"), self.coupleColumn)
+            self.connect(ch, QtCore.SIGNAL("hide"), self.hideColumn)
+            ch.canCouple(i+1!=cols)
             layout.addWidget(ch, 0, i+1)
-            self.columns.append( ch )
+            self.columnHeaders.append( ch )
         for i in range(rows):
-            ch = MatrixChannel(i, self)
+            ch = MixerChannel(i, self)
+            self.connect(ch, QtCore.SIGNAL("couple"), self.coupleRow)
+            self.connect(ch, QtCore.SIGNAL("hide"), self.hideRow)
+            ch.canCouple(i+1!=rows)
             layout.addWidget(ch, i+1, 0)
-            self.rows.append( ch )
+            self.rowHeaders.append( ch )
 
         # Add node-widgets
         for i in range(rows):
+            self.items.append([])
             for j in range(cols):
-                node = MatrixNode(self.rows[i], self.columns[j], self)
-                node.dial.setValue(self.interface.getValue(i, j))
+                node = MixerNode(j, i, self)
                 self.connect(node, QtCore.SIGNAL("valueChanged"), self.valueChanged)
                 layout.addWidget(node, i+1, j+1)
+                self.items[i].append(node)
 
-    def valueChanged(self, row, column, n):
-        #print "MatrixNode.valueChanged( %i, %i, %i )" % (row,column,n)
-        self.interface.setValue(row, column, n)
+        self.hiddenRows = []
+        self.hiddenCols = []
+        self.coupledRows = []
+        self.coupledCols = []
 
-    def paintEvent(self, event):
-        p = QtGui.QPainter(self)
-        p.fillRect(event.rect(), self.palette().window())
+
+    def checkVisibilities(self):
+        for x in range(len(self.items)):
+            for y in range(len(self.items[x])):
+                self.items[x][y].setHidden( (x in self.hiddenRows) | (x in self.coupledRows) | (y in self.hiddenCols) | (y in self.coupledCols) )
+
+    def coupleColumn(self, column, couple):
+        if column+1 < len(self.columnHeaders):
+            self.columnHeaders[column+1].setHidden(couple)
+        if column > 0:
+            self.columnHeaders[column-1].canCouple(not couple)
+        if couple:
+            self.coupledCols.append(column+1)
+        else:
+            self.coupledCols.remove(column+1)
+        for row in self.items:
+            if couple:
+                row[column].addInputs(column+1)
+            else:
+                row[column].removeInputs(column+1)
+        self.checkVisibilities()
+
+    def coupleRow(self, row, couple):
+        if row+1 < len(self.rowHeaders):
+            self.rowHeaders[row+1].setHidden(couple)
+        if row > 0:
+            self.rowHeaders[row-1].canCouple(not couple)
+        if couple:
+            self.coupledRows.append(row+1)
+        else:
+            self.coupledRows.remove(row+1)
+        for col in self.items[row]:
+            if couple:
+                col.addOutputs(row+1)
+            else:
+                col.removeOutputs(row+1)
+        self.checkVisibilities()
+
+    def hideColumn(self, column, hide):
+        if hide:
+            self.hiddenCols.append(column)
+        else:
+            self.hiddenCols.remove(column)
+        self.checkVisibilities()
+    def hideRow(self, row, hide):
+        if hide:
+            self.hiddenRows.append(row)
+        else:
+            self.hiddenRows.remove(row)
+        self.checkVisibilities()
+
+    def valueChanged(self, n):
+        #print "MatrixNode.valueChanged( %s )" % str(n)
+        for tmp in n:
+            self.interface.setValue(tmp[1], tmp[0], tmp[2])
+
 
 #
 # vim: et ts=4 sw=4
