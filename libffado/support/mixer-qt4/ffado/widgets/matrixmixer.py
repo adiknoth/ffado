@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui, QtCore, Qt
 import dbus
 
 class MixerNode(QtGui.QFrame):
@@ -33,10 +33,14 @@ class MixerNode(QtGui.QFrame):
         self.inputs = []
         self.outputs = []
 
-        self.inputbalance = QtGui.QLabel("Input Balance", self)
-        self.outputbalance = QtGui.QLabel("Output Balance", self)
+        self.inputbalance = QtGui.QSlider(Qt.Qt.Horizontal, self)
+        self.inputbalance.setRange(-100, 100)
+        self.connect(self.inputbalance, QtCore.SIGNAL("valueChanged(int)"), self.valuesChanged)
 
-        #self.fader = QtGui.QLabel("Fader", self)
+        self.outputbalance = QtGui.QSlider(Qt.Qt.Horizontal, self)
+        self.outputbalance.setRange(-100, 100)
+        self.connect(self.outputbalance, QtCore.SIGNAL("valueChanged(int)"), self.valuesChanged)
+
         self.fader = QtGui.QDial(self)
         self.fader.setRange(0,pow(2,16)-1)
         self.connect(self.fader, QtCore.SIGNAL("valueChanged(int)"), self.valuesChanged)
@@ -59,12 +63,32 @@ class MixerNode(QtGui.QFrame):
             while len(tmp) < len(self.outputs):
                 tmp.append(fader)
             values.append(tmp)
-        #print values
         if len(self.inputs) == len(self.outputs):
             for i in range(len(self.inputs)):
                 for j in range(len(self.outputs)):
                     values[i][j] *= (i==j)
-        #print values
+        if len(self.outputs) == 2:
+            v = self.outputbalance.value() / 100.0
+            left = 1.0
+            right = 1.0
+            if v > 0:
+                left = 1.0 - v
+            if v < 0:
+                right = 1.0 + v
+            for row in values:
+                row[0] *= left
+                row[1] *= right
+        if len(self.inputs) == 2:
+            v = self.inputbalance.value() / 100.0
+            left = 1.0
+            right = 1.0
+            if v > 0:
+                left = 1.0 - v
+            if v < 0:
+                right = 1.0 + v
+            for i in range(len(self.outputs)):
+                values[0][i] *= left
+                values[1][i] *= right
         ret = []
         for i in range(len(self.inputs)):
             for j in range(len(self.outputs)):
