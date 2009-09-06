@@ -82,7 +82,7 @@ Device::Device( DeviceManager& d,
     : FFADODevice( d, configRom )
     , m_rme_model( RME_MODEL_NONE )
     , num_channels( 0 )
-    , samples_per_packet( 0 )
+    , frames_per_packet( 0 )
     , speed800( 0 )
     , m_MixerContainer( NULL )
     , m_ControlContainer( NULL )
@@ -505,9 +505,43 @@ Device::showDevice()
 bool
 Device::prepare() {
 
-	debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
+    signed int mult;
 
-	return true;
+    debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
+
+    // The number of frames transmitted in a single packet is solely
+    // determined by the sample rate.
+    mult = multiplier_of_freq(getSamplingFrequency());
+    switch (mult) {
+        case 2: frames_per_packet = 15; break;
+        case 4: frames_per_packet = 25; break;
+    default:
+        frames_per_packet = 7;
+    }
+
+    // The number of active channels depends on sample rate and whether
+    // bandwidth limitation is active.  First set up the number of analog
+    // channels (which differs between devices), then add SPDIF channels if
+    // relevant.  Finally, the number of channels available from each ADAT
+    // interface depends on sample rate: 0 at 4x, 4 at 2x and 8 at 1x.
+    if (m_rme_model == RME_MODEL_FIREFACE800)
+        num_channels = 10;
+    else
+        num_channels = 8;
+    if (settings->limit_bandwidth != FF_SWPARAM_BWLIMIT_ANALOG_ONLY)
+        num_channels += 2;
+    if (settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_NO_ADAT2 ||
+        settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS)
+        num_channels += (mult==4?0:(mult==2?4:8));
+    if (settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS)
+        num_channels += (mult==4?0:(mult==2?4:8));
+
+    // TODO: We always must allocate a tx iso channel.  An rx iso channel is
+    // also allocated for the FF400.  For the FF800, the device itself will
+    // supply the iso channel we should listen on in zero-based byte 2 of
+    // the hardware status return.
+
+    return true;
 }
 
 int

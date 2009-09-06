@@ -122,7 +122,7 @@ protected:
     rme_shm_t *dev_config, local_dev_config_obj;
 
     signed int num_channels;
-    signed int samples_per_packet;
+    signed int frames_per_packet; // 1 frame includes 1 sample from each channel
     signed int speed800;
 
 private:
