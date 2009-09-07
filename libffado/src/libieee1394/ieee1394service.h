@@ -359,6 +359,8 @@ public:
 public:
     signed int getAvailableBandwidth();
     signed int allocateIsoChannelGeneric(unsigned int bandwidth);
+    signed int allocateFixedIsoChannelGeneric(
+        unsigned int chan, unsigned int bandwidth);
     signed int allocateIsoChannelCMP(nodeid_t xmit_node, int xmit_plug,
                                      nodeid_t recv_node, int recv_plug);
     bool freeIsoChannel(signed int channel);

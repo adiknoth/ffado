@@ -84,6 +84,8 @@ Device::Device( DeviceManager& d,
     , num_channels( 0 )
     , frames_per_packet( 0 )
     , speed800( 0 )
+    , iso_tx_channel( -1 )
+    , iso_rx_channel( -1 )
     , m_MixerContainer( NULL )
     , m_ControlContainer( NULL )
 {
@@ -93,6 +95,13 @@ Device::Device( DeviceManager& d,
 
 Device::~Device()
 {
+    if (iso_tx_channel>=0 && !get1394Service().freeIsoChannel(iso_tx_channel)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free tx iso channel %d\n", iso_tx_channel);
+    }
+    if (iso_rx_channel>=0 && !get1394Service().freeIsoChannel(iso_rx_channel)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free rx iso channel %d\n", iso_rx_channel);
+    }
+
     destroyMixer();
 
     if (dev_config != NULL) {
@@ -505,7 +514,7 @@ Device::showDevice()
 bool
 Device::prepare() {
 
-    signed int mult;
+    signed int mult, bandwidth;
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
 
@@ -536,10 +545,40 @@ Device::prepare() {
     if (settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS)
         num_channels += (mult==4?0:(mult==2?4:8));
 
-    // TODO: We always must allocate a tx iso channel.  An rx iso channel is
-    // also allocated for the FF400.  For the FF800, the device itself will
-    // supply the iso channel we should listen on in zero-based byte 2 of
-    // the hardware status return.
+    // Bandwidth is calculated here.  For the moment we assume the device 
+    // is connected at S400, so 1 allocation unit is 1 transmitted byte.
+    // There is 25 allocation units of protocol overhead per packet.  Each
+    // channel of audio data is sent/received as a 32 bit integer.
+    bandwidth = 25 + num_channels*4*frames_per_packet;
+
+    // Both the FF400 and FF800 require we allocate a tx iso channel.  The
+    // rx channel is also allocated for the FF400 while the FF800 handles
+    // the rx channel allocation for that device.
+    if (iso_tx_channel < 0) {
+        iso_tx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
+    }
+
+    if (iso_rx_channel < 0) {
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
+            unsigned int stat[4];
+            get_hardware_streaming_status(stat, 4);
+            // CHECKME: does this work before streaming has been initialised?
+            iso_rx_channel = stat[2] & 63;
+            iso_rx_channel = get1394Service().allocateFixedIsoChannelGeneric(iso_rx_channel, bandwidth);
+        } else {
+            iso_rx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
+        }
+    }
+
+    if (iso_tx_channel<0 || iso_rx_channel<0) {
+        if (iso_tx_channel >= 0) 
+            get1394Service().freeIsoChannel(iso_tx_channel);
+        if (iso_rx_channel >= 0)
+            get1394Service().freeIsoChannel(iso_rx_channel);
+        debugFatal("Could not allocate iso channels\n");
+        return false;
+    }
+
 
     return true;
 }

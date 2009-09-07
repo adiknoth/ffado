@@ -1301,6 +1301,59 @@ signed int Ieee1394Service::allocateIsoChannelGeneric(unsigned int bandwidth) {
 }
 
 /**
+ * Allocates a specific fixed iso channel for use by the interface.  Returns 
+ * -1 on error (due to the requested channel not being free) or the fixed iso
+ * channel number.
+ *
+ * Does not perform anything other than registering the channel and the
+ * bandwidth at the IRM
+ *
+ * Also allocates the necessary bandwidth (in ISO allocation units).
+ *
+ * FIXME: As in libiec61883, channel 63 is not requested; this is either a
+ * bug or it's omitted since that's the channel preferred by video devices.
+ *
+ * @chan the channel number being requested
+ * @param bandwidth the bandwidth to allocate for this channel
+ * @return the channel number
+ */
+signed int Ieee1394Service::allocateFixedIsoChannelGeneric(
+    unsigned int chan, unsigned int bandwidth
+    ) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Allocating ISO channel %d using generic method...\n", chan );
+
+    Util::MutexLockHelper lock(*m_handle_lock);
+    struct ChannelInfo cinfo;
+
+    if (raw1394_channel_modify (m_handle, chan, RAW1394_MODIFY_ALLOC) == 0) {
+        if (raw1394_bandwidth_modify(m_handle, bandwidth, RAW1394_MODIFY_ALLOC) < 0) {
+            debugFatal("Could not allocate bandwidth of %d\n", bandwidth);
+
+            raw1394_channel_modify (m_handle, chan, RAW1394_MODIFY_FREE);
+            return -1;
+        } else {
+            cinfo.channel=chan;
+            cinfo.bandwidth=bandwidth;
+            cinfo.alloctype=AllocGeneric;
+
+            cinfo.xmit_node=-1;
+            cinfo.xmit_plug=-1;
+            cinfo.recv_node=-1;
+            cinfo.recv_plug=-1;
+
+            if (registerIsoChannel(chan, cinfo)) {
+                return chan;
+            } else {
+                raw1394_bandwidth_modify(m_handle, bandwidth, RAW1394_MODIFY_FREE);
+                raw1394_channel_modify (m_handle, chan, RAW1394_MODIFY_FREE);
+                return -1;
+            }
+        }
+    }
+    return -1;
+}
+
+/**
  * Allocates an iso channel for use by the interface in a similar way to
  * libiec61883.  Returns -1 on error (due to there being no free channels)
  * or an allocated channel number.

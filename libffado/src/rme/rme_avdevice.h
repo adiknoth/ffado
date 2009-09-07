@@ -125,6 +125,8 @@ protected:
     signed int frames_per_packet; // 1 frame includes 1 sample from each channel
     signed int speed800;
 
+    signed int iso_tx_channel, iso_rx_channel;
+
 private:
     unsigned long long int cmd_buffer_addr();
     unsigned long long int stream_init_reg();
