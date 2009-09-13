@@ -31,23 +31,10 @@ import re
 from string import Template
 import imp
 
-build_dir = ARGUMENTS.get('BUILDDIR', "")
-if build_dir:
-	build_base=build_dir+'/'
-	if not os.path.isdir( build_base ):
-		os.makedirs( build_base )
-	print "Building into: " + build_base
-else:
-	build_base=''
-
 if not os.path.isdir( "cache" ):
 	os.makedirs( "cache" )
 
-opts = Options( "cache/"+build_base+"options.cache" )
-
-#
-# If this is just to display a help-text for the variable used via ARGUMENTS, then its wrong...
-opts.Add( "BUILDDIR", "Path to place the built files in", "")
+opts = Options( "cache/options.cache" )
 
 opts.AddOptions(
 	BoolOption( "DEBUG", """\
@@ -127,14 +114,14 @@ See www.ffado.org for stable releases.
 Help( opts.GenerateHelpText( env ) )
 
 # make sure the necessary dirs exist
-if not os.path.isdir( "cache/" + build_base ):
-	os.makedirs( "cache/" + build_base )
+if not os.path.isdir( "cache" ):
+	os.makedirs( "cache" )
 if not os.path.isdir( 'cache/objects' ):
 	os.makedirs( 'cache/objects' )
 
 CacheDir( 'cache/objects' )
 
-opts.Save( 'cache/' + build_base + "options.cache", env )
+opts.Save( 'cache/options.cache', env )
 
 def ConfigGuess( context ):
 	context.Message( "Trying to find the system triple: " )
@@ -189,8 +176,8 @@ tests.update( env['PYUIC4_TESTS'] )
 
 conf = Configure( env,
 	custom_tests = tests,
-	conf_dir = "cache/" + build_base,
-	log_file = "cache/" + build_base + 'config.log' )
+	conf_dir = "cache/",
+	log_file = 'cache/config.log' )
 
 if env['SERIALIZE_USE_EXPAT']:
 	env['SERIALIZE_USE_EXPAT']=1
@@ -329,10 +316,7 @@ if env['BUILD_STATIC_TOOLS']:
     print "Building static versions of the tools..."
     env['BUILD_STATIC_LIB'] = True
 
-if build_base:
-	env['build_base']="#/"+build_base
-else:
-	env['build_base']="#/"
+env['build_base']="#/"
 
 #
 # Get the DESTDIR (if wanted) from the commandline
@@ -519,7 +503,7 @@ env.ScanReplace( "config.h.in" )
 # ensure that the config.h is updated with the version
 
 env.Depends( "config.h", "SConstruct" )
-env.Depends( "config.h", 'cache/' + build_base + "options.cache" )
+env.Depends( "config.h", 'cache/options.cache' )
 
 # update config.h whenever the SVN revision changes
 env.Depends( "config.h", env.Value(env['REVISION']))
@@ -534,10 +518,7 @@ subdirs=['external','src','libffado','support','doc']
 if env['BUILD_TESTS']:
 	subdirs.append('tests')
 
-if build_base:
-	env.SConscript( dirs=subdirs, exports="env", build_dir=build_base+subdir )
-else:
-	env.SConscript( dirs=subdirs, exports="env" )
+env.SConscript( dirs=subdirs, exports="env" )
 
 # By default only src is built but all is cleaned
 if not env.GetOption('clean'):
