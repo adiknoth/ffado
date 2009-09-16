@@ -644,19 +644,4 @@ if env.GetOption( "clean" ):
     env.Execute( "rm cache/objects -Rf" )
 
 #
-# Temporary code to remove the installed qt3 mixer
-#
-import shutil
-if os.path.exists( os.path.join( env['BINDIR'], "ffado-mixer-qt3" ) ):
-    print "Removing the old qt3-mixer from the installation..."
-    os.remove( os.path.join( env['BINDIR'], "ffado-mixer-qt3" ) )
-if os.path.exists( os.path.join( env['SHAREDIR'], 'python-qt3' ) ):
-    print "Removing the old qt3-mixer files from the installation..."
-    shutil.rmtree( os.path.join( env['SHAREDIR'], 'python-qt3' ) )
-if os.path.exists( os.path.join( env['SHAREDIR'], 'python' ) ):
-    print "Removing the old qt3-mixer files from the installation..."
-    shutil.rmtree( os.path.join( env['SHAREDIR'], 'python' ) )
-
-
-#
 # vim: ts=4 sw=4 et
