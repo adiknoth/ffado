@@ -96,33 +96,29 @@ class MixerNode(QtGui.QFrame):
         #print ret
         self.emit(QtCore.SIGNAL("valueChanged"), ret)
 
-    def addInputs(self, inputs):
-        if isinstance(inputs, list):
+    def addInputs(self, inputs, add=True):
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+        if add:
             self.inputs += inputs
         else:
-            self.inputs.append(inputs)
-        self.checkWidgets()
-    def removeInputs(self, inputs):
-        if isinstance(inputs, list):
             for item in inputs:
                 self.inputs.remove(item)
-        else:
-            self.inputs.remove(inputs)
         self.checkWidgets()
+    def removeInputs(self, inputs):
+        self.addInputs(inputs, False)
 
-    def addOutputs(self, outputs):
-        if isinstance(outputs, list):
+    def addOutputs(self, outputs, add=True):
+        if not isinstance(outputs, list):
+            outputs = [outputs]
+        if add:
             self.outputs += outputs
         else:
-            self.outputs.append(outputs)
-        self.checkWidgets()
-    def removeOutputs(self, outputs):
-        if isinstance(outputs, list):
             for item in outputs:
                 self.outputs.remove(item)
-        else:
-            self.outputs.remove(outputs)
         self.checkWidgets()
+    def removeOutputs(self, outputs):
+        self.addOutputs(outputs, False)
 
     def checkWidgets(self):
         if len(self.inputs)>1:
@@ -133,6 +129,13 @@ class MixerNode(QtGui.QFrame):
             self.outputbalance.show()
         else:
             self.outputbalance.hide()
+        if len(self.inputs) and len(self.outputs):
+            valuematrix = []
+            for row in self.outputs:
+                valuematrix.append( [] )
+                for col in self.inputs:
+                    valuematrix[self.outputs.index(row)] = self.parent().interface.getValue(row, col)
+            self.fader.setValue(max(valuematrix))
 
 
 class MixerChannel(QtGui.QWidget):
@@ -233,10 +236,8 @@ class MatrixMixer(QtGui.QWidget):
         else:
             self.coupledCols.remove(column+1)
         for row in self.items:
-            if couple:
-                row[column].addInputs(column+1)
-            else:
-                row[column].removeInputs(column+1)
+            row[column].addInputs(column+1,couple)
+            row[column+1].addInputs(column+1,not couple)
         self.checkVisibilities()
 
     def coupleRow(self, row, couple):
@@ -249,10 +250,9 @@ class MatrixMixer(QtGui.QWidget):
         else:
             self.coupledRows.remove(row+1)
         for col in self.items[row]:
-            if couple:
-                col.addOutputs(row+1)
-            else:
-                col.removeOutputs(row+1)
+            col.addOutputs(row+1,couple)
+        for col in self.items[row+1]:
+            col.addOutputs(row+1,not couple)
         self.checkVisibilities()
 
     def hideColumn(self, column, hide):
