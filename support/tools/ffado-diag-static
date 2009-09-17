@@ -1,0 +1,91 @@
+#!/usr/bin/python
+#
+
+#
+# Copyright (C) 2008 Pieter Palmers
+#               2009 Arnold Krilles
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#
+# Test for common FFADO problems
+#
+
+import sys
+
+# Add the path of the installed dependent files
+import os
+import commands
+import re
+import logging
+
+from ffado_diag_helpers import *
+
+welcome_msg = """
+
+FFADO static diagnostic utility
+============================
+(C) 2008 Pieter Palmers
+(C) 2009 Arnold Krille
+
+"""
+
+help_msg = """
+Usage: ffado-diag [verboselevel]
+
+  verboselevel : verbosity level. (optional)
+
+"""
+
+## logging setup
+logging.basicConfig()
+log = logging.getLogger('staticdiag')
+
+## main program
+if __name__== '__main__':
+
+    print welcome_msg
+
+    num_args = len(sys.argv)
+    if num_args not in [1,2]:
+        print help
+        sys.exit(0)
+
+    if num_args == 2:
+        loglevel = eval(sys.argv[1])
+        if loglevel == 1:
+            logging.getLogger('staticdiag').setLevel(logging.INFO)
+        elif loglevel == 2:
+            logging.getLogger('staticdiag').setLevel(logging.DEBUG)
+
+    print "=== CHECK ==="
+
+    # check libraries
+    print "   gcc................ %s" % get_version_first_line('gcc --version')
+    print "   g++................ %s" % get_version_first_line('g++ --version')
+    print "   PyQt............... %s" % get_version_first_line('pyuic -version')
+    print "   jackd.............. %s" % get_version_first_line('jackd --version')
+    print "     path............. %s" % get_command_path('jackd')
+    print "     flags............ %s" % get_package_flags("jack")
+    print "   libraw1394......... %s" % get_package_version("libraw1394")
+    print "     flags............ %s" % get_package_flags("libraw1394")
+    print "   libavc1394......... %s" % get_package_version("libavc1394")
+    print "     flags............ %s" % get_package_flags("libavc1394")
+    print "   libiec61883........ %s" % get_package_version("libiec61883")
+    print "     flags............ %s" % get_package_flags("libiec61883")
+    print "   libxml++-2.6....... %s" % get_package_version("libxml++-2.6")
+    print "     flags............ %s" % get_package_flags("libxml++-2.6")
+    print "   dbus-1............. %s" % get_package_version("dbus-1")
+    print "     flags............ %s" % get_package_flags("dbus-1")
+

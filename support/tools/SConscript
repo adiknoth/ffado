@@ -34,8 +34,12 @@ e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substi
 # For the installation of the stuff
 e['pythondir'] = Template( os.path.join( e['sharedir'], 'python' ) ).safe_substitute( e )
 
+e.Command( "static_info.txt", "#/SConstruct", "python support/tools/ffado-diag-static > $TARGET" )
+
 e.ScanReplace( "ffado-diag.in" )
 
 e.Install( "$bindir", "ffado-diag" )
 e.Install( "$pythondir", "helpstrings.py" )
 e.Install( "$pythondir", "listirqinfo.py" )
+e.Install( "$pythondir", "static_info.txt" )
+e.Install( "$pythondir", "ffado_diag_helpers.py" )
