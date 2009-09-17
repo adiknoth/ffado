@@ -50,7 +50,7 @@ class ffadoRegDialog(QDialog):
                  guid, version, email="(optional)",
                  parent = None):
         QDialog.__init__(self,parent)
-        uicLoad("ffado_regdialog", self)
+        uicLoad("ffado/regdialog", self)
         self.txtVendorName.setText(vendor_name)
         self.txtVendorId.setText(vendor_id)
         self.txtModelName.setText(model_name)
