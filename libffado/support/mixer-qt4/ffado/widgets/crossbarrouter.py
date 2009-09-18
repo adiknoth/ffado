@@ -21,6 +21,9 @@
 from PyQt4 import QtGui, QtCore
 import dbus
 
+import logging
+log = logging.getLogger("crossbarrouter")
+
 class VuMeter(QtGui.QFrame):
     def __init__(self, interface, output, input=None, parent=None):
         QtGui.QFrame.__init__(self, parent)
@@ -38,7 +41,7 @@ class VuMeter(QtGui.QFrame):
         self.setInput(input)
 
     def setInput(self, input):
-        #print "VuMeter.setInput() %i->%i" % (self.output, input)
+        #log.debug("VuMeter.setInput() %i->%i" % (self.output, input))
         self.input = input
 
     def updateLevel(self, value):
@@ -90,10 +93,16 @@ of the mixer is an available output from the routers point.
             if tmp not in self.ingroups:
                 self.ingroups[tmp] = 0
             self.ingroups[tmp] += 1
-        #print "Detected ingroups: %s" % str(self.ingroups)
+        #log.debug("Detected ingroups: %s" % str(self.ingroups))
 
         self.menu = QtGui.QMenu(self)
         self.btn.setMenu(self.menu)
+
+        action = QtGui.QAction("Disconnect", self)
+        action.setCheckable(True)
+        self.connect(action, QtCore.SIGNAL("toggled(bool)"), self.disconnectRoute)
+        self.exclusiveGroup.addAction(action)
+        self.menu.addAction(action)
 
         for group in self.ingroups:
             submenu = InGroupMenu(self.interface, self.outname, group, self.ingroups[group], self, self.exclusiveGroup)
@@ -102,6 +111,16 @@ of the mixer is an available output from the routers point.
     def peakValue(self, value):
         self.vu.updateLevel(value)
 
+    def disconnectRoute(self, checked):
+        log.debug("disconnectRoute( %s ) sender: %s" % (str(checked),str(self.sender())))
+        dest = self.interface.getDestinationIndex(self.outname)
+        src = self.interface.getSourceName( self.interface.getSourceForDestination( dest ) )
+        #log.debug(" source=%s destination=%s  possible? %s" % (src, self.outname, self.interface.canConnectNamed(src, self.outname)))
+        if not self.interface.setConnectionStateNamed(src, self.outname, False):
+            log.debug(" Changing the connection table was successfull.")
+        else:
+            log.warning(" Failed to change the connection table!")
+        self.peakValue(0)
 
 class InGroupMenu(QtGui.QMenu):
     def __init__(self, interface, outname, inname, insize, parent, exclusiveGroup = None):
@@ -120,7 +139,7 @@ class InGroupMenu(QtGui.QMenu):
 
     def showMenu(self):
         #print "About to show the menu"
-        if len(self.actions()) < self.insize:
+        if len(self.actions()) < self.insize+1:
             # Do a lazy init of the sub-items.
             for i in range(self.insize):
                 action = QtGui.QAction("%s:%02i" % (self.inname,i), self)
@@ -139,10 +158,11 @@ class InGroupMenu(QtGui.QMenu):
 
     def connectionSwitched(self, checked):
         if self.lock: return
-        print "connectionSwitched( %s ) sender: %s" % (str(checked),str(self.sender()))
+        #log.debug("connectionSwitched( %s ) sender: %s" % (str(checked),str(self.sender())))
         inname = str(self.sender().text())
-        print " source=%s destination=%s  possible? %s" % (inname, self.outname, self.interface.canConnectNamed(inname, self.outname))
-        print " connectionState is now %s" % self.interface.setConnectionStateNamed(inname, self.outname, checked)
+        #log.debug(" source=%s destination=%s  possible? %s" % (inname, self.outname, self.interface.canConnectNamed(inname, self.outname)))
+        if not self.interface.setConnectionStateNamed(inname, self.outname, checked):
+            log.warning(" Failed to change the routing.")
 
 
 class CrossbarRouter(QtGui.QWidget):
@@ -152,7 +172,7 @@ class CrossbarRouter(QtGui.QWidget):
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.CrossbarRouter")
 
-        print self.interface.getDestinations()
+        log.info(self.interface.getDestinations())
 
         destinations = self.interface.getDestinationNames()
         self.outgroups = []

@@ -149,14 +149,18 @@ if __name__ == "__main__":
     else:
         debug_level = logging.INFO
 
+    # main loggers:
     logging.getLogger('main').setLevel(debug_level)
     logging.getLogger('dbus').setLevel(debug_level)
     logging.getLogger('registration').setLevel(debug_level)
     logging.getLogger('panelmanager').setLevel(debug_level)
     logging.getLogger('configparser').setLevel(logging.INFO)
 
-    logging.getLogger('global').setLevel(debug_level)
+    # widgets:
+    logging.getLogger('matrixmixer').setLevel(debug_level)
+    logging.getLogger('crossbarrouter').setLevel(debug_level)
 
+    # mixers:
     logging.getLogger('audiofire').setLevel(debug_level)
     logging.getLogger('bridgeco').setLevel(debug_level)
     logging.getLogger('edirolfa101').setLevel(debug_level)
@@ -169,6 +173,8 @@ if __name__ == "__main__":
     logging.getLogger('saffirebase').setLevel(debug_level)
     logging.getLogger('saffire').setLevel(debug_level)
     logging.getLogger('saffirepro').setLevel(debug_level)
+
+    logging.getLogger('global').setLevel(debug_level)
 
     log = logging.getLogger('main')
 

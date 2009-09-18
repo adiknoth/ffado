@@ -21,6 +21,9 @@
 from PyQt4 import QtGui, QtCore, Qt
 import dbus
 
+import logging
+log = logging.getLogger("matrixmixer")
+
 class MixerNode(QtGui.QFrame):
     def __init__(self, inputs, outputs, parent):
         """inputs  = list of input-channel numbers
@@ -180,8 +183,9 @@ class MatrixMixer(QtGui.QWidget):
         palette.setColor(QtGui.QPalette.Window, palette.color(QtGui.QPalette.Window).darker());
         self.setPalette(palette)
 
-        rows = self.interface.getRowCount()
-        cols = self.interface.getColCount()
+        rows = self.interface.getColCount()
+        cols = self.interface.getRowCount()
+        log.debug("Mixer has %i rows and %i columns" % (rows, cols))
 
         layout = QtGui.QGridLayout(self)
         self.setLayout(layout)
@@ -269,7 +273,7 @@ class MatrixMixer(QtGui.QWidget):
         self.checkVisibilities()
 
     def valueChanged(self, n):
-        #print "MatrixNode.valueChanged( %s )" % str(n)
+        log.debug("MatrixNode.valueChanged( %s )" % str(n))
         for tmp in n:
             self.interface.setValue(tmp[1], tmp[0], tmp[2])
 
