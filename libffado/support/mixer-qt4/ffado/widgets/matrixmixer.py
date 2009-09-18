@@ -142,11 +142,13 @@ class MixerNode(QtGui.QFrame):
 
 
 class MixerChannel(QtGui.QWidget):
-    def __init__(self, number, parent=None):
+    def __init__(self, number, parent=None, name=""):
         QtGui.QWidget.__init__(self, parent)
         layout = QtGui.QGridLayout(self)
         self.number = number
-        self.lbl = QtGui.QLabel("Ch. %i" % self.number, self)
+        if name is not "":
+            name = " (%s)" % name
+        self.lbl = QtGui.QLabel("Ch. %i%s" % (self.number, name), self)
         layout.addWidget(self.lbl, 0, 0, 1, 2)
 
         self.btnHide = QtGui.QToolButton(self)
@@ -196,14 +198,14 @@ class MatrixMixer(QtGui.QWidget):
 
         # Add row/column headers
         for i in range(cols):
-            ch = MixerChannel(i, self)
+            ch = MixerChannel(i, self, self.interface.getColName(i))
             self.connect(ch, QtCore.SIGNAL("couple"), self.coupleColumn)
             self.connect(ch, QtCore.SIGNAL("hide"), self.hideColumn)
             ch.canCouple(i+1!=cols)
             layout.addWidget(ch, 0, i+1)
             self.columnHeaders.append( ch )
         for i in range(rows):
-            ch = MixerChannel(i, self)
+            ch = MixerChannel(i, self, self.interface.getRowName(i))
             self.connect(ch, QtCore.SIGNAL("couple"), self.coupleRow)
             self.connect(ch, QtCore.SIGNAL("hide"), self.hideRow)
             ch.canCouple(i+1!=rows)
