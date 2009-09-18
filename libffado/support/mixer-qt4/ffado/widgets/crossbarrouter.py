@@ -112,13 +112,11 @@ of the mixer is an available output from the routers point.
         self.vu.updateLevel(value)
 
     def disconnectRoute(self, checked):
-        log.debug("disconnectRoute( %s ) sender: %s" % (str(checked),str(self.sender())))
+        log.debug("disconnectRoute( %s )" % str(checked))
         dest = self.interface.getDestinationIndex(self.outname)
         src = self.interface.getSourceName( self.interface.getSourceForDestination( dest ) )
         #log.debug(" source=%s destination=%s  possible? %s" % (src, self.outname, self.interface.canConnectNamed(src, self.outname)))
-        if not self.interface.setConnectionStateNamed(src, self.outname, False):
-            log.debug(" Changing the connection table was successfull.")
-        else:
+        if self.interface.setConnectionStateNamed(src, self.outname, False):
             log.warning(" Failed to change the connection table!")
         self.peakValue(0)
 
@@ -149,7 +147,6 @@ class InGroupMenu(QtGui.QMenu):
                 self.addAction(action)
                 idx = self.interface.getDestinationIndex(self.outname)
                 sourceidx = self.interface.getSourceForDestination(idx)
-                #print self.interface.getConnectionState(sourceidx, idx)
                 source = self.interface.getSourceName(sourceidx)
                 self.lock = True
                 for action in self.actions():
