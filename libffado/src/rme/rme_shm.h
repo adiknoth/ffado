@@ -39,6 +39,7 @@ typedef struct rme_shm_t {
 
     signed int dds_freq;      // Optionally explicitly set hardware freq
     signed int software_freq; // Sampling frequency in use by software
+    signed int hardware_freq; // Frequency actually programmed into hardware
 
     signed int is_streaming;
 

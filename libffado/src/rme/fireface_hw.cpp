@@ -618,8 +618,6 @@ Device::write_tco_settings(FF_TCO_settings_t *tco_settings)
         tc[2] |= FF_TCO2_SET_TERMINATION;
 
     return write_tco(tc, 4);
-
-    return 0;
 }
 
 signed int
@@ -637,6 +635,9 @@ Device::set_hardware_dds_freq(signed int freq)
         ret = writeRegister(RME_FF400_STREAM_SRATE, freq);
     else
         ret = writeRegister(RME_FF800_STREAM_SRATE, freq);
+
+    if (ret == 0)
+        dev_config->hardware_freq = freq;
 
     return ret;
 }
@@ -673,21 +674,32 @@ Device::hardware_init_streaming(unsigned int sample_rate,
 signed int
 Device::hardware_start_streaming(unsigned int listen_channel)
 {
+    signed int ret = 0;
     // Listen_channel is the ISO channel the PC will listen on for data sent
     // by the Fireface.
     fb_nodeaddr_t addr;
     quadlet_t data = num_channels;
 
-    if (m_rme_model == RME_MODEL_FIREFACE400) {
-        addr = RME_FF400_STREAM_START_REG;
-        data |= (listen_channel << 5);
-    } else {
-        addr = RME_FF800_STREAM_START_REG;
-        if (speed800)
-            data |= RME_FF800_STREAMING_SPEED_800; // Flag 800 Mbps speed
-    }
+    config_lock();
+    if (not(hardware_is_streaming())) {
+        if (m_rme_model == RME_MODEL_FIREFACE400) {
+            addr = RME_FF400_STREAM_START_REG;
+            data |= (listen_channel << 5);
+        } else {
+            addr = RME_FF800_STREAM_START_REG;
+            if (speed800)
+                data |= RME_FF800_STREAMING_SPEED_800; // Flag 800 Mbps speed
+        }
 
-    return writeRegister(addr, data);
+        ret = writeRegister(addr, data);
+        if (ret != 0) {
+            dev_config->is_streaming = 1;
+        }
+    } else
+        ret = -1;
+    config_unlock();
+
+    return ret;
 }
 
 signed int
@@ -695,17 +707,27 @@ Device::hardware_stop_streaming(void)
 {
     fb_nodeaddr_t addr;
     quadlet_t buf[4] = {0, 0, 0, 1};
-    unsigned int size;
+    unsigned int size, ret = 0;
 
-    if (m_rme_model == RME_MODEL_FIREFACE400) {
-      addr = RME_FF400_STREAM_END_REG;
-      size = RME_FF400_STREAM_END_SIZE;
-    } else {
-      addr = RME_FF800_STREAM_END_REG;
-      size = RME_FF800_STREAM_END_SIZE;
-    }
+    config_lock();
+    if (hardware_is_streaming()) {
+        if (m_rme_model == RME_MODEL_FIREFACE400) {
+            addr = RME_FF400_STREAM_END_REG;
+            size = RME_FF400_STREAM_END_SIZE;
+        } else {
+            addr = RME_FF800_STREAM_END_REG;
+            size = RME_FF800_STREAM_END_SIZE;
+        }
 
-    return writeBlock(addr, buf, size);
+        ret = writeBlock(addr, buf, size);
+        if (ret != 0) {
+            dev_config->is_streaming = 0;
+        }
+    } else
+        ret = -1;
+    config_unlock();
+
+    return ret;
 }
 
 signed int

@@ -24,6 +24,8 @@
 
 #warning RME support is at an early development stage and is not functional
 
+#include "config.h"
+
 #include "rme/rme_avdevice.h"
 #include "rme/fireface_def.h"
 #include "rme/fireface_settings_ctrls.h"
@@ -515,8 +517,16 @@ bool
 Device::prepare() {
 
     signed int mult, bandwidth;
+    signed int freq;
+    signed int err = 0;
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
+
+    freq = getSamplingFrequency();
+    if (freq <= 0) {
+        debugOutput(DEBUG_LEVEL_ERROR, "Can't continue: sampling frequency not set\n");
+        return false;
+    }
 
     // The number of frames transmitted in a single packet is solely
     // determined by the sample rate.
@@ -552,8 +562,9 @@ Device::prepare() {
     bandwidth = 25 + num_channels*4*frames_per_packet;
 
     // Both the FF400 and FF800 require we allocate a tx iso channel.  The
-    // rx channel is also allocated for the FF400 while the FF800 handles
-    // the rx channel allocation for that device.
+    // rx channel is also allocated for the FF400.  The FF800 chooses
+    // the rx channel to be used but does not handle the bus-level
+    // channel/bandwidth allocation/
     if (iso_tx_channel < 0) {
         iso_tx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
     }
@@ -569,16 +580,42 @@ Device::prepare() {
             iso_rx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
         }
     }
+  
+    if (iso_tx_channel>=0 && iso_rx_channel>=0) {
+        err = hardware_init_streaming(dev_config->hardware_freq, iso_tx_channel) != 0;
+        if (err) {
+            debugFatal("Could not intialise device streaming system\n");
+        }
+    } else {
+        err = 1;
+        debugFatal("Could not allocate iso channels\n");
+    }
 
-    if (iso_tx_channel<0 || iso_rx_channel<0) {
+    if (err) {
         if (iso_tx_channel >= 0) 
             get1394Service().freeIsoChannel(iso_tx_channel);
         if (iso_rx_channel >= 0)
             get1394Service().freeIsoChannel(iso_rx_channel);
-        debugFatal("Could not allocate iso channels\n");
         return false;
     }
 
+    // get the device specific and/or global SP configuration
+    Util::Configuration &config = getDeviceManager().getConfiguration();
+    // base value is the config.h value
+    float recv_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+    float xmit_sp_dll_bw = STREAMPROCESSOR_DLL_BW_HZ;
+
+    // we can override that globally
+    config.getValueForSetting("streaming.spm.recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForSetting("streaming.spm.xmit_sp_dll_bw", xmit_sp_dll_bw);
+
+    // or override in the device section
+    config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "recv_sp_dll_bw", recv_sp_dll_bw);
+    config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "xmit_sp_dll_bw", xmit_sp_dll_bw);
+
+    // Other things to be done:
+    //  * create a receive stream processor, set DLL bandwidth, add ports
+    //  * create a transmit stream processor, set DLL bandwidth, add ports
 
     return true;
 }
@@ -595,13 +632,26 @@ Device::getStreamProcessorByIndex(int i) {
 
 bool
 Device::startStreamByIndex(int i) {
-    return false;
+    // The RME does not allow separate enabling of the transmit and receive
+    // streams.  Therefore we start all streaming when index 0 is referenced
+    // and silently ignore the start requests for other streams
+    // (unconditionally flagging them as being successful).
+    if (i == 0) {
+        if (hardware_start_streaming(iso_rx_channel) != 0)
+            return false;
+    }
+    return true;
 }
 
 bool
 Device::stopStreamByIndex(int i) {
-    return false;
-
+    // See comments in startStreamByIndex() as to why we act only when stream
+    // 0 is requested.
+    if (i == 0) {
+        if (hardware_stop_streaming() != 0)
+            return false;
+    }
+    return true;
 }
 
 unsigned int 
