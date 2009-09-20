@@ -177,6 +177,10 @@ rme_source = env.Split( '\
 	rme/fireface_flash.cpp \
 	rme/fireface_hw.cpp \
 	rme/fireface_settings_ctrls.cpp \
+	libstreaming/rme/RmePort.cpp \
+	libstreaming/rme/RmePortInfo.cpp \
+	libstreaming/rme/RmeReceiveStreamProcessor.cpp \
+	libstreaming/rme/RmeTransmitStreamProcessor.cpp \
 ' )
 
 amdtp_source = env.Split( '\
