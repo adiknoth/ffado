@@ -56,7 +56,7 @@ public:
      * @param dimension number of substreams in the ISO stream
      *                  (midi-muxed is only one stream)
      */
-    RmeReceiveStreamProcessor(FFADODevice &parent, unsigned int event_size);
+    RmeReceiveStreamProcessor(FFADODevice &parent, unsigned int model, unsigned int event_size);
     virtual ~RmeReceiveStreamProcessor() {};
 
     enum eChildReturnValue processPacketHeader(unsigned char *data, unsigned int length,
@@ -83,6 +83,7 @@ private:
     int decodeRmeEventsToPort(RmeAudioPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
     int decodeRmeMidiEventsToPort(RmeMidiPort *, quadlet_t *data, unsigned int offset, unsigned int nevents);
 
+    unsigned int m_rme_model;
     /*
      * An iso packet mostly consists of multiple events.  m_event_size
      * is the size of a single 'event' in bytes.

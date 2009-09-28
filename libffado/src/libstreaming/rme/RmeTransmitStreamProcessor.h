@@ -54,7 +54,8 @@ public:
     /**
      * Create a RME transmit StreamProcessor
      */
-    RmeTransmitStreamProcessor(FFADODevice &parent, unsigned int event_size);
+    RmeTransmitStreamProcessor(FFADODevice &parent, 
+                               unsigned int model, unsigned int event_size);
     virtual ~RmeTransmitStreamProcessor() {};
 
     enum eChildReturnValue generatePacketHeader(unsigned char *data, unsigned int *length,
@@ -104,6 +105,8 @@ private:
     int encodeSilencePortToRmeMidiEvents(
                        RmeMidiPort *p, quadlet_t *data,
                        unsigned int offset, unsigned int nevents);
+
+    unsigned int m_rme_model;
 
     /*
      * An iso packet mostly consists of multiple events.  m_event_size

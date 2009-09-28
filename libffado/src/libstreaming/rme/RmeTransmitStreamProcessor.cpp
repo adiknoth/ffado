@@ -43,6 +43,10 @@
 
 #include "libutil/ByteSwap.h"
 
+// This is to pick up the RME_MODEL_* constants.  There's probably a better
+// way ...
+#include "../../rme/rme_avdevice.h"
+
 #include <cstring>
 #include <assert.h>
 
@@ -66,8 +70,10 @@ namespace Streaming
 #define get_bits(_d,_start,_len) (((_d)>>((_start)-(_len)+1)) & ((1<<(_len))-1))
 
 /* transmit */
-RmeTransmitStreamProcessor::RmeTransmitStreamProcessor(FFADODevice &parent, unsigned int event_size )
+RmeTransmitStreamProcessor::RmeTransmitStreamProcessor(FFADODevice &parent, 
+  unsigned int model, unsigned int event_size )
         : StreamProcessor(parent, ePT_Transmit )
+        , m_rme_model( model)
         , m_event_size( event_size )
         , m_tx_dbc( 0 )
         , mb_head( 0 )

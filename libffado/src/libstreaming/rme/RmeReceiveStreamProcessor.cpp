@@ -41,6 +41,10 @@
 
 #include "libutil/ByteSwap.h"
 
+// This is to pick up the RME_MODEL_* constants.  There's probably a better
+// way ...
+#include "../../rme/rme_avdevice.h"
+
 #include <cstring>
 #include <math.h>
 #include <assert.h>
@@ -55,8 +59,10 @@ namespace Streaming {
 // A macro to extract specific bits from a native endian quadlet
 #define get_bits(_d,_start,_len) (((_d)>>((_start)-(_len)+1)) & ((1<<(_len))-1))
 
-RmeReceiveStreamProcessor::RmeReceiveStreamProcessor(FFADODevice &parent, unsigned int event_size)
+RmeReceiveStreamProcessor::RmeReceiveStreamProcessor(FFADODevice &parent, 
+  unsigned int model, unsigned int event_size)
     : StreamProcessor(parent, ePT_Receive)
+    , m_rme_model( model )
     , m_event_size( event_size )
     , mb_head ( 0 )
     , mb_tail ( 0 )
@@ -66,13 +72,16 @@ RmeReceiveStreamProcessor::RmeReceiveStreamProcessor(FFADODevice &parent, unsign
 unsigned int
 RmeReceiveStreamProcessor::getMaxPacketSize() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
-    return framerate<=48000?616:(framerate<=96000?1032:1160);
+    if (m_rme_model == Rme::RME_MODEL_FIREFACE800)
+        return 8 + (framerate<=48000?784:(framerate<=96000?1200:1200));
+    else
+        return 8 + (framerate<=48000?504:(framerate<=96000?840:1000));
 }
 
 unsigned int
 RmeReceiveStreamProcessor::getNominalFramesPerPacket() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
-    return framerate<=48000?8:(framerate<=96000?16:32);
+    return framerate<=48000?7:(framerate<=96000?15:25);
 }
 
 bool
