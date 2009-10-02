@@ -425,12 +425,14 @@ if env['DIST_TARGET'] == 'auto':
         env['DIST_TARGET'] = 'x86_64'
     elif re.search("i[0-5]86", config[config_cpu]) != None:
         env['DIST_TARGET'] = 'i386'
+    elif re.search("i686", config[config_cpu]) != None:
+        env['DIST_TARGET'] = 'i686'
     elif re.search("powerpc64", config[config_cpu]) != None:
         env['DIST_TARGET'] = 'powerpc64'
     elif re.search("powerpc", config[config_cpu]) != None:
         env['DIST_TARGET'] = 'powerpc'
     else:
-        env['DIST_TARGET'] = 'i686'
+        env['DIST_TARGET'] = config[config_cpu]
     print "Detected DIST_TARGET = " + env['DIST_TARGET']
 
 if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64", config[config_cpu]) != None) or (re.search ("powerpc", config[config_cpu]) != None)):
