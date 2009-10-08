@@ -186,7 +186,7 @@ class CrossbarRouter(QtGui.QWidget):
 
         btn = QtGui.QPushButton("Switch VU", self)
         btn.setCheckable(True)
-        btn.setChecked(True)
+        #btn.setChecked(True)
         self.connect(btn, QtCore.SIGNAL("toggled(bool)"), self.runVu)
         self.toplayout.addWidget(btn)
 
@@ -202,7 +202,7 @@ class CrossbarRouter(QtGui.QWidget):
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(200)
         self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.updateLevels)
-        self.runVu(True)
+        #self.runVu(True)
 
     def runVu(self, run=True):
         if run:
@@ -213,11 +213,13 @@ class CrossbarRouter(QtGui.QWidget):
                 self.switchers[sw].peakValue(0)
 
     def updateLevels(self):
-        #print "CrossbarRouter.updateLevels()"
+        #log.debug("CrossbarRouter.updateLevels()")
         peakvalues = self.interface.getPeakValues()
-        #print "Got %i peaks" % len(peakvalues)
+        #log.debug("Got %i peaks" % len(peakvalues))
         for peak in peakvalues:
-            self.switchers[peak[0]].peakValue(peak[1])
+            #log.debug("peak = [%s,%s]" % (str(peak[0]),str(peak[1])))
+            if peak[0] >= 0:
+                self.switchers[peak[0]].peakValue(peak[1])
 
 #
 # vim: sw=4 ts=4 et
