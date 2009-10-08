@@ -218,6 +218,8 @@ if not env.GetOption('clean'):
 		env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, pkgs[pkg] )
 		if env['%s_FLAGS'%name2] == 0:
 			allpresent &= 0
+		else:
+			env.MergeFlags( env['%s_FLAGS'%name2] )
 
 	if not allpresent:
 		print """
