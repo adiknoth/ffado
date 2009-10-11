@@ -19,7 +19,9 @@
 #
 
 from PyQt4 import QtGui, QtCore, Qt
-import dbus
+import dbus, numpy
+
+from ffado.widgets.ntompanner import N2MPanner
 
 import logging
 log = logging.getLogger("matrixmixer")
@@ -36,14 +38,6 @@ class MixerNode(QtGui.QFrame):
         self.inputs = []
         self.outputs = []
 
-        self.inputbalance = QtGui.QSlider(Qt.Qt.Horizontal, self)
-        self.inputbalance.setRange(-100, 100)
-        self.connect(self.inputbalance, QtCore.SIGNAL("valueChanged(int)"), self.valuesChanged)
-
-        self.outputbalance = QtGui.QSlider(Qt.Qt.Horizontal, self)
-        self.outputbalance.setRange(-100, 100)
-        self.connect(self.outputbalance, QtCore.SIGNAL("valueChanged(int)"), self.valuesChanged)
-
         self.fader = QtGui.QDial(self)
         self.fader.setRange(0,pow(2,16)-1)
         self.connect(self.fader, QtCore.SIGNAL("valueChanged(int)"), self.valuesChanged)
@@ -51,51 +45,29 @@ class MixerNode(QtGui.QFrame):
         self.layout = QtGui.QGridLayout(self)
         self.setLayout(self.layout)
 
-        self.layout.addWidget(self.inputbalance, 0, 0)
-        self.layout.addWidget(self.fader, 1, 0)
-        self.layout.addWidget(self.outputbalance, 2, 0)
+        self.layout.addWidget(self.fader, 0, 0)
 
         self.addInputs(inputs)
         self.addOutputs(outputs)
 
     def valuesChanged(self):
+        #log.debug("MixerNode.valuesChanged")
         fader = self.fader.value()
-        values = []
-        while len(values) < len(self.inputs):
-            tmp = []
-            while len(tmp) < len(self.outputs):
-                tmp.append(fader)
-            values.append(tmp)
-        if len(self.inputs) == len(self.outputs):
-            for i in range(len(self.inputs)):
-                for j in range(len(self.outputs)):
-                    values[i][j] *= (i==j)
-        if len(self.outputs) == 2:
-            v = self.outputbalance.value() / 100.0
-            left = 1.0
-            right = 1.0
-            if v > 0:
-                left = 1.0 - v
-            if v < 0:
-                right = 1.0 + v
-            for row in values:
-                row[0] *= left
-                row[1] *= right
-        if len(self.inputs) == 2:
-            v = self.inputbalance.value() / 100.0
-            left = 1.0
-            right = 1.0
-            if v > 0:
-                left = 1.0 - v
-            if v < 0:
-                right = 1.0 + v
-            for i in range(len(self.outputs)):
-                values[0][i] *= left
-                values[1][i] *= right
+        values = numpy.ones((1, len(self.inputs)))
+        if len(self.outputs) > 1:
+            values = self.panner.values
+            if values.size == 0:
+                return
+            values = numpy.minimum(values, 2)
+            values = 1 - numpy.power(values/2, 2)
+        #print values
+        #print numpy.exp(-values)
+        values = values * fader
+        #print values
         ret = []
         for i in range(len(self.inputs)):
             for j in range(len(self.outputs)):
-                ret.append( (self.inputs[i], self.outputs[j], values[i][j]) )
+                ret.append( (self.inputs[i], self.outputs[j], values[i,j]) )
         #print ret
         self.emit(QtCore.SIGNAL("valueChanged"), ret)
 
@@ -124,14 +96,14 @@ class MixerNode(QtGui.QFrame):
         self.addOutputs(outputs, False)
 
     def checkWidgets(self):
-        if len(self.inputs)>1:
-            self.inputbalance.show()
-        else:
-            self.inputbalance.hide()
-        if len(self.outputs)>1:
-            self.outputbalance.show()
-        else:
-            self.outputbalance.hide()
+        if not hasattr(self, "panner") and len(self.outputs)>1:
+            self.panner = N2MPanner(self)
+            self.layout.addWidget(self.panner, 1, 0)
+            self.connect(self.panner, QtCore.SIGNAL("valuesChanged"), self.valuesChanged)
+        if hasattr(self, "panner"):
+            self.panner.setVisible(len(self.outputs)>1)
+            self.panner.setNumberOfSources(len(self.inputs))
+            self.panner.setNumberOfSinks(len(self.outputs))
         if len(self.inputs) and len(self.outputs):
             valuematrix = []
             for row in self.outputs:
@@ -275,7 +247,7 @@ class MatrixMixer(QtGui.QWidget):
         self.checkVisibilities()
 
     def valueChanged(self, n):
-        log.debug("MatrixNode.valueChanged( %s )" % str(n))
+        #log.debug("MatrixNode.valueChanged( %s )" % str(n))
         for tmp in n:
             self.interface.setValue(tmp[1], tmp[0], tmp[2])
 
