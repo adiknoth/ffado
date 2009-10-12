@@ -172,6 +172,13 @@ device_definitions = (
     xmit_max_cycles_early_transmit = 4;
 },
 {
+    vendorid    = 0x000d6c;
+    modelid     = 0x00000011;
+    vendorname  = "M-Audio";
+    modelname   = "ProFire 610";
+    driver      = 20;
+},
+{
     vendorid    = 0x000aac;
     modelid     = 0x00000002;
     vendorname  = "Acoustic Reality";
