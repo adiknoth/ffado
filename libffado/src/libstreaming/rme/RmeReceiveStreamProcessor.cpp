@@ -96,15 +96,9 @@ RmeReceiveStreamProcessor::prepareChild() {
 }
 
 
-/**
- * Processes packet header to extract timestamps and check if the packet is valid
- * @param data 
- * @param length 
- * @param channel 
- * @param tag 
- * @param sy 
- * @param cycle 
- * @return 
+/*
+ * Processes packet header to extract timestamps and check if the packet is 
+ * valid.
  */
 enum StreamProcessor::eChildReturnValue
 RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int length, 
@@ -112,32 +106,26 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
                                                 uint32_t pkt_ctr)
 {
     if (length > 8) {
-        // The iso data blocks from the RMEs comprise a CIP-like
-        // header followed by a number of events (8 for 1x rates, 16
-        // for 2x rates, 32 for 4x rates).
-        quadlet_t *quadlet = (quadlet_t *)data;
-        unsigned int dbs = get_bits(CondSwapFromBus32(quadlet[0]), 23, 8);  // Size of one event in terms of fdf_size
-        unsigned int fdf_size = get_bits(CondSwapFromBus32(quadlet[1]), 23, 8) == 0x22 ? 32:0; // Event unit size in bits
+        // The iso data blocks from the RMEs comprise 24-bit audio
+        // data encoded in 32-bit integers.  The LSB of the 32-bit integers
+        // of certain channels are used for house-keeping information.
+        // The number of samples for each channel present in a packet
+        // varies: 7 for 1x rates, 15 for 2x rates and 25 for 4x rates.
+        // quadlet_t *quadlet = (quadlet_t *)data;
 
         // Don't even attempt to process a packet if it isn't what we expect
-        // from a RME.  Yes, an FDF value of 32 bears little relationship
-        // to the actual data (24 bit integer) sent by the RME - it's one
-        // of those areas where RME have taken a curious detour around the
-        // standards.  Do this check early on because for invalid packets
-        // dbs may not be what we expect, potentially causing issues later
-        // on.
-        if (tag!=1 || fdf_size!=32 || dbs==0) {
+        // from an RME.  For now the only condition seems to be a tag of 0.
+        // This will be fleshed out in due course.
+        if (tag!=1) {
             return eCRV_Invalid;
         }
 
-        // m_event_size is the event size in bytes
-//        unsigned int n_events = (length-8) / m_event_size;
-
-        // Acquire the timestamp of the last frame in the packet just
-        // received.  Since every frame from the RME has its own timestamp
-        // we can just pick it straight from the packet.
-//        uint32_t last_sph = CondSwapFromBus32(*(quadlet_t *)(data+8+(n_events-1)*m_event_size));
-//        m_last_timestamp = sphRecvToFullTicks(last_sph, m_Parent.get1394Service().getCycleTimer());
+        // Timestamps are not transmitted explicitly by the RME interfaces
+        // so we'll have to fake it somehow in order to fit in with the
+        // rest of the FFADO infrastructure.  For now just take the current
+        // value of the cycle timer as the "last timestamp".  In practice 
+        // there a fixed offset that we'll have to include eventually.
+        m_last_timestamp = CYCLE_TIMER_TO_TICKS(m_Parent.get1394Service().getCycleTimer());
 
         return eCRV_OK;
     } else {
@@ -175,7 +163,7 @@ RmeReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int l
     }
     #endif
 
-    if(m_data_buffer->writeFrames(n_events, (char *)(data+8), m_last_timestamp)) {
+    if(m_data_buffer->writeFrames(n_events, (char *)data, m_last_timestamp)) {
         return eCRV_OK;
     } else {
         return eCRV_XRun;
@@ -228,10 +216,10 @@ signed int RmeReceiveStreamProcessor::decodeRmeEventsToPort(RmeAudioPort *p,
     unsigned int j=0;
 
     // Use char here since a port's source address won't necessarily be
-    // aligned; use of an unaligned quadlet_t may cause issues on
-    // certain architectures.  Besides, the source (data coming directly
-    // from the RME) isn't structured in quadlets anyway; it mainly
-    // consists of packed 24-bit integers.
+    // aligned; use of an unaligned quadlet_t may cause issues on certain
+    // architectures.  Besides, the source (data coming directly from the
+    // RME) isn't structured in quadlets anyway; it consists 24-bit integers
+    // within 32-bit quadlets with the LSB being a housekeeping byte.
 
     unsigned char *src_data;
     src_data = (unsigned char *)data + p->getPosition();

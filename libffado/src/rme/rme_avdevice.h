@@ -33,7 +33,8 @@
 #include "libutil/Configuration.h"
 
 #include "fireface_def.h"
-// #include "libstreaming/rme/RmeStreamProcessor.h"
+#include "libstreaming/rme/RmeReceiveStreamProcessor.h"
+#include "libstreaming/rme/RmeTransmitStreamProcessor.h"
 
 #include "rme_shm.h"
 
@@ -126,6 +127,9 @@ protected:
     signed int speed800;
 
     signed int iso_tx_channel, iso_rx_channel;
+
+    Streaming::RmeReceiveStreamProcessor *m_receiveProcessor;
+    Streaming::RmeTransmitStreamProcessor *m_transmitProcessor;
 
 private:
     unsigned long long int cmd_buffer_addr();

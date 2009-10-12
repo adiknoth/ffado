@@ -88,6 +88,8 @@ Device::Device( DeviceManager& d,
     , speed800( 0 )
     , iso_tx_channel( -1 )
     , iso_rx_channel( -1 )
+    , m_receiveProcessor( NULL )
+    , m_transmitProcessor( NULL )
     , m_MixerContainer( NULL )
     , m_ControlContainer( NULL )
 {
@@ -613,8 +615,31 @@ Device::prepare() {
     config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "recv_sp_dll_bw", recv_sp_dll_bw);
     config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "xmit_sp_dll_bw", xmit_sp_dll_bw);
 
+    // Set up receive stream processor, initialise it and set DLL bw
+    // TODO: set event_size properly; the value below is just a placeholder.
+    signed int event_size = 0x150;
+    #warning event_size needs setting up
+    m_receiveProcessor = new Streaming::RmeReceiveStreamProcessor(*this, 
+      m_rme_model, event_size);
+    m_receiveProcessor->setVerboseLevel(getDebugLevel());
+    if (!m_receiveProcessor) {
+        debugFatal("Could not initialize receive processor!\n");
+        return false;
+    }
+    if (!m_receiveProcessor->setDllBandwidth(recv_sp_dll_bw)) {
+        debugFatal("Could not set DLL bandwidth\n");
+        delete m_receiveProcessor;
+        m_receiveProcessor = NULL;
+        return false;
+    }
+
+    // Add ports to the processor - TODO
+    std::string id=std::string("dev?");
+    if (!getOption("id", id)) {
+        debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
+    }
+
     // Other things to be done:
-    //  * create a receive stream processor, set DLL bandwidth, add ports
     //  * create a transmit stream processor, set DLL bandwidth, add ports
 
     return true;
