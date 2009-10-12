@@ -45,14 +45,13 @@ def get_kernel_rt_patched():
     return False
 
 # modules
-def check_for_module_loaded(modulename):
-    log.info("Checking if module '%s' is loaded... " % modulename)
-    f = open('/proc/modules')
+def check_for_module_loaded(modulename, procfile):
+    log.info("Checking if module '%s' is present in %s... " % (modulename, procfile))
+    f = open(procfile)
     lines = f.readlines()
     f.close()
     for l in lines:
-        mod = l.split()[0]
-        if mod == modulename or mod == modulename.replace('-', '_'):
+        if l.find(modulename) > -1 or l.find(modulename.replace('-', '_')) > -1:
             log.info(" found")
             return True
     log.info(" not found")
@@ -71,40 +70,45 @@ def check_for_module_present(modulename):
         log.info(" found")
         return True
 
+def check_1394oldstack_active():
+    return check_for_module_loaded('ohci1394', '/proc/interrupts')
+
+def check_1394oldstack_linked():
+    return os.access('/sys/module/ohci1394', os.F_OK) and \
+           os.access('/sys/module/raw1394',  os.F_OK)
+
 def check_1394oldstack_loaded():
     retval = True
-    if not check_for_module_loaded('ieee1394'):
-        retval = False
-    if not check_for_module_loaded('ohci1394'):
-        retval = False
-    if not check_for_module_loaded('raw1394'):
-        retval = False
+    for modulename in ('ieee1394', 'ohci1394', 'raw1394'):
+        if not check_for_module_loaded(modulename, '/proc/modules'):
+            retval = False
     return retval
 
 def check_1394oldstack_present():
     retval = True
-    if not check_for_module_present('ieee1394'):
-        retval = False
-    if not check_for_module_present('ohci1394'):
-        retval = False
-    if not check_for_module_present('raw1394'):
-        retval = False
+    for modulename in ('ieee1394', 'ohci1394', 'raw1394'):
+        if not check_for_module_present(modulename):
+            retval = False
     return retval
+
+def check_1394newstack_active():
+    return check_for_module_loaded('firewire_ohci', '/proc/interrupts')
+
+def check_1394newstack_linked():
+    return os.access('/sys/module/firewire_ohci', os.F_OK)
 
 def check_1394newstack_loaded():
     retval = True
-    if not check_for_module_loaded('firewire-core'):
-        retval = False
-    if not check_for_module_loaded('firewire-ohci'):
-        retval = False
+    for modulename in ('firewire_core', 'firewire_ohci'):
+        if not check_for_module_loaded(modulename, '/proc/modules'):
+            retval = False
     return retval
 
 def check_1394newstack_present():
     retval = True
-    if not check_for_module_present('firewire-core'):
-        retval = False
-    if not check_for_module_present('firewire-ohci'):
-        retval = False
+    for modulename in ('firewire-core', 'firewire-ohci'):
+        if not check_for_module_present(modulename):
+            retval = False
     return retval
 
 def check_1394oldstack_devnode_present():
