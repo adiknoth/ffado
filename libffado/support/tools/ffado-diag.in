@@ -77,13 +77,19 @@ if __name__== '__main__':
     # check modules
     oldstack_present = check_1394oldstack_present()
     oldstack_loaded = check_1394oldstack_loaded()
+    oldstack_active = check_1394oldstack_active()
+    oldstack_statically_linked = not check_1394oldstack_loaded() and check_1394oldstack_linked()
     newstack_present = check_1394newstack_present()
     newstack_loaded = check_1394newstack_loaded()
+    newstack_active = check_1394newstack_active()
+    newstack_statically_linked = not check_1394newstack_loaded() and check_1394newstack_linked()
     
     print "  old 1394 stack present.... " + str(oldstack_present)
     print "  old 1394 stack loaded..... " + str(oldstack_loaded)
+    print "  old 1394 stack active..... " + str(oldstack_active)
     print "  new 1394 stack present.... " + str(newstack_present)
     print "  new 1394 stack loaded..... " + str(newstack_loaded)
+    print "  new 1394 stack active..... " + str(newstack_active)
     
     # check /dev/raw1394 node presence
     devnode_present = check_1394oldstack_devnode_present()
@@ -147,22 +153,23 @@ if __name__== '__main__':
     
     # do the interpretation of the tests
     print "FireWire kernel drivers:"
-    ## FIXME: what about in-kernel firewire? (i.e. no modules)
-    if not oldstack_present:
+    if (oldstack_loaded or oldstack_statically_linked) and \
+       (newstack_loaded or newstack_statically_linked):
+        help.show('MODULES_BOTH_STACKS_LOADED')
+        sys.exit(-1)
+    elif newstack_loaded or newstack_statically_linked:
+        help.show('MODULES_NEW_STACK_LOADED')
+        sys.exit(-1)
+    elif oldstack_statically_linked:
+        print "[PASS] Kernel drivers statically linked into the kernel."
+    elif not oldstack_present:
         help.show('MODULES_OLD_STACK_NOT_INSTALLED')
         sys.exit(-1)
+    elif not oldstack_loaded:
+        help.show('MODULES_OLD_STACK_NOT_LOADED')
+        sys.exit(-1)
     else:
-        if newstack_loaded and oldstack_loaded:
-            help.show('MODULES_BOTH_STACKS_LOADED')
-            sys.exit(-1)
-        elif newstack_loaded:
-            help.show('MODULES_NEW_STACK_LOADED')
-            sys.exit(-1)
-        elif not oldstack_loaded:
-            help.show('MODULES_OLD_STACK_NOT_LOADED')
-            sys.exit(-1)
-        else:
-            print "[PASS] Kernel modules present and correctly loaded."
+        print "[PASS] Kernel modules present and correctly loaded."
 
     if not devnode_present:
         help.show('DEVNODE_OLD_STACK_NOT_PRESENT')
