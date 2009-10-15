@@ -105,6 +105,9 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
                                                 unsigned char tag, unsigned char sy,
                                                 uint32_t pkt_ctr)
 {
+// For testing
+debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header\n");
+
     if (length > 8) {
         // The iso data blocks from the RMEs comprise 24-bit audio
         // data encoded in 32-bit integers.  The LSB of the 32-bit integers
@@ -162,6 +165,9 @@ RmeReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int l
             m_last_timestamp, getTicksPerFrame());
     }
     #endif
+
+// For testing
+debugOutput(DEBUG_LEVEL_VERBOSE, "data packet data\n");
 
     if(m_data_buffer->writeFrames(n_events, (char *)data, m_last_timestamp)) {
         return eCRV_OK;

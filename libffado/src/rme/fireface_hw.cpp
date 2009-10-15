@@ -647,9 +647,12 @@ Device::hardware_init_streaming(unsigned int sample_rate,
     unsigned int tx_channel)
 {
     // tx_channel is the ISO channel the PC will transmit on.
-    quadlet_t buf[4];
+    quadlet_t buf[5];
     fb_nodeaddr_t addr;
     unsigned int size;
+
+debugOutput(DEBUG_LEVEL_VERBOSE, "*** stream init: %d, %d, %d\n",
+  sample_rate, num_channels, tx_channel);
 
     buf[0] = sample_rate;
     buf[1] = (num_channels << 11) + tx_channel;
@@ -682,6 +685,7 @@ Device::hardware_start_streaming(unsigned int listen_channel)
 
     config_lock();
     if (not(hardware_is_streaming())) {
+debugOutput(DEBUG_LEVEL_VERBOSE,"*** starting: listen=%d, num_ch=%d\n", listen_channel, num_channels);
         if (m_rme_model == RME_MODEL_FIREFACE400) {
             addr = RME_FF400_STREAM_START_REG;
             data |= (listen_channel << 5);
@@ -692,7 +696,7 @@ Device::hardware_start_streaming(unsigned int listen_channel)
         }
 
         ret = writeRegister(addr, data);
-        if (ret != 0) {
+        if (ret == 0) {
             dev_config->is_streaming = 1;
         }
     } else
@@ -720,7 +724,7 @@ Device::hardware_stop_streaming(void)
         }
 
         ret = writeBlock(addr, buf, size);
-        if (ret != 0) {
+        if (ret == 0) {
             dev_config->is_streaming = 0;
         }
     } else

@@ -566,7 +566,7 @@ Device::prepare() {
     // Both the FF400 and FF800 require we allocate a tx iso channel.  The
     // rx channel is also allocated for the FF400.  The FF800 chooses
     // the rx channel to be used but does not handle the bus-level
-    // channel/bandwidth allocation/
+    // channel/bandwidth allocation.
     if (iso_tx_channel < 0) {
         iso_tx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
     }
@@ -622,7 +622,7 @@ Device::prepare() {
     m_receiveProcessor = new Streaming::RmeReceiveStreamProcessor(*this, 
       m_rme_model, event_size);
     m_receiveProcessor->setVerboseLevel(getDebugLevel());
-    if (!m_receiveProcessor) {
+    if (!m_receiveProcessor->init()) {
         debugFatal("Could not initialize receive processor!\n");
         return false;
     }
@@ -632,6 +632,7 @@ Device::prepare() {
         m_receiveProcessor = NULL;
         return false;
     }
+
 
     // Add ports to the processor - TODO
     std::string id=std::string("dev?");
@@ -647,11 +648,20 @@ Device::prepare() {
 
 int
 Device::getStreamCount() {
- 	return 0; // one receive, one transmit
+// Only rx implemented at present
+ 	return 1; // one receive, one transmit
 }
 
 Streaming::StreamProcessor *
 Device::getStreamProcessorByIndex(int i) {
+    switch (i) {
+        case 0:
+            return m_receiveProcessor;
+        case 1:
+            return m_transmitProcessor;
+        default:
+            debugWarning("Invalid stream index %d\n", i);
+    }
     return NULL;
 }
 
@@ -662,6 +672,8 @@ Device::startStreamByIndex(int i) {
     // and silently ignore the start requests for other streams
     // (unconditionally flagging them as being successful).
     if (i == 0) {
+        m_receiveProcessor->setChannel(iso_rx_channel);
+        // m_transmitProcessor->setChannel(iso_tx_channel);
         if (hardware_start_streaming(iso_rx_channel) != 0)
             return false;
     }
