@@ -519,8 +519,9 @@ bool
 Device::prepare() {
 
     signed int mult, bandwidth;
-    signed int freq;
+    signed int freq, init_samplerate;
     signed int err = 0;
+    unsigned int stat[4];
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
 
@@ -532,7 +533,7 @@ Device::prepare() {
 
     // The number of frames transmitted in a single packet is solely
     // determined by the sample rate.
-    mult = multiplier_of_freq(getSamplingFrequency());
+    mult = multiplier_of_freq(freq);
     switch (mult) {
         case 2: frames_per_packet = 15; break;
         case 4: frames_per_packet = 25; break;
@@ -563,36 +564,53 @@ Device::prepare() {
     // channel of audio data is sent/received as a 32 bit integer.
     bandwidth = 25 + num_channels*4*frames_per_packet;
 
-    // Both the FF400 and FF800 require we allocate a tx iso channel.  The
-    // rx channel is also allocated for the FF400.  The FF800 chooses
-    // the rx channel to be used but does not handle the bus-level
-    // channel/bandwidth allocation.
+    // Both the FF400 and FF800 require we allocate a tx iso channel and
+    // then initialise the device.  Device status is then read at least once
+    // regardless of which interface is in use.  The rx channel is then
+    // allocated for the FF400 or acquired from the device in the case of
+    // the FF800.  Even though the FF800 chooses the rx channel it does not
+    // handle the bus-level channel/bandwidth allocation so we must do that 
+    // here.
     if (iso_tx_channel < 0) {
         iso_tx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
     }
+    if (iso_tx_channel < 0) {
+        debugFatal("Could not allocate iso tx channel\n");
+        return false;
+    }
 
-    if (iso_rx_channel < 0) {
-        if (m_rme_model == RME_MODEL_FIREFACE800) {
-            unsigned int stat[4];
-            get_hardware_streaming_status(stat, 4);
-            // CHECKME: does this work before streaming has been initialised?
-            iso_rx_channel = stat[2] & 63;
-            iso_rx_channel = get1394Service().allocateFixedIsoChannelGeneric(iso_rx_channel, bandwidth);
-        } else {
-            iso_rx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
+    err = hardware_init_streaming(dev_config->hardware_freq, iso_tx_channel) != 0;
+    if (err) {
+        debugFatal("Could not intialise device streaming system\n");
+    }
+
+    if (err == 0) {
+        signed int i;
+        for (i=0; i<100; i++) {
+            err = (get_hardware_streaming_status(stat, 4) != 0);
+            if (err) {
+                debugFatal("error reading status register\n");
+                break;
+            }
+            if (m_rme_model == RME_MODEL_FIREFACE400) {
+                iso_rx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
+                break;
+            }
+            // The Fireface-800 chooses its tx channel (our rx channel).
+            if (stat[2] == -1) {
+                // Device not ready; wait 5 ms and try again
+                usleep(5000);
+            } else {
+                iso_rx_channel = stat[2] & 63;
+                iso_rx_channel = get1394Service().allocateFixedIsoChannelGeneric(iso_rx_channel, bandwidth);
+            }
+        }
+        if (iso_rx_channel < 0) {
+            debugFatal("Could not allocate/determine iso rx channel\n");
+            err = 1;
         }
     }
   
-    if (iso_tx_channel>=0 && iso_rx_channel>=0) {
-        err = hardware_init_streaming(dev_config->hardware_freq, iso_tx_channel) != 0;
-        if (err) {
-            debugFatal("Could not intialise device streaming system\n");
-        }
-    } else {
-        err = 1;
-        debugFatal("Could not allocate iso channels\n");
-    }
-
     if (err) {
         if (iso_tx_channel >= 0) 
             get1394Service().freeIsoChannel(iso_tx_channel);
@@ -600,6 +618,17 @@ Device::prepare() {
             get1394Service().freeIsoChannel(iso_rx_channel);
         return false;
     }
+
+    if ((stat[1] & SR1_CLOCK_MODE_MASTER) ||
+        (stat[0] & SR0_AUTOSYNC_FREQ_MASK)==0 ||
+        (stat[0] & SR0_AUTOSYNC_SRC_MASK)==SR0_AUTOSYNC_SRC_NONE) {
+        init_samplerate = dev_config->hardware_freq;
+    } else {
+        init_samplerate = (stat[0] & SR0_STREAMING_FREQ_MASK) * 250;
+    }
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "sample rate on start: %d\n",
+        init_samplerate);
 
     // get the device specific and/or global SP configuration
     Util::Configuration &config = getDeviceManager().getConfiguration();
@@ -617,7 +646,7 @@ Device::prepare() {
 
     // Set up receive stream processor, initialise it and set DLL bw
     // TODO: set event_size properly; the value below is just a placeholder.
-    signed int event_size = 0x150;
+    signed int event_size = 0x1000;
     #warning event_size needs setting up
     m_receiveProcessor = new Streaming::RmeReceiveStreamProcessor(*this, 
       m_rme_model, event_size);
