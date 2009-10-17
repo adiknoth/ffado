@@ -66,9 +66,9 @@ for app in apps.keys():
     if app.find( "test" ) == -1:
         env.Install( "$bindir", app )
 
+servicefile = env.ScanReplace('org.ffado.Control.service.in')
 if env['dbus_service_dir'] and ( env.destdir or os.access( env['dbus_service_dir'], os.W_OK ) ):
     print "Will install the service-file"
-    servicefile = env.ScanReplace('org.ffado.Control.service.in')
     targetdir = env.destdir + env['dbus_service_dir']
     env.Alias( "install", env.Install( env.destdir + env['dbus_service_dir'], servicefile ) )
 
