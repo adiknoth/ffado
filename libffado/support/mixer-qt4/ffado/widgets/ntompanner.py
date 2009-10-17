@@ -78,6 +78,7 @@ class N2MPanner(QtGui.QFrame):
         QtCore.QTimer.singleShot(10, self.resizeEvent)
 
     def setNumberOfSinks(self, sinknr):
+        #print "N2MPanner.setNumberOfSinks( %i )" % sinknr
         while len(self.sinks) > sinknr:
             self.sinks[-1].setParentItem(None)
             del self.sinks[-1]
@@ -85,14 +86,16 @@ class N2MPanner(QtGui.QFrame):
             c = self.scene.addEllipse(circlerect, self.pen)
             c.setZValue(1)
             self.sinks.append(c)
+        #print "N2MPanner.setNumberOfSinks() new size %i" % len(self.sinks)
         for i in range(sinknr):
-            degree = 2*math.pi/sinknr
+            degree = 2*math.pi/sinknr * i
             self.sinks[i].setPos(math.cos(degree), math.sin(degree))
         self.update()
         self.values.resize((len(self.sources), len(self.sinks)))
         self.sourcePositionChanged(range(len(self.sources)))
 
     def setNumberOfSources(self, sourcenr):
+        #print "N2MPanner.setNumberOfSources( %i )" % sourcenr
         while len(self.sources) > sourcenr:
             self.sources[-1].setParentItem(None)
             del self.sources[-1]
@@ -100,6 +103,7 @@ class N2MPanner(QtGui.QFrame):
             s = PannerSource(len(self.sources), self)
             self.scene.addItem(s)
             self.sources.append(s)
+        #print "N2MPanner.setNumberOfSources() new size %i" % len(self.sources)
         self.values.resize((len(self.sources), len(self.sinks)))
         self.sourcePositionChanged(range(len(self.sources)))
 

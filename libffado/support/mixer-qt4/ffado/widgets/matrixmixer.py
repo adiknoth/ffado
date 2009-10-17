@@ -53,7 +53,7 @@ class MixerNode(QtGui.QFrame):
     def valuesChanged(self):
         #log.debug("MixerNode.valuesChanged")
         fader = self.fader.value()
-        values = numpy.ones((1, len(self.inputs)))
+        values = numpy.ones((len(self.inputs), 1))
         if len(self.outputs) > 1:
             values = self.panner.values
             if values.size == 0:
@@ -65,8 +65,12 @@ class MixerNode(QtGui.QFrame):
         values = values * fader
         #print values
         ret = []
+        #print "i will be in %s" % str(range(len(self.inputs)))
+        #print "j will be in %s" % str(range(len(self.outputs)))
+        #print "values.shape: %s" % str(values.shape)
         for i in range(len(self.inputs)):
             for j in range(len(self.outputs)):
+                #print "%i,%i : %s" % (i, j, str(values[i,j]))
                 ret.append( (self.inputs[i], self.outputs[j], values[i,j]) )
         #print ret
         self.emit(QtCore.SIGNAL("valueChanged"), ret)
