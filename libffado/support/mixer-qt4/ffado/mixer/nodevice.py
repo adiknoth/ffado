@@ -25,7 +25,7 @@
 from PyQt4.QtGui import QWidget
 from mixer_nodeviceui import Ui_NoDeviceMixerUI
 
-class NoDeviceMixer(QWidget, Ui_NoDeviceMixerUI):
+class NoDevice(QWidget, Ui_NoDeviceMixerUI):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
         self.setupUi(self)

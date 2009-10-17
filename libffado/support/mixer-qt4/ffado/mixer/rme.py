@@ -32,7 +32,7 @@ RME_MODEL_NONE      = 0x0000
 RME_MODEL_FF800     = 0x0001
 RME_MODEL_FF400     = 0x0002
 
-class RmeMixer(QWidget):
+class Rme(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
         uicLoad("ffado/mixer/rme", self)

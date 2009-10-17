@@ -27,7 +27,7 @@ from ffado.mixer.saffire_base import SaffireMixerBase
 import logging
 log = logging.getLogger('saffirepro')
 
-class SaffireProMixer(QWidget):
+class SaffirePro(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self, parent)
 

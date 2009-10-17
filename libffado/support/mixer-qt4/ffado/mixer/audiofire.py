@@ -38,7 +38,7 @@ class AfSettingsWidget(QWidget):
         QWidget.__init__(self,parent)
         uicLoad("ffado/mixer/audiofire_settings", self)
 
-class AudioFireMixer(QWidget):
+class AudioFire(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
         log.debug("Init AudioFire mixer window")

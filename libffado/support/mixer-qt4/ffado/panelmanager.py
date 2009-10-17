@@ -32,20 +32,6 @@ from ffado.registration import *
 
 from ffado.configuration import *
 
-from ffado.mixer.phase88 import *
-from ffado.mixer.phase24 import *
-from ffado.mixer.saffire import SaffireMixer
-from ffado.mixer.saffirepro import SaffireProMixer
-from ffado.mixer.saffire_dice import Saffire_Dice
-from ffado.mixer.audiofire import AudioFireMixer
-from ffado.mixer.bcoaudio5 import *
-from ffado.mixer.edirolfa66 import *
-from ffado.mixer.edirolfa101 import *
-from ffado.mixer.mackie_onyxmixer import *
-from ffado.mixer.quatafire import *
-from ffado.mixer.motu import *
-from ffado.mixer.rme import *
-from ffado.mixer.dummy import *
 from ffado.mixer.globalmixer import GlobalMixer
 
 import time
@@ -331,7 +317,10 @@ class PanelManager(QWidget):
             #
             if 'mixer' in dev and dev['mixer'] != None:
                 mixerapp = dev['mixer']
-                exec( "mixerwidget = "+mixerapp+"( w )" )
+                exec( """
+import ffado.mixer.%s
+mixerwidget = ffado.mixer.%s.%s( w )
+""" % (mixerapp.lower(), mixerapp.lower(), mixerapp) )
             else:
                 mixerwidget = DummyMixer( w )
                 mixerapp = modelName+" (Dummy)"

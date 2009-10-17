@@ -24,7 +24,7 @@ from PyQt4.QtCore import SIGNAL, SLOT, QObject
 from PyQt4.QtGui import QWidget
 from ffado.config import *
 
-class DummyMixer(QWidget):
+class Dummy(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
         uicLoad("ffado/mixer/dummy", self)

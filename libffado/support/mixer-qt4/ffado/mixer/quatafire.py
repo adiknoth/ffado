@@ -27,7 +27,7 @@ from ffado.config import *
 import logging
 log = logging.getLogger('quatafire')
 
-class QuataFireMixer(QWidget):
+class QuataFire(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
         uicLoad("ffado/mixer/quatafire", self)

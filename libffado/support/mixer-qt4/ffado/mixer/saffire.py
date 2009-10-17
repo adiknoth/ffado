@@ -49,7 +49,7 @@ log = logging.getLogger('saffire')
 #R2: HW INPUT ch 3/4
 #Fx: reverb/fx return
 
-class SaffireMixer(QWidget):
+class Saffire(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self, parent)
 

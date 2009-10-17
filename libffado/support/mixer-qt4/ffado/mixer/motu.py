@@ -37,7 +37,7 @@ MOTU_MODEL_8PRE     = 0x0004
 MOTU_MODEL_828MkI   = 0x0005
 MOTU_MODEL_896HD    = 0x0006
 
-class MotuMixer(QWidget):
+class Motu(QWidget):
     def __init__(self,parent = None):
         QWidget.__init__(self,parent)
         uicLoad("ffado/mixer/motu", self)
