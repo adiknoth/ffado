@@ -47,8 +47,8 @@ class Saffire_Dice(QtGui.QWidget):
         scrollarea.setWidget(self.router)
         self.tabs.addTab(scrollarea, "Routing")
 
-    #def getDisplayTitle(self):
-    #    return "Experimental EAP Mixer"
+    def getDisplayTitle(self):
+        return "Saffire PRO40/PRO24 Mixer"
 
 
 #
