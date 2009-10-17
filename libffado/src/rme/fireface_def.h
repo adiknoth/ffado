@@ -45,7 +45,8 @@
 #define RME_FF400_CMD_BUFFER    0x80100500
 #define RME_FF800_CMD_BUFFER    0xfc88f000
 
-/* Offsets for registers at fixed offsets from the device's command buffer address */
+// Offsets for registers at fixed offsets from the device's command buffer 
+// address 
 #define RME_FF_DDS_SRATE_OFS      (0*4)
 #define RME_FF_CONF1_OFS          (5*4)
 #define RME_FF_CONF2_OFS          (6*4)
@@ -57,21 +58,21 @@
 #define RME_FF400_CONF_REG          (RME_FF400_CMD_BUFFER + RME_FF_CONF1_OFS)
 #define RME_FF800_CONF_REG          (RME_FF800_CMD_BUFFER + RME_FF_CONF1_OFS)
 
-#define RME_FF400_STREAM_INIT_REG   (RME_FF400_CMD_BUFFER)           // 3 quadlets wide
-#define RME_FF400_STREAM_INIT_SIZE  3              // Size in quadlets
+#define RME_FF400_STREAM_INIT_REG   (RME_FF400_CMD_BUFFER)  // 5 quadlets wide
+#define RME_FF400_STREAM_INIT_SIZE  5                       // Size in quadlets
 #define RME_FF400_STREAM_SRATE      (RME_FF400_CMD_BUFFER)
 #define RME_FF400_STREAM_CONF0      (RME_FF400_CMD_BUFFER+4)
 #define RME_FF400_STREAM_CONF1      (RME_FF400_CMD_BUFFER+8)
-#define RME_FF800_STREAM_INIT_REG   0x20000001cLL                    // 3 quadlets wide
-#define RME_FF800_STREAM_INIT_SIZE  3              // Size in quadlets
+#define RME_FF800_STREAM_INIT_REG   0x20000001cLL           // 3 quadlets wide
+#define RME_FF800_STREAM_INIT_SIZE  3                       // Size in quadlets
 #define RME_FF800_STREAM_SRATE      0x20000001cLL
 #define RME_FF800_STREAM_CONF0      (0x20000001cLL+4)
 #define RME_FF800_STREAM_CONF1      (0x20000001cLL+8)
-#define RME_FF400_STREAM_START_REG  (RME_FF400_CMD_BUFFER + 0x001c)  // 1 quadlet
+#define RME_FF400_STREAM_START_REG  (RME_FF400_CMD_BUFFER + 0x000c)  // 1 quadlet
 #define RME_FF800_STREAM_START_REG  0x200000028LL                    // 1 quadlet
 #define RME_FF400_STREAM_END_REG    (RME_FF400_CMD_BUFFER + 0x0004)  // 4 quadlets wide
 #define RME_FF400_STREAM_END_SIZE   4              // Size in quadlets
-#define RME_FF800_STREAM_END_REG    0x200000034LL                    // 3 quadlets wide
+#define RME_FF800_STREAM_END_REG    0x200000034LL  // 3 quadlets wide
 #define RME_FF800_STREAM_END_SIZE   3              // Size in quadlets
 
 #define RME_FF800_HOST_LED_REG      0x200000324LL

@@ -73,6 +73,7 @@ Device::init_hardware(void)
         settings->input_level = FF_SWPARAM_ILEVEL_LOGAIN;
         settings->output_level = FF_SWPARAM_OLEVEL_HIGAIN;
         settings->phones_level = FF_SWPARAM_PHONESLEVEL_HIGAIN;
+        settings->limit_bandwidth = FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS;
 
         // Set amplifier gains
         if (m_rme_model == RME_MODEL_FIREFACE400) {
@@ -403,7 +404,7 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
                 CR2_DISABLE_LIMITER : 0;
 
 //This is just for testing - it's a known consistent configuration
-//data[0] = 0x00020811;      // Phantom off
+//data[0] = 0x00020810;      // Phantom off
 //data[0] = 0x00020811;      // Phantom on
 //data[1] = 0x0000031e;
 //data[2] = 0xc400101f;
@@ -414,7 +415,7 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
     if (writeBlock(conf_reg, data, 3) != 0)
         return -1;
 
-    return -0;
+    return 0;
 }
 
 signed int 
@@ -671,6 +672,13 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "*** stream init: %d, %d, %d\n",
         size = RME_FF800_STREAM_INIT_SIZE;
     }
 
+{signed int i;
+  printf("addr %016llx\n", addr);
+  for (i=0; i<5; i++)
+    printf("0x%08x ", buf[i]);
+  printf("\n");
+}
+
     return writeBlock(addr, buf, size);
 }
 
@@ -695,6 +703,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"*** starting: listen=%d, num_ch=%d\n", listen_c
                 data |= RME_FF800_STREAMING_SPEED_800; // Flag 800 Mbps speed
         }
 
+printf("start 0x%016llx data: %08x\n", addr, data);
         ret = writeRegister(addr, data);
         if (ret == 0) {
             dev_config->is_streaming = 1;

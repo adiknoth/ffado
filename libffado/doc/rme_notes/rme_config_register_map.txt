@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.17
+Version: 0.18
 Author: Jonathan Woithe
-Date: 13 August 2009
+Date: 17 October 2009
 
 
 Definitions
@@ -553,8 +553,9 @@ streaming.
 Device (streaming) initialisation register (FF800: 0x20000001c, FF400: CBA)
 
 This register comprises the 3 quadlets starting at address 0x20000001c on
-the FF800 and the CBA on the FF400.  The first quadlet contains the sample
-rate in Hz.  The second quadlet is mapped as follows:
+the FF800 and the 5 quadlets starting at the CBA on the FF400.  The first 
+quadlet contains the sample rate in Hz.  The second quadlet is mapped as 
+follows:
   bits 31-11 = number of audio channels
   bits 10-0  = iso tx channel (PC to interface)
 In all local tests with a FF800 the value of this quadlet was always equal
@@ -566,11 +567,12 @@ The third quadlet is mapped as follows.
 In local tests with a FF800 the value of this register was always 0x0000001c
 (28 channels, 400 Mbps firewire bus).
 
-After this register is configured, 4 quadlets are read starting from
-0x801c0000.  The numbers returned don't appear to bear any relationship to
-those written to this same location later on.
+The forth and fifth quadlets (used only by the FF400) are zero.
 
-Device (streaming) start register (FF800: 0x200000028, FF400: CBA+0x1c):
+After this register is configured, 4 quadlets are read starting from
+0x801c0000.  When read, these are the device status registers.
+
+Device (streaming) start register (FF800: 0x200000028, FF400: CBA+0x0c):
 
 The start of streaming differs between the FF400 and FF800 in more than just
 the address of the relevant register.  On the FF800 this register is mapped

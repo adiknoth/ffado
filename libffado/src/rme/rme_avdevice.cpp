@@ -552,10 +552,10 @@ Device::prepare() {
         num_channels = 8;
     if (settings->limit_bandwidth != FF_SWPARAM_BWLIMIT_ANALOG_ONLY)
         num_channels += 2;
-    if (settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_NO_ADAT2 ||
-        settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS)
-        num_channels += (mult==4?0:(mult==2?4:8));
     if (settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS)
+        num_channels += (mult==4?0:(mult==2?4:8));
+    if (m_rme_model==RME_MODEL_FIREFACE800 &&
+        settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS)
         num_channels += (mult==4?0:(mult==2?4:8));
 
     // Bandwidth is calculated here.  For the moment we assume the device 
@@ -592,12 +592,20 @@ Device::prepare() {
                 debugFatal("error reading status register\n");
                 break;
             }
+{
+signed int j;
+printf("init stat: ");
+for (j=0;j<4;j++){
+  printf("%08x ", stat[j]);
+}
+printf("\n");
+}
             if (m_rme_model == RME_MODEL_FIREFACE400) {
                 iso_rx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
                 break;
             }
             // The Fireface-800 chooses its tx channel (our rx channel).
-            if (stat[2] == -1) {
+            if (stat[2] == 0xffffffff) {
                 // Device not ready; wait 5 ms and try again
                 usleep(5000);
             } else {
