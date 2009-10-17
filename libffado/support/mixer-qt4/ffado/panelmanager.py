@@ -33,6 +33,7 @@ from ffado.registration import *
 from ffado.configuration import *
 
 from ffado.mixer.globalmixer import GlobalMixer
+from ffado.mixer.dummy import Dummy
 
 import time
 
@@ -322,7 +323,7 @@ import ffado.mixer.%s
 mixerwidget = ffado.mixer.%s.%s( w )
 """ % (mixerapp.lower(), mixerapp.lower(), mixerapp) )
             else:
-                mixerwidget = DummyMixer( w )
+                mixerwidget = Dummy( w )
                 mixerapp = modelName+" (Dummy)"
 
             #
