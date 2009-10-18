@@ -88,6 +88,8 @@
 
 #define RME_FF400_GAIN_REG           0x801c0180
 
+#define RME_FF400_MIDI_HIGH_ADDR     0x801003f4
+
 /* Addresses of various blocks in memory-mapped flash */
 #define RME_FF400_FLASH_SETTINGS_ADDR       0x00060000
 #define RME_FF400_FLASH_MIXER_VOLUME_ADDR   0x00070000

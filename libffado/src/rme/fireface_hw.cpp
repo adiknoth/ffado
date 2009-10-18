@@ -23,6 +23,9 @@
 
 /* This file implements miscellaneous lower-level hardware functions for the Fireface */
 
+#include "libieee1394/configrom.h"
+#include "libieee1394/ieee1394service.h"
+
 #include "rme/rme_avdevice.h"
 #include "rme/fireface_def.h"
 
@@ -102,6 +105,24 @@ Device::init_hardware(void)
             write_tco_settings(tco_settings);
         }
         dev_config->tco_settings_valid = 1;
+    }
+
+    if (ret==0 && m_rme_model==RME_MODEL_FIREFACE400) {
+        unsigned int node_id = getConfigRom().getNodeId();
+        unsigned int midi_hi_addr;
+        // For now we'll fix this since that's what's done under other
+        // systems.
+        midi_hi_addr = 0x01;
+        if (writeRegister(RME_FF400_MIDI_HIGH_ADDR, (node_id<<16) | midi_hi_addr) != 0)
+            ret = -1;
+    }
+
+    if (ret==0) {
+        signed freq = dev_config->software_freq;
+        if (dev_config->dds_freq > 0)
+            freq = dev_config->dds_freq;
+        if (set_hardware_dds_freq(freq) != 0)
+            ret = -1;
     }
 
     config_unlock();
