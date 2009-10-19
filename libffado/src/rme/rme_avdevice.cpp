@@ -766,6 +766,8 @@ Device::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
         err = 1;
         debugError("Error doing RME write to register 0x%06x\n",reg);
     }
+
+printf("writeRegister: %016llx = %08x\n", reg, data);
     return (err==0)?0:-1;
 }
 
@@ -787,6 +789,8 @@ Device::writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads) {
         debugError("Error doing RME block write of %d quadlets to register 0x%06x\n",
           n_quads, reg);
     }
+
+printf("writeBlock: %016llx, size=%d (%d)\n", reg, n_quads, n_quads*4);
     return (err==0)?0:-1;
 }
                   

@@ -23,6 +23,8 @@
 
 /* This file implements miscellaneous lower-level hardware functions for the Fireface */
 
+#include <math.h>
+
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
 
@@ -57,6 +59,9 @@ signed int
 Device::init_hardware(void)
 {
     signed int ret = 0;
+    signed int src, dest;
+    signed int n_channels = (m_rme_model==RME_MODEL_FIREFACE400)?
+                   RME_FF400_MAX_CHANNELS:RME_FF800_MAX_CHANNELS;
 
     // Initialises the device's settings structure to a known state and then
     // sets the hardware to reflect this state.
@@ -78,24 +83,67 @@ Device::init_hardware(void)
         settings->phones_level = FF_SWPARAM_PHONESLEVEL_HIGAIN;
         settings->limit_bandwidth = FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS;
 
-        // Set amplifier gains
+        // A default sampling rate.  An explicit DDS frequency is not enabled
+        // by default.
+        dev_config->software_freq = 44100;
+        dev_config->dds_freq = 0;
+
+        // TODO: set input amplifier gains to a value other than 0?
+
+        // TODO: store and set matrix mixer values
+        // TODO: store and manipulate channel mute/rec flags
+
+        // Configure the hardware to match the current software status. 
+        // This is only done if the settings valid flag is 0; if it is 1 it
+        // indicates that something has already set the device up to match
+        // the software settings so there's no need to do it again.
+
+        if (set_hardware_params(settings) != 0)
+            ret = -1;
+
+        if (ret==0 && m_rme_model==RME_MODEL_FIREFACE400) {
+            unsigned int node_id = getConfigRom().getNodeId();
+            unsigned int midi_hi_addr;
+            // For now we'll fix this since that's what's done under other
+            // systems.
+            midi_hi_addr = 0x01;
+            if (writeRegister(RME_FF400_MIDI_HIGH_ADDR, (node_id<<16) | midi_hi_addr) != 0)
+                ret = -1;
+        }
+
+        if (ret==0) {
+            signed freq = dev_config->software_freq;
+            if (dev_config->dds_freq > 0)
+                freq = dev_config->dds_freq;
+            if (set_hardware_dds_freq(freq) != 0)
+                ret = -1;
+        }
+
         if (m_rme_model == RME_MODEL_FIREFACE400) {
             signed int i;
-            for (i=0; i<FF400_AMPGAIN_NUM; i++) {
+            for (i=FF400_AMPGAIN_MIC1; i<=FF400_AMPGAIN_INPUT4; i++) {
                 set_hardware_ampgain(i, settings->amp_gains[i]);
             }
         }
 
+        // Matrix mixer settings
+        for (dest=0; dest<n_channels; dest++) {
+            for (src=0; src<n_channels; src++) {
+                set_hardware_mixergain(RME_FF_MM_INPUT, src, dest, 0);
+            }
+            for (src=0; src<n_channels; src++) {
+                set_hardware_mixergain(RME_FF_MM_PLAYBACK, src, dest, 0);
+            }
+        }
+        for (src=0; src<n_channels; src++) {
+            set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, 0);
+        }
+
+        set_hardware_output_rec(0);
+
         dev_config->settings_valid = 1;
     }
 
-    // A default sampling rate.  An explicit DDS frequency is not enabled
-    // by default.
-    dev_config->software_freq = 44100;
-    dev_config->dds_freq = 0;
-
-    if (set_hardware_params(settings) != 0)
-        ret = -1;
 
     // Also configure the TCO (Time Code Option) settings for those devices
     // which have a TCO.
@@ -105,24 +153,6 @@ Device::init_hardware(void)
             write_tco_settings(tco_settings);
         }
         dev_config->tco_settings_valid = 1;
-    }
-
-    if (ret==0 && m_rme_model==RME_MODEL_FIREFACE400) {
-        unsigned int node_id = getConfigRom().getNodeId();
-        unsigned int midi_hi_addr;
-        // For now we'll fix this since that's what's done under other
-        // systems.
-        midi_hi_addr = 0x01;
-        if (writeRegister(RME_FF400_MIDI_HIGH_ADDR, (node_id<<16) | midi_hi_addr) != 0)
-            ret = -1;
-    }
-
-    if (ret==0) {
-        signed freq = dev_config->software_freq;
-        if (dev_config->dds_freq > 0)
-            freq = dev_config->dds_freq;
-        if (set_hardware_dds_freq(freq) != 0)
-            ret = -1;
     }
 
     config_unlock();
@@ -729,6 +759,9 @@ printf("start 0x%016llx data: %08x\n", addr, data);
         if (ret == 0) {
             dev_config->is_streaming = 1;
         }
+
+        set_hardware_channel_mute(0);
+
     } else
         ret = -1;
     config_unlock();
@@ -757,6 +790,9 @@ Device::hardware_stop_streaming(void)
         if (ret == 0) {
             dev_config->is_streaming = 0;
         }
+
+        set_hardware_channel_mute(1);
+
     } else
         ret = -1;
     config_unlock();
@@ -766,11 +802,22 @@ Device::hardware_stop_streaming(void)
 
 signed int
 Device::set_hardware_ampgain(unsigned int index, signed int val) {
+// "index" indicates the hardware amplifier gain to set.  Values of 0-3
+// correspond to input amplifier gains.  Values from 4 on relate to output
+// volume.
+//
 // "val" is in dB except for inputs 3/4 where it's in units of 0.5 dB. This
 // function is responsible for converting to/from the scale used by the
 // device.
+//
+// Only the FF400 has the hardware gain register which is controlled by this
+// function.
     quadlet_t regval = 0;
     signed int devval = 0;
+    if (val > 120)
+      val = 120;
+    if (val < -120)
+      val = -120;
     if (index <= FF400_AMPGAIN_MIC2) {
         if (val >= 10)
             devval = val;
@@ -787,6 +834,96 @@ Device::set_hardware_ampgain(unsigned int index, signed int val) {
     regval |= devval;
     regval |= (index << 16);
     return writeRegister(RME_FF400_GAIN_REG, regval);
+}
+
+signed int
+Device::set_hardware_mixergain(unsigned int ctype, unsigned int src_channel, 
+  unsigned int dest_channel, signed int val) {
+// Set the value of a matrix mixer control.  ctype is one of the RME_FF_MM_*
+// defines:
+//   RME_FF_MM_INPUT: source is a physical input
+//   RME_FF_MM_PLAYBACK: source is playback from PC
+//   RME_FF_MM_OUTPUT: source is the physical output whose gain is to be 
+//     changed, destination is ignored
+// Val is the integer value sent to the device.  The amount of gain (in dB)
+// applied can be calculated using
+//   dB = 20.log10(val/32768)
+// The maximum value of val is 0x10000, corresponding to +6dB of gain.
+// The minimum is 0x00000 corresponding to mute.
+
+    unsigned int n_channels;
+    signed int ram_output_block_size;
+    unsigned int ram_addr;
+
+    n_channels = (m_rme_model==RME_MODEL_FIREFACE400)?
+        RME_FF400_MAX_CHANNELS:RME_FF800_MAX_CHANNELS;
+    if (src_channel>n_channels || dest_channel>n_channels)
+        return -1;
+    if (val<0 || val>0x10000)
+        return -1;
+
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        ram_output_block_size = 0x48;
+    } else {
+        ram_output_block_size = 0x80;
+    }
+
+    ram_addr = RME_FF_MIXER_RAM;
+    switch (ctype) {
+        case RME_FF_MM_INPUT:
+        case RME_FF_MM_PLAYBACK:
+            ram_addr += (dest_channel*2*ram_output_block_size) + 4*src_channel;
+            if (ctype == RME_FF_MM_PLAYBACK)
+                 ram_addr += ram_output_block_size;
+            break;
+        case RME_FF_MM_OUTPUT:
+            ram_addr += 0x0f80 + 4*src_channel;
+            break;
+    }
+    writeRegister(ram_addr, val);
+
+    // If setting the output volume and the device is the FF400, keep
+    // the separate gain register in sync.
+    if (ctype==RME_FF_MM_OUTPUT && m_rme_model==RME_MODEL_FIREFACE400) {
+        signed int dB;
+        if (val==0)
+            dB = -90;
+        else
+            dB = roundl(20.0*log10(val/32768.0));
+        set_hardware_ampgain(FF400_AMPGAIN_OUTPUT1+src_channel, dB);
+    }
+
+    return 0;
+}
+
+signed int
+Device::set_hardware_channel_mute(signed int mute) {
+// Explicitly mute (mute!=0) or unmute (mute=0) all channels.
+// TODO: fill the details in to allow individual channels to be muted as 
+// required.
+    quadlet_t buf[28];
+    signed int i;
+
+    for (i=0; i<28; i++)
+        buf[i] = (mute!=0);
+
+    // Write 28 quadlets even for FF400
+    return writeBlock(RME_FF_CHANNEL_MUTE_MASK, buf, 28);
+}
+
+signed int
+Device::set_hardware_output_rec(signed int rec) {
+// Explicitly record (mute!=1) outputs, or not.
+// TODO: fill the details in to allow individual outputs to be recorded as 
+// required.
+    quadlet_t buf[28];
+    signed int i;
+
+    for (i=0; i<28; i++)
+        buf[i] = (rec!=0);
+
+    // Write 28 quadlets even for FF400
+    return writeBlock(RME_FF_OUTPUT_REC_MASK, buf, 28);
 }
 
 }

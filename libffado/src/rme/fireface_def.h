@@ -31,6 +31,10 @@
 #ifndef _FIREFACE_DEF
 #define _FIREFACE_DEF
 
+/* The maximum number of channels supported by each device */
+#define RME_FF400_MAX_CHANNELS  18
+#define RME_FF800_MAX_CHANNELS  28
+
 /* Boundaries between the speed multipliers */
 #define MIN_SPEED               30000
 #define MIN_DOUBLE_SPEED        56000
@@ -82,13 +86,23 @@
 #define RME_FF_CHANNEL_MUTE_MASK     0x801c0000    // Write only
 #define RME_FF_STATUS_REG0           0x801c0000    // Read only
 #define RME_FF_STATUS_REG1           0x801c0004    // Read only
+#define RME_FF_STATUS_REG2           0x801c0008
+#define RME_FF_STATUS_REG3           0x801c001c
+#define RME_FF_OUTPUT_REC_MASK       0x801c0080    // Write only
 
-#define RME_FF_TCO_READ_REG          0x801f0000
-#define RME_FF_TCO_WRITE_REG         0x810f0020
+#define RME_FF_MIXER_RAM             0x80080000
+
+#define RME_FF_TCO_READ_REG          0x801f0000    // FF800 only
+#define RME_FF_TCO_WRITE_REG         0x810f0020    // FF800 only
 
 #define RME_FF400_GAIN_REG           0x801c0180
 
 #define RME_FF400_MIDI_HIGH_ADDR     0x801003f4
+
+/* Types of controls in the matrix mixer */
+#define RME_FF_MM_INPUT              0x0000
+#define RME_FF_MM_PLAYBACK           0x0001
+#define RME_FF_MM_OUTPUT             0x0002
 
 /* Addresses of various blocks in memory-mapped flash */
 #define RME_FF400_FLASH_SETTINGS_ADDR       0x00060000
