@@ -160,7 +160,7 @@ static enum raw1394_iso_disposition myISOSender(raw1394handle_t handle,
     unsigned int dropped = dropped1 & 0xFFFF;
 
     //debugOutput(DEBUG_LEVEL_INFO, "In handler\n");
-    //sprintf((char *)data, "Hello World %8u\n", count);
+    sprintf((char *)data, "Hello World %8u\n", count);
     if (last_cycle >= 0) {
         if (cycle != (last_cycle + 1) % 8000) {
             debugOutput(DEBUG_LEVEL_INFO, "nonmonotonic cycles: this: %04d, last: %04d, dropped: 0x%08X\n", cycle, last_cycle, dropped1);
@@ -179,6 +179,7 @@ static enum raw1394_iso_disposition myISOSender(raw1394handle_t handle,
 
 void prepareXmit(raw1394handle_t handle)
 {
+    debugOutput(DEBUG_LEVEL_INFO, "prepareXmit(handle)\n");
     if(raw1394_iso_xmit_init(handle,
                 myISOSender,
                 arguments.buffersize,
@@ -243,6 +244,7 @@ int32_t main(int32_t argc, char **argv)
     }
 
     debugOutput(DEBUG_LEVEL_INFO, "Select 1394 port %d...\n", arguments.port);
+    int ret = -1;
     do
     {
         if (raw1394_get_port_info(handle, NULL, 0) < 0)
@@ -250,17 +252,14 @@ int32_t main(int32_t argc, char **argv)
             perror("raw1394_get_port_info");
             return 1;
         }
-        raw1394_set_port(handle, arguments.port );
-    } while (errno == ESTALE);
+        ret = raw1394_set_port(handle, arguments.port );
+    } while (ret != 0 && errno == ESTALE);
 
-    if(errno)
+    if(ret != 0 && errno)
     {
         perror("raw1394_set_port");
         return 1;
     }
-
-    debugOutput(DEBUG_LEVEL_INFO, "Prepare/start ISO transmit...\n");
-    prepareXmit(handle);
 
     if(raw1394_busreset_notify(handle, RAW1394_NOTIFY_ON))
     {
@@ -271,6 +270,9 @@ int32_t main(int32_t argc, char **argv)
 
     debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority (%d)...\n", arguments.rtprio);
     set_realtime_priority(arguments.rtprio);
+
+    debugOutput(DEBUG_LEVEL_INFO, "Prepare/start ISO transmit...\n");
+    prepareXmit(handle);
 
     int countdown = arguments.countdown;
     debugOutput(DEBUG_LEVEL_INFO, "Starting iterate loop...\n");

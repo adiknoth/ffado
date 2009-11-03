@@ -188,6 +188,7 @@ int main(int argc, char **argv)
     }
 
     debugOutput(DEBUG_LEVEL_INFO, "Select 1394 port %d...\n", arguments.port);
+    int ret = -1;
     do
     {
         if (raw1394_get_port_info(handle, NULL, 0) < 0)
@@ -195,10 +196,10 @@ int main(int argc, char **argv)
             perror("raw1394_get_port_info");
             return 1;
         }
-        raw1394_set_port(handle, arguments.port);
-    } while (errno == ESTALE);
+        ret = raw1394_set_port(handle, arguments.port);
+    } while (ret != 0 && errno == ESTALE);
 
-    if(errno)
+    if(ret != 0 && errno)
     {
         perror("raw1394_set_port");
         return 1;
