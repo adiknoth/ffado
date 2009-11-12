@@ -13,7 +13,7 @@ device_definitions = (
     vendorname  = "Mackie";
     modelname   = "Onyx Firewire";
     driver      = 1; # BeBoB
-    mixer       = "MackieOnyxMixer";
+    mixer       = "MackieOnyx";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -90,7 +90,7 @@ device_definitions = (
     vendorname  = "ESI";
     modelname   = "Quatafire 610";
     driver      = 1; # BeBoB
-    mixer       = "QuataFireMixer";
+    mixer       = "QuataFire";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -99,7 +99,7 @@ device_definitions = (
     vendorname  = "Focusrite";
     modelname   = "Saffire Pro26IO";
     driver      = 1; # BeBoB
-    mixer       = "SaffireProMixer";
+    mixer       = "SaffirePro";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -108,7 +108,7 @@ device_definitions = (
     vendorname  = "Focusrite";
     modelname   = "Saffire Pro10IO";
     driver      = 1; # BeBoB
-    mixer       = "SaffireProMixer";
+    mixer       = "SaffirePro";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -117,7 +117,7 @@ device_definitions = (
     vendorname  = "Focusrite";
     modelname   = "Saffire (LE)";
     driver      = 1; # BeBoB
-    mixer       = "SaffireMixer";
+    mixer       = "Saffire";
     cmd_interval_time = 10000;
     xmit_max_cycles_early_transmit = 4;
 },
@@ -200,7 +200,7 @@ device_definitions = (
     vendorname = "Echo";
     modelname = "AudioFire2";
     driver = 2;
-    mixer = "AudioFireMixer";
+    mixer = "AudioFire";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
@@ -209,7 +209,7 @@ device_definitions = (
     vendorname = "Echo";
     modelname = "AudioFire4";
     driver = 2;
-    mixer = "AudioFireMixer";
+    mixer = "AudioFire";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
@@ -218,7 +218,7 @@ device_definitions = (
     vendorname = "Echo";
     modelname = "AudioFire8";
     driver = 2;
-    mixer = "AudioFireMixer";
+    mixer = "AudioFire";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
@@ -227,7 +227,7 @@ device_definitions = (
     vendorname = "Echo";
     modelname = "AudioFire12";
     driver = 2;
-    mixer = "AudioFireMixer";
+    mixer = "AudioFire";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
@@ -293,7 +293,7 @@ device_definitions = (
     vendorname = "Motu";
     modelname = "All of them";
     driver = 10;
-    mixer = "MotuMixer";
+    mixer = "Motu";
 },
 {
     vendorid = 0x000a35;
@@ -304,7 +304,7 @@ device_definitions = (
     vendorname = "RME";
     modelname = "FireFace800";
     driver = 40;
-    mixer = "RmeMixer";
+    mixer = "Rme";
 },
 {
     vendorid = 0x000a35;
@@ -315,7 +315,7 @@ device_definitions = (
     vendorname = "RME";
     modelname = "FireFace400";
     driver = 40;
-    mixer = "RmeMixer";
+    mixer = "Rme";
 },
 {
     vendorid = 0x000166;
