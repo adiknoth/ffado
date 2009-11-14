@@ -108,6 +108,10 @@ class PanelManager(QWidget):
         if devmgr is not None:
             self.setManager(devmgr)
 
+    def __del__(self):
+        print("PanelManager.__del__()")
+        self.polltimer.stop()
+
     def setManager(self,devmgr):
         self.devmgr = devmgr
         self.devmgr.registerPreUpdateCallback(self.devlistPreUpdate)
@@ -242,11 +246,12 @@ class PanelManager(QWidget):
 
         # update the widget
         for guid in to_remove:
+            print "Removing widget for device" + guid
             w = self.panels[guid]
             del self.panels[guid] # remove from the list
             idx = self.tabs.indexOf(w)
             self.tabs.removeTab(idx)
-            del w # GC might also take care of that
+            w.deleteLater()
 
         for guid in to_add:
             # retrieve the device manager index

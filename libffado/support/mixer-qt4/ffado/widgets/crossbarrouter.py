@@ -169,6 +169,8 @@ class CrossbarRouter(QtGui.QWidget):
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.CrossbarRouter")
 
+        self.settings = QtCore.QSettings(self)
+
         log.info(self.interface.getDestinations())
 
         destinations = self.interface.getDestinationNames()
@@ -184,11 +186,10 @@ class CrossbarRouter(QtGui.QWidget):
         self.toplayout = QtGui.QHBoxLayout()
         self.biglayout.addLayout(self.toplayout)
 
-        btn = QtGui.QPushButton("Switch VU", self)
-        btn.setCheckable(True)
-        #btn.setChecked(True)
-        self.connect(btn, QtCore.SIGNAL("toggled(bool)"), self.runVu)
-        self.toplayout.addWidget(btn)
+        self.vubtn = QtGui.QPushButton("Switch VU", self)
+        self.vubtn.setCheckable(True)
+        self.connect(self.vubtn, QtCore.SIGNAL("toggled(bool)"), self.runVu)
+        self.toplayout.addWidget(self.vubtn)
 
         self.layout = QtGui.QGridLayout()
         self.biglayout.addLayout(self.layout)
@@ -202,9 +203,15 @@ class CrossbarRouter(QtGui.QWidget):
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(200)
         self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.updateLevels)
-        #self.runVu(True)
+
+        self.vubtn.setChecked(self.settings.value("crossbarrouter/runvu", False).toBool())
+
+    def __del__(self):
+        print "CrossbarRouter.__del__()"
+        self.settings.setValue("crossbarrouter/runvu", self.vubtn.isChecked())
 
     def runVu(self, run=True):
+        #log.debug("CrossbarRouter.runVu( %i )" % run)
         if run:
             self.timer.start()
         else:
