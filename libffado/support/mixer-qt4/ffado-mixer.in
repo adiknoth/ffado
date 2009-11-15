@@ -99,12 +99,10 @@ class FFADOWindow(QMainWindow):
     def __del__(self):
         log.info("__del__")
         del self.manager
-        #delattr(self, "manager")
         log.info("__del__ finished")
 
     def closeEvent(self, event):
         log.info("closeEvent()")
-        self.manager.deleteLater()
         event.accept()
 
     def connectToDBUS(self):
