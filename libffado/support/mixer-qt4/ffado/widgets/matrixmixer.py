@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# coding=utf8
 #
 # Copyright (C) 2009 by Arnold Krille
 #
@@ -65,6 +67,8 @@ class MixerNode(QtGui.QAbstractSlider):
         self.setValue(value)
         self.connect(self, QtCore.SIGNAL("valueChanged(int)"), self.internalValueChanged)
 
+        self.setSmall(False)
+
         self.bgcolors = ColorForNumber()
         self.bgcolors.addColor(             0.0, QtGui.QColor(  0,   0,   0))
         self.bgcolors.addColor(             1.0, QtGui.QColor(  0,   0, 128))
@@ -128,6 +132,10 @@ class MixerNode(QtGui.QAbstractSlider):
         v = self.value()
         color = self.bgcolors.getColor(v)
         p.fillRect(rect, color)
+
+        if self.small:
+            return
+
         if color.valueF() < 0.6:
             p.setPen(QtGui.QColor(255, 255, 255))
         else:
@@ -136,7 +144,10 @@ class MixerNode(QtGui.QAbstractSlider):
         if v != 0:
             lv = 20 * math.log10(v * 1.0 / math.pow(2,14))
             #log.debug("new value is %g dB" % lv)
-        p.drawText(rect, Qt.Qt.AlignCenter, "%.2g dB" % lv)
+        text = "%.2g dB" % lv
+        if v == 0:
+            text = "-ꝏ dB"
+        p.drawText(rect, Qt.Qt.AlignCenter, QtCore.QString.fromUtf8(text))
 
     def internalValueChanged(self, value):
         #log.debug("MixerNode.internalValueChanged( %i )" % value)
@@ -147,6 +158,14 @@ class MixerNode(QtGui.QAbstractSlider):
         self.emit(QtCore.SIGNAL("valueChanged"), (self.input, self.output, value) )
         self.update()
 
+    def setSmall(self, small):
+        self.small = small
+        if small:
+            self.setMinimumSize(10, 10)
+        else:
+            fontmetrics = self.fontMetrics()
+            self.setMinimumSize(fontmetrics.boundingRect("-0.0 dB").size()*1.1)
+        self.update()
 
 
 class MixerChannel(QtGui.QWidget):
@@ -155,18 +174,26 @@ class MixerChannel(QtGui.QWidget):
         layout = QtGui.QGridLayout(self)
         self.number = number
         if name is not "":
-            name = " (%s)" % name
-        self.lbl = QtGui.QLabel("Ch. %i\n%s" % (self.number, name), self)
+            name = "\n(%s)" % name
+        self.name = name
+        self.lbl = QtGui.QLabel(self)
         layout.addWidget(self.lbl, 0, 0, 1, 2)
+        self.hideChannel(False)
 
-        #self.btnHide = QtGui.QToolButton(self)
-        #self.btnHide.setText("Hide")
-        #self.btnHide.setCheckable(True)
-        #self.connect(self.btnHide, QtCore.SIGNAL("clicked(bool)"), self.hideChannel)
-        #layout.addWidget(self.btnHide, 1, 0)
+        self.setContextMenuPolicy(Qt.Qt.ActionsContextMenu)
+
+        action = QtGui.QAction("Make this channel small", self)
+        action.setCheckable(True)
+        self.connect(action, QtCore.SIGNAL("triggered(bool)"), self.hideChannel)
+        self.addAction(action)
 
     def hideChannel(self, hide):
+        if hide:
+            self.lbl.setText("Ch. %i" % self.number);
+        else:
+            self.lbl.setText("Ch. %i%s" % (self.number, self.name))
         self.emit(QtCore.SIGNAL("hide"), self.number, hide)
+        self.update()
 
 
 
@@ -220,7 +247,7 @@ class MatrixMixer(QtGui.QWidget):
     def checkVisibilities(self):
         for x in range(len(self.items)):
             for y in range(len(self.items[x])):
-                self.items[x][y].setHidden(
+                self.items[x][y].setSmall(
                         (x in self.hiddenRows)
                         | (y in self.hiddenCols)
                         )
@@ -245,4 +272,4 @@ class MatrixMixer(QtGui.QWidget):
 
 
 #
-# vim: et ts=4 sw=4
+# vim: et ts=4 sw=4 fileencoding=utf8
