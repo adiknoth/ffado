@@ -159,6 +159,7 @@ dice_source = env.Split( '\
 	dice/dice_avdevice.cpp \
 	dice/dice_eap.cpp \
 	dice/focusrite/saffire_pro40.cpp \
+	dice/focusrite/saffire_pro24.cpp \
 ' )
 
 bounce_source = env.Split( '\
