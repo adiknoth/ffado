@@ -19,7 +19,7 @@
 #
 
 from PyQt4 import QtGui, QtCore, Qt
-import dbus, math
+import dbus, math, decimal
 
 import logging
 log = logging.getLogger("matrixmixer")
@@ -34,6 +34,7 @@ class ColorForNumber:
     def getColor(self, n):
         #print "ColorForNumber.getColor( %g )" % (n)
         keys = self.colors.keys()
+        keys.sort()
         low = keys[-1]
         high = keys[-1]
         for i in range(len(keys)-1):
@@ -54,7 +55,7 @@ class ColorForNumber:
 class MixerNode(QtGui.QAbstractSlider):
     def __init__(self, input, output, value, parent):
         QtGui.QAbstractSlider.__init__(self, parent)
-        log.debug("MixerNode.__init__( %i, %i, %i, %s )" % (input, output, value, str(parent)) )
+        #log.debug("MixerNode.__init__( %i, %i, %i, %s )" % (input, output, value, str(parent)) )
 
         self.pos = QtCore.QPointF(0, 0)
         self.input = input
@@ -65,10 +66,36 @@ class MixerNode(QtGui.QAbstractSlider):
         self.connect(self, QtCore.SIGNAL("valueChanged(int)"), self.internalValueChanged)
 
         self.bgcolors = ColorForNumber()
-        self.bgcolors.addColor(0.0*65535, QtGui.QColor(  0,   0,   0))
-        self.bgcolors.addColor(0.1*65535, QtGui.QColor(  0,   0, 128))
-        self.bgcolors.addColor(0.8*65535, QtGui.QColor(255, 255,   0))
-        self.bgcolors.addColor(1.0*65535, QtGui.QColor(255,   0,   0))
+        self.bgcolors.addColor(             0.0, QtGui.QColor(  0,   0,   0))
+        self.bgcolors.addColor(             1.0, QtGui.QColor(  0,   0, 128))
+        self.bgcolors.addColor(   math.pow(2,6), QtGui.QColor(  0, 255,   0))
+        self.bgcolors.addColor(  math.pow(2,14), QtGui.QColor(255, 255,   0))
+        self.bgcolors.addColor(math.pow(2,16)-1, QtGui.QColor(255,   0,   0))
+
+        self.setContextMenuPolicy(Qt.Qt.ActionsContextMenu)
+        self.mapper = QtCore.QSignalMapper(self)
+        self.connect(self.mapper, QtCore.SIGNAL("mapped(const QString&)"), self.directValues)
+
+        self.spinbox = QtGui.QDoubleSpinBox(self)
+        self.spinbox.setRange(-40, 12)
+        self.spinbox.setSuffix(" dB")
+        self.connect(self.spinbox, QtCore.SIGNAL("valueChanged(const QString&)"), self.directValues)
+        action = QtGui.QWidgetAction(self)
+        action.setDefaultWidget(self.spinbox)
+        self.addAction(action)
+
+        for text in ["3 dB", "0 dB", "-3 dB", "-20 dB", "-inf dB"]:
+            action = QtGui.QAction(text, self)
+            self.connect(action, QtCore.SIGNAL("triggered()"), self.mapper, QtCore.SLOT("map()"))
+            self.mapper.setMapping(action, text)
+            self.addAction(action)
+
+    def directValues(self,text):
+        #log.debug("MixerNode.directValues( '%s' )" % text)
+        text = text.split(" ")[0].replace(",",".")
+        n = pow(10, (float(text)/20)) * pow(2,14)
+        #log.debug("%g" % n)
+        self.setValue(n)
 
     def mousePressEvent(self, ev):
         if ev.buttons() & Qt.Qt.LeftButton:
@@ -84,7 +111,6 @@ class MixerNode(QtGui.QAbstractSlider):
             #log.debug("MixerNode.mouseReleaseEvent() change %s" % (str(change)))
             self.setValue( self.tmpvalue - math.copysign(pow(abs(change), 2), change) )
             ev.accept()
-        pass
 
     def mouseReleaseEvent(self, ev):
         if hasattr(self, "tmpvalue") and self.pos is not QtCore.QPointF(0, 0):
@@ -102,15 +128,24 @@ class MixerNode(QtGui.QAbstractSlider):
         v = self.value()
         color = self.bgcolors.getColor(v)
         p.fillRect(rect, color)
-        if color.valueF() < 0.5:
+        if color.valueF() < 0.6:
             p.setPen(QtGui.QColor(255, 255, 255))
         else:
             p.setPen(QtGui.QColor(0, 0, 0))
-        p.drawText(rect, Qt.Qt.AlignCenter, str(self.value()))
+        lv=decimal.Decimal('-Infinity')
+        if v != 0:
+            lv = 20 * math.log10(v * 1.0 / math.pow(2,14))
+            #log.debug("new value is %g dB" % lv)
+        p.drawText(rect, Qt.Qt.AlignCenter, "%.2g dB" % lv)
 
     def internalValueChanged(self, value):
         #log.debug("MixerNode.internalValueChanged( %i )" % value)
+        if value is not 0:
+            dB = 20 * math.log10(value / math.pow(2,14))
+            if self.spinbox.value() is not dB:
+                self.spinbox.setValue(dB)
         self.emit(QtCore.SIGNAL("valueChanged"), (self.input, self.output, value) )
+        self.update()
 
 
 
@@ -124,11 +159,11 @@ class MixerChannel(QtGui.QWidget):
         self.lbl = QtGui.QLabel("Ch. %i\n%s" % (self.number, name), self)
         layout.addWidget(self.lbl, 0, 0, 1, 2)
 
-        self.btnHide = QtGui.QToolButton(self)
-        self.btnHide.setText("Hide")
-        self.btnHide.setCheckable(True)
-        self.connect(self.btnHide, QtCore.SIGNAL("clicked(bool)"), self.hideChannel)
-        layout.addWidget(self.btnHide, 1, 0)
+        #self.btnHide = QtGui.QToolButton(self)
+        #self.btnHide.setText("Hide")
+        #self.btnHide.setCheckable(True)
+        #self.connect(self.btnHide, QtCore.SIGNAL("clicked(bool)"), self.hideChannel)
+        #layout.addWidget(self.btnHide, 1, 0)
 
     def hideChannel(self, hide):
         self.emit(QtCore.SIGNAL("hide"), self.number, hide)
@@ -142,9 +177,9 @@ class MatrixMixer(QtGui.QWidget):
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
 
-        palette = self.palette()
-        palette.setColor(QtGui.QPalette.Window, palette.color(QtGui.QPalette.Window).darker());
-        self.setPalette(palette)
+        #palette = self.palette()
+        #palette.setColor(QtGui.QPalette.Window, palette.color(QtGui.QPalette.Window).darker());
+        #self.setPalette(palette)
 
         rows = self.interface.getColCount()
         cols = self.interface.getRowCount()
@@ -205,7 +240,7 @@ class MatrixMixer(QtGui.QWidget):
         self.checkVisibilities()
 
     def valueChanged(self, n):
-        log.debug("MatrixNode.valueChanged( %s )" % str(n))
+        #log.debug("MatrixNode.valueChanged( %s )" % str(n))
         self.interface.setValue(n[1], n[0], n[2])
 
 
