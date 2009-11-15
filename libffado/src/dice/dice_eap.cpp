@@ -397,59 +397,60 @@ void
 Device::EAP::show()
 {
     printMessage("== DICE EAP ==\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Parameter Space info:\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Capability        : offset=%04X size=%06d\n", m_capability_offset, m_capability_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Command           : offset=%04X size=%06d\n", m_cmd_offset, m_cmd_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Mixer             : offset=%04X size=%06d\n", m_mixer_offset, m_mixer_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Peak              : offset=%04X size=%06d\n", m_peak_offset, m_peak_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " New Routing Cfg   : offset=%04X size=%06d\n", m_new_routing_offset, m_new_routing_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " New Stream Cfg    : offset=%04X size=%06d\n", m_new_stream_cfg_offset, m_new_stream_cfg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Current Cfg       : offset=%04X size=%06d\n", m_curr_cfg_offset, m_curr_cfg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Standalone Cfg    : offset=%04X size=%06d\n", m_standalone_offset, m_standalone_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Application Space : offset=%04X size=%06d\n", m_app_offset, m_app_size);
+    printMessage("Parameter Space info:\n");
+    printMessage(" Capability        : offset=%04X size=%06d\n", m_capability_offset, m_capability_size);
+    printMessage(" Command           : offset=%04X size=%06d\n", m_cmd_offset, m_cmd_size);
+    printMessage(" Mixer             : offset=%04X size=%06d\n", m_mixer_offset, m_mixer_size);
+    printMessage(" Peak              : offset=%04X size=%06d\n", m_peak_offset, m_peak_size);
+    printMessage(" New Routing Cfg   : offset=%04X size=%06d\n", m_new_routing_offset, m_new_routing_size);
+    printMessage(" New Stream Cfg    : offset=%04X size=%06d\n", m_new_stream_cfg_offset, m_new_stream_cfg_size);
+    printMessage(" Current Cfg       : offset=%04X size=%06d\n", m_curr_cfg_offset, m_curr_cfg_size);
+    printMessage(" Standalone Cfg    : offset=%04X size=%06d\n", m_standalone_offset, m_standalone_size);
+    printMessage(" Application Space : offset=%04X size=%06d\n", m_app_offset, m_app_size);
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Capabilities:\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Router: %sexposed, %swritable, %sstored, %d routes\n",
+    printMessage("Capabilities:\n");
+    printMessage(" Router: %sexposed, %swritable, %sstored, %d routes\n",
                                      (m_router_exposed?"":"not "),
                                      (m_router_readonly?"not ":""),
                                      (m_router_flashstored?"":"not "),
                                      m_router_nb_entries);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Mixer : %sexposed, %swritable, %sstored\n",
+    printMessage(" Mixer : %sexposed, %swritable, %sstored\n",
                                      (m_mixer_exposed?"":"not "),
                                      (m_mixer_readonly?"not ":""),
                                      (m_mixer_flashstored?"":"not "));
-    debugOutput(DEBUG_LEVEL_VERBOSE, "         tx id: %s [%d], rx id: %s [%d]\n", 
+    printMessage("         tx id: %s [%d], rx id: %s [%d]\n", 
                                      dstBlockToString(m_mixer_tx_id), m_mixer_tx_id,
                                      srcBlockToString(m_mixer_rx_id), m_mixer_rx_id);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "         nb tx channels: %d, nb rx channels: %d\n", m_mixer_nb_tx, m_mixer_nb_rx);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " General: dynamic stream config %ssupported\n",
+    printMessage("         nb tx channels: %d, nb rx channels: %d\n", m_mixer_nb_tx, m_mixer_nb_rx);
+    printMessage(" General: dynamic stream config %ssupported\n",
                                      (m_general_support_dynstream?"":"not "));
-    debugOutput(DEBUG_LEVEL_VERBOSE, "          flash load and store %ssupported\n",
+    printMessage("          flash load and store %ssupported\n",
                                      (m_general_support_flash?"":"not "));
-    debugOutput(DEBUG_LEVEL_VERBOSE, "          peak metering %s\n",
+    printMessage("          peak metering %s\n",
                                      (m_general_peak_enabled?"enabled":"disabled"));
-    debugOutput(DEBUG_LEVEL_VERBOSE, "          stream config %sstored\n",
+    printMessage("          stream config %sstored\n",
                                      (m_general_stream_cfg_stored?"":"not "));
-    debugOutput(DEBUG_LEVEL_VERBOSE, "          max TX streams: %d, max RX streams: %d\n",
+    printMessage("          max TX streams: %d, max RX streams: %d\n",
                                      m_general_max_tx, m_general_max_rx);
 
     if(m_general_chip == DICE_EAP_CAP_GENERAL_CHIP_DICEII) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "          Chip: DICE-II\n");
+        printMessage("          Chip: DICE-II\n");
     } else if(m_general_chip == DICE_EAP_CAP_GENERAL_CHIP_DICEMINI) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "          Chip: DICE Mini (TCD2210)\n");
+        printMessage("          Chip: DICE Mini (TCD2210)\n");
     } else if(m_general_chip == DICE_EAP_CAP_GENERAL_CHIP_DICEJR) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "          Chip: DICE Junior (TCD2220)\n");
+        printMessage("          Chip: DICE Junior (TCD2220)\n");
     }
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "--- Mixer configuration ---\n");
+    printMessage("--- Mixer configuration ---\n");
     if(m_mixer) {
         m_mixer->show();
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "--- Router/Peak space ---\n");
+    printMessage("--- Router/Peak space ---\n");
     if(m_router) {
         m_router->show();
     }
 
+    printMessage("--- Active Router/Stream ---\n");
     RouterConfig *rcfg = getActiveRouterConfig();
     if(rcfg) {
         rcfg->show();
@@ -457,6 +458,20 @@ Device::EAP::show()
     StreamConfig *scfg = getActiveStreamConfig();
     if(scfg) {
         scfg->show();
+    }
+
+    printMessage("--- Application space ---\n");
+    fb_quadlet_t* tmp = (fb_quadlet_t *)calloc(128, sizeof(fb_quadlet_t));
+    unsigned int appsize = 512; //m_app_size; /// m_app_size is rather big. Start with the first four block of 128 quadlets...
+    unsigned int offset = 0;
+    while ( appsize > 0 ) {
+        if ( ! readRegBlock( eRT_Application, offset, tmp, (appsize<128)?appsize:128 ) )
+            appsize = 0;
+        else {
+            hexDumpQuadlets(tmp, 128);
+            offset += 128;
+            appsize -= 128;
+        }
     }
 
 // fixme

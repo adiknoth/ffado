@@ -859,7 +859,7 @@ hexDumpQuadlets( quadlet_t *data, unsigned int length )
         return;
     }
     for (i = 0; i< length; i += 1) {
-        printf( "%02d %04X: %08X (%08X)"
+        fprintf(stderr, "%02d %04X: %08X (%08X)"
                 "\n", i, i*4, data[i],CondSwapFromBus32(data[i]));
     }
 }
