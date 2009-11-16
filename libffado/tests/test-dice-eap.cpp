@@ -64,12 +64,14 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 ////////////////////////////////////////////////
 const char *argp_program_version = "test-dice-eap 0.1";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
-static char doc[] = "test-avccmd -- test program to examine the DICE EAP code.";
+static char doc[] = "test-dice-eap -- test program to examine the DICE EAP code.";
 static char args_doc[] = "NODE_ID";
 static struct argp_option options[] = {
     {"verbose",   'v', "LEVEL",     0,  "Produce verbose output" },
     {"port",      'p', "PORT",      0,  "Set port" },
     {"node",      'n', "NODE",      0,  "Set node" },
+    {"application",'a',  NULL,      0,  "Show the application space"},
+    {"counts",    'c', "COUNTS",    0,  "Number of runs to do. -1 means to run forever."},
    { 0 }
 };
 
@@ -81,16 +83,20 @@ struct arguments
         , test( false )
         , port( -1 )
         , node( -1 )
+        , application( false )
+        , counts( -1 )
         {
             args[0] = 0;
         }
 
     char* args[MAX_ARGS];
     int   nargs;
-    int  verbose;
+    int   verbose;
     bool  test;
     int   port;
     int   node;
+    bool  application;
+    int   counts;
 } arguments;
 
 // Parse a single option.
@@ -110,6 +116,9 @@ parse_opt( int key, char* arg, struct argp_state* state )
     case 't':
         arguments->test = true;
         break;
+    case 'a':
+        arguments->application = true;
+        break;
     case 'p':
         arguments->port = strtol(arg, &tail, 0);
         if (errno) {
@@ -119,6 +128,13 @@ parse_opt( int key, char* arg, struct argp_state* state )
         break;
     case 'n':
         arguments->node = strtol(arg, &tail, 0);
+        if (errno) {
+            perror("argument parsing failed:");
+            return errno;
+        }
+        break;
+    case 'c':
+        arguments->counts = strtol(arg, &tail, 0);
         if (errno) {
             perror("argument parsing failed:");
             return errno;
@@ -219,7 +235,7 @@ main(int argc, char **argv)
     }
 
     // now play
-    avDevice->setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
+    //avDevice->setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
 
     bool supports_eap = Device::EAP::supportsEAP(*avDevice);
     if (!supports_eap) {
@@ -231,7 +247,10 @@ main(int argc, char **argv)
 
     Device::EAP &eap = *(avDevice->getEAP());
 
-    eap.show();
+    if (arguments.application)
+        eap.showApplication();
+    else
+        eap.show();
     eap.lockControl();
     Control::Element *e = eap.getElementByName("MatrixMixer");
     if(e == NULL) {
@@ -254,7 +273,7 @@ main(int argc, char **argv)
 
     int cnt = 0;
 
-    while(run) {
+    while(run && arguments.counts != 0) {
         eap.lockControl();
         Control::Element *e = eap.getElementByName("Router");
         if(e == NULL) {
@@ -294,6 +313,7 @@ main(int argc, char **argv)
         e = NULL;
         eap.unlockControl();
         sleep(1);
+        arguments.counts--;
     }
 
     // cleanup

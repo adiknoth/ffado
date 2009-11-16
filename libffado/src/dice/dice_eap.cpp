@@ -460,20 +460,6 @@ Device::EAP::show()
         scfg->show();
     }
 
-    printMessage("--- Application space ---\n");
-    fb_quadlet_t* tmp = (fb_quadlet_t *)calloc(128, sizeof(fb_quadlet_t));
-    unsigned int appsize = 512; //m_app_size; /// m_app_size is rather big. Start with the first four block of 128 quadlets...
-    unsigned int offset = 0;
-    while ( appsize > 0 ) {
-        if ( ! readRegBlock( eRT_Application, offset, tmp, (appsize<128)?appsize:128 ) )
-            appsize = 0;
-        else {
-            hexDumpQuadlets(tmp, 128);
-            offset += 128;
-            appsize -= 128;
-        }
-    }
-
 // fixme
 //     size_t len = 0x1000;
 //     quadlet_t tmp[len];
@@ -483,6 +469,23 @@ Device::EAP::show()
 //         hexDumpQuadlets(tmp, len);
 //     }
 
+}
+void
+Device::EAP::showApplication()
+{
+    printMessage("--- Application space ---\n");
+    fb_quadlet_t* tmp = (fb_quadlet_t *)calloc(128, sizeof(fb_quadlet_t));
+    unsigned int appsize = m_app_size; /// m_app_size is rather big. Start with the first four block of 128 quadlets...
+    unsigned int offset = 0;
+    while ( appsize > 0 ) {
+        if ( ! readRegBlock( eRT_Application, offset, tmp, ((appsize<128)?appsize:128)*sizeof(fb_quadlet_t) ) )
+            appsize = 0;
+        else {
+            hexDumpQuadlets(tmp, 128);
+            offset += 128*sizeof(fb_quadlet_t);
+            appsize -= 128*sizeof(fb_quadlet_t);
+        }
+    }
 }
 
 // EAP load/store operations
