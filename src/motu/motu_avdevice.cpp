@@ -472,9 +472,20 @@ MotuDevice::getSamplingFrequency( ) {
 /*
  * Retrieve the current sample rate from the MOTU device.
  */
-    quadlet_t q = ReadRegister(MOTU_REG_CLK_CTRL);
+    quadlet_t q = 0;
     int rate = 0;
 
+    if (m_motu_model == MOTU_MODEL_828MkI) {
+        /* The original MOTU interfaces did things rather differently */
+        q = ReadRegister(MOTU_G1_REG_CONFIG);
+        if ((q & MOTU_G1_RATE_MASK) == MOTU_G1_RATE_44100)
+            rate = 44100;
+        else
+            rate = 48000;
+        return rate;
+    }
+
+    q = ReadRegister(MOTU_REG_CLK_CTRL);
     switch (q & MOTU_RATE_BASE_MASK) {
         case MOTU_RATE_BASE_44100:
             rate = 44100;
@@ -519,6 +530,46 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
 
     if ( samplingFrequency > DevicesProperty[m_motu_model-1].MaxSampleRate )
        return false; 
+
+    /* The original MOTU devices do things differently; they are much
+     * simpler than the later interfaces.
+     */
+    if (m_motu_model == MOTU_MODEL_828MkI) {
+        reg = ReadRegister(MOTU_G1_REG_CONFIG);
+        if (samplingFrequency > 0) {
+            reg &= ~MOTU_G1_RATE_MASK;
+            switch (samplingFrequency) {
+                case 44100:
+                    reg |= MOTU_G1_RATE_44100;
+                    break;
+                case 48000:
+                    reg |= MOTU_G1_RATE_48000;
+                default:
+                    // Unsupported rate
+                    return false;
+            }
+        }
+        if (clock_source != MOTU_CLKSRC_UNCHANGED) {
+            switch (clock_source) {
+                case MOTU_CLKSRC_INTERNAL:
+                    clock_source = MOTU_G1_CLKSRC_INTERNAL; break;
+                case MOTU_CLKSRC_SPDIF_TOSLINK:
+                    clock_source = MOTU_G1_CLKSRC_SPDIF; break;
+                case MOTU_CLKSRC_ADAT_9PIN:
+                    clock_source = MOTU_G1_CLKSRC_ADAT_9PIN; break;
+                default:
+                    // Unsupported clock source
+                    return false;
+            }
+            reg &= ~MOTU_G1_CLKSRC_MASK;
+            reg |= clock_source;
+        }
+        if (WriteRegister(MOTU_G1_REG_CONFIG, reg) != 0)
+            return false;
+        return true;
+    }
+
+    /* The rest of this function deals with later generation devices */
 
     reg = ReadRegister(MOTU_REG_CLK_CTRL);
 
@@ -682,6 +733,7 @@ MotuDevice::getSupportedSamplingFrequencies()
 FFADODevice::ClockSource
 MotuDevice::clockIdToClockSource(unsigned int id) {
     ClockSource s;
+    bool g1_model = (m_motu_model == MOTU_MODEL_828MkI);
     s.id = id;
 
     // Assume a clock source is valid/active unless otherwise overridden.
@@ -697,6 +749,7 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
         case MOTU_CLKSRC_ADAT_OPTICAL:
             s.type = eCT_ADAT;
             s.description = "ADAT optical";
+            s.valid = s.active = s.locked = !g1_model;
             break;
         case MOTU_CLKSRC_SPDIF_TOSLINK:
             s.type = eCT_SPDIF;
@@ -714,6 +767,7 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
         case MOTU_CLKSRC_WORDCLOCK:
             s.type = eCT_WordClock;
             s.description = "Wordclock";
+            s.valid = s.active = s.locked = !g1_model;
             break;
         case MOTU_CLKSRC_ADAT_9PIN:
             s.type = eCT_ADAT;
@@ -722,6 +776,7 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
         case MOTU_CLKSRC_AES_EBU:
             s.type = eCT_AES;
             s.description = "AES/EBU";
+            s.valid = s.active = s.locked = !g1_model;
             break;
         default:
             s.type = eCT_Invalid;
@@ -1112,7 +1167,15 @@ signed int MotuDevice::getIsoSendChannel(void) {
 }
 
 unsigned int MotuDevice::getOpticalMode(unsigned int dir) {
-    unsigned int reg = ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
+    unsigned int reg;
+
+    if (m_motu_model == MOTU_MODEL_828MkI) {
+        // The early devices used a different register layout.  
+        // To be completed.
+        return 0;
+    }
+
+    reg = ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
 
 debugOutput(DEBUG_LEVEL_VERBOSE, "optical mode: %x %x %x %x\n",dir, reg, reg & MOTU_OPTICAL_IN_MODE_MASK,
 reg & MOTU_OPTICAL_OUT_MODE_MASK);
@@ -1132,6 +1195,12 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
      */
     if (m_motu_model==MOTU_MODEL_896HD && mode==MOTU_OPTICAL_MODE_TOSLINK)
         return -1;
+
+    if (m_motu_model == MOTU_MODEL_828MkI) {
+        // The earlier MOTUs handle this differently.
+        // To be completed.
+        return 0;
+    }
 
     // Set up the optical control register value according to the current
     // optical port modes.  At this stage it's not completely understood

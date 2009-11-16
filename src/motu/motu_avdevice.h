@@ -89,6 +89,48 @@
 #define MOTU_REG_INPUT_GAIN_PHINV1 0x0c74
 #define MOTU_REG_INPUT_GAIN_PHINV2 0x0c78
 
+/* Device register definitions for the earliest generation devices */
+#define MOTU_G1_REG_CONFIG         0x0b00
+
+/* The optical mode defines for the 828Mk1 are estimates at present, to be 
+ * confirmed.
+ */
+#define MOTU_G1_OPT_IN_MODE_MASK   0x0000  // Still be be observed
+#define MOTU_G1_OPT_IN_MODE_BIT0        0  // Still to be observed
+#define MOTU_G1_OPT_OUT_MODE_MASK  0xc000
+#define MOTU_G1_OPT_OUT_MODE_BIT0      26
+#define MOTU_G1_OPTICAL_OFF        0x0000
+#define MOTU_G1_OPTICAL_TOSLINK    0x0001
+#define MOTU_G1_OPTICAL_ADAT       0x0002
+
+#define MOTU_G1_RATE_MASK          0x0004
+#define MOTU_G1_RATE_44100         0x0000
+#define MOTU_G1_RATE_48000         0x0004
+
+#define MOTU_G1_CLKSRC_MASK        0x0003
+#define MOTU_G1_CLKSRC_INTERNAL    0x0000
+#define MOTU_G1_CLKSRC_ADAT_9PIN   0x0001
+#define MOTU_G1_CLKSRC_SPDIF       0x0002
+#define MOTU_G1_CLKSRC_UNCHANGED   MOTU_CLKSRC_UNCHANGED
+
+#define MOTU_G1_MONIN_MASK         0x3f00
+#define MOTU_G1_MONIN_L_SRC_MASK   0x0600
+#define MOTU_G1_MONIN_R_SRC_MASK   0x3000
+#define MOTU_G1_MONIN_L_MUTE_MASK  0x0100  // Yes, the sense of these 2 bits
+#define MOTU_G1_MONIN_R_EN_MASK    0x0800  //   really are reversed
+#define MOTU_G1_MONIN_L_MUTE       0x0100
+#define MOTU_G1_MONIN_L_ENABLE     0x0000
+#define MOTU_G1_MONIN_R_MUTE       0x0000
+#define MOTU_G1_MONIN_R_ENABLE     0x0800
+#define MOTU_G1_MONIN_L_CH1        0x0000
+#define MOTU_G1_MONIN_L_CH3        0x0020
+#define MOTU_G1_MONIN_L_CH5        0x0040
+#define MOTU_G1_MONIN_L_CH7        0x0060
+#define MOTU_G1_MONIN_R_CH2        0x0000
+#define MOTU_G1_MONIN_R_CH4        0x1000
+#define MOTU_G1_MONIN_R_CH6        0x2000
+#define MOTU_G1_MONIN_R_CH8        0x3000
+
 /* Mark3 device registers - these don't have MOTU_BASE_ADDR as the base
  * address so for now we'll define them as absolute addresses.
  */
