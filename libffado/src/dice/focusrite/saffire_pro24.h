@@ -36,14 +36,53 @@ class SaffirePro24 : public Dice::Device {
 public:
     SaffirePro24( DeviceManager& d,
                   std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~SaffirePro24();
+    ~SaffirePro24();
 
-    virtual void showDevice();
+    bool discover();
 
+    void showDevice();
+
+    bool canChangeNickname() { return true; }
+    bool setNickName( std::string name );
+    std::string getNickName();
+
+    class LineInstSwitch : public Control::Enum
+    {
+    protected:
+        friend class Dice::Focusrite::SaffirePro24;
+
+        LineInstSwitch(Dice::Device::EAP*, std::string name, size_t offset, int activevalue);
+    public:
+        int count() { return 2; }
+
+        int selected();
+        bool select(int);
+
+        std::string getEnumLabel(int);
+
+    private:
+        Dice::Device::EAP* m_eap;
+        int m_selected;
+        size_t m_offset;
+        int m_activevalue;
+        fb_quadlet_t m_state_tmp;
+    };
+    class LevelSwitch : public LineInstSwitch
+    {
+    protected:
+        friend class Dice::Focusrite::SaffirePro24;
+
+        LevelSwitch(Dice::Device::EAP*, std::string name, size_t offset, int activevalue);
+    public:
+        std::string getEnumLabel(int);
+    };
 private:
+    LineInstSwitch *m_ch1, *m_ch2;
+    LevelSwitch *m_ch3, *m_ch4;
 };
 
 }
 }
 
 #endif
+// vim: et
