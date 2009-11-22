@@ -46,39 +46,47 @@ public:
     bool setNickName( std::string name );
     std::string getNickName();
 
-    class LineInstSwitch : public Control::Enum
+    /**
+     * @brief A standard-switch for boolean.
+     *
+     * If you don't like True and False for the labels, subclass and return your own.
+    */
+    class Switch : public Control::Boolean
     {
     protected:
         friend class Dice::Focusrite::SaffirePro24;
 
-        LineInstSwitch(Dice::Device::EAP*, std::string name, size_t offset, int activevalue);
+        Switch(Dice::Device::EAP*, std::string name, size_t offset, int activevalue);
     public:
-        int count() { return 2; }
-
-        int selected();
-        bool select(int);
-
-        std::string getEnumLabel(int);
-
+        bool selected();
+        bool select(bool);
     private:
         Dice::Device::EAP* m_eap;
-        int m_selected;
+        bool m_selected;
         size_t m_offset;
         int m_activevalue;
         fb_quadlet_t m_state_tmp;
     };
-    class LevelSwitch : public LineInstSwitch
+
+    class MonitorSection : public Control::Container
     {
     protected:
         friend class Dice::Focusrite::SaffirePro24;
 
-        LevelSwitch(Dice::Device::EAP*, std::string name, size_t offset, int activevalue);
-    public:
-        std::string getEnumLabel(int);
+        MonitorSection(Dice::Device::EAP*, std::string name);
+    private:
+        Dice::Device::EAP* m_eap;
+        Switch *m_mute, *m_dim;
+        std::vector<Switch*> m_mute_affected;
+        std::vector<Switch*> m_dim_affected;
+        std::vector<Switch*> m_mono;
     };
 private:
+    class LineInstSwitch;
     LineInstSwitch *m_ch1, *m_ch2;
+    class LevelSwitch;
     LevelSwitch *m_ch3, *m_ch4;
+    MonitorSection *m_monitor;
 };
 
 }
