@@ -302,4 +302,17 @@
       </method>
   </interface>
 
+  <interface name="org.ffado.Control.Element.Boolean">
+      <method name="select">
+          <arg type="b" name="value" direction="in"/>
+          <arg type="b" name="success" direction="out"/>
+      </method>
+      <method name="selected">
+          <arg type="b" name="value" direction="out"/>
+      </method>
+      <method name="getBooleanLabel">
+          <arg type="b" name="value" direction="in"/>
+          <arg type="s" name="label" direction="out"/>
+      </method>
+  </interface>
 </node>

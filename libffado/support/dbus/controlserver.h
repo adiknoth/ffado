@@ -366,6 +366,22 @@ private:
     Control::CrossbarRouter &m_Slave;
 };
 
+class Boolean
+: public org::ffado::Control::Element::Boolean
+, public Element
+{
+public:
+    Boolean( DBus::Connection& connection,
+          std::string p, Element *,
+          Control::Boolean &slave );
+    
+    DBus::Bool select( const DBus::Bool& value );
+    DBus::Bool selected();
+    DBus::String getBooleanLabel( const DBus::Bool& value );
+
+private:
+    Control::Boolean &m_Slave;
+};
 }
 
 #endif // CONTROLSERVER_H

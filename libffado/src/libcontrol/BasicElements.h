@@ -153,6 +153,24 @@ public:
     ///> get the name of the attribute with a certain index
     virtual std::string getAttributeName(int attridx) = 0;
 };
+/*!
+@brief Base class for basic boolean control elements
+*/
+class Boolean
+: public Element
+{
+public:
+    Boolean(Element *p) : Element(p) {};
+    Boolean(Element *p, std::string n) : Element(p, n) {};
+    virtual ~Boolean() {};
+
+    virtual bool select(bool) = 0;
+    virtual bool selected() = 0;
+    virtual std::string getBooleanLabel(bool n) {
+        if (n) return "True";
+        return "False";
+    }
+};
 
 }; // namespace Control
 

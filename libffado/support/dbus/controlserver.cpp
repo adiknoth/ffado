@@ -409,6 +409,13 @@ Container::createHandler(Element *parent, Control::Element& e) {
                 parent, *dynamic_cast<Control::Enum *>(&e));
         }
         
+        if (dynamic_cast<Control::Boolean *>(&e) != NULL) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a Control::Boolean\n");
+            
+            return new Boolean(conn(), std::string(path()+"/"+e.getName()),
+                parent, *dynamic_cast<Control::Boolean *>(&e));
+        }
+        
         if (dynamic_cast<ConfigRom *>(&e) != NULL) {
             debugOutput( DEBUG_LEVEL_VERBOSE, "Source is a ConfigRom\n");
             
@@ -1006,6 +1013,39 @@ CrossbarRouter::setConnectionMap(const std::vector< DBus::Int32 >&connmap)
         map_data[i] = connmap.at(i);
     }
     return m_Slave.setConnectionMap(map_data);
+}
+
+// --- Boolean
+
+Boolean::Boolean( DBus::Connection& connection, std::string p, Element* parent, Control::Boolean &slave)
+: Element(connection, p, parent, slave)
+, m_Slave(slave)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Boolean on '%s'\n",
+                 path().c_str() );
+}
+
+DBus::Bool
+Boolean::select( const DBus::Bool& value )
+{
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "select(%d)\n", value );
+    return  m_Slave.select(value);
+}
+
+DBus::Bool
+Boolean::selected()
+{
+    bool retval = m_Slave.selected();
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "selected() => %d\n", retval );
+    return retval;
+}
+
+DBus::String
+Boolean::getBooleanLabel( const DBus::Bool& value )
+{
+    std::string retval = m_Slave.getBooleanLabel(value);
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "getBooleanLabel(%d) => %s\n", value, retval.c_str() );
+    return retval;
 }
 
 
