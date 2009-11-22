@@ -386,7 +386,7 @@ Device::EAP::loadFlashConfig() {
 
 bool
 Device::EAP::storeFlashConfig() {
-    debugWarning("Untested code\n");
+    //debugWarning("Untested code\n") // Works. -Arnold;
     fb_quadlet_t cmd = DICE_EAP_CMD_OPCODE_ST_FLASH_CFG;
     cmd |= DICE_EAP_CMD_OPCODE_FLAG_LD_EXECUTE;
     return commandHelper(cmd);
