@@ -360,6 +360,7 @@ public:
         bool init();
 
         void show();
+        void showApplication();
         enum eWaitReturn operationBusy();
         enum eWaitReturn waitForOperationEnd(int max_wait_time_ms = 100);
 
@@ -403,6 +404,7 @@ public:
 
         bool commandHelper(fb_quadlet_t cmd);
 
+    public:
         bool readReg(enum eRegBase, unsigned offset, quadlet_t *);
         bool writeReg(enum eRegBase, unsigned offset, quadlet_t);
         bool readRegBlock(enum eRegBase, unsigned, fb_quadlet_t *, size_t);

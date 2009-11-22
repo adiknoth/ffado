@@ -30,7 +30,7 @@ namespace Focusrite {
 const int msgSet = 0x68;
 
 SaffirePro24::SaffirePro24( DeviceManager& d,
-                                        std::auto_ptr<ConfigRom>( configRom ))
+                            std::auto_ptr<ConfigRom>( configRom ))
     : Dice::Device(d , configRom)
     , m_ch1(NULL)
     , m_ch2(NULL)
@@ -41,15 +41,16 @@ SaffirePro24::SaffirePro24( DeviceManager& d,
 
 SaffirePro24::~SaffirePro24()
 {
-    m_eap->deleteElement(m_ch1);
-    m_eap->deleteElement(m_ch2);
+    getEAP()->deleteElement(m_ch1);
+    getEAP()->deleteElement(m_ch2);
     if (m_ch1) delete m_ch1;
     if (m_ch2) delete m_ch2;
 }
+
 bool SaffirePro24::discover() {
     if (Dice::Device::discover()) {
         fb_quadlet_t* tmp = (fb_quadlet_t *)calloc(2, sizeof(fb_quadlet_t));
-        m_eap->readRegBlock(Dice::Device::EAP::eRT_Application, 0x58, tmp, 2*sizeof(fb_quadlet_t));
+        getEAP()->readRegBlock(Dice::Device::EAP::eRT_Application, 0x58, tmp, 2*sizeof(fb_quadlet_t));
         hexDumpQuadlets(tmp, 2);
 
         m_ch1 = new LineInstSwitch(getEAP(), "LineInstCh1", 0x58, 2);
@@ -64,20 +65,22 @@ bool SaffirePro24::discover() {
     }
     return false;
 }
+
 void SaffirePro24::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a Dice::Focusrite::SaffirePro24\n");
     Dice::Device::showDevice();
 }
+
 bool SaffirePro24::setNickName( std::string name ) {
-    return m_eap->writeRegBlock( Dice::Device::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name.c_str(), name.size() );
-}
-std::string SaffirePro24::getNickName() {
-    char name[16];
-    m_eap->readRegBlock( Dice::Device::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name, 16 );
-    return std::string( name );
+    return getEAP()->writeRegBlock( Dice::Device::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name.c_str(), name.size() );
 }
 
+std::string SaffirePro24::getNickName() {
+    char name[16];
+    getEAP()->readRegBlock( Dice::Device::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name, 16 );
+    return std::string( name );
+}
 
 SaffirePro24::LineInstSwitch::LineInstSwitch(Dice::Device::EAP* eap, std::string name, size_t offset, int activevalue )
     : Control::Enum(eap, name)
@@ -90,9 +93,11 @@ SaffirePro24::LineInstSwitch::LineInstSwitch(Dice::Device::EAP* eap, std::string
     printf("%s: Active?%i\n", name.c_str(), m_state_tmp&m_activevalue);
     m_selected = (m_state_tmp&m_activevalue)?1:0;
 }
+
 int SaffirePro24::LineInstSwitch::selected() {
     return m_selected;
 }
+
 bool SaffirePro24::LineInstSwitch::select(int n) {
     if ( n != m_selected ) {
         m_selected = n;
