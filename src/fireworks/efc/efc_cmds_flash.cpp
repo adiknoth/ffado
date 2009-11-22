@@ -67,7 +67,7 @@ EfcFlashEraseCmd::showEfcCmd()
 {
     EfcCmd::showEfcCmd();
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC Flash Erase:\n");
-    debugOutput(DEBUG_LEVEL_NORMAL, " Address     : %lu\n", m_address);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Address     : %u\n", m_address);
 }
 
 // ----
@@ -119,8 +119,8 @@ EfcFlashReadCmd::showEfcCmd()
 {
     EfcCmd::showEfcCmd();
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC Flash Read:\n");
-    debugOutput(DEBUG_LEVEL_NORMAL, " Address           : %lu\n", m_address);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Length (quadlets) : %lu\n", m_nb_quadlets);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Address           : %u\n", m_address);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Length (quadlets) : %u\n", m_nb_quadlets);
     debugOutput(DEBUG_LEVEL_NORMAL, " Data              : \n");
     for (unsigned int i=0; i < m_nb_quadlets; i++) {
         debugOutput(DEBUG_LEVEL_NORMAL, "                     %08X \n", m_data[i]);
@@ -173,8 +173,8 @@ EfcFlashWriteCmd::showEfcCmd()
 {
     EfcCmd::showEfcCmd();
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC Flash Write:\n");
-    debugOutput(DEBUG_LEVEL_NORMAL, " Address           : %lu\n", m_address);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Length (quadlets) : %lu\n", m_nb_quadlets);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Address           : %u\n", m_address);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Length (quadlets) : %u\n", m_nb_quadlets);
     debugOutput(DEBUG_LEVEL_NORMAL, " Data              : \n");
     for (unsigned int i=0; i < m_nb_quadlets; i++) {
         debugOutput(DEBUG_LEVEL_NORMAL, "                     %08X \n", m_data[i]);
@@ -291,7 +291,7 @@ EfcFlashGetSessionBaseCmd::showEfcCmd()
 {
     EfcCmd::showEfcCmd();
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC Flash Get Session Base:\n");
-    debugOutput(DEBUG_LEVEL_NORMAL, " Address           : %lu\n", m_address);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Address           : %u\n", m_address);
 }
 
 } // namespace FireWorks

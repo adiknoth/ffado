@@ -559,7 +559,7 @@ Device::getActiveClockSource() {
 FFADODevice::ClockSource
 Device::clockIdToClockSource(uint32_t clockid) {
     ClockSource s;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "clock id: %lu\n", clockid);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "clock id: %u\n", clockid);
 
     // the polled values are used to detect
     // whether clocks are valid
@@ -623,7 +623,7 @@ Device::getClock() {
         debugError("Could not get clock info\n");
         return EFC_CMD_HW_CLOCK_UNSPECIFIED;
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Active clock: 0x%08lX\n",gccmd.m_clock);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Active clock: 0x%08X\n",gccmd.m_clock);
     gccmd.showEfcCmd();
 
     return gccmd.m_clock;
@@ -636,7 +636,7 @@ Device::setClock(uint32_t id) {
         debugError("Could not get clock info\n");
         return false;
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Set clock: 0x%08lX\n", id);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Set clock: 0x%08X\n", id);
 
     EfcSetClockCmd sccmd;
     sccmd.m_clock=id;

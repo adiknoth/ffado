@@ -422,11 +422,11 @@ SaffireProDevice::updateClockSources() {
         m_internal_clocksource.active=true;
         return;
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "SYNC_CONFIG field value: %08lX\n", sync );
+    debugOutput(DEBUG_LEVEL_VERBOSE, "SYNC_CONFIG field value: %08X\n", sync );
 
     switch(sync & FR_SAFFIREPRO_CMD_ID_SYNC_CONFIG_MASK) {
         default:
-            debugWarning( "Unexpected SYNC_CONFIG field value: %08lX\n", sync );
+            debugWarning( "Unexpected SYNC_CONFIG field value: %08X\n", sync );
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
             m_internal_clocksource.active=true;
             m_active_clocksource = &m_internal_clocksource;
@@ -465,7 +465,7 @@ SaffireProDevice::updateClockSources() {
             m_wordclock_clocksource.locked=true;
             break;
         default:
-            debugWarning( "Unexpected SYNC_CONFIG_STATE field value: %08lX\n", sync );
+            debugWarning( "Unexpected SYNC_CONFIG_STATE field value: %08X\n", sync );
     }
 }
 
@@ -771,7 +771,7 @@ SaffireProDevice::setSamplingFrequency( int s )
             if (s == verify) {
                 break;
             }
-            debugOutput( DEBUG_LEVEL_VERBOSE, "setSampleRate (try %d) failed. Try again...\n" );
+            debugOutput( DEBUG_LEVEL_VERBOSE, "setSampleRate (try %d) failed. Try again...\n", ntries);
         }
 
         // make the busreset handlers run
@@ -871,8 +871,7 @@ SaffireProDevice::getCount32() {
         return false;
     }
 
-    debugOutput( DEBUG_LEVEL_VERBOSE,
-                     "getCount32: %08lX\n", v );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getCount32: %08X\n", v );
     return v;
 }
 

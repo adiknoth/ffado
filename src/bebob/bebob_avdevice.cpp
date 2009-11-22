@@ -723,7 +723,7 @@ AvDevice::loadFromCache()
     std::string sDevicePath = getCachePath() + getConfigRom().getGuidString();
 
     char* configId;
-    asprintf(&configId, "%016llx", getConfigurationId() );
+    asprintf(&configId, "%016lx", getConfigurationId() );
     if ( !configId ) {
         debugError( "could not create id string\n" );
         return false;
@@ -799,7 +799,7 @@ AvDevice::saveCache()
 
     // come up with an unique file name for the current settings
     char* configId;
-    asprintf(&configId, "%016llx", BeBoB::AvDevice::getConfigurationId() );
+    asprintf(&configId, "%016lx", BeBoB::AvDevice::getConfigurationId() );
     if ( !configId ) {
         debugError( "Could not create id string\n" );
         return false;

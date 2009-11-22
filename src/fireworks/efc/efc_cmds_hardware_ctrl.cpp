@@ -72,9 +72,9 @@ EfcGetClockCmd::showEfcCmd()
 {
     EfcCmd::showEfcCmd();
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC Get Clock:\n");
-    debugOutput(DEBUG_LEVEL_NORMAL, " Clock       : %lu\n", m_clock);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Samplerate  : %lu\n", m_samplerate);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Index       : %lu\n", m_index);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Clock       : %u\n", m_clock);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Samplerate  : %u\n", m_samplerate);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Index       : %u\n", m_index);
 }
 
 // ----
@@ -123,9 +123,9 @@ EfcSetClockCmd::showEfcCmd()
 {
     EfcCmd::showEfcCmd();
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC Set Clock:\n");
-    debugOutput(DEBUG_LEVEL_NORMAL, " Clock       : %lu\n", m_clock);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Samplerate  : %lu\n", m_samplerate);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Index       : %lu\n", m_index);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Clock       : %u\n", m_clock);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Samplerate  : %u\n", m_samplerate);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Index       : %u\n", m_index);
 }
 
 // ----

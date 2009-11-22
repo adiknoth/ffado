@@ -163,10 +163,10 @@ CycleTimerHelper::initValues()
                         "Bogus CTR: %08X on try %02d\n",
                         m_cycle_timer_prev, maxtries2);
         }
-        debugOutput( DEBUG_LEVEL_VERBOSE, " read : CTR: %11lu, local: %17llu\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, " read : CTR: %11u, local: %17lu\n",
                             m_cycle_timer_prev, local_time);
         debugOutput(DEBUG_LEVEL_VERBOSE,
-                           "  ctr   : 0x%08X %11llu (%03us %04ucy %04uticks)\n",
+                           "  ctr   : 0x%08X %11lu (%03us %04ucy %04uticks)\n",
                            (uint32_t)m_cycle_timer_prev, (uint64_t)CYCLE_TIMER_TO_TICKS(m_cycle_timer_prev),
                            (unsigned int)CYCLE_TIMER_GET_SECS( m_cycle_timer_prev ),
                            (unsigned int)CYCLE_TIMER_GET_CYCLES( m_cycle_timer_prev ),
@@ -309,7 +309,7 @@ CycleTimerHelper::initDLL() {
     debugOutput(DEBUG_LEVEL_VERBOSE, "  DLL bandwidth: %f Hz (rel: %f)\n", 
                 bw_abs, bw_rel);
     debugOutput(DEBUG_LEVEL_VERBOSE,
-                "  usecs/update: %lu, ticks/update: %lu, m_dll_e2: %f\n",
+                "  usecs/update: %u, ticks/update: %u, m_dll_e2: %f\n",
                 m_usecs_per_update, m_ticks_per_update, m_dll_e2);
     debugOutput(DEBUG_LEVEL_VERBOSE,
                 "  usecs current: %f, next: %f\n",
@@ -350,7 +350,7 @@ CycleTimerHelper::Execute()
         #ifdef DEBUG
         ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         int sleep_time = m_sleep_until - now;
-        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) Sleep until %lld/%f (now: %lld, diff=%d) ...\n",
+        debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) Sleep until %ld/%f (now: %ld, diff=%d) ...\n",
                     this, m_sleep_until, m_next_time_usecs, now, sleep_time);
         #endif
         Util::SystemTimeSource::SleepUsecAbsolute(m_sleep_until);
@@ -389,7 +389,7 @@ CycleTimerHelper::Execute()
         not_good = (-err_ticks > 1*TICKS_PER_CYCLE || err_ticks > 1*TICKS_PER_CYCLE);
         if(not_good) {
             debugOutput(DEBUG_LEVEL_VERBOSE, 
-                        "(%p) have to retry CTR read, diff unrealistic: diff: %lld, max: +/- %u (try: %d) %lld\n", 
+                        "(%p) have to retry CTR read, diff unrealistic: diff: %ld, max: +/- %u (try: %d) %ld\n", 
                         this, err_ticks, 1*TICKS_PER_CYCLE, ntries, expected_ticks);
             // sleep half a cycle to make sure the hardware moved on
             Util::SystemTimeSource::SleepUsecRelative(USECS_PER_CYCLE / 2);
@@ -408,7 +408,7 @@ CycleTimerHelper::Execute()
 
     // // simulate a random scheduling delay between (0-10ms)
     // ffado_microsecs_t tmp = Util::SystemTimeSource::SleepUsecRandom(10000);
-    // debugOutput( DEBUG_LEVEL_VERBOSE, " (%p) random sleep of %llu usecs...\n", this, tmp);
+    // debugOutput( DEBUG_LEVEL_VERBOSE, " (%p) random sleep of %lu usecs...\n", this, tmp);
 
     if(m_unhandled_busreset) {
         debugOutput(DEBUG_LEVEL_VERBOSE,
@@ -435,7 +435,7 @@ CycleTimerHelper::Execute()
         m_first_run = false;
     } else if (diff_ticks > m_ticks_per_update * 20) {
         debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "re-init dll due to too large tick diff: %lld >> %f\n",
+                    "re-init dll due to too large tick diff: %ld >> %f\n",
                     diff_ticks, (float)(m_ticks_per_update * 20));
         if(!initDLL()) {
             debugError("(%p) Could not init DLL\n", this);
@@ -461,7 +461,7 @@ CycleTimerHelper::Execute()
         if (ticks_late >= 0) {
             diff_ticks_corr = diff_ticks - ticks_late;
             debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                               "diff_ticks_corr=%lld, diff_ticks = %lld, ticks_late = %lld\n",
+                               "diff_ticks_corr=%ld, diff_ticks = %ld, ticks_late = %ld\n",
                                diff_ticks_corr, diff_ticks, ticks_late);
         } else {
             debugError("Early wakeup, should not happen!\n");
@@ -472,7 +472,7 @@ CycleTimerHelper::Execute()
         #ifdef DEBUG
         // makes no sense if not running realtime
         if(m_realtime && usecs_late > 1000) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "Rather late wakeup: %lld usecs\n", usecs_late);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Rather late wakeup: %ld usecs\n", usecs_late);
         }
         #endif
 
@@ -525,10 +525,10 @@ CycleTimerHelper::Execute()
         m_next_time_usecs += m_usecs_per_update;
 
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, 
-                           " usecs: current: %f next: %f usecs_late=%lld ticks_late=%lld\n",
+                           " usecs: current: %f next: %f usecs_late=%ld ticks_late=%ld\n",
                            m_current_time_usecs, m_next_time_usecs, usecs_late, ticks_late);
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                           " ticks: current: %f next: %f diff=%lld\n",
+                           " ticks: current: %f next: %f diff=%ld\n",
                            m_current_time_ticks, m_next_time_ticks, diff_ticks);
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                            " ticks: current: %011llu (%03us %04ucy %04uticks)\n",
@@ -588,7 +588,7 @@ CycleTimerHelper::Execute()
         dll_time = substractTicks(offset_in_ticks_int, -y_step_in_ticks_int);
     }
     int32_t ctr_diff = cycle_timer_ticks-dll_time;
-    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) CTR DIFF: HW %010llu - DLL %010lu = %010ld (%s)\n", 
+    debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE, "(%p) CTR DIFF: HW %010lu - DLL %010u = %010d (%s)\n", 
                 this, cycle_timer_ticks, dll_time, ctr_diff, (ctr_diff>0?"lag":"lead"));
 #endif
 
@@ -624,13 +624,13 @@ CycleTimerHelper::getCycleTimerTicks(uint64_t now)
 
     if (y_step_in_ticks_int > 0) {
         retval = addTicks(offset_in_ticks_int, y_step_in_ticks_int);
-/*        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int > 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
+/*        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int > 0: %ld, time_diff: %f, rate: %f, retval: %lu\n", 
                     y_step_in_ticks_int, time_diff, my_vars.rate, retval);*/
     } else {
         retval = substractTicks(offset_in_ticks_int, -y_step_in_ticks_int);
 
         // this can happen if the update thread was woken up earlier than it should have been
-/*        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int <= 0: %lld, time_diff: %f, rate: %f, retval: %lu\n", 
+/*        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "y_step_in_ticks_int <= 0: %ld, time_diff: %f, rate: %f, retval: %lu\n", 
                     y_step_in_ticks_int, time_diff, my_vars.rate, retval);*/
     }
 
@@ -791,19 +791,19 @@ CycleTimerHelper::readCycleTimerWithRetry(uint32_t *cycle_timer, uint64_t *local
     
         if (diffTicks(cycle_timer_ticks, m_cycle_timer_ticks_prev) < 0) {
             debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
-                        "non-monotonic CTR (try %02d): %llu -> %llu\n",
+                        "non-monotonic CTR (try %02d): %lu -> %lu\n",
                         maxtries, m_cycle_timer_ticks_prev, cycle_timer_ticks);
             debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
                         "                            : %08X -> %08X\n",
                         m_cycle_timer_prev, *cycle_timer);
             debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
-                        " current: %011llu (%03us %04ucy %04uticks)\n",
+                        " current: %011lu (%03us %04ucy %04uticks)\n",
                         cycle_timer_ticks,
                         (unsigned int)TICKS_TO_SECS( cycle_timer_ticks ),
                         (unsigned int)TICKS_TO_CYCLES( cycle_timer_ticks ),
                         (unsigned int)TICKS_TO_OFFSET( cycle_timer_ticks ) );
             debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
-                        " prev   : %011llu (%03us %04ucy %04uticks)\n",
+                        " prev   : %011lu (%03us %04ucy %04uticks)\n",
                         m_cycle_timer_ticks_prev,
                         (unsigned int)TICKS_TO_SECS( m_cycle_timer_ticks_prev ),
                         (unsigned int)TICKS_TO_CYCLES( m_cycle_timer_ticks_prev ),

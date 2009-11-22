@@ -119,7 +119,7 @@ OpenDescriptorCmd::deserialize( Util::Cmd::IISDeserialize& de )
         
         break;
     default:
-        debugError("Can't handle command type %s\n", getCommandType());
+        debugError("Can't handle command type %d\n", getCommandType());
         return false;
     }
 

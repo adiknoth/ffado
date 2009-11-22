@@ -94,7 +94,7 @@ static inline uint64_t wrapAtMaxTicks(uint64_t x) {
 
 #ifdef DEBUG
         if (x >= TICKS_PER_SECOND * 128L) {
-            debugWarning("insufficient wrapping: %llu\n",x);
+            debugWarning("insufficient wrapping: %lu\n",x);
         }
 #endif
 
@@ -117,7 +117,7 @@ static inline int64_t wrapAtMinTicks(int64_t x) {
 
 #ifdef DEBUG
         if (x < 0) {
-            debugWarning("insufficient wrapping: %lld\n",x);
+            debugWarning("insufficient wrapping: %ld\n",x);
         }
 #endif
 
@@ -144,10 +144,10 @@ static inline int64_t wrapAtMinMaxTicks(int64_t x) {
 
 #ifdef DEBUG
         if (x >= (int64_t)(TICKS_PER_SECOND * 128L)) {
-            debugWarning("insufficient wrapping (max): %llu\n",x);
+            debugWarning("insufficient wrapping (max): %lu\n",x);
         }
         if (x < 0) {
-            debugWarning("insufficient wrapping (min): %lld\n",x);
+            debugWarning("insufficient wrapping (min): %ld\n",x);
         }
 #endif
     return x;
@@ -248,7 +248,7 @@ static inline int64_t diffTicks(int64_t x, int64_t y) {
 #ifdef DEBUG
     if(diff > max || diff < -max) {
         debugWarning("difference does not make any sense\n");
-        debugWarning("diff=%lld max=%lld\n", diff, max);
+        debugWarning("diff=%ld max=%ld\n", diff, max);
         
     }
 #endif
@@ -312,7 +312,7 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
     // the cycle timer should be ahead of the receive timer
     int diff_cycles = diffCycles(cc_cycles, rcv_cycle);
     if (diff_cycles<0) {
-        debugWarning("current cycle timer not ahead of receive cycle: rcv: %u / cc: %llu (%d)\n",
+        debugWarning("current cycle timer not ahead of receive cycle: rcv: %u / cc: %lu (%d)\n",
                         rcv_cycle, cc_cycles, diff_cycles);
     }
 
@@ -371,7 +371,7 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
     #ifdef DEBUG
         if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
             debugWarning("back-converted timestamp not equal to SYT\n");
-            debugWarning("TS=%011llu TSC=%08lX SYT=%04X\n",
+            debugWarning("TS=%011lu TSC=%08lX SYT=%04lX\n",
                   timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
         }
     #endif
@@ -432,7 +432,7 @@ static inline uint64_t sytRecvToFullTicks2(uint64_t syt_timestamp, uint32_t rcv_
     #ifdef DEBUG
         if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
             debugWarning("back-converted timestamp not equal to SYT\n");
-            debugWarning("TS=%011llu TSC=%08lX SYT=%04X\n",
+            debugWarning("TS=%011lu TSC=%08lX SYT=%04lX\n",
                   timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
         }
     #endif
@@ -466,7 +466,7 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     // check for bogus CTR
     int diff_cycles = diffCycles(xmt_cycle, cc_cycles);
     if (diff_cycles<0) {
-        debugWarning("xmit cycle not ahead of current cycle: xmt: %u / cc: %llu (%d)\n",
+        debugWarning("xmit cycle not ahead of current cycle: xmt: %u / cc: %lu (%d)\n",
                         xmt_cycle, cc_cycles, diff_cycles);
     }
 
@@ -525,7 +525,7 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     #ifdef DEBUG
         if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
             debugWarning("back-converted timestamp not equal to SYT\n");
-            debugWarning("TS=%011llu TSC=%08lX SYT=%04X\n",
+            debugWarning("TS=%011lu TSC=%08lX SYT=%04lX\n",
                   timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
         }
     #endif

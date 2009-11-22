@@ -300,7 +300,7 @@ double ChannelFaderMatrixMixer::setValue(const int row, const int col, const dou
     v = val<0?0:(uint32_t)val;
     if (v > 0x80)
       v = 0x80;
-    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelFader setValue for row %d col %d to %lf (%ld)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelFader setValue for row %d col %d to %lf (%d)\n",
       row, col, val, v);
     reg = getCellRegister(row,col);
 
@@ -330,7 +330,7 @@ double ChannelFaderMatrixMixer::getValue(const int row, const int col)
     // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(reg) & 0xff;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelFader getValue for row %d col %d = %lu\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelFader getValue for row %d col %d = %u\n",
       row, col, val);
     return val;
 }
@@ -352,7 +352,7 @@ double ChannelPanMatrixMixer::setValue(const int row, const int col, const doubl
     if (v > 0x80)
       v = 0x80;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelPan setValue for row %d col %d to %lf (%ld)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelPan setValue for row %d col %d to %lf (%d)\n",
       row, col, val, v);
     reg = getCellRegister(row,col);
 
@@ -386,7 +386,7 @@ double ChannelPanMatrixMixer::getValue(const int row, const int col)
     val = m_parent.ReadRegister(reg);
     val = ((val >> 8) & 0xff) - 0x40;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelPan getValue for row %d col %d = %lu\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelPan getValue for row %d col %d = %u\n",
       row, col, val);
     return val;
 }
@@ -413,7 +413,7 @@ double ChannelBinSwMatrixMixer::setValue(const int row, const int col, const dou
 {
     uint32_t v, reg;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "BinSw setValue for row %d col %d to %lf (%ld)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "BinSw setValue for row %d col %d to %lf (%d)\n",
       row, col, val, val==0?0:1);
     reg = getCellRegister(row,col);
 
@@ -459,7 +459,7 @@ double ChannelBinSwMatrixMixer::getValue(const int row, const int col)
     val = m_parent.ReadRegister(reg);
     val = (val & m_value_mask) != 0;
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "BinSw getValue for row %d col %d = %lu\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "BinSw getValue for row %d col %d = %u\n",
       row, col, val);
     return val;
 }

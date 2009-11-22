@@ -253,7 +253,7 @@ AVCDescriptor::load()
             readDescCmd.m_data_length=m_descriptor_length-bytes_read;
         }
         
-        debugOutput(DEBUG_LEVEL_VERBOSE, " copying %u bytes to internal buffer offset %u\n",readDescCmd.m_data_length, bytes_read);
+        debugOutput(DEBUG_LEVEL_VERBOSE, " copying %u bytes to internal buffer offset %lu\n",readDescCmd.m_data_length, bytes_read);
         
         memcpy(m_data+bytes_read,readDescCmd.m_data, readDescCmd.m_data_length);
         bytes_read += readDescCmd.m_data_length;

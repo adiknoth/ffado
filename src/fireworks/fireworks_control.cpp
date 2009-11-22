@@ -320,7 +320,7 @@ bool SimpleControl::setValue( const double val )
         default: // nothing
             break;
         }
-        debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for channel %d to %lf = %lf\n", 
+        debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for channel %d to %lf = %u\n", 
                                             m_Slave->m_channel, val, m_Slave->m_value);
         return true;
     } else {
@@ -338,7 +338,7 @@ double SimpleControl::getValue( )
             debugError("Cmd failed\n");
             return 0.0;
         }
-        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for channel %d = %lf\n", 
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for channel %d = %u\n", 
                                             m_Slave->m_channel, m_Slave->m_value);
         return m_Slave->m_value;
     } else {
@@ -450,7 +450,7 @@ bool BinaryControl::setValue( const int val )
             break;
         }
 
-        debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for channel %d to %ld (reg: 0x%08X => 0x%08X)\n", 
+        debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for channel %d to %d (reg: 0x%08X => 0x%08X)\n", 
                                             m_Slave->m_channel, val, old_reg, reg);
         return true;
     } else {
@@ -582,7 +582,7 @@ bool IOConfigControl::setValue( const int val )
             debugError("Cmd failed\n");
             return 0;
         }
-        debugOutput(DEBUG_LEVEL_VERBOSE, "setValue to %ld \n", val);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "setValue to %d \n", val);
         return true;
     } else {
         debugError("No slave EFC command present\n");
