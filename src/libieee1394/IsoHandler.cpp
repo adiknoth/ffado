@@ -396,7 +396,7 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
 
     if((pkt_ctr & ~0x0FFFL) != pkt_ctr_ref) {
         debugWarning("reconstructed CTR counter discrepancy\n");
-        debugWarning(" ingredients: %X, %lX, %lX, %lX, %lX, %ld, %ld, %ld, %lld\n",
+        debugWarning(" ingredients: %X, %X, %X, %X, %X, %d, %ld, %ld, %ld\n",
                        cycle, pkt_ctr_ref, pkt_ctr, now, m_last_now, now_secs_ref, CYCLE_TIMER_GET_SECS(now), CYCLE_TIMER_GET_SECS(m_last_now), tmp);
         debugWarning(" diffcy = %ld \n", diff_cycles);
     }
@@ -489,7 +489,7 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
 
         if(((pkt_ctr & ~0x0FFFL) != pkt_ctr_ref) && (m_packets > m_buf_packets)) {
             debugWarning("reconstructed CTR counter discrepancy\n");
-            debugWarning(" ingredients: %X, %lX, %lX, %lX, %lX, %ld, %ld, %ld, %lld\n",
+            debugWarning(" ingredients: %X, %X, %X, %X, %X, %d, %ld, %ld, %ld\n",
                         cycle, pkt_ctr_ref, pkt_ctr, now, m_last_now, now_secs_ref, CYCLE_TIMER_GET_SECS(now), CYCLE_TIMER_GET_SECS(m_last_now), tmp);
             debugWarning(" diffcy = %ld \n", diff_cycles);
         }

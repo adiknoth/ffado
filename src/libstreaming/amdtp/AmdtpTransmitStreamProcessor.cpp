@@ -140,7 +140,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         if ( cycles_until_presentation <= m_min_cycles_before_presentation )
         {
             debugOutput( DEBUG_LEVEL_NORMAL,
-                         "Insufficient frames (P): N=%02d, CY=%04u, TC=%04u, CUT=%04d\n",
+                         "Insufficient frames (P): N=%02d, CY=%04lu, TC=%04u, CUT=%04d\n",
                          fc, CYCLE_TIMER_GET_CYCLES(pkt_ctr), 
                          transmit_at_cycle, cycles_until_transmit );
             // we are too late
@@ -199,7 +199,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         {
             // we are too late
             debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "Too late: CY=%04u, TC=%04u, CUT=%04d, TSP=%011llu (%04u)\n",
+                        "Too late: CY=%04lu, TC=%04u, CUT=%04d, TSP=%011lu (%04u)\n",
                         CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                         transmit_at_cycle, cycles_until_transmit,
                         presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time) );
@@ -228,7 +228,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
 
             // for timestamp tracing
             debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                               "XMIT PKT: TSP= %011llu (%04u) (%04u) (%04u)\n",
+                               "XMIT PKT: TSP= %011lu (%04u) (%04u) (%04u)\n",
                                presentation_time,
                                (unsigned int)CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                                presentation_cycle, transmit_at_cycle);
@@ -238,7 +238,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
         else
         {
             debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                               "Too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
+                               "Too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011lu (%04u), TSP=%011llu (%04u)\n",
                                CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                                transmit_at_cycle, cycles_until_transmit,
                                transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
@@ -247,7 +247,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
             if ( cycles_until_transmit > m_max_cycles_to_transmit_early + 1 )
             {
                 debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                                   "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
+                                   "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011lu (%04u), TSP=%011llu (%04u)\n",
                                    CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                                    transmit_at_cycle, cycles_until_transmit,
                                    transmit_at_time, (unsigned int)TICKS_TO_CYCLES(transmit_at_time),
@@ -268,7 +268,7 @@ AmdtpTransmitStreamProcessor::generatePacketData (
     if (m_data_buffer->readFrames(m_syt_interval, (char *)(data + 8)))
     {
         debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                           "XMIT DATA: TSP= %011llu (%04u)\n",
+                           "XMIT DATA: TSP= %011lu (%04u)\n",
                            m_last_timestamp,
                            (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
         #if 0
@@ -300,7 +300,7 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                       "XMIT SILENT (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
+                       "XMIT SILENT (cy %04d): CY=%04u, TSP=%011lu (%04u)\n",
                        CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp,
                        (unsigned int)TICKS_TO_CYCLES(m_last_timestamp));
 
@@ -337,7 +337,7 @@ AmdtpTransmitStreamProcessor::generateEmptyPacketHeader (
 {
     struct iec61883_packet *packet = ( struct iec61883_packet * ) data;
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                       "XMIT EMPTY (cy %04d): CY=%04u, TSP=%011llu (%04u)\n",
+                       "XMIT EMPTY (cy %04d): CY=%04u, TSP=%011lu (%04u)\n",
                        CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp,
                        (unsigned int)TICKS_TO_CYCLES(m_last_timestamp) );
     packet->sid = m_local_node_id;

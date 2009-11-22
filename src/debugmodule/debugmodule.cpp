@@ -185,7 +185,7 @@ DebugModule::print( debug_level_t level,
     // format the message such that it remains together
     int chars_written=0;
     int retval=0;
-    retval = snprintf(msg, MB_BUFFERSIZE, "%011lu: %s (%s)[%4d] %s: ", 
+    retval = snprintf(msg, MB_BUFFERSIZE, "%011lu: %s (%s)[%4u] %s: ", 
                       ts_usec, getPreSequence( level ),
                       fname,  line,  function );
     if (retval >= 0) chars_written += retval; // ignore errors

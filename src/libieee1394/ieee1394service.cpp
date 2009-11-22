@@ -508,7 +508,7 @@ Ieee1394Service::readNoLock( fb_nodeid_t nodeId,
 
         #ifdef DEBUG
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-            "read: node 0x%hX, addr = 0x%016llX, length = %u\n",
+            "read: node 0x%hX, addr = 0x%016lX, length = %lu\n",
             nodeId, addr, length);
         printBuffer( DEBUG_LEVEL_VERY_VERBOSE, length, buffer );
         #endif
@@ -517,7 +517,7 @@ Ieee1394Service::readNoLock( fb_nodeid_t nodeId,
     } else {
         #ifdef DEBUG
         debugOutput(DEBUG_LEVEL_NORMAL,
-                    "raw1394_read failed: node 0x%hX, addr = 0x%016llX, length = %u\n",
+                    "raw1394_read failed: node 0x%hX, addr = 0x%016lX, length = %lu\n",
                     nodeId, addr, length);
         #endif
         return false;
@@ -563,7 +563,7 @@ Ieee1394Service::writeNoLock( fb_nodeid_t nodeId,
     }
 
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"write: node 0x%hX, addr = 0x%016llX, length = %d\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"write: node 0x%hX, addr = 0x%016lX, length = %lu\n",
                 nodeId, addr, length);
     printBuffer( DEBUG_LEVEL_VERY_VERBOSE, length, data );
     #endif
@@ -600,15 +600,15 @@ Ieee1394Service::lockCompareSwap64( fb_nodeid_t nodeId,
         return false;
     }
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERBOSE,"lockCompareSwap64: node 0x%X, addr = 0x%016llX\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"lockCompareSwap64: node 0x%X, addr = 0x%016lX\n",
                 nodeId, addr);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  if (*(addr)==0x%016llX) *(addr)=0x%016llX\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  if (*(addr)==0x%016lX) *(addr)=0x%016lX\n",
                 compare_value, swap_value);
     fb_octlet_t buffer;
     if(!read_octlet( nodeId, addr,&buffer )) {
         debugWarning("Could not read register\n");
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"before = 0x%016llX\n", buffer);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"before = 0x%016lX\n", buffer);
     }
     #endif
 
@@ -632,7 +632,7 @@ Ieee1394Service::lockCompareSwap64( fb_nodeid_t nodeId,
     if(!read_octlet( nodeId, addr,&buffer )) {
         debugWarning("Could not read register\n");
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"after = 0x%016llX\n", buffer);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"after = 0x%016lX\n", buffer);
     }
     #endif
 
@@ -826,7 +826,7 @@ Ieee1394Service::handleFcpResponse(nodeid_t nodeid,
 
     fb_quadlet_t *data_quads = (fb_quadlet_t *)data;
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"fcp response: node 0x%hX, response = %d, length = %d bytes\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"fcp response: node 0x%hX, response = %d, length = %lu bytes\n",
                 nodeid, response, length);
     printBuffer(DEBUG_LEVEL_VERY_VERBOSE, (length+3)/4, data_quads );
     #endif
@@ -856,7 +856,7 @@ Ieee1394Service::handleFcpResponse(nodeid_t nodeid,
 #endif
             } else if(FCP_MASK_SUBUNIT_AND_OPCODE(first_quadlet) 
                       != FCP_MASK_SUBUNIT_AND_OPCODE(CondSwapFromBus32(m_fcp_block.request[0]))) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response not for this request: %08lX != %08lX\n",
+                debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response not for this request: %08X != %08X\n",
                              FCP_MASK_SUBUNIT_AND_OPCODE(first_quadlet),
                              FCP_MASK_SUBUNIT_AND_OPCODE(CondSwapFromBus32(m_fcp_block.request[0])));
             } else if(m_filterFCPResponse && (memcmp(fcp_block_last.response, data, length) == 0)) {
@@ -920,14 +920,14 @@ Ieee1394Service::getSplitTimeoutUsecs(fb_nodeid_t nodeId)
         debugOutput(DEBUG_LEVEL_VERBOSE, "read of CSR_SPLIT_TIMEOUT_HI failed\n");
         return 0;
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, " READ HI: 0x%08lX\n", split_timeout_hi);
+    debugOutput(DEBUG_LEVEL_VERBOSE, " READ HI: 0x%08X\n", split_timeout_hi);
 
     if(!readNoLock( 0xffc0 | nodeId, CSR_REGISTER_BASE + CSR_SPLIT_TIMEOUT_LO, 1,
                   &split_timeout_low)) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "read of CSR_SPLIT_TIMEOUT_LO failed\n");
         return 0;
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, " READ LO: 0x%08lX\n", split_timeout_low);
+    debugOutput(DEBUG_LEVEL_VERBOSE, " READ LO: 0x%08X\n", split_timeout_low);
 
     split_timeout_hi = CondSwapFromBus32(split_timeout_hi);
     split_timeout_low = CondSwapFromBus32(split_timeout_low);
@@ -1380,7 +1380,7 @@ Ieee1394Service::show()
     debugOutput( DEBUG_LEVEL_VERBOSE, " Name: %s\n", getPortName().c_str() );
     debugOutput( DEBUG_LEVEL_VERBOSE, " CycleTimerHelper: %p, IsoManager: %p, WatchDog: %p\n",
                  m_pCTRHelper, m_pIsoManager, m_pWatchdog );
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Time: %011llu (%03us %04ucy %04uticks)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Time: %011lu (%03us %04ucy %04uticks)\n",
                 ctr,
                 (unsigned int)TICKS_TO_SECS( ctr ),
                 (unsigned int)TICKS_TO_CYCLES( ctr ),
