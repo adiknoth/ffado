@@ -504,7 +504,7 @@ bool TimestampedBuffer::writeFrames(unsigned int nframes, char *data, ffado_time
         size_t written = ffado_ringbuffer_write(m_event_buffer, data, write_size);
         if (written < write_size)
         {
-            debugWarning("ringbuffer full, %u, %lu\n", write_size, written);
+            debugWarning("ringbuffer full, %u, %zd\n", write_size, written);
             return false;
         }
         incrementFrameCounter(nframes, ts);
@@ -533,7 +533,7 @@ bool TimestampedBuffer::preloadFrames(unsigned int nframes, char *data, bool kee
     size_t written = ffado_ringbuffer_write(m_event_buffer, data, write_size);
     if (written < write_size)
     {
-        debugWarning("ringbuffer full, request: %u, actual: %lu\n", write_size, written);
+        debugWarning("ringbuffer full, request: %u, actual: %zd\n", write_size, written);
         return false;
     }
 
@@ -644,7 +644,7 @@ bool TimestampedBuffer::blockProcessWriteFrames(unsigned int nbframes, ffado_tim
         ffado_ringbuffer_get_write_vector(m_event_buffer, vec);
 
         if(vec[0].len + vec[1].len < m_process_block_size) { // this indicates a full event buffer
-            debugError("Event buffer overrun in buffer %p, fill: %lu, bytes2write: %u \n",
+            debugError("Event buffer overrun in buffer %p, fill: %zd, bytes2write: %u \n",
                        this, ffado_ringbuffer_read_space(m_event_buffer), bytes2write);
             debugShowBackLog();
             return false;

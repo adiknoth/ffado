@@ -126,7 +126,7 @@ EfcHardwareInfoCmd::showEfcCmd()
     
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC HW CAPS info:\n");
     debugOutput(DEBUG_LEVEL_NORMAL, " Flags   : 0x%08X\n", m_flags);
-    debugOutput(DEBUG_LEVEL_NORMAL, " GUID    : %016lX\n", m_guid);
+    debugOutput(DEBUG_LEVEL_NORMAL, " GUID    : %016"PRIX64"\n", m_guid);
     debugOutput(DEBUG_LEVEL_NORMAL, " HwType  : 0x%08X\n", m_type);
     debugOutput(DEBUG_LEVEL_NORMAL, " Version : %u\n", m_version);
     debugOutput(DEBUG_LEVEL_NORMAL, " Vendor  : %s\n", m_vendor_name);

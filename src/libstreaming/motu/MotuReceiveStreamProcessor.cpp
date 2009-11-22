@@ -181,7 +181,7 @@ MotuReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int 
     // later than expected (the real receive time)
     #ifdef DEBUG
     if(isRunning()) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %luticks | tpf=%f\n",
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %"PRIu64"ticks | tpf=%f\n",
             m_last_timestamp, getTicksPerFrame());
     }
     #endif

@@ -147,10 +147,10 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     int64_t now_t = Util::SystemTimeSource::getCurrentTime();
     if(isRunning()) {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                           "STMP: %luticks | syt_interval=%d, tpf=%f\n",
+                           "STMP: %"PRIu64"ticks | syt_interval=%d, tpf=%f\n",
                            m_last_timestamp, m_syt_interval, getTicksPerFrame());
 /*        debugOutput(DEBUG_LEVEL_NORMAL,
-                           "STMP: %12lu ticks | delta_t: %5ld | bufferfill: %5d\n",
+                           "STMP: %12"PRIu64" ticks | delta_t: %5"PRId64" | bufferfill: %5d\n",
                            m_last_timestamp, now_t-last_t, m_data_buffer->getBufferFill());*/
     }
     last_t = now_t;

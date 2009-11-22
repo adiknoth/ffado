@@ -483,7 +483,7 @@ bool
 ConfigRom::updatedNodeId()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, 
-                 "Checking for updated node id for device with GUID 0x%016lX...\n",
+                 "Checking for updated node id for device with GUID 0x%016"PRIX64"...\n",
                  getGuid());
 
     struct csr1212_csr* csr = NULL;
@@ -514,14 +514,14 @@ ConfigRom::updatedNodeId()
             | CSR1212_BE32_TO_CPU(csr->bus_info_data[4]);
 
         debugOutput( DEBUG_LEVEL_VERBOSE,
-                        " Node has GUID 0x%016lX\n",
+                        " Node has GUID 0x%016"PRIX64"\n",
                         guid);
 
         if ( guid == getGuid() ) {
             debugOutput( DEBUG_LEVEL_VERBOSE, "GUID matches ours\n");
             if ( nodeId != getNodeId() ) {
                 debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "Device with GUID 0x%016lX changed node id "
+                             "Device with GUID 0x%016"PRIX64" changed node id "
                              "from %d to %d\n",
                              getGuid(),
                              getNodeId(),
@@ -529,7 +529,7 @@ ConfigRom::updatedNodeId()
                 m_nodeId = nodeId;
             } else {
                 debugOutput( DEBUG_LEVEL_VERBOSE,
-                             "Device with GUID 0x%016lX kept node id %d\n",
+                             "Device with GUID 0x%016"PRIX64" kept node id %d\n",
                              getGuid(),
                              getNodeId());
             }
@@ -546,7 +546,7 @@ ConfigRom::updatedNodeId()
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE,
-                 "Device with GUID 0x%016lX could not be found on "
+                 "Device with GUID 0x%016"PRIX64" could not be found on "
                  "the bus anymore (removed?)\n",
                  getGuid() );
     m_nodeId = INVALID_NODE_ID;
@@ -559,7 +559,7 @@ ConfigRom::printConfigRomDebug() const
     using namespace std;
     debugOutput(DEBUG_LEVEL_NORMAL, "Config ROM\n" );
     debugOutput(DEBUG_LEVEL_NORMAL, "\tCurrent Node Id:\t%d\n",       getNodeId() );
-    debugOutput(DEBUG_LEVEL_NORMAL, "\tGUID:\t\t\t0x%016lX\n",       getGuid());
+    debugOutput(DEBUG_LEVEL_NORMAL, "\tGUID:\t\t\t0x%016"PRIX64"\n",       getGuid());
     debugOutput(DEBUG_LEVEL_NORMAL, "\tVendor Name:\t\t%s\n",         getVendorName().c_str() );
     debugOutput(DEBUG_LEVEL_NORMAL, "\tModel Name:\t\t%s\n",          getModelName().c_str() );
     debugOutput(DEBUG_LEVEL_NORMAL, "\tNode Vendor ID:\t\t0x%06x\n",  getNodeVendorId() );
@@ -580,7 +580,7 @@ ConfigRom::printConfigRom() const
     using namespace std;
     printMessage("Config ROM\n" );
     printMessage("\tCurrent Node Id:\t%d\n",       getNodeId() );
-    printMessage("\tGUID:\t\t\t0x%016lX\n",       getGuid());
+    printMessage("\tGUID:\t\t\t0x%016"PRIX64"\n",       getGuid());
     printMessage("\tVendor Name:\t\t%s\n",         getVendorName().c_str() );
     printMessage("\tModel Name:\t\t%s\n",          getModelName().c_str() );
     printMessage("\tNode Vendor ID:\t\t0x%06x\n",  getNodeVendorId() );

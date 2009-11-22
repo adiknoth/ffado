@@ -24,6 +24,7 @@
 #ifndef __Time__
 #define __Time__
 
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 #include "SystemTimeSource.h"
@@ -33,6 +34,7 @@
  * monotonic clock with units of microseconds.
  */
 typedef uint64_t ffado_microsecs_t;
+#define PRI_FFADO_MICROSECS_T PRIu64
 
 static inline void SleepRelativeUsec(ffado_microsecs_t usec) {
     Util::SystemTimeSource::SleepUsecRelative(usec);

@@ -1343,7 +1343,6 @@ Plug::plugDirectionToString(enum EPlugDirection t) {
         case eAPD_Output:
             return string("Output");
         default:
-        case eAPT_Unknown:
             return string("Unknown");
     }
 }

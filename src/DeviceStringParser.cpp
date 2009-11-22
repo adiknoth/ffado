@@ -202,7 +202,7 @@ DeviceStringParser::DeviceString::operator==(const DeviceString& x)
             return retval;
         case eGUID:
             retval = m_guid && (m_guid == x.m_guid);
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "eGUID 0x%016lX == 0x%016lX? %d\n",
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "eGUID 0x%016"PRIX64" == 0x%016"PRIX64"? %d\n",
                         m_guid, x.m_guid, retval);
             return retval;
         case eInvalid:
@@ -224,7 +224,7 @@ DeviceStringParser::DeviceString::show()
             break;
         case eGUID:
             debugOutput(DEBUG_LEVEL_INFO, "type: eGUID\n");
-            debugOutput(DEBUG_LEVEL_INFO, " GUID: %016lX\n", m_guid);
+            debugOutput(DEBUG_LEVEL_INFO, " GUID: %016"PRIX64"\n", m_guid);
             break;
         case eInvalid:
         default:

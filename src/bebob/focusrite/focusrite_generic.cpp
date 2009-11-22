@@ -68,7 +68,7 @@ FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
     ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
     if(m_cmd_time_interval && (m_earliest_next_cmd_time > now)) {
         ffado_microsecs_t wait = m_earliest_next_cmd_time - now;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %lu\n", wait );
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %"PRIu64"\n", wait );
         Util::SystemTimeSource::SleepUsecRelative(wait);
     }
     m_earliest_next_cmd_time = now + m_cmd_time_interval;
@@ -93,7 +93,7 @@ FocusriteDevice::getSpecificValue(uint32_t id, uint32_t *v)
     ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
     if(m_cmd_time_interval && (m_earliest_next_cmd_time > now)) {
         ffado_microsecs_t wait = m_earliest_next_cmd_time - now;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %lu\n", wait );
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %"PRIu64"\n", wait );
         Util::SystemTimeSource::SleepUsecRelative(wait);
     }
     m_earliest_next_cmd_time = now + m_cmd_time_interval;
@@ -168,7 +168,7 @@ FocusriteDevice::setSpecificValueARM(uint32_t id, uint32_t v)
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
     if(!get1394Service().write_quadlet( nodeId, addr, CondSwapToBus32(data) ) ) {
-        debugError("Could not write to node 0x%04X addr 0x%012lX\n", nodeId, addr);
+        debugError("Could not write to node 0x%04X addr 0x%012"PRIX64"\n", nodeId, addr);
         return false;
     }
     return true;
@@ -184,7 +184,7 @@ FocusriteDevice::getSpecificValueARM(uint32_t id, uint32_t *v)
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
     if(!get1394Service().read_quadlet( nodeId, addr, &result ) ) {
-        debugError("Could not read from node 0x%04X addr 0x%012lX\n", nodeId, addr);
+        debugError("Could not read from node 0x%04X addr 0x%012"PRIX64"\n", nodeId, addr);
         return false;
     }
 
@@ -384,7 +384,7 @@ RegisterControl::RegisterControl(FocusriteDevice& parent,
 bool
 RegisterControl::setValue(uint64_t addr, uint64_t v)
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for addr %lu to %lu\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for addr %"PRIu64" to %"PRIu64"\n",
                                      addr, v);
 
     if ( !m_Parent.setSpecificValue(addr, v) ) {
@@ -402,7 +402,7 @@ RegisterControl::getValue(uint64_t addr)
         debugError( "getSpecificValue failed\n" );
         return 0;
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %lu = %u\n", 
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %"PRIu64" = %u\n", 
                                          addr, val);
         return val;
     }
