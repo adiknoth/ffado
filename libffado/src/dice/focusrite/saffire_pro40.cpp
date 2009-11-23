@@ -45,5 +45,15 @@ SaffirePro40::showDevice()
     Dice::Device::showDevice();
 }
 
+bool SaffirePro40::setNickName(std::string name) {
+    return getEAP()->writeRegBlock(Dice::Device::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
+}
+std::string SaffirePro40::getNickName() {
+    char name[16];
+    getEAP()->readRegBlock(Dice::Device::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
+    return std::string(name);
+}
+
 }
 }
+// vim: et

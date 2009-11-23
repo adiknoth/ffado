@@ -39,6 +39,10 @@ public:
 
     virtual void showDevice();
 
+    bool canChangeNickname() { return true; }
+    bool setNickName(std::string);
+    std::string getNickName();
+
 private:
 };
 
@@ -46,3 +50,4 @@ private:
 }
 
 #endif
+// vim: et
