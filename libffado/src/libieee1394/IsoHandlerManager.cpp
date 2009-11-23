@@ -255,9 +255,6 @@ IsoTask::Execute()
             if (h->canIterateClient()) {
                 events = POLLIN | POLLPRI;
                 no_one_to_poll = false;
-                // if we are going to poll() it, let's ensure
-                // it can run until someone wants it to exit
-                h->allowIterateLoop();
             }
             m_poll_fds_shadow[i].events = events;
         }

@@ -84,7 +84,6 @@ IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t)
    , m_Client( 0 )
    , m_speed( RAW1394_ISO_SPEED_400 )
    , m_prebuffers( 0 )
-   , m_dont_exit_iterate_loop( true )
    , m_State( eHS_Stopped )
    , m_NextState( eHS_Stopped )
    , m_switch_on_cycle(0)
@@ -420,22 +419,8 @@ enum raw1394_iso_disposition IsoHandler::putPacket(
     #endif
 
     // iterate the client if required
-    if(m_Client) {
-        enum raw1394_iso_disposition retval = m_Client->putPacket(data, length, channel, tag, sy, pkt_ctr, dropped_cycles);
-        if (retval == RAW1394_ISO_OK) {
-            if (m_dont_exit_iterate_loop) {
-                return RAW1394_ISO_OK;
-            } else {
-                m_dont_exit_iterate_loop = true;
-                debugOutput(DEBUG_LEVEL_VERBOSE,
-                                "(%p) loop exit requested\n",
-                                this);
-                return RAW1394_ISO_DEFER;
-            }
-        } else {
-            return retval;
-        }
-    }
+    if(m_Client)
+        return m_Client->putPacket(data, length, channel, tag, sy, pkt_ctr, dropped_cycles);
 
     return RAW1394_ISO_OK;
 }
@@ -566,19 +551,7 @@ IsoHandler::getPacket(unsigned char *data, unsigned int *length,
                          this, getTypeString(), *length, m_max_packet_size);
         }
         #endif
-        if (retval == RAW1394_ISO_OK) {
-            if (m_dont_exit_iterate_loop) {
-                return RAW1394_ISO_OK;
-            } else {
-                m_dont_exit_iterate_loop = true;
-                debugOutput(DEBUG_LEVEL_VERBOSE,
-                                "(%p) loop exit requested\n",
-                                this);
-                return RAW1394_ISO_DEFER;
-            }
-        } else {
             return retval;
-        }
     }
 
     *tag = 0;

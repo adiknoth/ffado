@@ -142,21 +142,6 @@ public:
 
     bool canIterateClient(); // FIXME: implement with functor
 
-    /**
-     * @brief request that the handler exits the packet processing loop ASAP
-     *
-     * The raw1394 lib doesn't provide a means to stop the packet iteration loop
-     * except when the iterate callback returns a DEFER value. Calling this function
-     * will make the callback return DEFER ASAP.
-     */
-    void requestIterateLoopExit() {m_dont_exit_iterate_loop = false;};
-    /**
-     * @brief allow the handler to stay in the packet processing loop
-     *
-     * This resets the state set by requestIterateLoopExit()
-     */
-    void allowIterateLoop() {m_dont_exit_iterate_loop = true;};
-
 
     /**
      * @brief get last cycle number seen by handler
@@ -202,7 +187,6 @@ private:
 
     enum raw1394_iso_speed m_speed;
     unsigned int m_prebuffers;
-    bool m_dont_exit_iterate_loop;
 
     // the state machine
     enum EHandlerStates {
