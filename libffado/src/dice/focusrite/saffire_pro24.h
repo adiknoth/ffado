@@ -29,6 +29,8 @@
 
 #include "libieee1394/configrom.h"
 
+#include "focusrite_eap.h"
+
 namespace Dice {
 namespace Focusrite {
 
@@ -46,47 +48,23 @@ public:
     bool setNickName( std::string name );
     std::string getNickName();
 
-    /**
-     * @brief A standard-switch for boolean.
-     *
-     * If you don't like True and False for the labels, subclass and return your own.
-    */
-    class Switch : public Control::Boolean
-    {
-    protected:
-        friend class Dice::Focusrite::SaffirePro24;
-
-        Switch(Dice::Device::EAP*, std::string name, size_t offset, int activevalue);
-    public:
-        bool selected();
-        bool select(bool);
-    private:
-        Dice::Device::EAP* m_eap;
-        bool m_selected;
-        size_t m_offset;
-        int m_activevalue;
-        fb_quadlet_t m_state_tmp;
-    };
-
-    class MonitorSection : public Control::Container
-    {
-    protected:
-        friend class Dice::Focusrite::SaffirePro24;
-
-        MonitorSection(Dice::Device::EAP*, std::string name);
-    private:
-        Dice::Device::EAP* m_eap;
-        Switch *m_mute, *m_dim;
-        std::vector<Switch*> m_mute_affected;
-        std::vector<Switch*> m_dim_affected;
-        std::vector<Switch*> m_mono;
-    };
 private:
+
+    class SaffirePro24EAP : public FocusriteEAP
+    {
+    public:
+        SaffirePro24EAP(Dice::Device& dev) : FocusriteEAP(dev) {
+        }
+
+        int commandToFix(unsigned offset);
+    };
+    Dice::Device::EAP* createEAP();
+
     class LineInstSwitch;
     LineInstSwitch *m_ch1, *m_ch2;
     class LevelSwitch;
     LevelSwitch *m_ch3, *m_ch4;
-    MonitorSection *m_monitor;
+    Dice::Focusrite::FocusriteEAP::MonitorSection *m_monitor;
 };
 
 }
