@@ -548,6 +548,8 @@ private: // helper functions
 // EAP stuff
 private:
     EAP*         m_eap;
+protected:
+    virtual EAP* createEAP();
 public:
     EAP* getEAP() {return m_eap;};
 

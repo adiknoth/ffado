@@ -163,7 +163,7 @@ Device::discover()
 
     bool supports_eap = Device::EAP::supportsEAP(*this);
     if (supports_eap) { // FIXME: move to buildMixer() ??
-        m_eap = new Device::EAP(*this);
+        m_eap = createEAP();
         if(m_eap == NULL) {
             debugError("Failed to allocate EAP.\n");
             return false;
@@ -181,6 +181,11 @@ Device::discover()
         }
     }
     return true;
+}
+
+Device::EAP*
+Device::createEAP() {
+    return new Device::EAP(*this);
 }
 
 enum Device::eDiceConfig
