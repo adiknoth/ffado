@@ -57,6 +57,9 @@ private:
         }
 
         int commandToFix(unsigned offset);
+
+        Poti* getMonitorPoti(std::string);
+        Poti* getDimPoti(std::string);
     };
     Dice::Device::EAP* createEAP();
 

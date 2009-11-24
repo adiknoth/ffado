@@ -31,9 +31,16 @@ namespace Focusrite {
 int SaffirePro24::SaffirePro24EAP::commandToFix(unsigned offset) {
     if (offset<0x14) return 2;
     if (offset<0x3C && offset>=0x14) return 1;
+    if (offset<0x58 && offset>=0x50) return 1;
     if (offset<0x40 && offset>=0x3C) return 3;
     if (offset<0x60 && offset>=0x58) return 4;
     return 0;
+}
+FocusriteEAP::Poti* SaffirePro24::SaffirePro24EAP::getMonitorPoti(std::string name) {
+    return new FocusriteEAP::Poti(this, name, 0x50);
+}
+FocusriteEAP::Poti* SaffirePro24::SaffirePro24EAP::getDimPoti(std::string name) {
+    return new FocusriteEAP::Poti(this, name, 0x54);
 }
 
 

@@ -29,6 +29,26 @@ namespace Focusrite {
 
 const int msgSet = 0x68;
 
+FocusriteEAP::Poti::Poti(Dice::Focusrite::FocusriteEAP* eap, std::string name, size_t offset)
+    : Control::Discrete(eap, name)
+    , m_eap(eap)
+    , m_offset(offset)
+{
+    m_eap->readApplicationReg(m_offset, &m_tmp);
+    printf("%s: Value: %i\n", name.c_str(), m_tmp);
+    m_value = /*127*/-m_tmp;
+}
+
+int FocusriteEAP::Poti::getValue() {
+    return m_value;
+}
+bool FocusriteEAP::Poti::setValue(int n) {
+    if ( n == m_value )
+        return true;
+    return m_eap->writeApplicationReg(m_offset, -n);
+    //return false;
+}
+
 FocusriteEAP::FocusriteEAP(Dice::Device& dev) : Dice::Device::EAP(dev) {
 }
 
@@ -38,6 +58,7 @@ bool FocusriteEAP::readApplicationReg(unsigned offset, quadlet_t* quadlet) {
 bool FocusriteEAP::writeApplicationReg(unsigned offset, quadlet_t quadlet) {
     bool ret = writeReg(eRT_Application, offset, quadlet);
     if (!ret) return false;
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Will sent command %i.\n", commandToFix(offset));
     return writeReg(eRT_Application, msgSet, commandToFix(offset));
 }
 
@@ -73,6 +94,8 @@ bool FocusriteEAP::Switch::select(bool n) {
 FocusriteEAP::MonitorSection::MonitorSection(Dice::Focusrite::FocusriteEAP* eap, std::string name)
     : Control::Container(eap, name)
     , m_eap(eap)
+    , m_monitorlevel(0)
+    , m_dimlevel(0)
 {
     m_mute = new Switch(m_eap, "Mute", 0x0C, 1);
     addElement(m_mute);
@@ -97,6 +120,10 @@ FocusriteEAP::MonitorSection::MonitorSection(Dice::Focusrite::FocusriteEAP* eap,
         addElement(s);
         m_mono.push_back(s);
     }
+    m_monitorlevel = m_eap->getMonitorPoti("MonitorLevel");
+    addElement(m_monitorlevel);
+    m_dimlevel = m_eap->getDimPoti("DimLevel");
+    addElement(m_dimlevel);
 }
 
 }

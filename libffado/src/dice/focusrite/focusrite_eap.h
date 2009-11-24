@@ -56,6 +56,26 @@ public:
         fb_quadlet_t m_state_tmp;
     };
 
+    class Poti : public Control::Discrete
+    {
+        public:
+            Poti(Dice::Focusrite::FocusriteEAP*, std::string name, size_t offset);
+
+            int getValue(int) { return getValue(); }
+            bool setValue(int, int n) { return setValue(n); }
+
+            int getMinimum() { return -127; }
+            int getMaximum() { return 0; }
+
+            int getValue();
+            bool setValue(int n);
+        private:
+            Dice::Focusrite::FocusriteEAP* m_eap;
+            size_t m_offset;
+            int m_value;
+            quadlet_t m_tmp;
+    };
+
     class MonitorSection : public Control::Container
     {
     public:
@@ -67,6 +87,8 @@ public:
         std::vector<Switch*> m_mute_affected;
         std::vector<Switch*> m_dim_affected;
         std::vector<Switch*> m_mono;
+        Poti* m_monitorlevel;
+        Poti* m_dimlevel;
     };
 
 
@@ -78,6 +100,8 @@ public:
 
 protected:
     virtual int commandToFix(unsigned offset) =0;
+    virtual Poti* getMonitorPoti(std::string) { return 0; }
+    virtual Poti* getDimPoti(std::string) { return 0; }
 };
 
 }
