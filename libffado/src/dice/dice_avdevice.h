@@ -413,7 +413,7 @@ public:
         bool writeRegBlockSwapped(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
         fb_nodeaddr_t offsetGen(enum eRegBase, unsigned, size_t);
 
-    private:
+    protected:
         DECLARE_DEBUG_MODULE_REFERENCE;
 
     private:
