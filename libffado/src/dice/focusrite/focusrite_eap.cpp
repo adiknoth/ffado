@@ -43,11 +43,12 @@ int FocusriteEAP::Poti::getValue() {
     return m_value;
 }
 bool FocusriteEAP::Poti::setValue(int n) {
-    if ( n == m_value )
+    if (n == m_value)
         return true;
+    m_value = n;
     return m_eap->writeApplicationReg(m_offset, -n);
-    //return false;
 }
+
 
 FocusriteEAP::FocusriteEAP(Dice::Device& dev) : Dice::Device::EAP(dev) {
 }
@@ -71,7 +72,7 @@ FocusriteEAP::Switch::Switch(Dice::Focusrite::FocusriteEAP* eap, std::string nam
     , m_activevalue(activevalue)
 {
     m_eap->readApplicationReg(m_offset, &m_state_tmp);
-    printf("%s: Active?%i\n", name.c_str(), m_state_tmp&m_activevalue);
+    printf("%s: %s\n", name.c_str(), (m_state_tmp&m_activevalue)?"true":"false");
     debugOutput(DEBUG_LEVEL_VERBOSE, "Probably the initialization is the other way round.\n");
     m_selected = (m_state_tmp&m_activevalue)?true:false;
 }
@@ -90,6 +91,41 @@ bool FocusriteEAP::Switch::select(bool n) {
 }
 
 
+class VolumeControl : public Control::Discrete
+{
+public:
+    VolumeControl(FocusriteEAP* eap, std::string name, size_t offset, int bitshift)
+        : Control::Discrete(eap, name)
+        , m_eap(eap)
+        , m_offset(offset)
+        , m_bitshift(bitshift)
+    {
+        quadlet_t tmp;
+        m_eap->readApplicationReg(m_offset, &tmp);
+        m_value = - ((tmp>>m_bitshift)&0xff);
+        printf("%s: %i -> %i\n", name.c_str(), tmp, m_value);
+    }
+
+    int getValue(int) { return getValue(); }
+    bool setValue(int, int n) { return setValue(n); }
+
+    int getMinimum() { return -255; }
+    int getMaximum() { return 0; }
+
+    int getValue() { return m_value; }
+    bool setValue(int n) {
+        if (n == m_value)
+            return true;
+        m_value = n;
+        return m_eap->writeApplicationReg(m_offset, (-n)<<m_bitshift);
+    }
+private:
+    FocusriteEAP* m_eap;
+    size_t m_offset;
+    int m_bitshift;
+    int m_value;
+};
+
 
 FocusriteEAP::MonitorSection::MonitorSection(Dice::Focusrite::FocusriteEAP* eap, std::string name)
     : Control::Container(eap, name)
@@ -97,33 +133,73 @@ FocusriteEAP::MonitorSection::MonitorSection(Dice::Focusrite::FocusriteEAP* eap,
     , m_monitorlevel(0)
     , m_dimlevel(0)
 {
-    m_mute = new Switch(m_eap, "Mute", 0x0C, 1);
-    addElement(m_mute);
-    m_dim = new Switch(m_eap, "Dim", 0x10, 1);
-    addElement(m_dim);
+    Control::Container* grp_globalmute = new Control::Container(m_eap, "GlobalMute");
+    addElement(grp_globalmute);
+    m_mute = new Switch(m_eap, "State", 0x0C, 1);
+    grp_globalmute->addElement(m_mute);
+
+    Control::Container* grp_globaldim = new Control::Container(m_eap, "GlobalDim");
+    addElement(grp_globaldim);
+    m_dim = new Switch(m_eap, "State", 0x10, 1);
+    grp_globaldim->addElement(m_dim);
+    m_dimlevel = m_eap->getDimPoti("Level");
+    grp_globaldim->addElement(m_dimlevel);
+
+    Control::Container* grp_mono = new Control::Container(m_eap, "Mono");
+    addElement(grp_mono);
+
+    Control::Container* grp_globalvolume = new Control::Container(m_eap, "GlobalVolume");
+    addElement(grp_globalvolume);
+    m_monitorlevel = m_eap->getMonitorPoti("Level");
+    grp_globalvolume->addElement(m_monitorlevel);
+
+    Control::Container* grp_perchannel = new Control::Container(m_eap, "PerChannel");
+    addElement(grp_perchannel);
+
     for (int i=0; i<10; ++i) {
         std::stringstream stream;
-        stream << "MuteAffectsCh" << i;
+        stream << "AffectsCh" << i;
         Switch* s = new Switch(m_eap, stream.str(), 0x3C, 1<<i);
-        addElement(s);
-        m_mute_affected.push_back(s);
-        stream.str(std::string());
-        stream << "DimAffectsCh" << i;
+        grp_globalmute->addElement(s);
+        //m_mute_affected.push_back(s);
         s = new Switch(m_eap, stream.str(), 0x3C, 1<<(10+i));
-        addElement(s);
-        m_dim_affected.push_back(s);
+        grp_globaldim->addElement(s);
+        //m_dim_affected.push_back(s);
     }
     for (int i=0; i<5; ++i) {
         std::stringstream stream;
-        stream << "Mono_" << i*2 << "_" << i*2+1;
+        stream << "Ch" << i*2 << "Ch" << i*2+1;
         Switch* s = new Switch(m_eap, stream.str(), 0x3C, 1<<(20+i));
-        addElement(s);
-        m_mono.push_back(s);
+        grp_mono->addElement(s);
+        //m_mono.push_back(s);
+
+        stream.str(std::string());
+        stream << "AffectsCh" << i*2;
+        s = new Switch(m_eap, stream.str(), 0x28+i*4, 1);
+        grp_globalvolume->addElement(s);
+        stream.str(std::string());
+        stream << "AffectsCh" << i*2+1;
+        s = new Switch(m_eap, stream.str(), 0x28+i*4, 2);
+        grp_globalvolume->addElement(s);
+
+        stream.str(std::string());
+        stream << "Mute" << i*2;
+        s = new Switch(m_eap, stream.str(), 0x28+i*4, 4);
+        grp_perchannel->addElement(s);
+        stream.str(std::string());
+        stream << "Mute" << i*2+1;
+        s = new Switch(m_eap, stream.str(), 0x28+i*4, 8);
+        grp_perchannel->addElement(s);
+
+        stream.str(std::string());
+        stream << "Volume" << i*2;
+        VolumeControl* vol = new VolumeControl(m_eap, stream.str(), 0x14+i*4, 0);
+        grp_perchannel->addElement(vol);
+        stream.str(std::string());
+        stream << "Volume" << i*2+1;
+        vol = new VolumeControl(m_eap, stream.str(), 0x14+i*4, 8);
+        grp_perchannel->addElement(vol);
     }
-    m_monitorlevel = m_eap->getMonitorPoti("MonitorLevel");
-    addElement(m_monitorlevel);
-    m_dimlevel = m_eap->getDimPoti("DimLevel");
-    addElement(m_dimlevel);
 }
 
 }
