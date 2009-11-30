@@ -35,7 +35,7 @@ FocusriteEAP::Poti::Poti(Dice::Focusrite::FocusriteEAP* eap, std::string name, s
     , m_offset(offset)
 {
     m_eap->readApplicationReg(m_offset, &m_tmp);
-    printf("%s: Value: %i\n", name.c_str(), m_tmp);
+    //printf("%s: Value: %i\n", name.c_str(), m_tmp);
     m_value = /*127*/-m_tmp;
 }
 
@@ -58,7 +58,10 @@ bool FocusriteEAP::readApplicationReg(unsigned offset, quadlet_t* quadlet) {
 }
 bool FocusriteEAP::writeApplicationReg(unsigned offset, quadlet_t quadlet) {
     bool ret = writeReg(eRT_Application, offset, quadlet);
-    if (!ret) return false;
+    if (!ret) {
+        debugWarning("Couldn't write %i to register %x!\n", quadlet, offset);
+        return false;
+    }
     debugOutput(DEBUG_LEVEL_VERBOSE, "Will sent command %i.\n", commandToFix(offset));
     return writeReg(eRT_Application, msgSet, commandToFix(offset));
 }
@@ -72,8 +75,8 @@ FocusriteEAP::Switch::Switch(Dice::Focusrite::FocusriteEAP* eap, std::string nam
     , m_activevalue(activevalue)
 {
     m_eap->readApplicationReg(m_offset, &m_state_tmp);
-    printf("%s: %s\n", name.c_str(), (m_state_tmp&m_activevalue)?"true":"false");
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Probably the initialization is the other way round.\n");
+    //printf("%s: %s\n", name.c_str(), (m_state_tmp&m_activevalue)?"true":"false");
+    //debugOutput(DEBUG_LEVEL_VERBOSE, "Probably the initialization is the other way round.\n");
     m_selected = (m_state_tmp&m_activevalue)?true:false;
 }
 
@@ -103,7 +106,7 @@ public:
         quadlet_t tmp;
         m_eap->readApplicationReg(m_offset, &tmp);
         m_value = - ((tmp>>m_bitshift)&0xff);
-        printf("%s: %i -> %i\n", name.c_str(), tmp, m_value);
+        //printf("%s: %i -> %i\n", name.c_str(), tmp, m_value);
     }
 
     int getValue(int) { return getValue(); }
