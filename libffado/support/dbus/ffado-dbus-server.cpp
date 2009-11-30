@@ -312,7 +312,7 @@ main( int argc, char **argv )
     
     DBus::_init_threading();
 
-    // test DBUS stuff
+    // set up DBUS stuff
     DBus::default_dispatcher = &dispatcher;
     DBus::Connection conn = DBus::Connection::SessionBus();
     global_conn = &conn;
@@ -325,7 +325,7 @@ main( int argc, char **argv )
     // unlock the control tree since the tree is built
     m_deviceManager->unlockControl();
 
-    printMessage("DBUS test service running\n");
+    printMessage("DBUS service running\n");
     printMessage("press ctrl-c to stop it & exit\n");
     
     while(run) {
