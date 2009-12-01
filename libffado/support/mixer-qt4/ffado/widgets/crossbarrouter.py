@@ -68,6 +68,7 @@ of the mixer is an available output from the routers point.
         QtGui.QFrame.__init__(self, parent)
         self.interface = interface
         self.outname = outname
+        self.lastin = ""
 
         self.setLineWidth(1)
         self.setFrameStyle(QtGui.QFrame.Sunken|QtGui.QFrame.Panel)
@@ -79,87 +80,39 @@ of the mixer is an available output from the routers point.
         self.layout.addWidget(self.lbl, 0, 0)
 
         self.vu = VuMeter(self.interface, self.interface.getDestinationIndex(outname), parent=self)
-        self.layout.addWidget(self.vu, 0, 1, 2, 1)
-
-        self.btn = QtGui.QPushButton("Sel.", self)
-        self.layout.addWidget(self.btn, 1, 0)
-
-        self.exclusiveGroup = QtGui.QActionGroup(self)
+        self.layout.addWidget(self.vu, 0, 1)
 
         sources = self.interface.getSourceNames()
-        self.ingroups = {}
-        for ch in sources:
-            tmp = str(ch).split(":")[0]
-            if tmp not in self.ingroups:
-                self.ingroups[tmp] = 0
-            self.ingroups[tmp] += 1
-        #log.debug("Detected ingroups: %s" % str(self.ingroups))
 
-        self.menu = QtGui.QMenu(self)
-        self.btn.setMenu(self.menu)
+        self.combo = QtGui.QComboBox(self)
+        self.layout.addWidget(self.combo, 1, 0, 1, 2)
+        self.combo.addItem("Disconnected")
+        self.combo.addItems(sources)
+        idx = self.interface.getDestinationIndex(self.outname)
+        sourceidx = self.interface.getSourceForDestination(idx)
+        if sourceidx > -1:
+            source = self.interface.getSourceName(sourceidx)
+            self.combo.setCurrentIndex(sources.index(source)+1)
+        self.connect(self.combo, QtCore.SIGNAL("activated(QString)"), self.comboCurrentChanged)
 
-        action = QtGui.QAction("Disconnect", self)
-        action.setCheckable(True)
-        self.connect(action, QtCore.SIGNAL("toggled(bool)"), self.disconnectRoute)
-        self.exclusiveGroup.addAction(action)
-        self.menu.addAction(action)
-
-        for group in self.ingroups:
-            submenu = InGroupMenu(self.interface, self.outname, group, self.ingroups[group], self, self.exclusiveGroup)
-            self.menu.addMenu(submenu)
 
     def peakValue(self, value):
         self.vu.updateLevel(value)
 
-    def disconnectRoute(self, checked):
-        log.debug("disconnectRoute( %s )" % str(checked))
-        dest = self.interface.getDestinationIndex(self.outname)
-        src = self.interface.getSourceName( self.interface.getSourceForDestination( dest ) )
-        #log.debug(" source=%s destination=%s  possible? %s" % (src, self.outname, self.interface.canConnectNamed(src, self.outname)))
-        if self.interface.setConnectionStateNamed(src, self.outname, False):
-            log.warning(" Failed to change the connection table!")
-        self.peakValue(0)
+    def comboCurrentChanged(self, inname):
+        #log.debug("comboCurrentChanged( %s )" % inname)
+        if inname == self.lastin:
+            return
+        if self.lastin != "":
+            self.interface.setConnectionStateNamed(self.lastin, self.outname, False)
 
-class InGroupMenu(QtGui.QMenu):
-    def __init__(self, interface, outname, inname, insize, parent, exclusiveGroup = None):
-        QtGui.QMenu.__init__(self, inname, parent)
-        self.interface = interface
-        self.outname = str(outname)
-        self.inname = str(inname)
-        self.insize = insize
-        self.connect(self, QtCore.SIGNAL("aboutToShow()"), self.showMenu)
-
-        self.lock = False
-        if exclusiveGroup:
-            self.exclusiveGroup = exclusiveGroup
+        if inname != "Disconnected":
+            if self.interface.setConnectionStateNamed(str(inname), self.outname, True):
+                self.lastin = str(inname)
+            else:
+                log.warning(" Failed to connect %s to %s" % (inname, self.outname))
         else:
-            self.exclusiveGroup = QtGui.QActionGroup(self)
-
-    def showMenu(self):
-        #print "About to show the menu"
-        if len(self.actions()) < self.insize+1:
-            # Do a lazy init of the sub-items.
-            for i in range(self.insize):
-                action = QtGui.QAction("%s:%02i" % (self.inname,i), self)
-                action.setCheckable(True)
-                self.connect(action, QtCore.SIGNAL("toggled(bool)"), self.connectionSwitched)
-                self.exclusiveGroup.addAction(action)
-                self.addAction(action)
-                idx = self.interface.getDestinationIndex(self.outname)
-                sourceidx = self.interface.getSourceForDestination(idx)
-                source = self.interface.getSourceName(sourceidx)
-                self.lock = True
-                for action in self.actions():
-                    action.setChecked(action.text() == source)
-                self.lock = False
-
-    def connectionSwitched(self, checked):
-        if self.lock: return
-        #log.debug("connectionSwitched( %s ) sender: %s" % (str(checked),str(self.sender())))
-        inname = str(self.sender().text())
-        #log.debug(" source=%s destination=%s  possible? %s" % (inname, self.outname, self.interface.canConnectNamed(inname, self.outname)))
-        if not self.interface.setConnectionStateNamed(inname, self.outname, checked):
-            log.warning(" Failed to change the routing.")
+            self.lastin = ""
 
 
 class CrossbarRouter(QtGui.QWidget):
