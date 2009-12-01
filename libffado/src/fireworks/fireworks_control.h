@@ -60,6 +60,7 @@ public:
 
     virtual void show();
 
+    bool hasNames() const { return true; }
     virtual std::string getRowName( const int );
     virtual std::string getColName( const int );
     virtual int canWrite( const int, const int );
@@ -67,6 +68,8 @@ public:
     virtual double getValue( const int, const int );
     virtual int getRowCount( );
     virtual int getColCount( );
+
+    bool canConnect() const { return false; }
 
     // full map updates are unsupported
     virtual bool getCoefficientMap(int &) {return false;};

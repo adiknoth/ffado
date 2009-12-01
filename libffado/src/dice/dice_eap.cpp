@@ -925,19 +925,6 @@ Device::EAP::Mixer::show()
 
 }
 
-// The control interface to the mixer
-std::string
-Device::EAP::Mixer::getRowName( const int row )
-{
-    return "FIXME";
-}
-
-std::string
-Device::EAP::Mixer::getColName( const int col )
-{
-    return "FIXME";
-}
-
 int
 Device::EAP::Mixer::canWrite( const int row, const int col)
 {

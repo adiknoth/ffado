@@ -179,17 +179,22 @@ public:
 
     virtual void show();
 
-    virtual std::string getRowName( const int );
-    virtual std::string getColName( const int );
+    virtual int getRowCount( );
+    virtual int getColCount( );
+
     virtual int canWrite( const int, const int );
     virtual double setValue( const int, const int, const double );
     virtual double getValue( const int, const int );
-    virtual int getRowCount( );
-    virtual int getColCount( );
 
     // full map updates are unsupported
     virtual bool getCoefficientMap(int &) {return false;};
     virtual bool storeCoefficientMap(int &) {return false;};
+
+    bool hasNames() const { return true; }
+    virtual std::string getRowName( const int );
+    virtual std::string getColName( const int );
+
+    bool canConnect() const { return false; }
 
 protected:
     struct sSignalInfo {

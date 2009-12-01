@@ -242,14 +242,18 @@ public:
              */
             bool storeCoefficients();
 
-            virtual std::string getRowName( const int );
-            virtual std::string getColName( const int );
+            virtual int getRowCount( );
+            virtual int getColCount( );
+
             virtual int canWrite( const int, const int );
             virtual double setValue( const int, const int, const double );
             virtual double getValue( const int, const int );
-            virtual int getRowCount( );
-            virtual int getColCount( );
-        
+
+            bool hasNames() const { return false; }
+
+            // TODO: implement connections.
+            bool canConnect() const { return false; }
+
             // full map updates are unsupported
             virtual bool getCoefficientMap(int &);
             virtual bool storeCoefficientMap(int &);

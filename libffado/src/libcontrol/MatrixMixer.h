@@ -46,18 +46,60 @@ public:
 
     virtual void show() = 0;
 
-    // per-coefficient access
-    virtual std::string getRowName(const int) = 0;
-    virtual std::string getColName(const int) = 0;
+    /*!
+      @{
+      @brief general dimensions
+      */
+    virtual int getRowCount() = 0;
+    virtual int getColCount() = 0;
+    // @}
+
+    /*!
+      @{
+      @brief per-coefficient access
+      */
     virtual int canWrite(const int, const int) = 0;
     virtual double setValue(const int, const int, const double) = 0;
     virtual double getValue(const int, const int) = 0;
-    virtual int getRowCount() = 0;
-    virtual int getColCount() = 0;
+    // @}
 
-    // functions to access the entire coefficient map at once
+    /*!
+      @{
+      @brief functions to access the entire coefficient map at once
+      */
     virtual bool getCoefficientMap(int &) = 0;
     virtual bool storeCoefficientMap(int &) = 0;
+    // @}
+
+    /*!
+      @{
+      @brief names for the channels
+
+      If named channels are not supported, just implement hasNames() to return false
+
+      The default implementations do nothing
+      */
+    virtual bool hasNames() const = 0;
+    virtual std::string getRowName(const int);
+    virtual std::string getColName(const int);
+    virtual bool setRowName(const int row, const std::string& name);
+    virtual bool setColName(const int col, const std::string& name);
+    // @}
+
+    /*!
+      @{
+      @brief connections for channels
+
+      If connections are not supported, implement canConnect() to return false.
+
+      The default implementations do nothing.
+      */
+    virtual bool canConnect() const = 0;
+    virtual std::vector<std::string> availableConnectionsForRow(const int);
+    virtual std::vector<std::string> availableConnectionsForCol(const int);
+    virtual bool connectRowTo(const int row, const std::string& target);
+    virtual bool connectColTo(const int col, const std::string& target);
+    // @}
 
 protected:
 

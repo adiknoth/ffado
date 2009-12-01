@@ -790,14 +790,14 @@ MatrixMixer::MatrixMixer( DBus::Connection& connection, std::string p, Element* 
                  path().c_str() );
 }
 
-DBus::String
-MatrixMixer::getRowName( const DBus::Int32& row) {
-    return m_Slave.getRowName(row);
+DBus::Int32
+MatrixMixer::getRowCount( ) {
+    return m_Slave.getRowCount();
 }
 
-DBus::String
-MatrixMixer::getColName( const DBus::Int32& col) {
-    return m_Slave.getColName(col);
+DBus::Int32
+MatrixMixer::getColCount( ) {
+    return m_Slave.getColCount();
 }
 
 DBus::Int32
@@ -815,14 +815,46 @@ MatrixMixer::getValue( const DBus::Int32& row, const DBus::Int32& col) {
     return m_Slave.getValue(row,col);
 }
 
-DBus::Int32
-MatrixMixer::getRowCount( ) {
-    return m_Slave.getRowCount();
+DBus::Bool
+MatrixMixer::hasNames() {
+    return m_Slave.hasNames();
+}
+DBus::String
+MatrixMixer::getRowName( const DBus::Int32& row) {
+    return m_Slave.getRowName(row);
+}
+DBus::String
+MatrixMixer::getColName( const DBus::Int32& col) {
+    return m_Slave.getColName(col);
+}
+DBus::Bool
+MatrixMixer::setRowName( const DBus::Int32& row, const DBus::String& name) {
+    return m_Slave.setRowName(row, name);
+}
+DBus::Bool
+MatrixMixer::setColName( const DBus::Int32& col, const DBus::String& name) {
+    return m_Slave.setColName(col, name);
 }
 
-DBus::Int32
-MatrixMixer::getColCount( ) {
-    return m_Slave.getColCount();
+DBus::Bool
+MatrixMixer::canConnect() {
+    return m_Slave.canConnect();
+}
+std::vector<DBus::String>
+MatrixMixer::availableConnectionsForRow( const DBus::Int32& row) {
+    return m_Slave.availableConnectionsForRow(row);
+}
+std::vector<DBus::String>
+MatrixMixer::availableConnectionsForCol( const DBus::Int32& col) {
+    return m_Slave.availableConnectionsForCol(col);
+}
+DBus::Bool
+MatrixMixer::connectRowTo( const DBus::Int32& row, const DBus::String& target) {
+    return m_Slave.connectRowTo(row, target);
+}
+DBus::Bool
+MatrixMixer::connectColTo( const DBus::Int32& col, const DBus::String& target) {
+    return m_Slave.connectColTo(col, target);
 }
 
 // --- CrossbarRouter

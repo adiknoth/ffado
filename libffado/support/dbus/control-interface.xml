@@ -188,6 +188,15 @@
           <arg type="i" name="col" direction="in"/>
           <arg type="i" name="value" direction="out"/>
       </method>
+      <method name="getRowCount">
+          <arg type="i" name="nbrows" direction="out"/>
+      </method>
+      <method name="getColCount">
+          <arg type="i" name="nbrows" direction="out"/>
+      </method>
+      <method name="hasNames">
+          <arg type="b" name="value" direction="out"/>
+      </method>
       <method name="getRowName">
           <arg type="i" name="row" direction="in"/>
           <arg type="s" name="rowname" direction="out"/>
@@ -196,11 +205,36 @@
           <arg type="i" name="col" direction="in"/>
           <arg type="s" name="colname" direction="out"/>
       </method>
-      <method name="getRowCount">
-          <arg type="i" name="nbrows" direction="out"/>
+      <method name="setRowName">
+          <arg type="i" name="row" direction="in"/>
+          <arg type="s" name="rowname" direction="in"/>
+          <arg type="b" name="value" direction="out"/>
       </method>
-      <method name="getColCount">
-          <arg type="i" name="nbrows" direction="out"/>
+      <method name="setColName">
+          <arg type="i" name="col" direction="in"/>
+          <arg type="s" name="colname" direction="in"/>
+          <arg type="b" name="value" direction="out"/>
+      </method>
+      <method name="canConnect">
+          <arg type="b" name="value" direction="out"/>
+      </method>
+      <method name="availableConnectionsForRow">
+          <arg type="i" name="row" direction="in"/>
+          <arg type="as" name="value" direction="out"/>
+      </method>
+      <method name="availableConnectionsForCol">
+          <arg type="i" name="col" direction="in"/>
+          <arg type="as" name="value" direction="out"/>
+      </method>
+      <method name="connectRowTo">
+          <arg type="i" name="row" direction="in"/>
+          <arg type="s" name="target" direction="in"/>
+          <arg type="b" name="value" direction="out"/>
+      </method>
+      <method name="connectColTo">
+          <arg type="i" name="col" direction="in"/>
+          <arg type="s" name="target" direction="in"/>
+          <arg type="b" name="value" direction="out"/>
       </method>
   </interface>
 

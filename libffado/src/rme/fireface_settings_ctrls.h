@@ -89,6 +89,9 @@ public:
 
     virtual void show();
 
+    bool hasNames() const { return true; }
+    bool canConnect() const { return false; }
+
     virtual std::string getRowName(const int row);
     virtual std::string getColName(const int col);
     virtual int canWrite( const int, const int ) { return true; }

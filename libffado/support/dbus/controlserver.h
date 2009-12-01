@@ -306,13 +306,24 @@ public:
                   std::string p, Element *,
                   Control::MatrixMixer &slave );
 
-    DBus::String getRowName( const DBus::Int32& );
-    DBus::String getColName( const DBus::Int32& );
+    DBus::Int32 getRowCount( );
+    DBus::Int32 getColCount( );
+
     DBus::Int32 canWrite( const DBus::Int32&, const DBus::Int32& );
     DBus::Double setValue( const DBus::Int32&, const DBus::Int32&, const DBus::Double& );
     DBus::Double getValue( const DBus::Int32&, const DBus::Int32& );
-    DBus::Int32 getRowCount( );
-    DBus::Int32 getColCount( );
+
+    DBus::Bool hasNames();
+    DBus::String getRowName( const DBus::Int32& );
+    DBus::String getColName( const DBus::Int32& );
+    DBus::Bool setRowName( const DBus::Int32&, const DBus::String& );
+    DBus::Bool setColName( const DBus::Int32&, const DBus::String& );
+
+    DBus::Bool canConnect();
+    std::vector<DBus::String> availableConnectionsForRow( const DBus::Int32& );
+    std::vector<DBus::String> availableConnectionsForCol( const DBus::Int32& );
+    DBus::Bool connectRowTo( const DBus::Int32&, const DBus::String& );
+    DBus::Bool connectColTo( const DBus::Int32&, const DBus::String& );
 
 private:
     Control::MatrixMixer &m_Slave;

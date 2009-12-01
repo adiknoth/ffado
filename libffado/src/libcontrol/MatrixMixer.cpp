@@ -24,5 +24,31 @@
 #include "MatrixMixer.h"
 
 namespace Control {
-// no implementation
+
+    std::string MatrixMixer::getRowName(const int) {
+        return "";
+    }
+    std::string MatrixMixer::getColName(const int) {
+        return "";
+    }
+    bool MatrixMixer::setRowName(const int, const std::string&) {
+        return false;
+    }
+    bool MatrixMixer::setColName(const int, const std::string&) {
+        return false;
+    }
+
+    std::vector<std::string> MatrixMixer::availableConnectionsForRow(const int) {
+        return std::vector<std::string>();
+    }
+    std::vector<std::string> MatrixMixer::availableConnectionsForCol(const int) {
+        return std::vector<std::string>();
+    }
+    bool MatrixMixer::connectRowTo(const int, const std::string&) {
+        return false;
+    }
+    bool MatrixMixer::connectColTo(const int, const std::string&) {
+        return false;
+    }
+
 } // namespace Control
