@@ -173,10 +173,11 @@ class MixerChannel(QtGui.QWidget):
         QtGui.QWidget.__init__(self, parent)
         layout = QtGui.QGridLayout(self)
         self.number = number
-        if name is not "":
+        if name != "":
             name = "\n(%s)" % name
         self.name = name
         self.lbl = QtGui.QLabel(self)
+        self.lbl.setAlignment(Qt.Qt.AlignCenter)
         layout.addWidget(self.lbl, 0, 0, 1, 2)
         self.hideChannel(False)
 
@@ -189,7 +190,7 @@ class MixerChannel(QtGui.QWidget):
 
     def hideChannel(self, hide):
         if hide:
-            self.lbl.setText("Ch. %i" % self.number);
+            self.lbl.setText("%i" % self.number);
         else:
             self.lbl.setText("Ch. %i%s" % (self.number, self.name))
         self.emit(QtCore.SIGNAL("hide"), self.number, hide)
