@@ -92,16 +92,20 @@
 /* Device register definitions for the earliest generation devices */
 #define MOTU_G1_REG_CONFIG         0x0b00
 
-/* The optical mode defines for the 828Mk1 are estimates at present, to be 
- * confirmed.
+/* There's an unknown subtlety regarding the optical mode of the "generation
+ * 1" devices such as the 828Mk1.  It seems that the same configuration
+ * register setting is used for "off" and "adat" modes.  There must be more
+ * to this though because the number of audio channels sent presumedly
+ * changes when adat mode is selected; there must be some way that the
+ * device deduces the mode.
  */
-#define MOTU_G1_OPT_IN_MODE_MASK   0x0000  // Still be be observed
-#define MOTU_G1_OPT_IN_MODE_BIT0        0  // Still to be observed
-#define MOTU_G1_OPT_OUT_MODE_MASK  0xc000
-#define MOTU_G1_OPT_OUT_MODE_BIT0      26
+#define MOTU_G1_OPT_IN_MODE_MASK   0x8000
+#define MOTU_G1_OPT_IN_MODE_BIT0       15
+#define MOTU_G1_OPT_OUT_MODE_MASK  0x4000
+#define MOTU_G1_OPT_OUT_MODE_BIT0      14
 #define MOTU_G1_OPTICAL_OFF        0x0000
 #define MOTU_G1_OPTICAL_TOSLINK    0x0001
-#define MOTU_G1_OPTICAL_ADAT       0x0002
+#define MOTU_G1_OPTICAL_ADAT       0x0000
 
 #define MOTU_G1_RATE_MASK          0x0004
 #define MOTU_G1_RATE_44100         0x0000

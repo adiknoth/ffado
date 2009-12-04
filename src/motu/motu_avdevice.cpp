@@ -1171,14 +1171,22 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir) {
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         // The early devices used a different register layout.  
-        // To be completed.
+        unsigned int mask, shift;
+        reg = ReadRegister(MOTU_G1_REG_CONFIG);
+        mask = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_MASK:MOTU_G1_OPT_OUT_MODE_MASK;
+        shift = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_BIT0:MOTU_G1_OPT_OUT_MODE_BIT0;
+        switch (reg & mask) {
+            case MOTU_G1_OPTICAL_OFF: return MOTU_OPTICAL_MODE_OFF;
+            case MOTU_G1_OPTICAL_TOSLINK: return MOTU_OPTICAL_MODE_TOSLINK;
+            // MOTU_G1_OPTICAL_OFF and MOTU_G1_OPTICAL_ADAT seem to be
+            // identical, so currently we don't know how to differentiate
+            // these two modes.
+            // case MOTU_G1_OPTICAL_ADAT: return MOTU_OPTICAL_MODE_ADAT;
+        }
         return 0;
     }
 
     reg = ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
-
-debugOutput(DEBUG_LEVEL_VERBOSE, "optical mode: %x %x %x %x\n",dir, reg, reg & MOTU_OPTICAL_IN_MODE_MASK,
-reg & MOTU_OPTICAL_OUT_MODE_MASK);
 
     if (dir == MOTU_DIR_IN)
         return (reg & MOTU_OPTICAL_IN_MODE_MASK) >> 8;
@@ -1187,7 +1195,7 @@ reg & MOTU_OPTICAL_OUT_MODE_MASK);
 }
 
 signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
-    unsigned int reg = ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
+    unsigned int reg;
     unsigned int opt_ctrl = 0x0000002;
 
     /* THe 896HD doesn't have an SPDIF/TOSLINK optical mode, so don't try to
@@ -1198,9 +1206,21 @@ signed int MotuDevice::setOpticalMode(unsigned int dir, unsigned int mode) {
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         // The earlier MOTUs handle this differently.
-        // To be completed.
-        return 0;
+        unsigned int mask, shift, g1mode = 0;
+        reg = ReadRegister(MOTU_G1_REG_CONFIG);
+        mask = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_MASK:MOTU_G1_OPT_OUT_MODE_MASK;
+        shift = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_BIT0:MOTU_G1_OPT_OUT_MODE_BIT0;
+        switch (mode) {
+            case MOTU_OPTICAL_MODE_OFF: g1mode = MOTU_G1_OPTICAL_OFF; break;
+            case MOTU_OPTICAL_MODE_ADAT: g1mode = MOTU_G1_OPTICAL_ADAT; break;
+            // See comment in getOpticalMode() about mode ambiguity
+            // case MOTU_OPTICAL_MODE_TOSLINK: g1mode = MOTU_G1_OPTICAL_TOSLINK; break;
+        }
+        reg = (reg & ~mask) | (g1mode << shift);
+        return WriteRegister(MOTU_G1_REG_CONFIG, reg);
     }
+
+    reg = ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
 
     // Set up the optical control register value according to the current
     // optical port modes.  At this stage it's not completely understood
