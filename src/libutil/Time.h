@@ -24,7 +24,9 @@
 #ifndef __Time__
 #define __Time__
 
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 
 #include "SystemTimeSource.h"

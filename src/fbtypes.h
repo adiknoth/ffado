@@ -24,7 +24,9 @@
 #ifndef FBTYPES_H
 #define FBTYPES_H
 
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 
 #include <libraw1394/raw1394.h>
