@@ -358,10 +358,6 @@ if env['ENABLE_ALL']:
     env['ENABLE_BOUNCE'] = True
     env['ENABLE_MAUDIO'] = True
 
-if env['ENABLE_BEBOB'] or env['ENABLE_DICE'] \
-   or env['ENABLE_BOUNCE'] or env['ENABLE_FIREWORKS'] \
-   or env['ENABLE_OXFORD'] or env['ENABLE_MAUDIO']:
-    env['ENABLE_GENERICAVC'] = True
 
 env['BUILD_STATIC_LIB'] = False
 if env['BUILD_STATIC_TOOLS']:

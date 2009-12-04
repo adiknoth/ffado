@@ -25,9 +25,7 @@ Import( 'env' )
 
 env = env.Clone()
 
-env.PrependUnique( CPPPATH=["#/src"] )
-env.PrependUnique( LIBPATH=[env['build_base']+"src"] )
-env.PrependUnique( LIBS=["ffado"] )
+env.MergeFlags( "-I#/ -I#/src -L%ssrc -lffado" % env['build_base'] )
 
 if not env.GetOption( "clean" ):
 	env.MergeFlags( env['LIBRAW1394_FLAGS'] )
