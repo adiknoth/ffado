@@ -670,15 +670,29 @@ printf("\n");
         return false;
     }
 
-
     // Add ports to the processor - TODO
     std::string id=std::string("dev?");
     if (!getOption("id", id)) {
         debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
     }
 
+    /* Now set up the transmit stream processor */
+    m_transmitProcessor = new Streaming::RmeTransmitStreamProcessor(*this,
+      m_rme_model, event_size);
+    m_transmitProcessor->setVerboseLevel(getDebugLevel());
+    if (!m_transmitProcessor->init()) {
+        debugFatal("Could not initialise receive processor!\n");
+        return false;
+    }
+    if (!m_transmitProcessor->setDllBandwidth(xmit_sp_dll_bw)) {
+        debugFatal("Could not set DLL bandwidth\n");
+        delete m_transmitProcessor;
+        m_transmitProcessor = NULL;
+        return false;
+    }
+
     // Other things to be done:
-    //  * create a transmit stream processor, set DLL bandwidth, add ports
+    //  * add ports to transmit stream processor
 
     return true;
 }
@@ -710,7 +724,7 @@ Device::startStreamByIndex(int i) {
     // (unconditionally flagging them as being successful).
     if (i == 0) {
         m_receiveProcessor->setChannel(iso_rx_channel);
-        // m_transmitProcessor->setChannel(iso_tx_channel);
+        m_transmitProcessor->setChannel(iso_tx_channel);
         if (hardware_start_streaming(iso_rx_channel) != 0)
             return false;
     }
@@ -767,7 +781,7 @@ Device::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
         debugError("Error doing RME write to register 0x%06x\n",reg);
     }
 
-printf("writeRegister: %016llx = %08x\n", reg, data);
+//printf("writeRegister: %016llx = %08x\n", reg, data);
     return (err==0)?0:-1;
 }
 
@@ -790,7 +804,7 @@ Device::writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads) {
           n_quads, reg);
     }
 
-printf("writeBlock: %016llx, size=%d (%d)\n", reg, n_quads, n_quads*4);
+//printf("writeBlock: %016llx, size=%d (%d)\n", reg, n_quads, n_quads*4);
     return (err==0)?0:-1;
 }
                   
