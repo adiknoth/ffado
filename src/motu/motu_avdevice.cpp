@@ -1080,6 +1080,12 @@ MotuDevice::startStreamByIndex(int i) {
 
 quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
 
+    if (m_motu_model == MOTU_MODEL_828MkI) {
+        // The 828MkI device does this differently.
+        // To be implemented
+        return false;
+    }
+
     // NOTE: this assumes that you have two streams
     switch (i) {
     case 0:
@@ -1131,6 +1137,12 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
 
     // TODO: connection management: break connection
     // cfr the start function
+
+    if (m_motu_model == MOTU_MODEL_828MkI) {
+        // The 828MkI device does this differently.
+        // To be implemented
+        return false;
+    }
 
     // NOTE: this assumes that you have two streams
     switch (i) {

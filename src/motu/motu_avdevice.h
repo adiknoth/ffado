@@ -91,6 +91,7 @@
 
 /* Device register definitions for the earliest generation devices */
 #define MOTU_G1_REG_CONFIG         0x0b00
+#define MOTU_G1_REG_ISOCTRL        0x0b10
 
 /* There's an unknown subtlety regarding the optical mode of the "generation
  * 1" devices such as the 828Mk1.  It seems that the same configuration
