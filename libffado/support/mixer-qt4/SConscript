@@ -50,6 +50,10 @@ if env.has_key('PYUIC4'):
     e.Depends( "ffado-mixer", "#/SConstruct" )
     e.Install( "$bindir", "ffado-mixer" )
 
+    e.ScanReplace( "ffado-mixer-profiler.in" )
+    e.Depends( "ffado-mixer-profiler", "SConscript" )
+    e.Depends( "ffado-mixer-profiler", "#/SConstruct" )
+
     e.Install( "$sharedir/icons", "../xdg/hi64-apps-ffado.png" )
 
 # vim: et

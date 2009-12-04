@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2005-2008 by Pieter Palmers
+# Copyright (C) 2005-2009 by Pieter Palmers
 #               2007-2009 by Arnold Krille
 #
 # This file is part of FFADO
@@ -10,8 +10,7 @@
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# the Free Software Foundation, either version 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,8 +29,10 @@ sys.path.append( "$PYPKGDIR" )
 
 from ffado.ffadowindow import *
 
+import cProfile
+
 if __name__ == "__main__":
-    sys.exit(ffadomain(sys.argv))
+    cProfile.run('ffadomain(sys.argv)', sort='time')
 
 #
 # vim: ts=4 sw=4 et
