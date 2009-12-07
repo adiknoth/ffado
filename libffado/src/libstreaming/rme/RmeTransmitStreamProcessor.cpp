@@ -43,8 +43,6 @@
 
 #include "libutil/ByteSwap.h"
 
-// This is to pick up the RME_MODEL_* constants.  There's probably a better
-// way ...
 #include "../../rme/rme_avdevice.h"
 
 #include <cstring>
@@ -91,16 +89,14 @@ RmeTransmitStreamProcessor::RmeTransmitStreamProcessor(FFADODevice &parent,
 
 unsigned int
 RmeTransmitStreamProcessor::getMaxPacketSize() {
-//    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
-    /* FIXME */
-    return 0;
+    Rme::Device *dev = static_cast<Rme::Device *>(&m_Parent);
+    /* Each channel comprises a single 32-bit quadlet.  Note return value is in bytes. */
+    return dev->getFramesPerPacket() * dev->getNumChannels() * 4;
 }
 
 unsigned int
 RmeTransmitStreamProcessor::getNominalFramesPerPacket() {
-//    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
-    /* FIXME */
-    return 0;
+    return static_cast<Rme::Device *>(&m_Parent)->getFramesPerPacket();
 }
 
 enum StreamProcessor::eChildReturnValue
@@ -312,9 +308,21 @@ RmeTransmitStreamProcessor::generateEmptyPacketHeader (
     // Do housekeeping expected for all packets, even for packets containing
     // no audio data.
     *sy = 0x00;
-    *length = 8;
+    *length = 0;
 
-    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
+    // During the dryRunning state used during startup FFADO will request
+    // "empty" packets.  However, the fireface will only "start" (ie:
+    // sending data to the DACs and sending data from the ADCs) 
+    // packets once it has received a certain amount of data from the PC.
+    // Since the receive stream processor won't register as dry running 
+    // until data is received, we therefore need to send some data during
+    // the dry running state in order to kick the process into gear.
+    if (isDryRunning()) {
+//        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
+        *length = getMaxPacketSize();
+    }
+
+//    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
     return eCRV_OK;
 }
 
@@ -322,6 +330,10 @@ enum StreamProcessor::eChildReturnValue
 RmeTransmitStreamProcessor::generateEmptyPacketData (
     unsigned char *data, unsigned int *length)
 {
+    /* If dry-running data is being sent, zero the data */
+    if (*length > 0) {
+        memset(data, *length, 0);
+    }
     return eCRV_OK; // no need to do anything
 }
 

@@ -531,15 +531,7 @@ Device::prepare() {
         return false;
     }
 
-    // The number of frames transmitted in a single packet is solely
-    // determined by the sample rate.
-    mult = multiplier_of_freq(freq);
-    switch (mult) {
-        case 2: frames_per_packet = 15; break;
-        case 4: frames_per_packet = 25; break;
-    default:
-        frames_per_packet = 7;
-    }
+    frames_per_packet = getFramesPerPacket();
 
     // The number of active channels depends on sample rate and whether
     // bandwidth limitation is active.  First set up the number of analog
@@ -699,8 +691,7 @@ printf("\n");
 
 int
 Device::getStreamCount() {
-// Only rx implemented at present
- 	return 1; // one receive, one transmit
+    return 2; // one receive, one transmit
 }
 
 Streaming::StreamProcessor *
@@ -740,6 +731,21 @@ Device::stopStreamByIndex(int i) {
             return false;
     }
     return true;
+}
+
+signed int
+Device::getFramesPerPacket(void) {
+    // The number of frames transmitted in a single packet is solely
+    // determined by the sample rate.
+    signed int freq = getSamplingFrequency();
+    signed int mult = multiplier_of_freq(freq);
+    switch (mult) {
+        case 2: return 15;
+        case 4: return 25;
+    default:
+        return 7;
+    }
+    return 7;
 }
 
 unsigned int 

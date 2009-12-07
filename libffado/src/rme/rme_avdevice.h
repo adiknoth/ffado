@@ -89,6 +89,9 @@ public:
     virtual bool startStreamByIndex(int i);
     virtual bool stopStreamByIndex(int i);
 
+    signed int getNumChannels(void) { return num_channels; };
+    signed int getFramesPerPacket(void);
+
     unsigned int readRegister(fb_nodeaddr_t reg);
     signed int readBlock(fb_nodeaddr_t reg, quadlet_t *buf, unsigned int n_quads);
     signed int writeRegister(fb_nodeaddr_t reg, quadlet_t data);

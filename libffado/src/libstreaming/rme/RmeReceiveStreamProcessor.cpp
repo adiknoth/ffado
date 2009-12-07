@@ -119,9 +119,9 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header\n");
         // Don't even attempt to process a packet if it isn't what we expect
         // from an RME.  For now the only condition seems to be a tag of 0.
         // This will be fleshed out in due course.
-        if (tag!=1) {
-            return eCRV_Invalid;
-        }
+//        if (tag!=1) {
+//            return eCRV_Invalid;
+//        }
 
         // Timestamps are not transmitted explicitly by the RME interfaces
         // so we'll have to fake it somehow in order to fit in with the
