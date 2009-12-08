@@ -1,4 +1,5 @@
 #! /usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2007-2008 Arnold Krille
 # Copyright (C) 2007-2008 Pieter Palmers
@@ -24,7 +25,7 @@
 #
 
 FFADO_API_VERSION = "8"
-FFADO_VERSION = "1.999.43"
+FFADO_VERSION = "2.0.0"
 
 import os
 import re
