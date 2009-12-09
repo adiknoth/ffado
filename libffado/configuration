@@ -374,13 +374,6 @@ device_definitions = (
     driver = 20;
 },
 {
-    vendorid = 0x000595;
-    modelid = 0x00000000;
-    vendorname = "Alesis";
-    modelname = "Multimix16 Firewire";
-    driver = 20;
-},
-{
     vendorid = 0x000a92;
     modelid = 0x0000000b;
     vendorname = "Presonus";
