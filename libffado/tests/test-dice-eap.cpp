@@ -271,8 +271,6 @@ main(int argc, char **argv)
     e = NULL;
     eap.unlockControl();
 
-    int cnt = 0;
-
     while(run && arguments.counts != 0) {
         eap.lockControl();
         Control::Element *e = eap.getElementByName("Router");

@@ -1,10 +1,12 @@
 /*
+ * Copyright (C) 2005-2008 by Daniel Wagner
  * Copyright (C) 2005-2008 by Pieter Palmers
+ * Copyright (C) 2008-2009 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
  *
- * FFADO is based upon FreeBoB
+ * FFADO is based upon FreeBoB.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,28 +23,16 @@
  *
  */
 
-#ifndef __Time__
-#define __Time__
+/* DBus controls associated with Mark3 mixer controls */
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
-#include <inttypes.h>
+#include "debugmodule/debugmodule.h"
 
-#include "SystemTimeSource.h"
+#include "libcontrol/BasicElements.h"
+#include "libcontrol/MatrixMixer.h"
 
-/**
- * Type used to represent the value of free running
- * monotonic clock with units of microseconds.
- */
-typedef uint64_t ffado_microsecs_t;
-#define PRI_FFADO_MICROSECS_T PRIu64
+namespace Motu {
 
-static inline void SleepRelativeUsec(ffado_microsecs_t usec) {
-    Util::SystemTimeSource::SleepUsecRelative(usec);
+class MotuDevice;
+
+
 }
-
-#endif
-
-
-

@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    debugOutput(DEBUG_LEVEL_NORMAL, "verbose level = %d\n", arguments.verbose);
+    debugOutput(DEBUG_LEVEL_NORMAL, "verbose level = %d\n", (int)arguments.verbose);
     setDebugLevel(arguments.verbose);
 
     int nb_in_channels=0, nb_out_channels=0;

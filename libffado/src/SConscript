@@ -149,6 +149,10 @@ oxford_pkgdata = env.Split( '\
 motu_source = env.Split( '\
 	motu/motu_avdevice.cpp \
 	motu/motu_controls.cpp \
+	motu/motu_mark3_controls.cpp \
+	motu/motu_mixerdefs.cpp \
+	motu/motu_mark3_mixerdefs.cpp \
+	motu/motu_mixer.cpp \
 	libstreaming/motu/MotuPort.cpp \
 	libstreaming/motu/MotuPortInfo.cpp \
 	libstreaming/motu/MotuReceiveStreamProcessor.cpp \

@@ -74,6 +74,7 @@ public:
     int countDeviceStrings() {return m_DeviceStrings.size();};
 
     bool match(ConfigRom &);
+    int matchPosition(ConfigRom& c);
 
     bool parseString(std::string s);
     void show();

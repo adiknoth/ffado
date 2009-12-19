@@ -54,7 +54,7 @@ void StreamStatistics::signal(unsigned int val) {
 
 void StreamStatistics::dumpInfo() {
     debugOutputShort( DEBUG_LEVEL_VERBOSE, 
-                      "--- Stats for %s: min=%ld avg=%f max=%ld cnt=%ld sum=%ld\n",
+                      "--- Stats for %s: min=%"PRId64" avg=%f max=%"PRId64" cnt=%"PRId64" sum=%"PRId64"\n",
                       m_name.c_str(), m_min, m_average, m_max, m_count, m_sum);
     debugOutputShort( DEBUG_LEVEL_VERBOSE, "    Signal stats\n");
     for (unsigned int i=0;i <= MAX_SIGNAL_VALUE; i++) {

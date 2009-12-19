@@ -627,8 +627,8 @@ class Motu(QWidget):
             self.optical_in_mode.setEnabled(False)
             self.optical_out_mode.setEnabled(False)
 
-        # The 896HD doesn't have optical SPDIF (aka Toslink) capability
-        if (self.model == MOTU_MODEL_896HD):
+        # The 896HD and 8pre don't have optical SPDIF (aka Toslink) capability
+        if (self.model==MOTU_MODEL_896HD or self.model==MOTU_MODEL_8PRE):
             self.optical_in_mode.removeItem(2)
             self.optical_out_mode.removeItem(2)
 

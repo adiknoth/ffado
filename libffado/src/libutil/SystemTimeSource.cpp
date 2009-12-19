@@ -54,8 +54,8 @@ SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec)
     ts.tv_sec = wake_at_usec / (1000000LL);
     ts.tv_nsec = (wake_at_usec % (1000000LL)) * 1000LL;
     debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                "clock_nanosleep until %lld sec, %lld nanosec\n",
-                (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
+                       "clock_nanosleep until %"PRId64" sec, %"PRId64" nanosec\n",
+                       (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
     int err = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &ts, NULL);
     if(err) {
         // maybe signal occurred, but we're going to ignore that

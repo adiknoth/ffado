@@ -32,6 +32,9 @@
 
 #include <argp.h>
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 
 #include "debugmodule/debugmodule.h"
@@ -156,12 +159,12 @@ int main(int argc, char **argv)
 
     debugOutput(DEBUG_LEVEL_INFO, "Simple RT system loader\n");
     debugOutput(DEBUG_LEVEL_INFO, " Arguments:\n");
-    debugOutput(DEBUG_LEVEL_INFO, "  RT priority : %d\n", arguments.rtprio);
-    debugOutput(DEBUG_LEVEL_INFO, "  Countdown   : %d\n", arguments.countdown);
-    debugOutput(DEBUG_LEVEL_INFO, "  Period      : %d usec\n", arguments.period);
-    debugOutput(DEBUG_LEVEL_INFO, "  CPU load    : %d%%\n", arguments.cpu_pct);
+    debugOutput(DEBUG_LEVEL_INFO, "  RT priority : %ld\n", arguments.rtprio);
+    debugOutput(DEBUG_LEVEL_INFO, "  Countdown   : %ld\n", arguments.countdown);
+    debugOutput(DEBUG_LEVEL_INFO, "  Period      : %ld usec\n", arguments.period);
+    debugOutput(DEBUG_LEVEL_INFO, "  CPU load    : %ld%%\n", arguments.cpu_pct);
 
-    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority (%d)...\n", arguments.rtprio);
+    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority (%ld)...\n", arguments.rtprio);
     set_realtime_priority(arguments.rtprio);
 
     debugOutput(DEBUG_LEVEL_INFO, "Starting iterate loop...\n");
@@ -186,12 +189,12 @@ int main(int argc, char **argv)
         toc = rt_gettime_usecs();
         int64_t usecs_late = toc - sleep_time;
         if(usecs_late > 1000) {
-            debugWarning("late wakeup: %lld usecs\n", usecs_late);
+            debugWarning("late wakeup: %"PRId64" usecs\n", usecs_late);
         }
 
         // try and detect lockup ()
         if(usecs_late > 100000) {
-            debugWarning("very late wakeup: %lld usecs\n", usecs_late);
+            debugWarning("very late wakeup: %"PRId64" usecs\n", usecs_late);
             // force exit, since this is a loop out of control
             run=0;
         }

@@ -76,7 +76,7 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_scratch_buffer_size_bytes( 0 )
     , m_ticks_per_frame( 0 )
     , m_dll_bandwidth_hz ( STREAMPROCESSOR_DLL_BW_HZ )
-    , m_sync_delay_frames( 0 )
+    , m_extra_buffer_frames( 0 )
     , m_in_xrun( false )
 {
     // create the timestamped buffer and register ourselves as its client
@@ -131,10 +131,6 @@ void StreamProcessor::handlerDied()
     SIGNAL_ACTIVITY_ALL;
 }
 
-uint64_t StreamProcessor::getTimeNow() {
-    return m_1394service.getCycleTimerTicks();
-}
-
 int StreamProcessor::getMaxFrameLatency() {
     return (int)(m_IsoHandlerManager.getPacketLatencyForStream( this ) * TICKS_PER_CYCLE);
 }
@@ -171,76 +167,46 @@ StreamProcessor::getNbPacketsIsoXmitBuffer()
 /***********************************************
  * Buffer management and manipulation          *
  ***********************************************/
+void
+StreamProcessor::getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int *fc)
+{
+    m_data_buffer->getBufferHeadTimestamp(ts, fc);
+}
+
+void
+StreamProcessor::getBufferTailTimestamp(ffado_timestamp_t *ts, signed int *fc)
+{
+    m_data_buffer->getBufferTailTimestamp(ts, fc);
+}
+
+void StreamProcessor::setBufferTailTimestamp(ffado_timestamp_t new_timestamp)
+{
+    m_data_buffer->setBufferTailTimestamp(new_timestamp);
+}
+
+void
+StreamProcessor::setBufferHeadTimestamp(ffado_timestamp_t new_timestamp)
+{
+    m_data_buffer->setBufferHeadTimestamp(new_timestamp);
+}
 
 int StreamProcessor::getBufferFill() {
     return m_data_buffer->getBufferFill();
 }
 
-int64_t
-StreamProcessor::getTimeUntilNextPeriodSignalUsecs()
-{
-    uint64_t time_at_period=getTimeAtPeriod();
-
-    // we delay the period signal with the sync delay
-    // this makes that the period signals lag a little compared to reality
-    // ISO buffering causes the packets to be received at max
-    // m_handler->getWakeupInterval() later than the time they were received.
-    // hence their payload is available this amount of time later. However, the
-    // period boundary is predicted based upon earlier samples, and therefore can
-    // pass before these packets are processed. Adding this extra term makes that
-    // the period boundary is signalled later
-    time_at_period = addTicks(time_at_period, m_StreamProcessorManager.getSyncSource().getSyncDelay());
-
-    uint64_t cycle_timer=m_1394service.getCycleTimerTicks();
-
-    // calculate the time until the next period
-    int32_t until_next=diffTicks(time_at_period,cycle_timer);
-
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "=> TAP=%11llu, CTR=%11llu, UTN=%11ld\n",
-        time_at_period, cycle_timer, until_next
-        );
-
-    // now convert to usecs
-    // don't use the mapping function because it only works
-    // for absolute times, not the relative time we are
-    // using here (which can also be negative).
-    return (int64_t)(((float)until_next) / TICKS_PER_USEC);
-}
-
 void
-StreamProcessor::setSyncDelay(unsigned int ticks) {
-
-    // round the sync delay to an integer number of packets now we know the frame rate
-    int frames = (int)((float)ticks / getTicksPerFrame());
-    frames = (frames / getNominalFramesPerPacket()) + 1;
-    frames *= getNominalFramesPerPacket();
-    
-    #ifdef DEBUG
-    float ticks2 = frames * getTicksPerFrame();
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting SP %p SyncDelay to %u ticks => rounded to %u frames, %f ticks\n",
-                this, ticks, frames, ticks2);
-    #endif
-    m_sync_delay_frames = frames;
+StreamProcessor::setExtraBufferFrames(unsigned int frames) {
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting extra buffer to %d frames\n", frames);
+    m_extra_buffer_frames = frames;
 }
 
 unsigned int
-StreamProcessor::getSyncDelayFrames() {
-    return m_sync_delay_frames;
-}
-
-unsigned int
-StreamProcessor::getSyncDelay() {
-    return (unsigned int)(m_sync_delay_frames * getTicksPerFrame());
+StreamProcessor::getExtraBufferFrames() {
+    return m_extra_buffer_frames;
 }
 
 uint64_t
-StreamProcessor::getTimeAtPeriodUsecs()
-{
-    return (uint64_t)((float)getTimeAtPeriod() * TICKS_PER_USEC);
-}
-
-uint64_t
-StreamProcessor::getTimeAtPeriod() 
+StreamProcessor::getTimeAtPeriod()
 {
     if (getType() == ePT_Receive) {
         ffado_timestamp_t next_period_boundary = m_data_buffer->getTimestampFromHead(m_StreamProcessorManager.getPeriodSize());
@@ -411,7 +377,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
         #ifdef DEBUG
         if (m_last_timestamp > 0 && m_last_timestamp2 > 0) {
             int64_t tsp_diff = diffTicks(m_last_timestamp, m_last_timestamp2);
-            debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "TSP diff: %lld\n", tsp_diff);
+            debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "TSP diff: %"PRId64"\n", tsp_diff);
             double tsp_diff_d = tsp_diff;
             double fs_syt = 1.0/tsp_diff_d;
             fs_syt *= (double)getNominalFramesPerPacket() * (double)TICKS_PER_USEC * 1e6;
@@ -432,8 +398,8 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 // so 50 ticks = 10%, which is a rather large jitter value.
                 if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
                     debugOutput(DEBUG_LEVEL_VERBOSE,
-                                "cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                                CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                                "cy %04d rather large TSP difference TS=%011"PRIu64" => TS=%011"PRIu64" (%d, nom %d)\n",
+                                (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
                                 m_last_timestamp, diff, ticks_per_packet);
                     // !!!HACK!!! FIXME: this is the result of a failure in wrapping/unwrapping somewhere
                     // it's definitely a bug.
@@ -443,8 +409,8 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                     last_timestamp_fixed = addTicks(m_last_timestamp, TICKS_PER_SECOND);
                     diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
                     if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
-                        debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                                    CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                        debugWarning("cy %04d rather large TSP difference TS=%011"PRIu64" => TS=%011"PRIu64" (%d, nom %d)\n",
+                                    (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
                                     m_last_timestamp, diff, ticks_per_packet);
                         debugWarning("HACK: fixed by adding one second of ticks. This is a bug being run-time fixed.\n");
                         m_last_timestamp = last_timestamp_fixed;
@@ -453,8 +419,8 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                         last_timestamp_fixed = substractTicks(m_last_timestamp, TICKS_PER_SECOND);
                         diff = diffTicks(last_timestamp_fixed, m_last_timestamp2);
                         if(diff-ticks_per_packet < 50 && diff-ticks_per_packet > -50) {
-                            debugWarning("cy %04u rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                                        CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                            debugWarning("cy %04d rather large TSP difference TS=%011"PRIu64" => TS=%011"PRIu64" (%d, nom %d)\n",
+                                        (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
                                         m_last_timestamp, diff, ticks_per_packet);
                             debugWarning("HACK: fixed by subtracing one second of ticks. This is a bug being run-time fixed.\n");
                             m_last_timestamp = last_timestamp_fixed;
@@ -462,16 +428,16 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                     }
                 }
                 debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                                "%04u %011llu %011llu %d %d\n",
-                                CYCLE_TIMER_GET_CYCLES(pkt_ctr),
+                                "%04u %011"PRIu64" %011"PRIu64" %d %d\n",
+                                (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                                 m_last_timestamp2, m_last_timestamp, 
                                 diff, ticks_per_packet);
         }
         #endif
 
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                          "RECV: CY=%04u TS=%011llu\n",
-                          CYCLE_TIMER_GET_CYCLES(pkt_ctr),
+                          "RECV: CY=%04u TS=%011"PRIu64"\n",
+                          (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr),
                           m_last_timestamp);
 
         if(m_correct_last_timestamp) {
@@ -639,8 +605,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         enum eChildReturnValue result = generateSilentPacketHeader(data, length, tag, sy, pkt_ctr);
         if (result == eCRV_Packet) {
             debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                               "XMIT SILENT: CY=%04u TS=%011llu\n",
-                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp);
+                               "XMIT SILENT: CY=%04u TS=%011"PRIu64"\n",
+                               (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp);
 
             // assumed not to xrun
             generateSilentPacketData(data, length);
@@ -690,8 +656,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
         enum eChildReturnValue result = generatePacketHeader(data, length, tag, sy, pkt_ctr);
         if (result == eCRV_Packet || result == eCRV_Defer) {
             debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                               "XMIT: CY=%04u TS=%011llu\n",
-                               CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp);
+                               "XMIT: CY=%04u TS=%011"PRIu64"\n",
+                               (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp);
 
             // valid packet timestamp
             m_last_timestamp2 = prev_timestamp;
@@ -727,7 +693,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             #ifdef DEBUG
             if (m_last_timestamp > 0 && m_last_timestamp2 > 0) {
                 int64_t tsp_diff = diffTicks(m_last_timestamp, m_last_timestamp2);
-                debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "TSP diff: %lld\n", tsp_diff);
+                debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "TSP diff: %"PRId64"\n", tsp_diff);
                 double tsp_diff_d = tsp_diff;
                 double fs_syt = 1.0/tsp_diff_d;
                 fs_syt *= (double)getNominalFramesPerPacket() * (double)TICKS_PER_USEC * 1e6;
@@ -736,7 +702,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 double fs_diff_norm = fs_diff/fs_nom;
                 debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)\n",
                            fs_nom, fs_syt, fs_diff, fs_diff_norm);
-//                 debugOutput(DEBUG_LEVEL_VERBOSE, "Diff fs: %12f, m_last_timestamp: %011llu, m_last_timestamp2: %011llu\n",
+//                 debugOutput(DEBUG_LEVEL_VERBOSE, "Diff fs: %12f, m_last_timestamp: %011"PRIu64", m_last_timestamp2: %011"PRIu64"\n",
 //                            fs_diff, m_last_timestamp, m_last_timestamp2);
                 if (fs_diff_norm > 0.01 || fs_diff_norm < -0.01) {
                     debugWarning( "Instantanous samplerate more than 1%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
@@ -749,13 +715,13 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 // so 50 ticks = 10%, which is a rather large jitter value.
                 if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
                     debugOutput(DEBUG_LEVEL_VERBOSE,
-                                "cy %04d, rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
-                                CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                                "cy %04d, rather large TSP difference TS=%011"PRIu64" => TS=%011"PRIu64" (%d, nom %d)\n",
+                                (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
                                 m_last_timestamp, diff, ticks_per_packet);
                 }
                 debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                                "%04d %011llu %011llu %d %d\n",
-                                CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
+                                "%04d %011"PRIu64" %011"PRIu64" %d %d\n",
+                                (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
                                 m_last_timestamp, diff, ticks_per_packet);
             }
             #endif
@@ -790,7 +756,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
             }
             goto send_empty_packet;
         } else if (result == eCRV_Again) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "have to retry cycle %d\n", CYCLE_TIMER_GET_CYCLES(pkt_ctr));
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "have to retry cycle %d\n", (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr));
             if(m_state != m_next_state) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
                                                 ePSToString(m_state), ePSToString(m_next_state));
@@ -825,7 +791,7 @@ send_empty_packet:
     }
     debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                        "XMIT EMPTY: CY=%04u\n",
-                       CYCLE_TIMER_GET_CYCLES(pkt_ctr));
+                       (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr));
 
     generateEmptyPacketHeader(data, length, tag, sy, pkt_ctr);
     generateEmptyPacketData(data, length);
@@ -842,7 +808,7 @@ send_empty_packet:
 bool StreamProcessor::getFrames(unsigned int nbframes, int64_t ts) {
     bool result;
     debugOutputExtreme( DEBUG_LEVEL_VERBOSE,
-                        "(%p, %s) getFrames(%d, %11llu)\n",
+                        "(%p, %s) getFrames(%d, %11"PRIu64")\n",
                         this, getTypeString(), nbframes, ts);
     assert( getType() == ePT_Receive );
     if(isDryRunning()) result = getFramesDry(nbframes, ts);
@@ -873,15 +839,15 @@ bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
     lag_ticks = diffTicks(ts, ts_expected);
     lag_frames = (((float)lag_ticks) / srate);
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       "stream (%p): drifts %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
+                       "stream (%p): drifts %6d ticks = %10.5f frames (rate=%10.5f), %"PRId64", %"PRIu64", %d\n",
                        this, lag_ticks, lag_frames, srate, ts, ts_expected, fc);
     if (lag_frames >= 1.0) {
         // the stream lags
-        debugOutput(DEBUG_LEVEL_VERBOSE, "stream (%p): lags  with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
+        debugOutput(DEBUG_LEVEL_VERBOSE, "stream (%p): lags  with %6d ticks = %10.5f frames (rate=%10.5f), %"PRId64", %"PRIu64", %d\n",
                       this, lag_ticks, lag_frames, srate, ts, ts_expected, fc);
     } else if (lag_frames <= -1.0) {
         // the stream leads
-        debugOutput(DEBUG_LEVEL_VERBOSE, "stream (%p): leads with %6d ticks = %10.5f frames (rate=%10.5f), %lld, %llu, %d\n",
+        debugOutput(DEBUG_LEVEL_VERBOSE, "stream (%p): leads with %6d ticks = %10.5f frames (rate=%10.5f), %"PRId64", %"PRIu64", %d\n",
                       this, lag_ticks, lag_frames, srate, ts, ts_expected, fc);
     }
 #endif
@@ -895,7 +861,7 @@ bool StreamProcessor::getFramesWet(unsigned int nbframes, int64_t ts) {
 bool StreamProcessor::getFramesDry(unsigned int nbframes, int64_t ts)
 {
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                       "stream (%p): dry run %d frames (@ ts=%lld)\n",
+                       "stream (%p): dry run %d frames (@ ts=%"PRId64")\n",
                        this, nbframes, ts);
     // dry run on this side means that we put silence in all enabled ports
     // since there is do data put into the ringbuffer in the dry-running state
@@ -906,7 +872,7 @@ bool
 StreamProcessor::dropFrames(unsigned int nbframes, int64_t ts)
 {
     bool result;
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::dropFrames(%d, %lld)\n", nbframes, ts);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "StreamProcessor::dropFrames(%d, %"PRId64")\n", nbframes, ts);
     result = m_data_buffer->dropFrames(nbframes);
     SIGNAL_ACTIVITY_ISO_RECV;
     return result;
@@ -916,7 +882,7 @@ bool StreamProcessor::putFrames(unsigned int nbframes, int64_t ts)
 {
     bool result;
     debugOutputExtreme( DEBUG_LEVEL_VERBOSE,
-                        "(%p, %s) putFrames(%d, %11llu)\n",
+                        "(%p, %s) putFrames(%d, %11"PRIu64")\n",
                         this, getTypeString(), nbframes, ts);
     assert( getType() == ePT_Transmit );
     if(isDryRunning()) result = putFramesDry(nbframes, ts);
@@ -929,12 +895,12 @@ bool
 StreamProcessor::putFramesWet(unsigned int nbframes, int64_t ts)
 {
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                       "StreamProcessor::putFramesWet(%d, %llu)\n",
+                       "StreamProcessor::putFramesWet(%d, %"PRIu64")\n",
                        nbframes, ts);
     // transfer the data
     m_data_buffer->blockProcessWriteFrames(nbframes, ts);
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                       " New timestamp: %llu\n", ts);
+                       " New timestamp: %"PRIu64"\n", ts);
     return true; // FIXME: what about failure?
 }
 
@@ -942,7 +908,7 @@ bool
 StreamProcessor::putFramesDry(unsigned int nbframes, int64_t ts)
 {
     debugOutputExtreme(DEBUG_LEVEL_ULTRA_VERBOSE,
-                       "StreamProcessor::putFramesDry(%d, %llu)\n",
+                       "StreamProcessor::putFramesDry(%d, %"PRIu64")\n",
                        nbframes, ts);
     // do nothing
     return true;
@@ -952,7 +918,7 @@ bool
 StreamProcessor::putSilenceFrames(unsigned int nbframes, int64_t ts)
 {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-                       "StreamProcessor::putSilenceFrames(%d, %llu)\n",
+                       "StreamProcessor::putSilenceFrames(%d, %"PRIu64")\n",
                        nbframes, ts);
 
     size_t bytes_per_frame = getEventSize() * getEventsPerFrame();
@@ -1103,7 +1069,7 @@ bool StreamProcessor::prepare()
 
     // make the scratch buffer one period of frames long
     m_scratch_buffer_size_bytes = m_StreamProcessorManager.getPeriodSize() * getEventsPerFrame() * getEventSize();
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Allocate scratch buffer of %d quadlets\n");
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Allocate scratch buffer of %zd quadlets\n", m_scratch_buffer_size_bytes);
     if(m_scratch_buffer) delete[] m_scratch_buffer;
     m_scratch_buffer = new byte_t[m_scratch_buffer_size_bytes];
     if(m_scratch_buffer == NULL) {
@@ -1192,12 +1158,12 @@ bool StreamProcessor::scheduleStartDryRunning(int64_t t) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
     #ifdef DEBUG
     uint64_t now = m_1394service.getCycleTimerTicks();
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011"PRIu64" (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
                           (unsigned int)TICKS_TO_CYCLES(now),
                           (unsigned int)TICKS_TO_OFFSET(now));
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011"PRIu64" (%03us %04uc %04ut)\n",
                           tx,
                           (unsigned int)TICKS_TO_SECS(tx),
                           (unsigned int)TICKS_TO_CYCLES(tx),
@@ -1238,12 +1204,12 @@ bool StreamProcessor::scheduleStartRunning(int64_t t) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
     #ifdef DEBUG
     uint64_t now = m_1394service.getCycleTimerTicks();
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011"PRIu64" (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
                           (unsigned int)TICKS_TO_CYCLES(now),
                           (unsigned int)TICKS_TO_OFFSET(now));
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Start at              : %011"PRIu64" (%03us %04uc %04ut)\n",
                           tx,
                           (unsigned int)TICKS_TO_SECS(tx),
                           (unsigned int)TICKS_TO_CYCLES(tx),
@@ -1262,12 +1228,12 @@ bool StreamProcessor::scheduleStopDryRunning(int64_t t) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
     #ifdef DEBUG
     uint64_t now = m_1394service.getCycleTimerTicks();
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011"PRIu64" (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
                           (unsigned int)TICKS_TO_CYCLES(now),
                           (unsigned int)TICKS_TO_OFFSET(now));
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at              : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at              : %011"PRIu64" (%03us %04uc %04ut)\n",
                           tx,
                           (unsigned int)TICKS_TO_SECS(tx),
                           (unsigned int)TICKS_TO_CYCLES(tx),
@@ -1287,12 +1253,12 @@ bool StreamProcessor::scheduleStopRunning(int64_t t) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"for %s SP (%p)\n", ePTToString(getType()), this);
     #ifdef DEBUG
     uint64_t now = m_1394service.getCycleTimerTicks();
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Now                   : %011"PRIu64" (%03us %04uc %04ut)\n",
                           now,
                           (unsigned int)TICKS_TO_SECS(now),
                           (unsigned int)TICKS_TO_CYCLES(now),
                           (unsigned int)TICKS_TO_OFFSET(now));
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at              : %011llu (%03us %04uc %04ut)\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Stop at              : %011"PRIu64" (%03us %04uc %04ut)\n",
                           tx,
                           (unsigned int)TICKS_TO_SECS(tx),
                           (unsigned int)TICKS_TO_CYCLES(tx),
@@ -1383,27 +1349,29 @@ bool StreamProcessor::stopRunning(int64_t t) {
 bool
 StreamProcessor::doStop()
 {
+    assert(m_data_buffer);
+
     float ticks_per_frame;
-    unsigned int ringbuffer_size_frames = (m_StreamProcessorManager.getNbBuffers() + 1) * m_StreamProcessorManager.getPeriodSize();
+    unsigned int ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
+    ringbuffer_size_frames += m_extra_buffer_frames;
+    ringbuffer_size_frames += 1; // to ensure that we can fit it all in there
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
     bool result = true;
 
     switch(m_state) {
         case ePS_Created:
-            assert(m_data_buffer);
-
             // prepare the framerate estimate
             ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_StreamProcessorManager.getNominalRate());
             m_ticks_per_frame = ticks_per_frame;
             m_local_node_id= m_1394service.getLocalNodeId() & 0x3f;
             m_correct_last_timestamp = false;
-
+        
             debugOutput(DEBUG_LEVEL_VERBOSE, "Initializing remote ticks/frame to %f\n", ticks_per_frame);
-
+        
             // initialize internal buffer
             result &= m_data_buffer->setBufferSize(ringbuffer_size_frames);
-
+        
             result &= m_data_buffer->setEventSize( getEventSize() );
             result &= m_data_buffer->setEventsPerFrame( getEventsPerFrame() );
             if(getType() == ePT_Receive) {
@@ -1412,13 +1380,12 @@ StreamProcessor::doStop()
                 result &= m_data_buffer->setUpdatePeriod( m_StreamProcessorManager.getPeriodSize() );
             }
             result &= m_data_buffer->setNominalRate(ticks_per_frame);
-            result &= m_data_buffer->setWrapValue(128L*TICKS_PER_SECOND);
+            result &= m_data_buffer->setWrapValue(128L * TICKS_PER_SECOND);
             result &= m_data_buffer->setBandwidth(STREAMPROCESSOR_DLL_FAST_BW_HZ / (double)TICKS_PER_SECOND);
             result &= m_data_buffer->prepare(); // FIXME: the name
 
             debugOutput(DEBUG_LEVEL_VERBOSE, "DLL info: nominal tpf: %f, update period: %d, bandwidth: %e 1/ticks (%e Hz)\n", 
                         m_data_buffer->getNominalRate(), m_data_buffer->getUpdatePeriod(), m_data_buffer->getBandwidth(), m_data_buffer->getBandwidth() * TICKS_PER_SECOND);
-
             break;
         case ePS_DryRunning:
             if(!m_IsoHandlerManager.stopHandlerForStream(this)) {
@@ -1431,7 +1398,8 @@ StreamProcessor::doStop()
             return false;
     }
 
-    result &= m_data_buffer->clearBuffer(); // FIXME: don't like the reset() name
+    // clear all data
+    result &= m_data_buffer->clearBuffer();
     // make the buffer transparent
     m_data_buffer->setTransparent(true);
 
@@ -1548,26 +1516,30 @@ bool
 StreamProcessor::doWaitForStreamEnable()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
-    unsigned int ringbuffer_size_frames;
+
+    unsigned int ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
+    ringbuffer_size_frames += m_extra_buffer_frames;
+    ringbuffer_size_frames += 1; // to ensure that we can fit it all in there
+
     switch(m_state) {
         case ePS_DryRunning:
             // we have to start waiting for an incoming stream
             // this basically means nothing, the state change will
             // be picked up by the packet iterator
 
-            if(!m_data_buffer->clearBuffer()) {
-                debugError("Could not reset data buffer\n");
+            // clear the buffer / resize it to the most recent
+            // size setting
+            if(!m_data_buffer->resizeBuffer(ringbuffer_size_frames)) {
+                debugError("Could not resize data buffer\n");
                 return false;
             }
+
             if (getType() == ePT_Transmit) {
                 ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
+                ringbuffer_size_frames += m_extra_buffer_frames;
 
-                // add sync delay
-                int syncdelay_in_frames = m_StreamProcessorManager.getSyncSource().getSyncDelayFrames();
-                ringbuffer_size_frames += syncdelay_in_frames;
-
-                debugOutput(DEBUG_LEVEL_VERBOSE, "Prefill transmit SP %p with %u frames (sync_delay_frames = %d)\n",
-                            this, ringbuffer_size_frames, syncdelay_in_frames);
+                debugOutput(DEBUG_LEVEL_VERBOSE, "Prefill transmit SP %p with %u frames (xmit prebuffer = %d)\n",
+                            this, ringbuffer_size_frames, m_extra_buffer_frames);
                 // prefill the buffer
                 if(!transferSilence(ringbuffer_size_frames)) {
                     debugFatal("Could not prefill transmit stream\n");
@@ -1928,7 +1900,7 @@ StreamProcessor::dumpInfo()
         debugError("No handler for stream??\n");
     }
     uint64_t now = m_1394service.getCycleTimerTicks();
-    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011llu (%03us %04uc %04ut)\n",
+    debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011"PRIu64" (%03us %04uc %04ut)\n",
                         now,
                         (unsigned int)TICKS_TO_SECS(now),
                         (unsigned int)TICKS_TO_CYCLES(now),
@@ -1947,10 +1919,6 @@ StreamProcessor::dumpInfo()
                                           m_StreamProcessorManager.getNominalRate(),
                                           24576000.0/m_StreamProcessorManager.getSyncSource().m_data_buffer->getRate(),
                                           24576000.0/m_data_buffer->getRate());
-    float d = getSyncDelay();
-    debugOutputShort(DEBUG_LEVEL_NORMAL, "  Sync delay             : %f ticks (%f frames, %f cy)\n",
-                                         d, d/getTicksPerFrame(),
-                                         d/((float)TICKS_PER_CYCLE));
     #endif
     m_data_buffer->dumpInfo();
 }

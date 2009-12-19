@@ -147,10 +147,10 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     int64_t now_t = Util::SystemTimeSource::getCurrentTime();
     if(isRunning()) {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                           "STMP: %lluticks | syt_interval=%d, tpf=%f\n",
+                           "STMP: %"PRIu64"ticks | syt_interval=%d, tpf=%f\n",
                            m_last_timestamp, m_syt_interval, getTicksPerFrame());
 /*        debugOutput(DEBUG_LEVEL_NORMAL,
-                           "STMP: %12llu ticks | delta_t: %5lld | bufferfill: %5d\n",
+                           "STMP: %12"PRIu64" ticks | delta_t: %5"PRId64" | bufferfill: %5d\n",
                            m_last_timestamp, now_t-last_t, m_data_buffer->getBufferFill());*/
     }
     last_t = now_t;
@@ -377,6 +377,7 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
                     sample_int=(sample_int >> 16) & 0x000000FF;
                     sample_int |= 0x01000000; // flag that there is a midi event present
                     *buffer = sample_int;
+                    debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "(%p) MIDI [%d]: %08X\n", this, i, sample_int);
                 } else if(IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_2X)
                        || IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_3X) ) {
                     debugOutput(DEBUG_LEVEL_VERBOSE, "Midi mode %X not supported.\n", IEC61883_AM824_GET_LABEL(sample_int));

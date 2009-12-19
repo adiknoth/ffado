@@ -116,8 +116,13 @@
 // at which the buffer is transfer()'ed, making things somewhat
 // more robust. It should be noted though that shifting the transfer
 // time to a later time instant also causes the xmit buffer fill to be
-// lower on average.
+// lower on average. This can be counteracted by increasing the
+// STREAMPROCESSORMANAGER_XMIT_PREBUFFER_FRAMES option
 #define STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS           (3072*0)
+
+// the number of frames that we prebuffer in the 1394 ISO layer
+// this adds directly to the roundtrip latency
+#define STREAMPROCESSORMANAGER_XMIT_PREBUFFER_FRAMES         100
 
 // causes the waitForPeriod() call to wait until sufficient
 // data is present in the buffer such that a transfer() will

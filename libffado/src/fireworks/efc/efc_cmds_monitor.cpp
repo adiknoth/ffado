@@ -149,9 +149,9 @@ EfcGenericMonitorCmd::showEfcCmd()
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC %s MONITOR %s:\n",
                                     (m_type==eCT_Get?"GET":"SET"),
                                     eMonitorCommandToString(m_command));
-    debugOutput(DEBUG_LEVEL_NORMAL, " Input       : %ld\n", m_input);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Output      : %ld\n", m_output);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Value       : %lu\n", m_value);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Input       : %d\n", m_input);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Output      : %d\n", m_output);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Value       : %u\n", m_value);
 }
 
 // --- The specific commands

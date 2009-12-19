@@ -24,6 +24,11 @@
 #ifndef FBTYPES_H
 #define FBTYPES_H
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+#include <inttypes.h>
+
 #include <libraw1394/raw1394.h>
 
 #define INVALID_NODE_ID 0xFF
@@ -33,6 +38,10 @@ typedef byte_t      fb_byte_t;
 typedef octlet_t    fb_octlet_t;
 typedef nodeid_t    fb_nodeid_t;
 typedef nodeaddr_t  fb_nodeaddr_t;
+
+#define FORMAT_FB_OCTLET_T      "0x%016" PRIX64
+#define FORMAT_FB_NODEID_T      "0x%016" PRIX64
+#define FORMAT_FB_NODEADDR_T    "0x%016" PRIX64
 
 class DeviceManager;
 

@@ -248,12 +248,14 @@ AVCDescriptor::load()
         
         // copy the payload
         
-        if (bytes_read+readDescCmd.m_data_length>m_descriptor_length) {
+        if (bytes_read + readDescCmd.m_data_length > m_descriptor_length) {
             debugWarning("Device returned too much data, truncating\n");
             readDescCmd.m_data_length=m_descriptor_length-bytes_read;
         }
         
-        debugOutput(DEBUG_LEVEL_VERBOSE, " copying %u bytes to internal buffer offset %u\n",readDescCmd.m_data_length, bytes_read);
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    " copying %u bytes to internal buffer offset %zd\n", 
+                    readDescCmd.m_data_length, bytes_read);
         
         memcpy(m_data+bytes_read,readDescCmd.m_data, readDescCmd.m_data_length);
         bytes_read += readDescCmd.m_data_length;

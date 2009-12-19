@@ -244,8 +244,8 @@ EfcGenericMixerCmd::showEfcCmd()
                                     (m_type==eCT_Get?"GET":"SET"),
                                     eMixerTargetToString(m_target),
                                     eMixerCommandToString(m_command));
-    debugOutput(DEBUG_LEVEL_NORMAL, " Channel     : %ld\n", m_channel);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Value       : %lu\n", m_value);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Channel     : %d\n", m_channel);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Value       : %u\n", m_value);
 }
 
 // --- The specific commands

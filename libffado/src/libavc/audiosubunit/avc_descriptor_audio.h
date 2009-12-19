@@ -42,11 +42,15 @@
 
 class Ieee1394Service;
 
+// forward declarations
+namespace Util {
+    namespace Cmd {
+        class IOSSerialize;
+        class IISDeserialize;
+    }
+}
+
 namespace AVC {
-
-
-class Util::Cmd::IOSSerialize;
-class Util::Cmd::IISDeserialize;
 
 class AVCAudioClusterInformation
 {

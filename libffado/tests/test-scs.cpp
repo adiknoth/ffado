@@ -324,7 +324,7 @@ private: // the class that handles the async messages from the HSS1394 node
 
         virtual void operator() (byte_t *buff, size_t len) {
             if (m_ready) {
-                debugOutput(DEBUG_LEVEL_NORMAL, "got message len %d\n", len);
+                debugOutput(DEBUG_LEVEL_NORMAL, "got message len %zd\n", len);
     
                 for (size_t s=0; s < len; s++) {
                     byte_t *byte = (buff+s);

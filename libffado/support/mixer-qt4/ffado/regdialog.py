@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2005-2008 by Pieter Palmers
 #
@@ -33,6 +34,7 @@ REGISTRATION_MESSAGE = """
 <body style=" font-family:'Sans Serif'; font-size:9pt; font-weight:400; font-style:normal;">\n
 <p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">
 You are running this version of FFADO for the first time with this device. </p>
+<p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">If FFADO is useful to you, please consider a donation through <a href="http://www.ffado.org/?q=donations ">http://www.ffado.org/?q=donations</a>.</p>
 <p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">
 In order to collect usage statistics we would like to send some information about your system to ffado.org.
 It is very important for us to have good usage statistics. This is to convince vendors that Linux users 

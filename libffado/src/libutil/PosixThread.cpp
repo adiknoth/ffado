@@ -148,7 +148,7 @@ int PosixThread::Start()
         m_lock.Unlock();
         if (res) {
             debugError("Cannot create realtime thread (%d: %s)\n", res, strerror(res));
-            debugError(" priority: %d %s\n", fPriority);
+            debugError(" priority: %d\n", fPriority);
             return -1;
         }
 
@@ -171,13 +171,13 @@ int PosixThread::Start()
 int PosixThread::Kill()
 {
     if (fThread) { // If thread has been started
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Kill %p (thread: %p)\n", m_id.c_str(), this, fThread);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Kill %p (thread: %p)\n", m_id.c_str(), this, (void *)fThread);
         void* status;
         pthread_cancel(fThread);
         m_lock.Lock();
         pthread_join(fThread, &status);
         m_lock.Unlock();
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Killed %p (thread: %p)\n", m_id.c_str(), this, fThread);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Killed %p (thread: %p)\n", m_id.c_str(), this, (void *)fThread);
         return 0;
     } else {
         return -1;
@@ -187,14 +187,14 @@ int PosixThread::Kill()
 int PosixThread::Stop()
 {
     if (fThread) { // If thread has been started
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Stop %p (thread: %p)\n", m_id.c_str(), this, fThread);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Stop %p (thread: %p)\n", m_id.c_str(), this, (void *)fThread);
         void* status;
         fRunning = false; // Request for the thread to stop
         m_lock.Lock();
         pthread_join(fThread, &status);
         fThread = NULL;
         m_lock.Unlock();
-        debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Stopped %p (thread: %p)\n", m_id.c_str(), this, fThread);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Stopped %p (thread: %p)\n", m_id.c_str(), this, (void *)fThread);
         return 0;
     } else {
         return -1;

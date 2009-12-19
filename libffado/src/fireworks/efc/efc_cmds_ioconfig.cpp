@@ -161,7 +161,7 @@ EfcGenericIOConfigCmd::showEfcCmd()
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC IOCONFIG %s %s:\n",
                                     (m_type==eCT_Get?"GET":"SET"),
                                     eIOConfigRegisterToString(m_reg));
-    debugOutput(DEBUG_LEVEL_NORMAL, " Value       : %lu\n", m_value);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Value       : %u\n", m_value);
 }
 
 // --- The specific commands

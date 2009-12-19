@@ -582,7 +582,7 @@ Plug::discoverConnectionsOutput()
              != infoType->m_plugOutput->m_outputPlugAddresses.size() )
         {
             debugError( "number of output plugs (%d) disagree with "
-                        "number of elements in plug address vector (%d)\n",
+                        "number of elements in plug address vector (%zd)\n",
                         infoType->m_plugOutput->m_nrOfOutputPlugs,
                         infoType->m_plugOutput->m_outputPlugAddresses.size());
         }

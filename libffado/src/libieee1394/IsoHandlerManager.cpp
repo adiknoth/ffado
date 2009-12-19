@@ -113,7 +113,7 @@ IsoTask::handleBusReset()
         if(h->getType() != m_handlerType) continue;
 
         if (!h->handleBusReset()) {
-            debugWarning("Failed to handle busreset on %p\n");
+            debugWarning("Failed to handle busreset on %p\n", h);
             retval = false;
         }
     }
@@ -260,7 +260,7 @@ IsoTask::Execute()
         }
 
         if(no_one_to_poll) {
-            debugOutput(DEBUG_LEVEL_ULTRA_VERBOSE,
+            debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                         "(%p, %s) No one to poll, waiting for something to happen\n",
                         this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"));
             // wait for something to happen
@@ -324,11 +324,11 @@ IsoTask::Execute()
         int64_t measured_diff_ticks = diffTicks(ctr_at_poll_return_ticks, last_packet_seen_ticks);
 
         debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                           "(%p, %s) check handler %d: diff = %lld, max = %lld, now: %08lX, last: %08lX\n",
+                           "(%p, %s) check handler %d: diff = %"PRId64", max = %"PRId64", now: %08X, last: %08X\n",
                            this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"), 
                            i, measured_diff_ticks, max_diff_ticks, ctr_at_poll_return, last_packet_seen);
         if(measured_diff_ticks > max_diff_ticks) {
-            debugFatal("(%p, %s) Handler died: now: %08lX, last: %08lX, diff: %lld (max: %lld)\n",
+            debugFatal("(%p, %s) Handler died: now: %08X, last: %08X, diff: %"PRId64" (max: %"PRId64")\n",
                        this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"),
                        ctr_at_poll_return, last_packet_seen, measured_diff_ticks, max_diff_ticks);
             m_IsoHandler_map_shadow[i]->notifyOfDeath();
@@ -409,14 +409,16 @@ IsoTask::waitForActivity()
         } else if (errno == EINVAL) {
             debugError("(%p) sem_timedwait error (result=%d errno=EINVAL)\n", 
                         this, result);
-            debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, m_activity_wait_timeout_nsec, ts.tv_sec, ts.tv_nsec);
+            debugError("(%p) timeout_nsec=%lld ts.sec=%"PRId64" ts.nsec=%"PRId64"\n", 
+                       this, m_activity_wait_timeout_nsec, 
+		       (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
             return eAR_Error;
         } else {
             debugError("(%p) sem_timedwait error (result=%d errno=%d)\n", 
                         this, result, errno);
-            debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, m_activity_wait_timeout_nsec, ts.tv_sec, ts.tv_nsec);
+            debugError("(%p) timeout_nsec=%lld ts.sec=%"PRId64" ts.nsec=%"PRId64"\n", 
+                       this, m_activity_wait_timeout_nsec,
+		       (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
             return eAR_Error;
         }
     }
@@ -884,7 +886,7 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
     debugOutput( DEBUG_LEVEL_VERBOSE, " registered stream (%p) with handler (%p)\n", stream, h);
 
     m_StreamProcessors.push_back(stream);
-    debugOutput( DEBUG_LEVEL_VERBOSE, " %d streams, %d handlers registered\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, " %zd streams, %zd handlers registered\n",
                                       m_StreamProcessors.size(), m_IsoHandlers.size());
     return true;
 }

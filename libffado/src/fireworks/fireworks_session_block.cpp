@@ -254,7 +254,7 @@ Session::loadFromMemory(void *buff, size_t len)
     memcpy(&s, raw+sizeof(SessionHeader), sizeof(SubSession));
 
     if (len != h.size_quads*4) {
-        debugWarning("size not correct: got %d, should be %d according to data\n", len, h.size_quads*4);
+        debugWarning("size not correct: got %zd, should be %d according to data\n", len, h.size_quads*4);
     }
 
 #if __BYTE_ORDER == __BIG_ENDIAN

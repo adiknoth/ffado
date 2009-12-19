@@ -350,7 +350,7 @@ main( int argc, char **argv )
             int i=0;
 
             int devices_on_bus = m_deviceManager->getNbDevices();
-            printf("  port = %ld, devices_on_bus = %d\n", arguments.port, devices_on_bus);
+            printf("  port = %d, devices_on_bus = %d\n", (int)arguments.port, devices_on_bus);
 
             for(i=0;i<devices_on_bus;i++) {
                 int node_id=m_deviceManager->getDeviceNodeId(i);
@@ -442,7 +442,7 @@ main( int argc, char **argv )
         // switch off all messages since they mess up the list
         service.setVerboseLevel(arguments.verbose);
         if ( !service.initialize( arguments.port ) ) {
-            printf("Could not initialize IEEE 1394 service on port %ld\n", arguments.port);
+            printf("Could not initialize IEEE 1394 service on port %d\n", (int)arguments.port);
             return exitfunction(-1);
         }
 
@@ -454,8 +454,8 @@ main( int argc, char **argv )
         }
         
         if (!service.setSplitTimeoutUsecs(nodeid, usecs)) {
-            printf("Failed to set SPLIT_TIMEOUT to %u for node %X on port %ld\n",
-                   usecs, nodeid, arguments.port);
+            printf("Failed to set SPLIT_TIMEOUT to %u for node %X on port %d\n",
+                   usecs, nodeid, (int)arguments.port);
             return exitfunction(-1);
         }
 
@@ -465,7 +465,7 @@ main( int argc, char **argv )
         // switch off all messages since they mess up the list
         service.setVerboseLevel(arguments.verbose);
         if ( !service.initialize( arguments.port ) ) {
-            printf("Could not initialize IEEE 1394 service on port %ld\n", arguments.port);
+            printf("Could not initialize IEEE 1394 service on port %d\n", (int)arguments.port);
             return exitfunction(-1);
         }
 
@@ -477,12 +477,12 @@ main( int argc, char **argv )
         }
         int usecs = service.getSplitTimeoutUsecs(nodeid);
         if (usecs < 0) {
-            printf("Failed to get SPLIT_TIMEOUT for node %X on port %ld\n",
-                   nodeid, arguments.port);
+            printf("Failed to get SPLIT_TIMEOUT for node %X on port %d\n",
+                   nodeid, (int)arguments.port);
             return exitfunction(-1);
         }
-        printf("SPLIT_TIMEOUT for node %X on port %ld is %u\n",
-               nodeid, arguments.port, usecs);
+        printf("SPLIT_TIMEOUT for node %X on port %d is %u\n",
+               nodeid, (int)arguments.port, usecs);
 
         return exitfunction(0);
     } else if ( strcmp( arguments.args[0], "SytCalcTest" ) == 0 ) {
@@ -510,7 +510,7 @@ main( int argc, char **argv )
         }
         uint64_t result_rcv = sytRecvToFullTicks(syt_timestamp, rcv_cycle, ctr_now);
         uint64_t result_xmt = sytXmitToFullTicks(syt_timestamp, rcv_cycle, ctr_now);
-        printf("RCV: 0x%010llX %010llu  XMT: 0x%010llX %010llu CTR: %010llu\n",
+        printf("RCV: 0x%010"PRIX64" %010"PRIu64"  XMT: 0x%010"PRIX64" %010"PRIu64" CTR: %010"PRIu64"\n",
                result_rcv, result_rcv, result_xmt, result_xmt, CYCLE_TIMER_TO_TICKS(ctr_now));
 
     } else {

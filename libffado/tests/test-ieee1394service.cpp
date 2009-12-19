@@ -164,13 +164,13 @@ bool CtrThread::Execute() {
         debugError("(%p) CTR read error\n", this);
     }
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
-                "(%p) Cycle timer: %011llu (%03us %04ucy %04uticks)\n",
+                "(%p) Cycle timer: %011"PRIu64" (%03us %04ucy %04uticks)\n",
                 this, ctr,
                 (unsigned int)TICKS_TO_SECS( ctr ),
                 (unsigned int)TICKS_TO_CYCLES( ctr ),
                 (unsigned int)TICKS_TO_OFFSET( ctr ) );
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
-                "(%p)    from DLL: %011llu (%03us %04ucy %04uticks)\n",
+                "(%p)    from DLL: %011"PRIu64" (%03us %04ucy %04uticks)\n",
                 this, ctr_dll,
                 (unsigned int)TICKS_TO_SECS( ctr_dll ),
                 (unsigned int)TICKS_TO_CYCLES( ctr_dll ),
@@ -199,19 +199,19 @@ bool CtrThread::Execute() {
         abs_diff = diff;
     }
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
-                "(%p)       diff: %s%011llu (%03us %04ucy %04uticks)\n", this,
+                "(%p)       diff: %s%011"PRIu64" (%03us %04ucy %04uticks)\n", this,
                 ((int64_t)abs_diff==diff?" ":"-"), abs_diff, (unsigned int)TICKS_TO_SECS( abs_diff ),
                 (unsigned int)TICKS_TO_CYCLES( abs_diff ), (unsigned int)TICKS_TO_OFFSET( abs_diff ) );
     if (abs_diff > DIFF_CONSIDERED_LARGE) {
-        debugWarning("(%p) Alert, large diff: %lld\n", this, diff);
+        debugWarning("(%p) Alert, large diff: %"PRId64"\n", this, diff);
         debugOutput ( DEBUG_LEVEL_NORMAL,
-                    "(%p)  Cycle timer: %011llu (%03us %04ucy %04uticks)\n",
+                    "(%p)  Cycle timer: %011"PRIu64" (%03us %04ucy %04uticks)\n",
                     this, ctr,
                     (unsigned int)TICKS_TO_SECS( ctr ),
                     (unsigned int)TICKS_TO_CYCLES( ctr ),
                     (unsigned int)TICKS_TO_OFFSET( ctr ) );
         debugOutput ( DEBUG_LEVEL_NORMAL,
-                    "(%p)   from DLL: %011llu (%03us %04ucy %04uticks)\n",
+                    "(%p)   from DLL: %011"PRIu64" (%03us %04ucy %04uticks)\n",
                     this, ctr_dll,
                     (unsigned int)TICKS_TO_SECS( ctr_dll ),
                     (unsigned int)TICKS_TO_CYCLES( ctr_dll ),
@@ -220,16 +220,16 @@ bool CtrThread::Execute() {
     
     diff = diffTicks(ctr, ctr_prev);
     if (diff < 0) {
-        debugWarning("(%p) Alert, non-monotonic ctr (direct): %llu - %llu = %lld\n",
+        debugWarning("(%p) Alert, non-monotonic ctr (direct): %"PRId64" - %"PRId64" = %"PRId64"\n",
                      this, ctr, ctr_prev, diff);
         debugOutput ( DEBUG_LEVEL_NORMAL,
-                    "(%p)  Cycle timer now : %011llu (%03us %04ucy %04uticks)\n",
+                    "(%p)  Cycle timer now : %011"PRIu64" (%03us %04ucy %04uticks)\n",
                     this, ctr,
                     (unsigned int)TICKS_TO_SECS( ctr ),
                     (unsigned int)TICKS_TO_CYCLES( ctr ),
                     (unsigned int)TICKS_TO_OFFSET( ctr ) );
         debugOutput ( DEBUG_LEVEL_NORMAL,
-                    "(%p)  Cycle timer prev: %011llu (%03us %04ucy %04uticks)\n",
+                    "(%p)  Cycle timer prev: %011"PRIu64" (%03us %04ucy %04uticks)\n",
                     this, ctr_prev,
                     (unsigned int)TICKS_TO_SECS( ctr_prev ),
                     (unsigned int)TICKS_TO_CYCLES( ctr_prev ),
@@ -237,16 +237,16 @@ bool CtrThread::Execute() {
     }
     diff = diffTicks(ctr_dll, ctr_dll_prev);
     if (diff < 0) {
-        debugWarning("(%p) Alert, non-monotonic ctr (dll): %llu - %llu = %lld\n",
+        debugWarning("(%p) Alert, non-monotonic ctr (dll): %"PRId64" - %"PRId64" = %"PRId64"\n",
                      this, ctr_dll, ctr_dll_prev, diff);
         debugOutput ( DEBUG_LEVEL_NORMAL,
-                    "(%p)  Cycle timer now : %011llu (%03us %04ucy %04uticks)\n",
+                    "(%p)  Cycle timer now : %011"PRIu64" (%03us %04ucy %04uticks)\n",
                     this, ctr_dll,
                     (unsigned int)TICKS_TO_SECS( ctr_dll ),
                     (unsigned int)TICKS_TO_CYCLES( ctr_dll ),
                     (unsigned int)TICKS_TO_OFFSET( ctr_dll ) );
         debugOutput ( DEBUG_LEVEL_NORMAL,
-                    "(%p)  Cycle timer prev: %011llu (%03us %04ucy %04uticks)\n",
+                    "(%p)  Cycle timer prev: %011"PRIu64" (%03us %04ucy %04uticks)\n",
                     this, ctr_dll_prev,
                     (unsigned int)TICKS_TO_SECS( ctr_dll_prev ),
                     (unsigned int)TICKS_TO_CYCLES( ctr_dll_prev ),
@@ -267,7 +267,7 @@ bool CtrThread::Execute() {
                     (unsigned int)CYCLE_TIMER_GET_CYCLES( tmp_orig ),
                     (unsigned int)CYCLE_TIMER_GET_OFFSET( tmp_orig ) );
         debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
-                    "(%p) TICKS: %011llu (%03us %04ucy %04uticks)\n",
+                    "(%p) TICKS: %011"PRIu32" (%03us %04ucy %04uticks)\n",
                     this, tmp_ticks,
                     (unsigned int)TICKS_TO_SECS( tmp_ticks ),
                     (unsigned int)TICKS_TO_CYCLES( tmp_ticks ),

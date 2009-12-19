@@ -88,7 +88,7 @@ Util::XMLSerialize::write( std::string strMemberName,
                            long long value )
 
 {
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "write %s = %d\n",
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "write %s = %lld\n",
                  strMemberName.c_str(), value );
 
     vector<string> tokens;
@@ -265,7 +265,7 @@ Util::XMLDeserialize::read( std::string strMemberName,
             char* tail;
             value = strtoll( pElement->get_child_text()->get_content().c_str(),
                              &tail, 0 );
-            debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "found %s = %d\n",
+            debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "found %s = %lld\n",
                          strMemberName.c_str(), value );
             return true;
         }

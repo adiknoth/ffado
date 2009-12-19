@@ -119,7 +119,7 @@ DeviceManager::~DeviceManager()
           ++it )
     {
         if (!deleteElement(*it)) {
-            debugWarning("failed to remove AvDevice from Control::Container\n");
+            debugWarning("failed to remove Device from Control::Container\n");
         }
         delete *it;
     }
@@ -438,7 +438,7 @@ DeviceManager::discover( bool useCache, bool rediscover )
 
                 // the device has disappeared, remove it from the control tree
                 if (!deleteElement(*it)) {
-                    debugWarning("failed to remove AvDevice from Control::Container\n");
+                    debugWarning("failed to remove Device from Control::Container\n");
                 }
                 // delete the device
                 // FIXME: this will mess up the any code that waits for bus resets to
@@ -454,7 +454,7 @@ DeviceManager::discover( bool useCache, bool rediscover )
             ++it )
         {
             if (!deleteElement(*it)) {
-                debugWarning("failed to remove AvDevice from Control::Container\n");
+                debugWarning("failed to remove Device from Control::Container\n");
             }
             delete *it;
         }
@@ -541,7 +541,7 @@ DeviceManager::discover( bool useCache, bool rediscover )
             ++it2 )
         {
             if (!deleteElement(*it2)) {
-                debugWarning("failed to remove AvDevice from Control::Container\n");
+                debugWarning("failed to remove Device from Control::Container\n");
             }
             delete *it2;
         }
@@ -651,7 +651,7 @@ DeviceManager::discover( bool useCache, bool rediscover )
                     m_avDevices.push_back( avDevice );
 
                     if (!addElement(avDevice)) {
-                        debugWarning("failed to add AvDevice to Control::Container\n");
+                        debugWarning("failed to add Device to Control::Container\n");
                     }
 
                     debugOutput( DEBUG_LEVEL_NORMAL, "discovery of node %d on port %d done...\n", nodeId, portService->getPort() );
@@ -669,7 +669,43 @@ DeviceManager::discover( bool useCache, bool rediscover )
         // the side effect of this is that for the same set of attached devices,
         // a device id always corresponds to the same device
         sort(m_avDevices.begin(), m_avDevices.end(), FFADODevice::compareGUID);
+
         int i=0;
+        if(m_deviceStringParser->countDeviceStrings()) { // only if there are devicestrings
+            // first map the devices to a position using the device spec strings
+            std::map<fb_octlet_t, int> positionMap;
+            for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+                it != m_avDevices.end();
+                ++it )
+            {
+                int pos = m_deviceStringParser->matchPosition((*it)->getConfigRom());
+                fb_octlet_t guid = (*it)->getConfigRom().getGuid();
+                positionMap[guid] = pos;
+                debugOutput( DEBUG_LEVEL_VERBOSE, "Mapping %s to position %d...\n", (*it)->getConfigRom().getGuidString().c_str(), pos );
+            }
+    
+            // now run over all positions, and add the devices that belong to it
+            FFADODeviceVector sorted;
+            int nbPositions = m_deviceStringParser->countDeviceStrings();
+            for (i=0; i < nbPositions; i++) {
+                for ( FFADODeviceVectorIterator it = m_avDevices.begin();
+                    it != m_avDevices.end();
+                    ++it )
+                {
+                    fb_octlet_t guid = (*it)->getConfigRom().getGuid();
+                    if(positionMap[guid] == i) {
+                        sorted.push_back(*it);
+                    }
+                }
+            }
+            // assign the new vector
+            flushDebugOutput();
+            assert(sorted.size() == m_avDevices.size());
+            m_avDevices = sorted;
+        }
+
+        // set device id's
+        i = 0;
         for ( FFADODeviceVectorIterator it = m_avDevices.begin();
             it != m_avDevices.end();
             ++it )
@@ -709,7 +745,7 @@ DeviceManager::discover( bool useCache, bool rediscover )
             ++it )
         {
             if (!deleteElement(*it)) {
-                debugWarning("failed to remove AvDevice from Control::Container\n");
+                debugWarning("failed to remove Device from Control::Container\n");
             }
             delete *it;
         }
@@ -826,36 +862,88 @@ DeviceManager::finishStreaming() {
 }
 
 bool
-DeviceManager::startStreaming() {
-    // create the connections for all devices
-    // iterate over the found devices
-    // add the stream processors of the devices to the managers
-    for ( FFADODeviceVectorIterator it = m_avDevices.begin();
-        it != m_avDevices.end();
-        ++it )
-    {
-        FFADODevice *device = *it;
-        assert(device);
+DeviceManager::startStreamingOnDevice(FFADODevice *device)
+{
+    assert(device);
 
-        int j=0;
-        for(j=0; j < device->getStreamCount(); j++) {
+    int j=0;
+    bool all_streams_started = true;
+    bool device_start_failed = false;
+    for(j=0; j < device->getStreamCount(); j++) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"Starting stream %d of device %p\n", j, device);
-            // start the stream
-            if (!device->startStreamByIndex(j)) {
-                debugWarning("Could not start stream %d of device %p\n", j, device);
-                continue;
-            }
-        }
-
-        if (!device->enableStreaming()) {
-            debugWarning("Could not enable streaming on device %p!\n", device);
+        // start the stream
+        if (!device->startStreamByIndex(j)) {
+            debugWarning("Could not start stream %d of device %p\n", j, device);
+            all_streams_started = false;
+            break;
         }
     }
 
+    if(!all_streams_started) {
+        // disable all streams that did start up correctly
+        for(j = j-1; j >= 0; j--) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %p\n", j, device);
+            // stop the stream
+            if (!device->stopStreamByIndex(j)) {
+                debugWarning("Could not stop stream %d of device %p\n", j, device);
+            }
+        }
+        device_start_failed = true;
+    } else {
+        if (!device->enableStreaming()) {
+            debugWarning("Could not enable streaming on device %p!\n", device);
+            device_start_failed = true;
+        }
+    }
+    return !device_start_failed;
+}
+
+bool
+DeviceManager::startStreaming() {
+    bool device_start_failed = false;
+    FFADODeviceVectorIterator it;
+
+    // create the connections for all devices
+    // iterate over the found devices
+    for ( it = m_avDevices.begin();
+        it != m_avDevices.end();
+        ++it )
+    {
+        if (!startStreamingOnDevice(*it)) {
+            debugWarning("Could not start streaming on device %p!\n", *it);
+            device_start_failed = true;
+            break;
+        }
+    }
+
+    // if one of the devices failed to start,
+    // the previous routine should have cleaned up the failing one.
+    // we still have to stop all devices that were started before this one.
+    if(device_start_failed) {
+        for (FFADODeviceVectorIterator it2 = m_avDevices.begin();
+            it2 != it;
+            ++it2 )
+        {
+            if (!stopStreamingOnDevice(*it2)) {
+                debugWarning("Could not stop streaming on device %p!\n", *it2);
+            }
+        }
+        return false;
+    }
+
+    // start the stream processor manager to tune in to the channels
     if(m_processorManager->start()) {
         return true;
     } else {
-        stopStreaming();
+        debugWarning("Failed to start SPM!\n");
+        for( it = m_avDevices.begin();
+             it != m_avDevices.end();
+             ++it )
+        {
+            if (!stopStreamingOnDevice(*it)) {
+                debugWarning("Could not stop streaming on device %p!\n", *it);
+            }
+        }
         return false;
     }
 }
@@ -863,6 +951,30 @@ DeviceManager::startStreaming() {
 bool
 DeviceManager::resetStreaming() {
     return true;
+}
+
+bool
+DeviceManager::stopStreamingOnDevice(FFADODevice *device)
+{
+    assert(device);
+    bool result = true;
+
+    if (!device->disableStreaming()) {
+        debugWarning("Could not disable streaming on device %p!\n", device);
+    }
+
+    int j=0;
+    for(j=0; j < device->getStreamCount(); j++) {
+        debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %p\n", j, device);
+        // stop the stream
+        // start the stream
+        if (!device->stopStreamByIndex(j)) {
+            debugWarning("Could not stop stream %d of device %p\n", j, device);
+            result = false;
+            continue;
+        }
+    }
+    return result;
 }
 
 bool
@@ -878,24 +990,7 @@ DeviceManager::stopStreaming()
         it != m_avDevices.end();
         ++it )
     {
-        FFADODevice *device = *it;
-        assert(device);
-
-        if (!device->disableStreaming()) {
-            debugWarning("Could not disable streaming on device %p!\n", device);
-        }
-
-        int j=0;
-        for(j=0; j < device->getStreamCount(); j++) {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Stopping stream %d of device %p\n", j, device);
-            // stop the stream
-            // start the stream
-            if (!device->stopStreamByIndex(j)) {
-                debugWarning("Could not stop stream %d of device %p\n", j, device);
-                result = false;
-                continue;
-            }
-        }
+        stopStreamingOnDevice(*it);
     }
     return result;
 }

@@ -206,7 +206,7 @@ MotuTransmitStreamProcessor::generatePacketHeader (
         {
             // we are too late
             debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "Too late: CY=%04u, TC=%04u, CUT=%04d, TSP=%011llu (%04u)\n",
+                        "Too late: CY=%04u, TC=%04u, CUT=%04d, TSP=%011"PRIu64" (%04u)\n",
                         cycle,
                         transmit_at_cycle, cycles_until_transmit,
                         presentation_time, (unsigned int)TICKS_TO_CYCLES(presentation_time) );
@@ -241,7 +241,7 @@ MotuTransmitStreamProcessor::generatePacketHeader (
         else
         {
             debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
-                        "Too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
+                        "Too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011"PRIu64" (%04u), TSP=%011"PRIu64" (%04u)\n",
                         cycle,
                         transmit_at_cycle, cycles_until_transmit,
                         transmit_at_time, ( unsigned int ) TICKS_TO_CYCLES ( transmit_at_time ),
@@ -250,7 +250,7 @@ MotuTransmitStreamProcessor::generatePacketHeader (
             if ( cycles_until_transmit > MOTU_MAX_CYCLES_TO_TRANSMIT_EARLY + 1 )
             {
                 debugOutput ( DEBUG_LEVEL_VERY_VERBOSE,
-                            "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011llu (%04u), TSP=%011llu (%04u)\n",
+                            "Way too early: CY=%04u, TC=%04u, CUT=%04d, TST=%011"PRIu64" (%04u), TSP=%011"PRIu64" (%04u)\n",
                             cycle,
                             transmit_at_cycle, cycles_until_transmit,
                             transmit_at_time, ( unsigned int ) TICKS_TO_CYCLES ( transmit_at_time ),
@@ -329,8 +329,8 @@ MotuTransmitStreamProcessor::generateEmptyPacketHeader (
     unsigned char *tag, unsigned char *sy,
     uint32_t pkt_ctr )
 {
-    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u, TSP=%011llu (%04u)\n",
-                CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp, 
+    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04d, TSP=%011"PRIu64" (%04u)\n",
+                (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp, 
                 ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
 
     // Do housekeeping expected for all packets sent to the MOTU, even
@@ -358,7 +358,7 @@ MotuTransmitStreamProcessor::generateSilentPacketHeader (
 {
     unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 
-    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "XMIT SILENT: CY=%04u, TSP=%011llu (%04u)\n",
+    debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "XMIT SILENT: CY=%04u, TSP=%011"PRIu64" (%04u)\n",
                  cycle, m_last_timestamp,
                  ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
 

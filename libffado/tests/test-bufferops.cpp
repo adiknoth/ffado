@@ -29,6 +29,8 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 #include "libstreaming/amdtp/AmdtpBufferOps.h"
 
 #include "libutil/SystemTimeSource.h"
+#include "libutil/Time.h"
+
 #include <inttypes.h>
 
 // 32M of test data
@@ -85,7 +87,7 @@ testByteSwap(int nb_quadlets, int nb_tests) {
         start = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         byteSwapToBus(buffer_1, nb_quadlets);
         elapsed = Util::SystemTimeSource::getCurrentTimeAsUsecs() - start;
-        printMessage( " took %lluusec...\n", elapsed);
+        printMessage( " took %"PRI_FFADO_MICROSECS_T"usec...\n", elapsed);
         
     }
 
@@ -153,7 +155,7 @@ testInt24Label(int nb_quadlets, int nb_tests) {
         start = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         convertFromInt24AndLabelAsMBLA(buffer_1, nb_quadlets);
         elapsed = Util::SystemTimeSource::getCurrentTimeAsUsecs() - start;
-        printMessage( " took %lluusec...\n", elapsed);
+        printMessage( " took %"PRI_FFADO_MICROSECS_T"usec...\n", elapsed);
     }
 
     // check
@@ -235,7 +237,7 @@ testFloatLabel(int nb_quadlets, int nb_tests) {
         start = Util::SystemTimeSource::getCurrentTimeAsUsecs();
         convertFromFloatAndLabelAsMBLA(buffer_1, nb_quadlets);
         elapsed = Util::SystemTimeSource::getCurrentTimeAsUsecs() - start;
-        printMessage( " took %lluusec...\n", elapsed);
+        printMessage( " took %"PRI_FFADO_MICROSECS_T"usec...\n", elapsed);
     }
 
     // check

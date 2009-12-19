@@ -171,14 +171,14 @@ Firmware::show()
     unsigned int version_major = (m_version & 0xFF000000) >> 24;
     unsigned int version_minor = (m_version & 0x00FF0000) >> 16;
     unsigned int version_build = (m_version & 0x0000FFFF);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Address Offset       : 0x%08lX\n", m_flash_offset_address);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Length (Quadlets)    : 0x%08lX\n", m_length_quads);
-    debugOutput(DEBUG_LEVEL_NORMAL, " CRC 32               : 0x%08lX\n", m_CRC32);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Checksum             : 0x%08lX\n", m_checksum);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Address Offset       : 0x%08X\n", m_flash_offset_address);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Length (Quadlets)    : 0x%08X\n", m_length_quads);
+    debugOutput(DEBUG_LEVEL_NORMAL, " CRC 32               : 0x%08X\n", m_CRC32);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Checksum             : 0x%08X\n", m_checksum);
     debugOutput(DEBUG_LEVEL_NORMAL, " Firmware version     : %02u.%02u.%02u (0x%08X)\n", 
                                     version_major, version_minor, version_build, m_version);
     debugOutput(DEBUG_LEVEL_NORMAL, " Append CRC           : %s\n", (m_append_crc?"Yes":"No"));
-    debugOutput(DEBUG_LEVEL_NORMAL, " Footprint (Quadlets) : 0x%08lX\n", m_footprint_quads);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Footprint (Quadlets) : 0x%08X\n", m_footprint_quads);
     #endif
 }
 
@@ -297,7 +297,7 @@ Firmware::loadFile(std::string filename)
             return false;
         }
         
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "   Header %02d: %08lX\n", 
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "   Header %02d: %08X\n", 
                     i, m_header[i]);
     }
 
@@ -336,7 +336,7 @@ Firmware::loadFile(std::string filename)
             return false;
         }
         
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "   Data %02d: %08lX\n", 
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "   Data %02d: %08X\n", 
                     i, m_data[i]);
     }
     debugOutput(DEBUG_LEVEL_VERBOSE, "  data ok...\n");

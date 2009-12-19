@@ -301,14 +301,22 @@ public:
 
     void printShort( debug_level_t level,
                      const char* format,
-                     ... ) const;
+                     ... ) const
+#ifdef __GNUC__
+            __attribute__((format(printf, 3, 4)))
+#endif
+            ;
 
     void print( debug_level_t level,
                 const char*   file,
                 const char*   function,
                 unsigned int  line,
                 const char*   format,
-                ... ) const;
+                ... ) const
+#ifdef __GNUC__
+            __attribute__((format(printf, 6, 7)))
+#endif
+            ;
 
     bool setLevel( debug_level_t level )
         { m_level = level; return true; }

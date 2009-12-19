@@ -57,7 +57,7 @@ FocusriteDevice::setVerboseLevel(int l)
 bool
 FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Writing parameter address space id 0x%08lX (%u), data: 0x%08lX\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Writing parameter address space id 0x%08X (%u), data: 0x%08X\n",
         id, id, v);
     bool use_avc = false;
     if(!getOption("useAvcForParameters", use_avc)) {
@@ -68,7 +68,7 @@ FocusriteDevice::setSpecificValue(uint32_t id, uint32_t v)
     ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
     if(m_cmd_time_interval && (m_earliest_next_cmd_time > now)) {
         ffado_microsecs_t wait = m_earliest_next_cmd_time - now;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %llu\n", wait );
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %"PRIu64"\n", wait );
         Util::SystemTimeSource::SleepUsecRelative(wait);
     }
     m_earliest_next_cmd_time = now + m_cmd_time_interval;
@@ -93,7 +93,7 @@ FocusriteDevice::getSpecificValue(uint32_t id, uint32_t *v)
     ffado_microsecs_t now = Util::SystemTimeSource::getCurrentTimeAsUsecs();
     if(m_cmd_time_interval && (m_earliest_next_cmd_time > now)) {
         ffado_microsecs_t wait = m_earliest_next_cmd_time - now;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %llu\n", wait );
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Rate control... %"PRIu64"\n", wait );
         Util::SystemTimeSource::SleepUsecRelative(wait);
     }
     m_earliest_next_cmd_time = now + m_cmd_time_interval;
@@ -104,7 +104,7 @@ FocusriteDevice::getSpecificValue(uint32_t id, uint32_t *v)
     } else {
         retval = getSpecificValueARM(id, v);
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Read parameter address space id 0x%08lX (%u): %08lX\n", id, id, *v);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Read parameter address space id 0x%08X (%u): %08X\n", id, id, *v);
     return retval;
 }
 
@@ -160,15 +160,15 @@ FocusriteDevice::getSpecificValueAvc(uint32_t id, uint32_t *v)
 bool
 FocusriteDevice::setSpecificValueARM(uint32_t id, uint32_t v)
 {
-    fb_quadlet_t data=v;
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing parameter address space id 0x%08lX (%u), data: 0x%08lX\n",
+    fb_quadlet_t data = v;
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing parameter address space id 0x%08X (%u), data: 0x%08X\n",
         id, id, data);
 
     fb_nodeaddr_t addr = FR_PARAM_SPACE_START + (id * 4);
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
     if(!get1394Service().write_quadlet( nodeId, addr, CondSwapToBus32(data) ) ) {
-        debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
+        debugError("Could not write to node 0x%04X addr 0x%012"PRIX64"\n", nodeId, addr);
         return false;
     }
     return true;
@@ -178,18 +178,18 @@ bool
 FocusriteDevice::getSpecificValueARM(uint32_t id, uint32_t *v)
 {
     fb_quadlet_t result;
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading parameter address space id 0x%08lX\n", id);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading parameter address space id 0x%08X\n", id);
 
     fb_nodeaddr_t addr = FR_PARAM_SPACE_START + (id * 4);
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
     if(!get1394Service().read_quadlet( nodeId, addr, &result ) ) {
-        debugError("Could not read from node 0x%04llX addr 0x%012llX\n", nodeId, addr);
+        debugError("Could not read from node 0x%04X addr 0x%012"PRIX64"\n", nodeId, addr);
         return false;
     }
 
-    result=CondSwapFromBus32(result);
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08llX\n", result);
+    result = CondSwapFromBus32(result);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08X\n", result);
 
     *v = result;
     return true;
@@ -384,7 +384,7 @@ RegisterControl::RegisterControl(FocusriteDevice& parent,
 bool
 RegisterControl::setValue(uint64_t addr, uint64_t v)
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for addr %llu to %llu\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for addr %"PRIu64" to %"PRIu64"\n",
                                      addr, v);
 
     if ( !m_Parent.setSpecificValue(addr, v) ) {
@@ -402,7 +402,7 @@ RegisterControl::getValue(uint64_t addr)
         debugError( "getSpecificValue failed\n" );
         return 0;
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %llu = %lu\n", 
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for %"PRIu64" = %u\n", 
                                          addr, val);
         return val;
     }
@@ -575,7 +575,7 @@ double FocusriteMatrixMixer::setValue( const int row, const int col, const doubl
     int32_t v = (int32_t)val;
     struct sCellInfo c = m_CellInfo.at(row).at(col);
 
-    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d row %d col %d to %lf (%ld)\n", 
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for id %d row %d col %d to %lf (%d)\n", 
                                      c.address, row, col, val, v);
 
     if (v>0x07FFF) v=0x07FFF;
@@ -596,7 +596,7 @@ double FocusriteMatrixMixer::getValue( const int row, const int col )
         debugError( "getSpecificValue failed\n" );
         return 0;
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for id %d row %d col %d = %lu\n", 
+        debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for id %d row %d col %d = %u\n", 
                                          c.address, row, col, val);
         return val;
     }

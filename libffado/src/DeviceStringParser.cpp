@@ -159,7 +159,7 @@ DeviceStringParser::DeviceString::isValidString(std::string s)
 bool
 DeviceStringParser::DeviceString::match(ConfigRom& configRom)
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "match %p\n", &configRom);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "match %p (%s)\n", &configRom, configRom.getGuidString().c_str());
     bool match;
     switch(m_Type) {
         case eBusNode:
@@ -171,13 +171,20 @@ DeviceStringParser::DeviceString::match(ConfigRom& configRom)
             if(m_node >= 0) {
                 match &= ((configRom.getNodeId() & 0x3F) == m_node);
             }
+            if(match) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "(eBusNode) device matches device string %s\n", m_String.c_str());
+            }
             return match;
         case eGUID:
             //GUID should not be 0
-            return m_guid && (m_guid == configRom.getGuid());
+            match = m_guid && (m_guid == configRom.getGuid());
+            if(match) {
+                debugOutput(DEBUG_LEVEL_VERBOSE, "(eGUID) device matches device string %s\n", m_String.c_str());
+            }
+            return match;
         case eInvalid:
         default:
-            debugOutput(DEBUG_LEVEL_VERBOSE, "no match %p\n", &configRom);
+            debugError("invalid DeviceString type (%d)\n", m_Type);
             return false;
     }
     return false;
@@ -195,7 +202,7 @@ DeviceStringParser::DeviceString::operator==(const DeviceString& x)
             return retval;
         case eGUID:
             retval = m_guid && (m_guid == x.m_guid);
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "eGUID 0x%016X == 0x%016X? %d\n",
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "eGUID 0x%016"PRIX64" == 0x%016"PRIX64"? %d\n",
                         m_guid, x.m_guid, retval);
             return retval;
         case eInvalid:
@@ -217,7 +224,7 @@ DeviceStringParser::DeviceString::show()
             break;
         case eGUID:
             debugOutput(DEBUG_LEVEL_INFO, "type: eGUID\n");
-            debugOutput(DEBUG_LEVEL_INFO, " GUID: %016LLX\n", m_guid);
+            debugOutput(DEBUG_LEVEL_INFO, " GUID: %016"PRIX64"\n", m_guid);
             break;
         case eInvalid:
         default:
@@ -281,16 +288,25 @@ DeviceStringParser::isValidString(std::string s)
 bool
 DeviceStringParser::match(ConfigRom& c)
 {
+    return matchPosition(c) != -1;
+}
+
+int
+DeviceStringParser::matchPosition(ConfigRom& c)
+{
+    int pos = 0;
     for ( DeviceStringVectorIterator it = m_DeviceStrings.begin();
       it != m_DeviceStrings.end();
       ++it )
     {
         if((*it)->match(c)) {
-            return true;
+            return pos;
         }
+        pos++;
     }
-    return false;
+    return -1;
 }
+
 bool
 DeviceStringParser::addDeviceString(DeviceString *o)
 {
@@ -368,7 +384,6 @@ DeviceStringParser::pruneDuplicates()
         removeDeviceString(*it);
     }
 }
-
 
 void
 DeviceStringParser::show()

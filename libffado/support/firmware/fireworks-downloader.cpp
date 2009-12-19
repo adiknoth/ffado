@@ -22,6 +22,7 @@
  *
  */
 
+#include "fbtypes.h"
 #include "downloader.h"
 
 #include "config.h"
@@ -213,7 +214,7 @@ main( int argc, char** argv )
     }
 
     if (node_id < 0) {
-        printMessage("Could not find device with GUID 0x%016llX\n", guid);
+        printMessage("Could not find device with GUID 0x%016"PRIX64"\n", guid);
         return -1;
     }
 

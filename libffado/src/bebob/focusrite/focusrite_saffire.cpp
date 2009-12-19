@@ -47,11 +47,11 @@ SaffireDevice::SaffireDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( config
     int delaytime = 0;
     if(config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "cmd_interval_time", delaytime)) {
         m_cmd_time_interval = delaytime;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "Setting command interval time to %llu\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, "Setting command interval time to %"PRIu64"\n",
                      m_cmd_time_interval );
     } else {
         m_cmd_time_interval = 10000;
-        debugOutput( DEBUG_LEVEL_VERBOSE, "No command interval time setting found, defaulting to %llu\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, "No command interval time setting found, defaulting to %"PRIu64"\n",
                      m_cmd_time_interval );
     }
 }

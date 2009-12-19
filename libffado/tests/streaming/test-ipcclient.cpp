@@ -194,7 +194,7 @@ main(int argc, char **argv)
     }
 
     printMessage("Testing shared memory streaming IPC\n");
-    printMessage(" period %d, nb_buffers %d, playback %d, capture %d\n",
+    printMessage(" period %ld, nb_buffers %ld, playback %ld, capture %ld\n",
                  arguments.period, arguments.nb_buffers,
                  arguments.playback,
                  arguments.capture );

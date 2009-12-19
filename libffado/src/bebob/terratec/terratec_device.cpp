@@ -22,6 +22,8 @@
  */
 
 #include "terratec_device.h"
+#include "src/bebob/bebob_dl_mgr.h"
+#include "src/bebob/bebob_dl_bcd.h"
 
 namespace BeBoB {
 namespace Terratec {
@@ -44,8 +46,19 @@ Phase88Device::showDevice()
     debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Terratec::Phase88Device\n");
     BeBoB::Device::showDevice();
 }
-/*                'externalsync': ['/Mixer/Selector_8', self.comboExtSync], 
-                'syncsource':   ['/Mixer/Selector_9', self.comboSyncSource], */
+
+bool
+Phase88Device::discover()
+{
+    BeBoB::BootloaderManager blMgr( get1394Service(), getNodeId() );
+    blMgr.printInfoRegisters();
+    if (blMgr.getSoftwareVersion() < 0x01120d1f) {
+        debugError("The firmware of this Phase88 device is too old. Please update the firmware.\n");
+        return false;
+    }
+    return BeBoB::Device::discover();
+}
+
 void
 Phase88Device::updateClockSources() {
     m_internal_clocksource.type = FFADODevice::eCT_Internal;

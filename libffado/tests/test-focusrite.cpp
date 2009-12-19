@@ -182,7 +182,7 @@ main(int argc, char **argv)
                 SleepRelativeUsec(10000);
             }
             if (!retval) {
-                debugError( " read from %16llX failed (id: %d)\n", addr, id);
+                debugError( " read from %16"PRIX64" failed (id: %d)\n", addr, id);
             } else {
                 value = CondSwapFromBus32(value);
             

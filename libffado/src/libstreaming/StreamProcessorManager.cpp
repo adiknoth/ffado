@@ -52,6 +52,7 @@ StreamProcessorManager::StreamProcessorManager(DeviceManager &p)
     , m_activity_wait_timeout_nsec( 0 ) // dynamically set
     , m_nb_buffers( 0 )
     , m_period( 0 )
+    , m_sync_delay( 0 )
     , m_audio_datatype( eADT_Float )
     , m_nominal_framerate ( 0 )
     , m_xruns(0)
@@ -76,6 +77,7 @@ StreamProcessorManager::StreamProcessorManager(DeviceManager &p, unsigned int pe
     , m_activity_wait_timeout_nsec( 0 ) // dynamically set
     , m_nb_buffers(nb_buffers)
     , m_period(period)
+    , m_sync_delay( 0 )
     , m_audio_datatype( eADT_Float )
     , m_nominal_framerate ( framerate )
     , m_xruns(0)
@@ -190,14 +192,16 @@ StreamProcessorManager::waitForActivity()
         } else if (errno == EINVAL) {
             debugError("(%p) sem_[timed]wait error (result=%d errno=EINVAL)\n", 
                         this, result);
-            debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, m_activity_wait_timeout_nsec, ts.tv_sec, ts.tv_nsec);
+            debugError("(%p) timeout_nsec=%"PRId64" ts.sec=%"PRId64" ts.nsec=%"PRId64"\n", 
+                       this, m_activity_wait_timeout_nsec,
+		       (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
             return eAR_Error;
         } else {
             debugError("(%p) sem_[timed]wait error (result=%d errno=%d)\n", 
                         this, result, errno);
-            debugError("(%p) timeout_nsec=%lld ts.sec=%d ts.nsec=%lld\n", 
-                       this, m_activity_wait_timeout_nsec, ts.tv_sec, ts.tv_nsec);
+            debugError("(%p) timeout_nsec=%"PRId64" ts.sec=%"PRId64" ts.nsec=%"PRId64"\n", 
+                       this, m_activity_wait_timeout_nsec, 
+		       (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
             return eAR_Error;
         }
     }
@@ -471,12 +475,14 @@ bool StreamProcessorManager::syncStartAll() {
 
     // get the options
     int signal_delay_ticks = STREAMPROCESSORMANAGER_SIGNAL_DELAY_TICKS;
+    int xmit_prebuffer_frames = STREAMPROCESSORMANAGER_XMIT_PREBUFFER_FRAMES;
     int sync_wait_time_msec = STREAMPROCESSORMANAGER_SYNC_WAIT_TIME_MSEC;
     int cycles_for_startup = STREAMPROCESSORMANAGER_CYCLES_FOR_STARTUP;
     int prestart_cycles_for_xmit = STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_XMIT;
     int prestart_cycles_for_recv = STREAMPROCESSORMANAGER_PRESTART_CYCLES_FOR_RECV;
     Util::Configuration &config = m_parent.getConfiguration();
     config.getValueForSetting("streaming.spm.signal_delay_ticks", signal_delay_ticks);
+    config.getValueForSetting("streaming.spm.xmit_prebuffer_frames", xmit_prebuffer_frames);
     config.getValueForSetting("streaming.spm.sync_wait_time_msec", sync_wait_time_msec);
     config.getValueForSetting("streaming.spm.cycles_for_startup", cycles_for_startup);
     config.getValueForSetting("streaming.spm.prestart_cycles_for_xmit", prestart_cycles_for_xmit);
@@ -513,18 +519,7 @@ bool StreamProcessorManager::syncStartAll() {
     // add some processing margin. This only shifts the time
     // at which the buffer is transfer()'ed. This makes things somewhat
     // more robust.
-    max_of_min_delay += signal_delay_ticks;
-
-    // Note that the equivalent number of frames is added to the 
-    // transmit buffer to ensure that it keeps a good buffer fill, no matter
-    // what the sync delay is.
-    m_SyncSource->setSyncDelay(max_of_min_delay);
-    unsigned int syncdelay = m_SyncSource->getSyncDelay();
-    debugOutput( DEBUG_LEVEL_VERBOSE, " sync delay = %d => %d ticks (%03us %04uc %04ut)...\n", 
-        max_of_min_delay, syncdelay,
-        (unsigned int)TICKS_TO_SECS(syncdelay),
-        (unsigned int)TICKS_TO_CYCLES(syncdelay),
-        (unsigned int)TICKS_TO_OFFSET(syncdelay));
+    m_sync_delay = max_of_min_delay + signal_delay_ticks;
 
     //STEP X: when we implement such a function, we can wait for a signal from the devices that they
     //        have aquired lock
@@ -539,15 +534,25 @@ bool StreamProcessorManager::syncStartAll() {
     nb_sync_runs /= 1000;
     nb_sync_runs /= getPeriodSize();
 
-    int64_t time_till_next_period;
     while(nb_sync_runs--) { // or while not sync-ed?
         // check if we were woken up too soon
-        time_till_next_period = m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
-        debugOutput( DEBUG_LEVEL_VERBOSE, "waiting for %d usecs...\n", time_till_next_period);
-        if(time_till_next_period > 0) {
-            // wait for the period
-            SleepRelativeUsec(time_till_next_period);
-        }
+        uint64_t ticks_at_period = m_SyncSource->getTimeAtPeriod();
+        uint64_t ticks_at_period_margin = ticks_at_period + m_sync_delay;
+        uint64_t pred_system_time_at_xfer = m_SyncSource->getParent().get1394Service().getSystemTimeForCycleTimerTicks(ticks_at_period_margin);
+    
+        #ifdef DEBUG
+        int64_t now = Util::SystemTimeSource::getCurrentTime();
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "CTR  pred: %"PRId64", syncdelay: %"PRId64", diff: %"PRId64"\n", ticks_at_period, ticks_at_period_margin, ticks_at_period_margin-ticks_at_period );
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "PREWAIT  pred: %"PRId64", now: %"PRId64", wait: %"PRId64"\n", pred_system_time_at_xfer, now, pred_system_time_at_xfer-now );
+        #endif
+    
+        // wait until it's time to transfer
+        Util::SystemTimeSource::SleepUsecAbsolute(pred_system_time_at_xfer);
+    
+        #ifdef DEBUG
+        now = Util::SystemTimeSource::getCurrentTime();
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "POSTWAIT pred: %"PRId64", now: %"PRId64", excess: %"PRId64"\n", pred_system_time_at_xfer, now, now-pred_system_time_at_xfer );
+        #endif
     }
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "Propagate sync info...\n");
@@ -563,19 +568,11 @@ bool StreamProcessorManager::syncStartAll() {
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, " sync source frame rate: %f fps (%f tpf)\n", syncrate, tpf);
 
-    m_SyncSource->setSyncDelay(max_of_min_delay);
-    syncdelay = m_SyncSource->getSyncDelay();
-    debugOutput( DEBUG_LEVEL_VERBOSE, " updated sync delay = %d => %d ticks (%f frames) (%03us %04uc %04ut)...\n", 
-        max_of_min_delay, syncdelay, syncdelay/tpf,
-        (unsigned int)TICKS_TO_SECS(syncdelay),
-        (unsigned int)TICKS_TO_CYCLES(syncdelay),
-        (unsigned int)TICKS_TO_OFFSET(syncdelay));
-
     // we now should have decent sync info on the sync source
     // determine a point in time where the system should start
     // figure out where we are now
     uint64_t time_of_first_sample = m_SyncSource->getTimeAtPeriod();
-    debugOutput( DEBUG_LEVEL_VERBOSE, " sync at TS=%011llu (%03us %04uc %04ut)...\n", 
+    debugOutput( DEBUG_LEVEL_VERBOSE, " sync at TS=%011"PRIu64" (%03us %04uc %04ut)...\n", 
         time_of_first_sample,
         (unsigned int)TICKS_TO_SECS(time_of_first_sample),
         (unsigned int)TICKS_TO_CYCLES(time_of_first_sample),
@@ -592,10 +589,10 @@ bool StreamProcessorManager::syncStartAll() {
 
     time_of_first_sample = addTicks(time_of_first_sample,
                                     time_for_startup_ticks);
-    debugOutput( DEBUG_LEVEL_VERBOSE, "  add %d frames (%011llu ticks)...\n", 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  add %d frames (%011"PRIu64" ticks)...\n", 
         time_for_startup_frames, time_for_startup_ticks);
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "  => first sample at TS=%011llu (%03us %04uc %04ut)...\n", 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  => first sample at TS=%011"PRIu64" (%03us %04uc %04ut)...\n", 
         time_of_first_sample,
         (unsigned int)TICKS_TO_SECS(time_of_first_sample),
         (unsigned int)TICKS_TO_CYCLES(time_of_first_sample),
@@ -608,28 +605,81 @@ bool StreamProcessorManager::syncStartAll() {
 
     uint64_t time_to_start_recv = substractTicks(time_of_first_sample,
                                                  prestart_cycles_for_recv * TICKS_PER_CYCLE);
-    debugOutput( DEBUG_LEVEL_VERBOSE, "  => xmit starts at  TS=%011llu (%03us %04uc %04ut)...\n", 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  => xmit starts at  TS=%011"PRIu64" (%03us %04uc %04ut)...\n", 
         time_to_start_xmit,
         (unsigned int)TICKS_TO_SECS(time_to_start_xmit),
         (unsigned int)TICKS_TO_CYCLES(time_to_start_xmit),
         (unsigned int)TICKS_TO_OFFSET(time_to_start_xmit));
-    debugOutput( DEBUG_LEVEL_VERBOSE, "  => recv starts at  TS=%011llu (%03us %04uc %04ut)...\n", 
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  => recv starts at  TS=%011"PRIu64" (%03us %04uc %04ut)...\n", 
         time_to_start_recv,
         (unsigned int)TICKS_TO_SECS(time_to_start_recv),
         (unsigned int)TICKS_TO_CYCLES(time_to_start_recv),
         (unsigned int)TICKS_TO_OFFSET(time_to_start_recv));
+
+    // print the sync delay
+    int sync_delay_frames = (int)((float)m_sync_delay / m_SyncSource->getTicksPerFrame());
+    debugOutput( DEBUG_LEVEL_VERBOSE, " sync delay: %d = %d + %d ticks (%03us %04uc %04ut) [%d frames]...\n", 
+        m_sync_delay, max_of_min_delay, signal_delay_ticks,
+        (unsigned int)TICKS_TO_SECS(m_sync_delay),
+        (unsigned int)TICKS_TO_CYCLES(m_sync_delay),
+        (unsigned int)TICKS_TO_OFFSET(m_sync_delay),
+        sync_delay_frames);
+
+    // the amount of prebuffer frames should be a multiple of the common block size
+    // as otherwise the position of MIDI is messed up
+    if(xmit_prebuffer_frames % max_packet_size_frames) {
+        int tmp = 0;
+        while(tmp < xmit_prebuffer_frames) {
+            tmp += max_packet_size_frames;
+        }
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                    "The number of prebuffer frames (%d) is not a multiple of the common block size (%d), increased to %d...\n", 
+                    xmit_prebuffer_frames, max_packet_size_frames, tmp);
+        xmit_prebuffer_frames = tmp;
+    }
+
+    // check if this can even work.
+    // the worst case point where we can receive a period is at 1 period + sync delay
+    // this means that the number of frames in the xmit buffer has to be at least
+    // 1 period + sync delay
+    if(xmit_prebuffer_frames + m_period * m_nb_buffers < m_period + sync_delay_frames) {
+        debugWarning("The amount of transmit buffer frames (%d) is too small (< %d). "
+                     "This will most likely cause xruns.\n",
+                     xmit_prebuffer_frames + m_period * m_nb_buffers,
+                     m_period + sync_delay_frames);
+    }
 
     // at this point the buffer head timestamp of the transmit buffers can be set
     // this is the presentation time of the first sample in the buffer
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
           it != m_TransmitProcessors.end();
           ++it ) {
+        // set the number of prebuffer frames
+        (*it)->setExtraBufferFrames(xmit_prebuffer_frames);
+
+        // set the TSP of the first sample in the buffer
         (*it)->setBufferHeadTimestamp(time_of_first_sample);
         ffado_timestamp_t ts;
         signed int fc;
         (*it)->getBufferHeadTimestamp ( &ts, &fc );
-        debugOutput( DEBUG_LEVEL_VERBOSE, " transmit buffer tail %010lld => head TS %010lld, fc=%d...\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, " transmit buffer tail %010"PRId64" => head TS %010"PRIu64", fc=%d...\n",
                     time_of_first_sample, (uint64_t)ts, fc);
+    }
+
+    // the receive processors can be delayed by sync_delay ticks
+    // this means that in the worst case we have to be able to accomodate
+    // an extra sync_delay ticks worth of frames in the receive SP buffer
+    // the sync delay should be rounded to an integer amount of max_packet_size
+    int tmp = sync_delay_frames / max_packet_size_frames;
+    tmp = tmp + 1;
+    sync_delay_frames = tmp * max_packet_size_frames;
+    if (sync_delay_frames < 1024) sync_delay_frames = 1024; //HACK
+
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+          it != m_ReceiveProcessors.end();
+          ++it ) {
+        // set the number of extra buffer frames
+        (*it)->setExtraBufferFrames(sync_delay_frames);
     }
 
     // switch syncsource to running state
@@ -642,7 +692,7 @@ bool StreamProcessorManager::syncStartAll() {
         time_to_start_sync = time_to_start_xmit;
     }
     if(!m_SyncSource->scheduleStartRunning(time_to_start_sync)) {
-        debugError("m_SyncSource->scheduleStartRunning(%11llu) failed\n", time_to_start_sync);
+        debugError("m_SyncSource->scheduleStartRunning(%11"PRIu64") failed\n", time_to_start_sync);
         return false;
     }
 
@@ -652,7 +702,7 @@ bool StreamProcessorManager::syncStartAll() {
           ++it ) {
         if(*it != m_SyncSource) {
             if(!(*it)->scheduleStartRunning(time_to_start_recv)) {
-                debugError("%p->scheduleStartRunning(%11llu) failed\n", *it, time_to_start_recv);
+                debugError("%p->scheduleStartRunning(%11"PRIu64") failed\n", *it, time_to_start_recv);
                 return false;
             }
         }
@@ -662,7 +712,7 @@ bool StreamProcessorManager::syncStartAll() {
           ++it ) {
         if(*it != m_SyncSource) {
             if(!(*it)->scheduleStartRunning(time_to_start_xmit)) {
-                debugError("%p->scheduleStartRunning(%11llu) failed\n", *it, time_to_start_xmit);
+                debugError("%p->scheduleStartRunning(%11"PRIu64") failed\n", *it, time_to_start_xmit);
                 return false;
             }
         }
@@ -695,26 +745,26 @@ bool StreamProcessorManager::syncStartAll() {
     m_time_of_transfer2 = substractTicks(m_time_of_transfer2, (uint64_t)(m_period * rate));
     #endif
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "  initial time of transfer %010lld, rate %f...\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  initial time of transfer %010"PRId64", rate %f...\n",
                 m_time_of_transfer, rate);
 
-    int64_t delay_in_ticks = (int64_t)(((float)((m_nb_buffers-1) * m_period)) * rate);
-    // also add the sync delay
-    delay_in_ticks = addTicks(delay_in_ticks, m_SyncSource->getSyncDelay());
-
+    // FIXME: ideally we'd want the SP itself to account for the xmit_prebuffer_frames
+    // but that would also require to use a different approach to setting the initial TSP's
+    int64_t delay_in_ticks = (int64_t)(((float)((m_nb_buffers-1) * m_period + xmit_prebuffer_frames)) * rate);
 
     // then use this information to initialize the xmit handlers
 
     //  we now set the buffer tail timestamp of the transmit buffer
     //  to the period transfer time instant plus what's nb_buffers - 1
     //  in ticks. This due to the fact that we (should) have received one period
-    //  worth of ticks at t=m_time_of_transfer
+    //  worth of ticks at t = m_time_of_transfer
     //  hence one period of frames should also have been transmitted, which means
     //  that there should be (nb_buffers - 1) * periodsize of frames in the xmit buffer
+    //  there are also xmit_prebuffer_frames frames extra present in the buffer
     //  that allows us to calculate the tail timestamp for the buffer.
 
     int64_t transmit_tail_timestamp = addTicks(m_time_of_transfer, delay_in_ticks);
-    debugOutput( DEBUG_LEVEL_VERBOSE, "  preset transmit tail TS %010lld, rate %f...\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "  preset transmit tail TS %010"PRId64", rate %f...\n",
                 transmit_tail_timestamp, rate);
 
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
@@ -725,7 +775,7 @@ bool StreamProcessorManager::syncStartAll() {
         ffado_timestamp_t ts;
         signed int fc;
         (*it)->getBufferHeadTimestamp ( &ts, &fc );
-        debugOutput( DEBUG_LEVEL_VERBOSE, "   => transmit head TS %010lld, fc=%d...\n",
+        debugOutput( DEBUG_LEVEL_VERBOSE, "   => transmit head TS %010"PRId64", fc=%d...\n",
                     (uint64_t)ts, fc);
     }
 
@@ -782,7 +832,7 @@ StreamProcessorManager::alignReceivedStreams()
             for ( i = 0; i < nb_rcv_sp; i++) {
                 StreamProcessor *s = m_ReceiveProcessors.at(i);
                 diff = diffTicks(m_SyncSource->getTimeAtPeriod(), s->getTimeAtPeriod());
-                debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "  offset between SyncSP %p and SP %p is %lld ticks...\n", 
+                debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "  offset between SyncSP %p and SP %p is %"PRId64" ticks...\n", 
                     m_SyncSource, s, diff);
                 if ( nb_sync_runs == periods_per_align_try ) {
                     diff_between_streams[i] = diff;
@@ -804,7 +854,7 @@ StreamProcessorManager::alignReceivedStreams()
 
             diff_between_streams[i] /= periods_per_align_try;
             diff_between_streams_frames[i] = (int)roundf(diff_between_streams[i] / s->getTicksPerFrame());
-            debugOutput( DEBUG_LEVEL_VERBOSE, "   avg offset between SyncSP %p and SP %p is %lld ticks, %d frames...\n", 
+            debugOutput( DEBUG_LEVEL_VERBOSE, "   avg offset between SyncSP %p and SP %p is %"PRId64" ticks, %d frames...\n", 
                 m_SyncSource, s, diff_between_streams[i], diff_between_streams_frames[i]);
 
             aligned &= (diff_between_streams_frames[i] == 0);
@@ -1077,12 +1127,13 @@ bool StreamProcessorManager::waitForPeriod() {
                         "waiting for period (%d frames in buffer)...\n",
                         m_SyncSource->getBufferFill());
     uint64_t ticks_at_period = m_SyncSource->getTimeAtPeriod();
-    uint64_t ticks_at_period_margin = ticks_at_period + m_SyncSource->getSyncDelay();
+    uint64_t ticks_at_period_margin = ticks_at_period + m_sync_delay;
     uint64_t pred_system_time_at_xfer = m_SyncSource->getParent().get1394Service().getSystemTimeForCycleTimerTicks(ticks_at_period_margin);
 
     #ifdef DEBUG
     int64_t now = Util::SystemTimeSource::getCurrentTime();
-    debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "pred: %lld, now: %lld, wait: %lld\n", pred_system_time_at_xfer, now, pred_system_time_at_xfer-now );
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "CTR  pred: %"PRId64", syncdelay: %"PRId64", diff: %"PRId64"\n", ticks_at_period, ticks_at_period_margin, ticks_at_period_margin-ticks_at_period );
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "PREWAIT  pred: %"PRId64", now: %"PRId64", wait: %"PRId64"\n", pred_system_time_at_xfer, now, pred_system_time_at_xfer-now );
     #endif
 
     // wait until it's time to transfer
@@ -1090,10 +1141,37 @@ bool StreamProcessorManager::waitForPeriod() {
 
     #ifdef DEBUG
     now = Util::SystemTimeSource::getCurrentTime();
-    debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "pred: %lld now: %lld, excess: %lld\n", pred_system_time_at_xfer, now, now-pred_system_time_at_xfer );
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "POSTWAIT pred: %"PRId64", now: %"PRId64", excess: %"PRId64"\n", pred_system_time_at_xfer, now, now-pred_system_time_at_xfer );
     #endif
 
     // the period should be ready now
+    #ifdef DEBUG
+    int rcv_fills[10];
+    int xmt_fills[10];
+    int i;
+    i=0;
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+        it != m_ReceiveProcessors.end();
+        ++it ) {
+        rcv_fills[i] = (*it)->getBufferFill();
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "RECV SP %p bufferfill: %05d\n", *it, rcv_fills[i]);
+        i++;
+    }
+    i=0;
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+        it != m_TransmitProcessors.end();
+        ++it ) {
+        xmt_fills[i] = (*it)->getBufferFill();
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "XMIT SP %p bufferfill: %05d\n", *it, xmt_fills[i]);
+        i++;
+    }
+    for(i=0;i<1;i++) {
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "SP %02d RECV: %05d [%05d] XMIT: %05d [%05d] DIFF: %05d\n", i,
+                    rcv_fills[i], rcv_fills[i] - m_period,
+                    xmt_fills[i], xmt_fills[i] - m_period,
+                    rcv_fills[i] - xmt_fills[i]);
+    }
+    #endif
 
     #if STREAMPROCESSORMANAGER_ALLOW_DELAYED_PERIOD_SIGNAL
     // HACK: we force wait until every SP is ready. this is needed
@@ -1193,23 +1271,17 @@ bool StreamProcessorManager::waitForPeriod() {
     // values is more than 50 ticks. 1 sample at 48k is 512 ticks
     // so 50 ticks = 10%, which is a rather large jitter value.
     if(diff-ticks_per_period > 50 || diff-ticks_per_period < -50) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "rather large TSP difference TS=%011llu => TS=%011llu (%d, nom %d)\n",
+        debugOutput(DEBUG_LEVEL_VERBOSE, "rather large TSP difference TS=%011"PRIu64" => TS=%011"PRIu64" (%d, nom %d)\n",
                                             m_time_of_transfer2, m_time_of_transfer, diff, ticks_per_period);
     }
     m_time_of_transfer2 = m_time_of_transfer;
     #endif
 
     debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                        "transfer period %d at %llu ticks...\n",
+                        "transfer period %d at %"PRIu64" ticks...\n",
                         m_nbperiods, m_time_of_transfer);
 
-    // this is to notify the client of the delay that we introduced by waiting
-    m_delayed_usecs = - m_SyncSource->getTimeUntilNextPeriodSignalUsecs();
-    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                        "delayed for %d usecs...\n",
-                        m_delayed_usecs);
-
-#ifdef DEBUG
+    #ifdef DEBUG
     int rcv_bf=0, xmt_bf=0;
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
         it != m_ReceiveProcessors.end();
@@ -1222,7 +1294,7 @@ bool StreamProcessorManager::waitForPeriod() {
         xmt_bf = (*it)->getBufferFill();
     }
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, 
-                        "XF at %011llu ticks, RBF=%d, XBF=%d, SUM=%d...\n",
+                        "XF at %011"PRIu64" ticks, RBF=%d, XBF=%d, SUM=%d...\n",
                         m_time_of_transfer, rcv_bf, xmt_bf, rcv_bf+xmt_bf);
 
     // check if xruns occurred on the Iso side.
@@ -1254,8 +1326,17 @@ bool StreamProcessorManager::waitForPeriod() {
                         "Xrun on XMIT SP %p due to buffer side xrun\n", *it);
         }
     }
-#endif
+    #endif
     m_nbperiods++;
+
+    // this is to notify the client of the delay that we introduced by waiting
+    pred_system_time_at_xfer = m_SyncSource->getParent().get1394Service().getSystemTimeForCycleTimerTicks(m_time_of_transfer);
+
+    m_delayed_usecs = Util::SystemTimeSource::getCurrentTime() - pred_system_time_at_xfer;
+    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
+                        "delayed for %d usecs...\n",
+                        m_delayed_usecs);
+
     // now we can signal the client that we are (should be) ready
     return !xrun_occurred;
 }
@@ -1286,7 +1367,7 @@ bool StreamProcessorManager::transfer() {
 bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
     if(m_SyncSource == NULL) return false;
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE,
-        "transfer(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
+        "transfer(%d) at TS=%011"PRIu64" (%03us %04uc %04ut)...\n", 
         t, m_time_of_transfer,
         (unsigned int)TICKS_TO_SECS(m_time_of_transfer),
         (unsigned int)TICKS_TO_CYCLES(m_time_of_transfer),
@@ -1300,7 +1381,7 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
                 it != m_ReceiveProcessors.end();
                 ++it ) {
             if(!(*it)->getFrames(m_period, m_time_of_transfer)) {
-                    debugWarning("could not getFrames(%u, %11llu) from stream processor (%p)\n",
+                    debugWarning("could not getFrames(%u, %11"PRIu64") from stream processor (%p)\n",
                             m_period, m_time_of_transfer,*it);
                 retval &= false; // buffer underrun
             }
@@ -1309,23 +1390,21 @@ bool StreamProcessorManager::transfer(enum StreamProcessor::eProcessorType t) {
         // FIXME: in the SPM it would be nice to have system time instead of
         //        1394 time
         float rate = m_SyncSource->getTicksPerFrame();
-        int64_t one_ringbuffer_in_ticks=(int64_t)(((float)((m_nb_buffers * m_period))) * rate);
-
-        // the data we are putting into the buffer is intended to be transmitted
-        // one ringbuffer size after it has been received
-
-        // we also add one syncdelay as a safety margin, since that's the amount of time we can get
-        // postponed.
-        int syncdelay = m_SyncSource->getSyncDelay();
-        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks + syncdelay);
 
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
                 it != m_TransmitProcessors.end();
                 ++it ) {
-            // FIXME: in the SPM it would be nice to have system time instead of
-            //        1394 time
+            // this is the delay in frames between the point where a frame is received and
+            // when it is transmitted again
+            unsigned int one_ringbuffer_in_frames = m_nb_buffers * m_period + (*it)->getExtraBufferFrames();
+            int64_t one_ringbuffer_in_ticks = (int64_t)(((float)one_ringbuffer_in_frames) * rate);
+    
+            // the data we are putting into the buffer is intended to be transmitted
+            // one ringbuffer size after it has been received
+            int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+
             if(!(*it)->putFrames(m_period, transmit_timestamp)) {
-                debugWarning("could not putFrames(%u,%llu) to stream processor (%p)\n",
+                debugWarning("could not putFrames(%u,%"PRIu64") to stream processor (%p)\n",
                         m_period, transmit_timestamp, *it);
                 retval &= false; // buffer underrun
             }
@@ -1366,7 +1445,7 @@ bool StreamProcessorManager::transferSilence() {
 bool StreamProcessorManager::transferSilence(enum StreamProcessor::eProcessorType t) {
     if(m_SyncSource == NULL) return false;
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE,
-        "transferSilence(%d) at TS=%011llu (%03us %04uc %04ut)...\n", 
+        "transferSilence(%d) at TS=%011"PRIu64" (%03us %04uc %04ut)...\n", 
         t, m_time_of_transfer,
         (unsigned int)TICKS_TO_SECS(m_time_of_transfer),
         (unsigned int)TICKS_TO_CYCLES(m_time_of_transfer),
@@ -1380,7 +1459,7 @@ bool StreamProcessorManager::transferSilence(enum StreamProcessor::eProcessorTyp
                 it != m_ReceiveProcessors.end();
                 ++it ) {
             if(!(*it)->dropFrames(m_period, m_time_of_transfer)) {
-                    debugWarning("could not dropFrames(%u, %11llu) from stream processor (%p)\n",
+                    debugWarning("could not dropFrames(%u, %11"PRIu64") from stream processor (%p)\n",
                             m_period, m_time_of_transfer,*it);
                 retval &= false; // buffer underrun
             }
@@ -1389,22 +1468,21 @@ bool StreamProcessorManager::transferSilence(enum StreamProcessor::eProcessorTyp
         // FIXME: in the SPM it would be nice to have system time instead of
         //        1394 time
         float rate = m_SyncSource->getTicksPerFrame();
-        int64_t one_ringbuffer_in_ticks=(int64_t)(((float)(m_nb_buffers * m_period)) * rate);
-
-        // the data we are putting into the buffer is intended to be transmitted
-        // one ringbuffer size after it has been received
-        // we also add one syncdelay as a safety margin, since that's the amount of time we can get
-        // postponed.
-        int syncdelay = m_SyncSource->getSyncDelay();
-        int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks + syncdelay);
 
         for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
                 it != m_TransmitProcessors.end();
                 ++it ) {
-            // FIXME: in the SPM it would be nice to have system time instead of
-            //        1394 time
+            // this is the delay in frames between the point where a frame is received and
+            // when it is transmitted again
+            unsigned int one_ringbuffer_in_frames = m_nb_buffers * m_period + (*it)->getExtraBufferFrames();
+            int64_t one_ringbuffer_in_ticks = (int64_t)(((float)one_ringbuffer_in_frames) * rate);
+    
+            // the data we are putting into the buffer is intended to be transmitted
+            // one ringbuffer size after it has been received
+            int64_t transmit_timestamp = addTicks(m_time_of_transfer, one_ringbuffer_in_ticks);
+
             if(!(*it)->putSilenceFrames(m_period, transmit_timestamp)) {
-                debugWarning("could not putSilenceFrames(%u,%llu) to stream processor (%p)\n",
+                debugWarning("could not putSilenceFrames(%u,%"PRIu64") to stream processor (%p)\n",
                         m_period, transmit_timestamp, *it);
                 retval &= false; // buffer underrun
             }
@@ -1577,7 +1655,7 @@ Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction dir
     if (direction == Port::E_Capture) {
         #ifdef DEBUG
         if(idx >= (int)m_CapturePorts_shadow.size()) {
-            debugError("Capture port %d out of range (%d)\n", idx, m_CapturePorts_shadow.size());
+            debugError("Capture port %d out of range (%zd)\n", idx, m_CapturePorts_shadow.size());
             return NULL;
         }
         #endif
@@ -1585,7 +1663,7 @@ Port* StreamProcessorManager::getPortByIndex(int idx, enum Port::E_Direction dir
     } else {
         #ifdef DEBUG
         if(idx >= (int)m_PlaybackPorts_shadow.size()) {
-            debugError("Playback port %d out of range (%d)\n", idx, m_PlaybackPorts_shadow.size());
+            debugError("Playback port %d out of range (%zd)\n", idx, m_PlaybackPorts_shadow.size());
             return NULL;
         }
         #endif

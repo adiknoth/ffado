@@ -189,6 +189,7 @@ protected: // FIXME: private?
 
     unsigned int m_nb_buffers;
     unsigned int m_period;
+    unsigned int m_sync_delay;
     enum eADT_AudioDataType m_audio_datatype;
     unsigned int m_nominal_framerate;
     unsigned int m_xruns;

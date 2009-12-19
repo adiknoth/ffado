@@ -187,7 +187,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    debugOutput(DEBUG_LEVEL_INFO, "Select 1394 port %d...\n", arguments.port);
+    debugOutput(DEBUG_LEVEL_INFO, "Select 1394 port %d...\n", (int) arguments.port);
     int ret = -1;
     do
     {
@@ -225,7 +225,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority (%d)...\n", arguments.rtprio);
+    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority (%d)...\n", (int)arguments.rtprio);
     set_realtime_priority(arguments.rtprio);
 
     debugOutput(DEBUG_LEVEL_INFO, "Starting iterate loop...\n");

@@ -94,7 +94,7 @@ static inline uint64_t wrapAtMaxTicks(uint64_t x) {
 
 #ifdef DEBUG
         if (x >= TICKS_PER_SECOND * 128L) {
-            debugWarning("insufficient wrapping: %llu\n",x);
+            debugWarning("insufficient wrapping: %"PRIu64"\n",x);
         }
 #endif
 
@@ -117,7 +117,7 @@ static inline int64_t wrapAtMinTicks(int64_t x) {
 
 #ifdef DEBUG
         if (x < 0) {
-            debugWarning("insufficient wrapping: %lld\n",x);
+            debugWarning("insufficient wrapping: %"PRId64"\n",x);
         }
 #endif
 
@@ -144,10 +144,10 @@ static inline int64_t wrapAtMinMaxTicks(int64_t x) {
 
 #ifdef DEBUG
         if (x >= (int64_t)(TICKS_PER_SECOND * 128L)) {
-            debugWarning("insufficient wrapping (max): %llu\n",x);
+            debugWarning("insufficient wrapping (max): %"PRIu64"\n",x);
         }
         if (x < 0) {
-            debugWarning("insufficient wrapping (min): %lld\n",x);
+            debugWarning("insufficient wrapping (min): %"PRId64"\n",x);
         }
 #endif
     return x;
@@ -248,7 +248,7 @@ static inline int64_t diffTicks(int64_t x, int64_t y) {
 #ifdef DEBUG
     if(diff > max || diff < -max) {
         debugWarning("difference does not make any sense\n");
-        debugWarning("diff=%lld max=%lld\n", diff, max);
+        debugWarning("diff=%"PRId64" max=%"PRId64"\n", diff, max);
         
     }
 #endif
@@ -301,7 +301,7 @@ static inline uint64_t substractTicks(uint64_t x, uint64_t y) {
 static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int rcv_cycle, uint64_t ctr_now) {
     uint64_t timestamp;
 
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "SYT=%04llX CY=%u CTR=%08llX\n",
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "SYT=%"PRIX64" CY=%u CTR=%08"PRIX64"\n",
                        syt_timestamp, rcv_cycle, ctr_now);
 
     // reconstruct the full cycle
@@ -312,7 +312,7 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
     // the cycle timer should be ahead of the receive timer
     int diff_cycles = diffCycles(cc_cycles, rcv_cycle);
     if (diff_cycles<0) {
-        debugWarning("current cycle timer not ahead of receive cycle: rcv: %u / cc: %llu (%d)\n",
+        debugWarning("current cycle timer not ahead of receive cycle: rcv: %u / cc: %"PRIu64" (%d)\n",
                         rcv_cycle, cc_cycles, diff_cycles);
     }
 
@@ -350,7 +350,7 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
         timestamp  = new_cycles * TICKS_PER_CYCLE;
     } else {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                           "Detected wraparound: %d + %d = %d\n",
+                           "Detected wraparound: %u + %"PRId64" = %"PRId64"\n",
                            rcv_cycle, delta_cycles, new_cycles);
 
         new_cycles-=8000; // wrap around
@@ -371,7 +371,7 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
     #ifdef DEBUG
         if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
             debugWarning("back-converted timestamp not equal to SYT\n");
-            debugWarning("TS=%011llu TSC=%08lX SYT=%04X\n",
+            debugWarning("TS=%011"PRIu64" TSC=%08"PRIX64" SYT=%04"PRIX64"\n",
                   timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
         }
     #endif
@@ -390,7 +390,7 @@ static inline uint64_t sytRecvToFullTicks(uint64_t syt_timestamp, unsigned int r
 static inline uint64_t sytRecvToFullTicks2(uint64_t syt_timestamp, uint32_t rcv_ctr) {
     uint64_t timestamp;
 
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "SYT=%04llX RCV_CTR=%08X\n",
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "SYT=%04"PRIX64" RCV_CTR=%08X\n",
                        syt_timestamp, rcv_ctr);
 
     // reconstruct the top part of the timestamp using the current cycle number
@@ -432,7 +432,7 @@ static inline uint64_t sytRecvToFullTicks2(uint64_t syt_timestamp, uint32_t rcv_
     #ifdef DEBUG
         if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
             debugWarning("back-converted timestamp not equal to SYT\n");
-            debugWarning("TS=%011llu TSC=%08lX SYT=%04X\n",
+            debugWarning("TS=%011"PRIu64" TSC=%08"PRIX64" SYT=%04"PRIX64"\n",
                   timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
         }
     #endif
@@ -456,7 +456,7 @@ static inline uint64_t sytRecvToFullTicks2(uint64_t syt_timestamp, uint32_t rcv_
 static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int xmt_cycle, uint64_t ctr_now) {
     uint64_t timestamp;
 
-    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "SYT=%08llX CY=%04X CTR=%08llX\n",
+    debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "SYT=%08"PRIX64" CY=%04X CTR=%08"PRIX64"\n",
                        syt_timestamp, xmt_cycle, ctr_now);
 
     // reconstruct the full cycle
@@ -466,7 +466,7 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     // check for bogus CTR
     int diff_cycles = diffCycles(xmt_cycle, cc_cycles);
     if (diff_cycles<0) {
-        debugWarning("xmit cycle not ahead of current cycle: xmt: %u / cc: %llu (%d)\n",
+        debugWarning("xmit cycle not ahead of current cycle: xmt: %u / cc: %"PRIu64" (%d)\n",
                         xmt_cycle, cc_cycles, diff_cycles);
     }
 
@@ -504,7 +504,7 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
         timestamp  = new_cycles * TICKS_PER_CYCLE;
     } else {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
-                           "Detected wraparound: %d + %d = %d\n",
+                           "Detected wraparound: %u + %"PRId64" = %"PRId64"\n",
                            xmt_cycle, delta_cycles, new_cycles);
 
         new_cycles-=8000; // wrap around
@@ -525,7 +525,7 @@ static inline uint64_t sytXmitToFullTicks(uint64_t syt_timestamp, unsigned int x
     #ifdef DEBUG
         if(( TICKS_TO_CYCLE_TIMER(timestamp) & 0xFFFF) != syt_timestamp) {
             debugWarning("back-converted timestamp not equal to SYT\n");
-            debugWarning("TS=%011llu TSC=%08lX SYT=%04X\n",
+            debugWarning("TS=%011"PRIu64" TSC=%08"PRIX64" SYT=%04"PRIX64"\n",
                   timestamp, TICKS_TO_CYCLE_TIMER(timestamp), syt_timestamp);
         }
     #endif

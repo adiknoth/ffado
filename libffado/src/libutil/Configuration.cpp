@@ -181,7 +181,7 @@ Configuration::ConfigFile::showSetting(libconfig::Setting &s, std::string prefix
         {
             int32_t i = s;
             debugOutput(DEBUG_LEVEL_NORMAL,
-                        "  %s%s = %ld (0x%08lX)\n",
+                        "  %s%s = %d (0x%08X)\n",
                         prefix.c_str(), s.getName(), i, i);
         }
         break;
@@ -189,7 +189,7 @@ Configuration::ConfigFile::showSetting(libconfig::Setting &s, std::string prefix
         {
             int64_t i = s;
             debugOutput(DEBUG_LEVEL_NORMAL,
-                        "  %s%s = %lld (0x%016llX)\n",
+                        "  %s%s = %"PRId64" (0x%016"PRIX64")\n",
                         prefix.c_str(), s.getName(), i, i);
         }
         break;
@@ -258,7 +258,7 @@ Configuration::getValueForSetting(std::string path, int64_t &ref)
         Setting::Type t = s->getType();
         if(t == Setting::TypeInt64) {
             ref = *s;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has value %d\n", path.c_str(), ref);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has value %"PRId64"\n", path.c_str(), ref);
             return true;
         } else {
             debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has wrong type\n", path.c_str());

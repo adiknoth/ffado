@@ -326,7 +326,7 @@ void
 Container::show()
 {
     Util::MutexLockHelper lock(getLock());
-    debugOutput( DEBUG_LEVEL_NORMAL, "Container %s (%d Elements)\n",
+    debugOutput( DEBUG_LEVEL_NORMAL, "Container %s (%zd Elements)\n",
         getName().c_str(), m_Children.size());
 
     for ( ElementVectorIterator it = m_Children.begin();

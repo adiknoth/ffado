@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    debugOutput(DEBUG_LEVEL_NORMAL, "verbose level = %d\n", arguments.verbose);
+    debugOutput(DEBUG_LEVEL_NORMAL, "verbose level = %ld\n", arguments.verbose);
     setDebugLevel(arguments.verbose);
 
     if(arguments.playback == 0 && arguments.capture == 0) {
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
     run=1;
 
     debugOutput(DEBUG_LEVEL_NORMAL, "FFADO streaming test application (3)\n");
-    printMessage(" period %d, nb_buffers %d, playback %d, capture %d\n",
+    printMessage(" period %ld, nb_buffers %ld, playback %ld, capture %ld\n",
                  arguments.period, arguments.nb_buffers,
                  arguments.playback,
                  arguments.capture );
@@ -373,16 +373,16 @@ int main(int argc, char *argv[])
 
     printMessage("Device channel count: %d capture, %d playback\n",
                  nb_in_channels, nb_out_channels);
-    printMessage("Requested channel count: %d capture, %d playback\n",
+    printMessage("Requested channel count: %ld capture, %ld playback\n",
                  arguments.capture, arguments.playback);
 
     if(arguments.playback > nb_out_channels) {
-        debugError("Too many playback channels requested (want: %d, have:%d)\n", 
+        debugError("Too many playback channels requested (want: %ld, have:%d)\n", 
                    arguments.playback, nb_out_channels);
         return -1;
     }
     if(arguments.capture > nb_in_channels) {
-        debugError("Too many capture channels requested (want: %d, have:%d)\n", 
+        debugError("Too many capture channels requested (want: %ld, have:%d)\n", 
                    arguments.capture, nb_in_channels);
         return -1;
     }
@@ -459,7 +459,7 @@ int main(int argc, char *argv[])
 
     // enter the loop
     debugOutput(DEBUG_LEVEL_NORMAL,
-                "Entering receive loop (IN: %d, OUT: %d)\n",
+                "Entering receive loop (IN: %ld, OUT: %ld)\n",
                 arguments.capture, arguments.playback);
 
     while(run && start_flag==0) {

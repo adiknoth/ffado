@@ -126,9 +126,9 @@ EfcHardwareInfoCmd::showEfcCmd()
     
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC HW CAPS info:\n");
     debugOutput(DEBUG_LEVEL_NORMAL, " Flags   : 0x%08X\n", m_flags);
-    debugOutput(DEBUG_LEVEL_NORMAL, " GUID    : %016llX\n", m_guid);
+    debugOutput(DEBUG_LEVEL_NORMAL, " GUID    : %016"PRIX64"\n", m_guid);
     debugOutput(DEBUG_LEVEL_NORMAL, " HwType  : 0x%08X\n", m_type);
-    debugOutput(DEBUG_LEVEL_NORMAL, " Version : %lu\n", m_version);
+    debugOutput(DEBUG_LEVEL_NORMAL, " Version : %u\n", m_version);
     debugOutput(DEBUG_LEVEL_NORMAL, " Vendor  : %s\n", m_vendor_name);
     debugOutput(DEBUG_LEVEL_NORMAL, " Model   : %s\n", m_model_name);
     
@@ -231,12 +231,12 @@ EfcPolledValuesCmd::showEfcCmd()
     unsigned int i=0;
     debugOutput(DEBUG_LEVEL_NORMAL, " # Output Meters : %d\n", m_nb_output_meters);
     for (i=0;i<m_nb_output_meters;i++) {
-        debugOutput(DEBUG_LEVEL_NORMAL, "     Meter %d: %ld\n", i, m_meters[i]);
+        debugOutput(DEBUG_LEVEL_NORMAL, "     Meter %d: %d\n", i, m_meters[i]);
     }
     
     debugOutput(DEBUG_LEVEL_NORMAL, " # Input Meters  : %d\n", m_nb_input_meters);
     for (;i<m_nb_output_meters+m_nb_input_meters;i++) {
-        debugOutput(DEBUG_LEVEL_NORMAL, "     Meter %d: %ld\n", i, m_meters[i]);
+        debugOutput(DEBUG_LEVEL_NORMAL, "     Meter %d: %d\n", i, m_meters[i]);
     }
 }
 

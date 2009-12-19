@@ -675,7 +675,7 @@ Device::EAP::offsetGen(enum eRegBase base, unsigned offset, size_t length) {
 
     // out-of-range check
     if(length > maxlen) {
-        debugError("requested length too large: %d > %d\n", length, maxlen);
+        debugError("requested length too large: %zd > %"PRIu64"\n", length, maxlen);
         return DICE_INVALID_OFFSET;
     }
     return DICE_EAP_BASE + addr + offset;
@@ -826,7 +826,7 @@ Device::EAP::Mixer::updateNameCache()
         // get the source for this mixer channel
         m_input_route_map[i] = rcfg->getRouteForDestination(dest, ch);
 
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Mixer input channel %2d source: %s\n", i,
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Mixer input channel %2d source: %s (%d)\n", i,
                                           srcBlockToString(m_input_route_map[i].src),
                                           m_input_route_map[i].srcChannel);
     }
@@ -1977,7 +1977,7 @@ Device::EAP::StreamConfig::read(enum eRegBase base, unsigned offset)
         debugError("Failed to read number of rx entries\n");
         return false;
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Entries: TX: %lu, RX: %lu\n", m_nb_tx, m_nb_rx);
+    debugOutput(DEBUG_LEVEL_VERBOSE, " Entries: TX: %u, RX: %u\n", m_nb_tx, m_nb_rx);
 
     if(m_tx_configs) {
         delete[]m_tx_configs;
@@ -2069,7 +2069,7 @@ Device::EAP::StreamConfig::getNamesForBlock(struct ConfigBlock &b)
 void
 Device::EAP::StreamConfig::showConfigBlock(struct ConfigBlock &b)
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Channel count : %lu audio, %lu midi\n", b.nb_audio, b.nb_midi);
+    debugOutput(DEBUG_LEVEL_VERBOSE, " Channel count : %u audio, %u midi\n", b.nb_audio, b.nb_midi);
     debugOutput(DEBUG_LEVEL_VERBOSE, " AC3 Map       : 0x%08X\n", b.ac3_map);
     diceNameVector channel_names  = getNamesForBlock(b);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Channel names :\n");

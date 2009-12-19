@@ -232,7 +232,7 @@ int32_t main(int32_t argc, char **argv)
         return -1;
     }
 
-    debugOutput(DEBUG_LEVEL_NORMAL, "verbose level = %d\n", arguments.verbose);
+    debugOutput(DEBUG_LEVEL_NORMAL, "verbose level = %d\n", (int) arguments.verbose);
     setDebugLevel(arguments.verbose);
 
     debugOutput(DEBUG_LEVEL_INFO, "Get 1394 handle...\n");
@@ -243,7 +243,7 @@ int32_t main(int32_t argc, char **argv)
         return -1;
     }
 
-    debugOutput(DEBUG_LEVEL_INFO, "Select 1394 port %d...\n", arguments.port);
+    debugOutput(DEBUG_LEVEL_INFO, "Select 1394 port %d...\n", (int)arguments.port);
     int ret = -1;
     do
     {
@@ -268,7 +268,7 @@ int32_t main(int32_t argc, char **argv)
     }
     raw1394_set_bus_reset_handler(handle, myResetHandler);
 
-    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority (%d)...\n", arguments.rtprio);
+    debugOutput(DEBUG_LEVEL_INFO, "Setting RT priority (%d)...\n", (int)arguments.rtprio);
     set_realtime_priority(arguments.rtprio);
 
     debugOutput(DEBUG_LEVEL_INFO, "Prepare/start ISO transmit...\n");

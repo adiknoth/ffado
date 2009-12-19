@@ -34,6 +34,7 @@
 #include "libstreaming/motu/MotuTransmitStreamProcessor.h"
 
 #include "motu_controls.h"
+#include "motu_mark3_controls.h"
 
 #define MOTU_BASE_ADDR               0xfffff0000000ULL
 
@@ -88,6 +89,58 @@
 #define MOTU_REG_INPUT_GAIN_PHINV1 0x0c74
 #define MOTU_REG_INPUT_GAIN_PHINV2 0x0c78
 
+/* Device register definitions for the earliest generation devices */
+#define MOTU_G1_REG_CONFIG         0x0b00
+#define MOTU_G1_REG_ISOCTRL        0x0b10
+
+/* There's an unknown subtlety regarding the optical mode of the "generation
+ * 1" devices such as the 828Mk1.  It seems that the same configuration
+ * register setting is used for "off" and "adat" modes.  There must be more
+ * to this though because the number of audio channels sent presumedly
+ * changes when adat mode is selected; there must be some way that the
+ * device deduces the mode.
+ */
+#define MOTU_G1_OPT_IN_MODE_MASK   0x8000
+#define MOTU_G1_OPT_IN_MODE_BIT0       15
+#define MOTU_G1_OPT_OUT_MODE_MASK  0x4000
+#define MOTU_G1_OPT_OUT_MODE_BIT0      14
+#define MOTU_G1_OPTICAL_OFF        0x0000
+#define MOTU_G1_OPTICAL_TOSLINK    0x0001
+#define MOTU_G1_OPTICAL_ADAT       0x0000
+
+#define MOTU_G1_RATE_MASK          0x0004
+#define MOTU_G1_RATE_44100         0x0000
+#define MOTU_G1_RATE_48000         0x0004
+
+#define MOTU_G1_CLKSRC_MASK        0x0003
+#define MOTU_G1_CLKSRC_INTERNAL    0x0000
+#define MOTU_G1_CLKSRC_ADAT_9PIN   0x0001
+#define MOTU_G1_CLKSRC_SPDIF       0x0002
+#define MOTU_G1_CLKSRC_UNCHANGED   MOTU_CLKSRC_UNCHANGED
+
+#define MOTU_G1_MONIN_MASK         0x3f00
+#define MOTU_G1_MONIN_L_SRC_MASK   0x0600
+#define MOTU_G1_MONIN_R_SRC_MASK   0x3000
+#define MOTU_G1_MONIN_L_MUTE_MASK  0x0100  // Yes, the sense of these 2 bits
+#define MOTU_G1_MONIN_R_EN_MASK    0x0800  //   really are reversed
+#define MOTU_G1_MONIN_L_MUTE       0x0100
+#define MOTU_G1_MONIN_L_ENABLE     0x0000
+#define MOTU_G1_MONIN_R_MUTE       0x0000
+#define MOTU_G1_MONIN_R_ENABLE     0x0800
+#define MOTU_G1_MONIN_L_CH1        0x0000
+#define MOTU_G1_MONIN_L_CH3        0x0020
+#define MOTU_G1_MONIN_L_CH5        0x0040
+#define MOTU_G1_MONIN_L_CH7        0x0060
+#define MOTU_G1_MONIN_R_CH2        0x0000
+#define MOTU_G1_MONIN_R_CH4        0x1000
+#define MOTU_G1_MONIN_R_CH6        0x2000
+#define MOTU_G1_MONIN_R_CH8        0x3000
+
+/* Mark3 device registers - these don't have MOTU_BASE_ADDR as the base
+ * address so for now we'll define them as absolute addresses.
+ */
+#define MOTU_MARK3_REG_MIXER     0xffff00010000LL
+
 /* Port Active Flags (ports declaration) */
 #define MOTU_PA_RATE_1x          0x0001    /* 44k1 or 48k */
 #define MOTU_PA_RATE_2x          0x0002    /* 88k2 or 96k */
@@ -121,14 +174,15 @@ namespace Util {
 namespace Motu {
 
 enum EMotuModel {
-    MOTU_MODEL_NONE     = 0x0000,
-    MOTU_MODEL_828mkII  = 0x0001,
-    MOTU_MODEL_TRAVELER = 0x0002,
-    MOTU_MODEL_ULTRALITE= 0x0003,
-    MOTU_MODEL_8PRE     = 0x0004,
-    MOTU_MODEL_828MkI   = 0x0005,
-    MOTU_MODEL_896HD    = 0x0006,
-    MOTU_MODEL_828mk3   = 0x0007,
+    MOTU_MODEL_NONE         = 0x0000,
+    MOTU_MODEL_828mkII      = 0x0001,
+    MOTU_MODEL_TRAVELER     = 0x0002,
+    MOTU_MODEL_ULTRALITE    = 0x0003,
+    MOTU_MODEL_8PRE         = 0x0004,
+    MOTU_MODEL_828MkI       = 0x0005,
+    MOTU_MODEL_896HD        = 0x0006,
+    MOTU_MODEL_828mk3       = 0x0007,
+    MOTU_MODEL_ULTRALITEmk3 = 0x0008,
 };
 
 struct VendorModelEntry {
@@ -147,23 +201,21 @@ struct PortEntry {
     unsigned int port_offset;
 };
 
+// Structures used for pre-Mark3 device mixer definitions
 struct MixerCtrl {
     const char *name, *label, *desc;
     unsigned int type;
     unsigned int dev_register;
 };
-
 struct MatrixMixBus {
     const char *name;
     unsigned int address;
 };
-
 struct MatrixMixChannel {
     const char *name;
     unsigned int flags;
     unsigned int addr_ofs;
 };
-
 struct MotuMixer {
     const MixerCtrl *mixer_ctrl;
     unsigned int n_mixer_ctrls;
@@ -173,13 +225,21 @@ struct MotuMixer {
     unsigned int n_mixer_channels;
 };
 
+// Structures used for devices which use the "Mark3" mixer protocol
+struct MotuMark3Mixer {
+};
+
 struct DevicePropertyEntry {
     const PortEntry* port_entry;
     unsigned int n_port_entries;
     signed int MaxSampleRate;
+    // A device will set at most one of the *mixer fields
     const struct MotuMixer *mixer;
+    const struct MotuMark3Mixer *m3mixer;
     // Others features can be added here like MIDI port presence.
 };
+
+extern const DevicePropertyEntry DevicesProperty[];
 
 /* Macro to calculate the size of an array */
 #define N_ELEMENTS(_array) (sizeof(_array) / sizeof((_array)[0]))
@@ -243,6 +303,7 @@ protected:
 
 private:
     bool buildMixerAudioControls(void);
+    bool buildMark3MixerAudioControls(void);
     bool addPort(Streaming::StreamProcessor *s_processor,
         char *name,
         enum Streaming::Port::E_Direction direction,

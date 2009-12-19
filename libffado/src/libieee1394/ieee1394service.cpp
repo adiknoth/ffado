@@ -56,7 +56,7 @@ Ieee1394Service::Ieee1394Service()
     , m_armHelperNormal( NULL )
     , m_armHelperRealtime( NULL )
     , m_handle( 0 )
-    , m_handle_lock( new Util::PosixMutex("SRCVHND") )
+    , m_handle_lock( new Util::PosixMutex("SRVCHND") )
     , m_util_handle( 0 )
     , m_port( -1 )
     , m_realtime ( false )
@@ -84,7 +84,7 @@ Ieee1394Service::Ieee1394Service(bool rt, int prio)
     , m_armHelperNormal( NULL )
     , m_armHelperRealtime( NULL )
     , m_handle( 0 )
-    , m_handle_lock( new Util::PosixMutex("SRCVHND") )
+    , m_handle_lock( new Util::PosixMutex("SRVCHND") )
     , m_util_handle( 0 )
     , m_port( -1 )
     , m_realtime ( rt )
@@ -121,11 +121,11 @@ Ieee1394Service::~Ieee1394Service()
           it != m_armHandlers.end();
           ++it )
     {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler for 0x%016llX\n", (*it)->getStart());
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler for 0x%016"PRIX64"\n", (*it)->getStart());
         if(m_armHelperNormal) {
             int err = raw1394_arm_unregister(m_armHelperNormal->get1394Handle(), (*it)->getStart());
             if (err) {
-                debugError(" Failed to unregister ARM handler for 0x%016llX\n", (*it)->getStart());
+                debugError(" Failed to unregister ARM handler for 0x%016"PRIX64"\n", (*it)->getStart());
                 debugError(" Error: %s\n", strerror(errno));
             }
         } else {
@@ -556,7 +556,7 @@ Ieee1394Service::readNoLock( fb_nodeid_t nodeId,
 
         #ifdef DEBUG
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
-            "read: node 0x%hX, addr = 0x%016llX, length = %u\n",
+            "read: node 0x%hX, addr = 0x%016"PRIX64", length = %zd\n",
             nodeId, addr, length);
         printBuffer( DEBUG_LEVEL_VERY_VERBOSE, length, buffer );
         #endif
@@ -565,7 +565,7 @@ Ieee1394Service::readNoLock( fb_nodeid_t nodeId,
     } else {
         #ifdef DEBUG
         debugOutput(DEBUG_LEVEL_VERBOSE,
-                    "raw1394_read failed: node 0x%hX, addr = 0x%016llX, length = %u\n",
+                    "raw1394_read failed: node 0x%hX, addr = 0x%016"PRIX64", length = %zd\n",
                     nodeId, addr, length);
         #endif
         return false;
@@ -611,7 +611,7 @@ Ieee1394Service::writeNoLock( fb_nodeid_t nodeId,
     }
 
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"write: node 0x%hX, addr = 0x%016llX, length = %d\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"write: node 0x%hX, addr = 0x%016"PRIX64", length = %zd\n",
                 nodeId, addr, length);
     printBuffer( DEBUG_LEVEL_VERY_VERBOSE, length, data );
     #endif
@@ -648,15 +648,15 @@ Ieee1394Service::lockCompareSwap64( fb_nodeid_t nodeId,
         return false;
     }
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERBOSE,"lockCompareSwap64: node 0x%X, addr = 0x%016llX\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"lockCompareSwap64: node 0x%X, addr = 0x%016"PRIX64"\n",
                 nodeId, addr);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  if (*(addr)==0x%016llX) *(addr)=0x%016llX\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  if (*(addr)==0x%016"PRIX64") *(addr)=0x%016"PRIX64"\n",
                 compare_value, swap_value);
     fb_octlet_t buffer;
     if(!read_octlet( nodeId, addr,&buffer )) {
         debugWarning("Could not read register\n");
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"before = 0x%016llX\n", buffer);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"before = 0x%016"PRIX64"\n", buffer);
     }
     #endif
 
@@ -680,7 +680,7 @@ Ieee1394Service::lockCompareSwap64( fb_nodeid_t nodeId,
     if(!read_octlet( nodeId, addr,&buffer )) {
         debugWarning("Could not read register\n");
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"after = 0x%016llX\n", buffer);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"after = 0x%016"PRIX64"\n", buffer);
     }
     #endif
 
@@ -830,14 +830,6 @@ Ieee1394Service::doFcpTransactionTry()
         }
     }
 
-    // stop listening for FCP responses
-    err = raw1394_stop_fcp_listen(m_handle);
-    if(err) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "could not stop FCP listen (err=%d, errno=%d)\n", err, errno);
-        retval = false;
-        goto out;
-    }
-
     // check the request and figure out what happened
     if(m_fcp_block.status == eFS_Waiting) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response timed out\n");
@@ -851,6 +843,13 @@ Ieee1394Service::doFcpTransactionTry()
     }
 
 out:
+    // stop listening for FCP responses
+    err = raw1394_stop_fcp_listen(m_handle);
+    if(err) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "could not stop FCP listen (err=%d, errno=%d)\n", err, errno);
+        retval = false;
+    }
+
     m_fcp_block.status = eFS_Empty;
     return retval;
 }
@@ -875,7 +874,7 @@ Ieee1394Service::handleFcpResponse(nodeid_t nodeid,
 
     fb_quadlet_t *data_quads = (fb_quadlet_t *)data;
     #ifdef DEBUG
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"fcp response: node 0x%hX, response = %d, length = %d bytes\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"fcp response: node 0x%hX, response = %d, length = %zd bytes\n",
                 nodeid, response, length);
     printBuffer(DEBUG_LEVEL_VERY_VERBOSE, (length+3)/4, data_quads );
     #endif
@@ -905,7 +904,7 @@ Ieee1394Service::handleFcpResponse(nodeid_t nodeid,
 #endif
             } else if(FCP_MASK_SUBUNIT_AND_OPCODE(first_quadlet) 
                       != FCP_MASK_SUBUNIT_AND_OPCODE(CondSwapFromBus32(m_fcp_block.request[0]))) {
-                debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response not for this request: %08lX != %08lX\n",
+                debugOutput(DEBUG_LEVEL_VERBOSE, "FCP response not for this request: %08X != %08X\n",
                              FCP_MASK_SUBUNIT_AND_OPCODE(first_quadlet),
                              FCP_MASK_SUBUNIT_AND_OPCODE(CondSwapFromBus32(m_fcp_block.request[0])));
             } else if(m_filterFCPResponse && (memcmp(fcp_block_last.response, data, length) == 0)) {
@@ -969,14 +968,14 @@ Ieee1394Service::getSplitTimeoutUsecs(fb_nodeid_t nodeId)
         debugOutput(DEBUG_LEVEL_VERBOSE, "read of CSR_SPLIT_TIMEOUT_HI failed\n");
         return 0;
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, " READ HI: 0x%08lX\n", split_timeout_hi);
+    debugOutput(DEBUG_LEVEL_VERBOSE, " READ HI: 0x%08X\n", split_timeout_hi);
 
     if(!readNoLock( 0xffc0 | nodeId, CSR_REGISTER_BASE + CSR_SPLIT_TIMEOUT_LO, 1,
                   &split_timeout_low)) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "read of CSR_SPLIT_TIMEOUT_LO failed\n");
         return 0;
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, " READ LO: 0x%08lX\n", split_timeout_low);
+    debugOutput(DEBUG_LEVEL_VERBOSE, " READ LO: 0x%08X\n", split_timeout_low);
 
     split_timeout_hi = CondSwapFromBus32(split_timeout_hi);
     split_timeout_low = CondSwapFromBus32(split_timeout_low);
@@ -1072,8 +1071,9 @@ Ieee1394Service::resetHandler( unsigned int generation )
 }
 
 bool Ieee1394Service::registerARMHandler(ARMHandler *h) {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Registering ARM handler (%p) for 0x%016llX, length %u\n",
-        h, h->getStart(), h->getLength());
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "Registering ARM handler (%p) for 0x%016"PRIX64", length %zu\n",
+                h, h->getStart(), h->getLength());
 
     // FIXME: note that this will result in the ARM handlers not running in a realtime context
     int err = raw1394_arm_register(m_armHelperNormal->get1394Handle(), h->getStart(),
@@ -1082,7 +1082,7 @@ bool Ieee1394Service::registerARMHandler(ARMHandler *h) {
                                    h->getNotificationOptions(),
                                    h->getClientTransactions());
     if (err) {
-        debugError("Failed to register ARM handler for 0x%016llX\n", h->getStart());
+        debugError("Failed to register ARM handler for 0x%016"PRIX64"\n", h->getStart());
         debugError(" Error: %s\n", strerror(errno));
         return false;
     }
@@ -1091,7 +1091,7 @@ bool Ieee1394Service::registerARMHandler(ARMHandler *h) {
 }
 
 bool Ieee1394Service::unregisterARMHandler( ARMHandler *h ) {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler (%p) for 0x%016llX\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Unregistering ARM handler (%p) for 0x%016"PRIX64"\n",
         h, h->getStart());
 
     for ( arm_handler_vec_t::iterator it = m_armHandlers.begin();
@@ -1122,8 +1122,9 @@ bool Ieee1394Service::unregisterARMHandler( ARMHandler *h ) {
  * @return The base address that is free, and 0xFFFFFFFFFFFFFFFF when failed
  */
 nodeaddr_t Ieee1394Service::findFreeARMBlock( nodeaddr_t start, size_t length, size_t step ) {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Finding free ARM block of %d bytes, from 0x%016llX in steps of %d bytes\n",
-        length, start, step);
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "Finding free ARM block of %zd bytes, from 0x%016"PRIX64" in steps of %zd bytes\n",
+                length, start, step);
 
     int cnt=0;
     const int maxcnt=10;
@@ -1134,11 +1135,11 @@ nodeaddr_t Ieee1394Service::findFreeARMBlock( nodeaddr_t start, size_t length, s
         err = raw1394_arm_register(m_handle, start, length, 0, 0, 0, 0, 0);
 
         if (err) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, " -> cannot use 0x%016llX\n", start);
+            debugOutput(DEBUG_LEVEL_VERBOSE, " -> cannot use 0x%016"PRIX64"\n", start);
             debugError("    Error: %s\n", strerror(errno));
             start += step;
         } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, " -> use 0x%016llX\n", start);
+            debugOutput(DEBUG_LEVEL_VERBOSE, " -> use 0x%016"PRIX64"\n", start);
             err = raw1394_arm_unregister(m_handle, start);
             if (err) {
                 debugOutput(DEBUG_LEVEL_VERBOSE, " error unregistering test handler\n");
@@ -1187,7 +1188,7 @@ Ieee1394Service::armHandler(  unsigned long arm_tag,
             raw1394_arm_request_t arm_req = arm_req_resp->request;
             raw1394_arm_response_t arm_resp = arm_req_resp->response;
 
-            debugOutput(DEBUG_LEVEL_VERBOSE,"ARM handler for address 0x%016llX called\n",
+            debugOutput(DEBUG_LEVEL_VERBOSE,"ARM handler for address 0x%016"PRIX64" called\n",
                 (*it)->getStart());
             debugOutput(DEBUG_LEVEL_VERBOSE," request type   : 0x%02X\n", request_type);
             debugOutput(DEBUG_LEVEL_VERBOSE," request length : %04d\n", requested_length);
@@ -1582,7 +1583,7 @@ Ieee1394Service::show()
     debugOutput( DEBUG_LEVEL_VERBOSE, " Name: %s\n", getPortName().c_str() );
     debugOutput( DEBUG_LEVEL_VERBOSE, " CycleTimerHelper: %p, IsoManager: %p, WatchDog: %p\n",
                  m_pCTRHelper, m_pIsoManager, m_pWatchdog );
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Time: %011llu (%03us %04ucy %04uticks)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Time: %011"PRIu64" (%03us %04ucy %04uticks)\n",
                 ctr,
                 (unsigned int)TICKS_TO_SECS( ctr ),
                 (unsigned int)TICKS_TO_CYCLES( ctr ),

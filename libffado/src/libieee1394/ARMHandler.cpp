@@ -122,9 +122,9 @@ Ieee1394Service::ARMHandler::printRequest(struct raw1394_arm_request *arm_req) {
         arm_req->source_nodeid, arm_req->destination_nodeid);
     debugOutput(DEBUG_LEVEL_VERBOSE, "  tlabel: 0x%02X, tcode: 0x%02X, extended tcode: 0x%02X\n",
         arm_req->tlabel, arm_req->tcode, arm_req->extended_transaction_code);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  generation: %lu\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  generation: %u\n",
         arm_req->generation);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  buffer length: %lu\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  buffer length: %u\n",
         arm_req->buffer_length);
     printBufferBytes(DEBUG_LEVEL_VERBOSE, arm_req->buffer_length, arm_req->buffer);
 }

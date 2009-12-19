@@ -153,7 +153,7 @@ BeBoB::BCD::parse()
 
     bytes_read = fread( &m_bcd_version, 1, sizeof( fb_quadlet_t ), m_file );
     if ( bytes_read != sizeof( fb_quadlet_t ) ) {
-        debugError( "parse: %d bytes read at position %d failed\n",
+        debugError( "parse: %zd bytes read at position %d failed\n",
                     sizeof( fb_quadlet_t ),
                     BCDFileVersionOffset );
         return false;
@@ -244,7 +244,7 @@ BeBoB::BCD::read( int addr, fb_quadlet_t* q )
 
     size_t bytes_read = std::fread( q, 1, sizeof( *q ), m_file );
     if ( bytes_read  != sizeof( *q ) ) {
-        debugError( "read: %d byte read failed at position 0x%08x\n",
+        debugError( "read: %zd byte read failed at position 0x%08x\n",
                     sizeof( *q ),  addr );
         return false;
     }
@@ -262,7 +262,7 @@ BeBoB::BCD::read( int addr, fb_octlet_t* o )
 
     size_t bytes_read = std::fread( o, 1, sizeof( *o ), m_file );
     if ( bytes_read  != sizeof( *o ) ) {
-        debugError( "read: %d byte read failed at position 0x%08x\n",
+        debugError( "read: %zd byte read failed at position 0x%08x\n",
                     sizeof( *o ), addr );
         return false;
     }
@@ -280,7 +280,7 @@ BeBoB::BCD::read( int addr, unsigned char* b, size_t len )
 
     size_t bytes_read = std::fread( b, 1, len, m_file );
     if ( bytes_read  != len ) {
-        debugError( "read: %d byte read failed at position 0x%08x\n",
+        debugError( "read: %zd byte read failed at position 0x%08x\n",
                     len, addr );
         return false;
     }

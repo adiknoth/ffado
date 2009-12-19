@@ -375,20 +375,20 @@ Device::getSupportedClockSources() {
     quadlet_t clock_caps;
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &clock_caps);
     uint16_t clocks_supported = (clock_caps >> 16) & 0xFFFF;
-    debugOutput(DEBUG_LEVEL_VERBOSE," Clock caps: 0x%08X, supported=0x%04X\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock caps: 0x%08"PRIX32", supported=0x%04X\n",
                                     clock_caps, clocks_supported);
 
     quadlet_t clock_select;
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clock_select);
     byte_t clock_selected = (clock_select) & 0xFF;
-    debugOutput(DEBUG_LEVEL_VERBOSE," Clock select: 0x%08X, selected=0x%04X\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock select: 0x%08"PRIX32", selected=0x%04X\n",
                                     clock_select, clock_selected);
     quadlet_t extended_status;
     readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &extended_status);
     #ifdef DEBUG
     uint16_t clock_status = (extended_status) & 0xFFFF;
     uint16_t clock_slipping = (extended_status >> 16) & 0xFFFF;
-    debugOutput(DEBUG_LEVEL_VERBOSE," Clock status: 0x%08X, status=0x%04X, slip=0x%04X\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock status: 0x%08"PRIX32", status=0x%04X, slip=0x%04X\n",
                                     extended_status, clock_status, clock_slipping);
     #endif
 
@@ -539,20 +539,20 @@ Device::getActiveClockSource() {
     quadlet_t clock_caps;
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &clock_caps);
     uint16_t clocks_supported = (clock_caps >> 16) & 0xFFFF;
-    debugOutput(DEBUG_LEVEL_VERBOSE," Clock caps: 0x%08X, supported=0x%04X\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock caps: 0x%08"PRIX32", supported=0x%04X\n",
                                     clock_caps, clocks_supported);
 
     quadlet_t clock_select;
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clock_select);
     byte_t id = (clock_select) & 0xFF;
-    debugOutput(DEBUG_LEVEL_VERBOSE," Clock select: 0x%08X, selected=0x%04X\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock select: 0x%08"PRIX32", selected=0x%04X\n",
                                     clock_select, id);
     quadlet_t extended_status;
     readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &extended_status);
     #ifdef DEBUG
     uint16_t clock_status = (extended_status) & 0xFFFF;
     uint16_t clock_slipping = (extended_status >> 16) & 0xFFFF;
-    debugOutput(DEBUG_LEVEL_VERBOSE," Clock status: 0x%08X, status=0x%04X, slip=0x%04X\n",
+    debugOutput(DEBUG_LEVEL_VERBOSE," Clock status: 0x%08"PRIX32", status=0x%04X, slip=0x%04X\n",
                                     extended_status, clock_status, clock_slipping);
     #endif
 
@@ -609,10 +609,10 @@ Device::showDevice()
     debugOutput(DEBUG_LEVEL_VERBOSE," Global param space:\n");
 
     readGlobalRegBlock(DICE_REGISTER_GLOBAL_OWNER, reinterpret_cast<fb_quadlet_t *>(&tmp_octlet), sizeof(fb_octlet_t));
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Owner            : 0x%016X\n",tmp_octlet);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Owner            : 0x%016"PRIX64"\n",tmp_octlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Notification     : 0x%08X\n",tmp_quadlet);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Notification     : 0x%08"PRIX32"\n",tmp_quadlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_NORMAL,"  Nick name        : %s\n",getDeviceNickName().c_str());
@@ -630,16 +630,16 @@ Device::showDevice()
         (tmp_quadlet&0x1?"locked":"not locked"), (tmp_quadlet>>8) & 0xFF);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Extended Status  : 0x%08X\n",tmp_quadlet);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  Extended Status  : 0x%08"PRIX32"\n", tmp_quadlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_SAMPLE_RATE, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Samplerate       : 0x%08X (%lu)\n",tmp_quadlet,tmp_quadlet);
+    debugOutput(DEBUG_LEVEL_NORMAL, "  Samplerate       : 0x%08"PRIX32" (%"PRIu32")\n", tmp_quadlet, tmp_quadlet);
 
     readGlobalRegBlock(DICE_REGISTER_GLOBAL_VERSION, reinterpret_cast<fb_quadlet_t *>(&tmp_quadlet), sizeof(fb_quadlet_t));
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08X\n", tmp_quadlet);
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08"PRIX32"\n", tmp_quadlet);
     
     readGlobalReg(DICE_REGISTER_GLOBAL_VERSION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08X (%u.%u.%u.%u)\n",
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08"PRIX32" (%u.%u.%u.%u)\n",
         tmp_quadlet,
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_A(tmp_quadlet),
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_B(tmp_quadlet),
@@ -648,7 +648,7 @@ Device::showDevice()
         );
 
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock caps       : 0x%08X\n",tmp_quadlet);
+    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock caps       : 0x%08"PRIX32"\n", tmp_quadlet);
 
     diceNameVector names=getClockSourceNameString();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock sources    :\n");
@@ -676,9 +676,9 @@ Device::showDevice()
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb midi channels  : %3d\n", tmp_quadlet);
 
         readTxReg(i, DICE_REGISTER_TX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08X\n", tmp_quadlet);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08"PRIX32"\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_AC3_ENABLE_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08X\n", tmp_quadlet);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08"PRIX32"\n", tmp_quadlet);
 
         diceNameVector channel_names=getTxNameString(i);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
@@ -706,9 +706,9 @@ Device::showDevice()
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb midi channels  : %3d\n", tmp_quadlet);
 
         readTxReg(i, DICE_REGISTER_RX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08X\n", tmp_quadlet);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08"PRIX32"\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_RX_AC3_ENABLE_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08X\n", tmp_quadlet);
+        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08"PRIX32"\n", tmp_quadlet);
 
         diceNameVector channel_names=getRxNameString(i);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
@@ -1131,7 +1131,7 @@ Device::lock() {
         }
     
         if (result != DICE_OWNER_NO_OWNER) {
-            debugWarning("Could not register ourselves as device owner, unexpected register value: 0x%016llX\n", result);
+            debugWarning("Could not register ourselves as device owner, unexpected register value: 0x%016"PRIX64"\n", result);
             return false;
         }
     
@@ -1259,16 +1259,20 @@ Device::startStreamByIndex(int i) {
                 return false;
             }
             int isochannel = reg_isoch;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Snooping RX from channel %d\n", isochannel);
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "(%p) Snooping RX from channel %d\n",
+                        this, isochannel);
             p->setChannel(isochannel);
         } else {
             // allocate ISO channel
             int isochannel = allocateIsoChannel(p->getMaxPacketSize());
             if(isochannel<0) {
-                debugError("Could not allocate iso channel for SP %d (ATX %d)\n",i,n);
+                debugError("Could not allocate iso channel for SP %d (ATX %d)\n", i, n);
                 return false;
             }
-            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Allocated channel %lu for RX\n", isochannel);
+            debugOutput(DEBUG_LEVEL_VERBOSE,
+                        "(%p) Allocated channel %u for RX\n",
+                        this, isochannel);
             p->setChannel(isochannel);
     
             fb_quadlet_t reg_isoch;
@@ -1280,7 +1284,7 @@ Device::startStreamByIndex(int i) {
                 return false;
             }
             if(reg_isoch != 0xFFFFFFFFUL) {
-                debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08X) for ATX %d\n", reg_isoch, n);
+                debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for ATX %d\n", reg_isoch, n);
                 p->setChannel(-1);
                 deallocateIsoChannel(isochannel);
                 return false;
@@ -1310,7 +1314,7 @@ Device::startStreamByIndex(int i) {
                 return false;
             }
             int isochannel = reg_isoch;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Snooping TX from channel %d\n", isochannel);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Snooping TX from channel %d\n", this, isochannel);
             p->setChannel(isochannel);
         } else {
             // allocate ISO channel
@@ -1319,7 +1323,7 @@ Device::startStreamByIndex(int i) {
                 debugError("Could not allocate iso channel for SP %d (ARX %d)\n",i,n);
                 return false;
             }
-            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Allocated channel %lu for TX\n", isochannel);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Allocated channel %u for TX\n", this, isochannel);
             p->setChannel(isochannel);
     
             fb_quadlet_t reg_isoch;
@@ -1331,7 +1335,7 @@ Device::startStreamByIndex(int i) {
                 return false;
             }
             if(reg_isoch != 0xFFFFFFFFUL) {
-                debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08X) for ARX %d\n", reg_isoch, n);
+                debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for ARX %d\n", reg_isoch, n);
                 p->setChannel(-1);
                 deallocateIsoChannel(isochannel);
                 return false;
@@ -1380,7 +1384,7 @@ Device::stopStreamByIndex(int i) {
                 return false;
             }
             if(reg_isoch != isochannel) {
-                debugError("ISO_CHANNEL register != 0x%08X (=0x%08X) for ATX %d\n", isochannel, reg_isoch, n);
+                debugError("ISO_CHANNEL register != 0x%08"PRIX32" (=0x%08"PRIX32") for ATX %d\n", isochannel, reg_isoch, n);
                 return false;
             }
     
@@ -1416,7 +1420,7 @@ Device::stopStreamByIndex(int i) {
                 return false;
             }
             if(reg_isoch != isochannel) {
-                debugError("ISO_CHANNEL register != 0x%08X (=0x%08X) for ARX %d\n", isochannel, reg_isoch, n);
+                debugError("ISO_CHANNEL register != 0x%08"PRIX32" (=0x%08"PRIX32") for ARX %d\n", isochannel, reg_isoch, n);
                 return false;
             }
     
@@ -1733,10 +1737,10 @@ Device::initIoFunctions() {
 
 bool
 Device::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08llX\n", offset);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08"PRIX64"\n", offset);
 
     if(offset >= DICE_INVALID_OFFSET) {
-        debugError("invalid offset: 0x%016llX\n", offset);
+        debugError("invalid offset: 0x%016"PRIX64"\n", offset);
         return false;
     }
 
@@ -1744,24 +1748,24 @@ Device::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
     if(!get1394Service().read_quadlet( nodeId, addr, result ) ) {
-        debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
+        debugError("Could not read from node 0x%04X addr 0x%12"PRIX64"\n", nodeId, addr);
         return false;
     }
 
     *result = CondSwapFromBus32(*result);
 
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08X\n", *result);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08"PRIX32"\n", *result);
 
     return true;
 }
 
 bool
 Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, data: 0x%08X\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08"PRIX64", data: 0x%08"PRIX32"\n",
         offset, data);
 
     if(offset >= DICE_INVALID_OFFSET) {
-        debugError("invalid offset: 0x%016llX\n", offset);
+        debugError("invalid offset: 0x%012"PRIX64"\n", offset);
         return false;
     }
 
@@ -1769,7 +1773,7 @@ Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
 
     if(!get1394Service().write_quadlet( nodeId, addr, CondSwapToBus32(data) ) ) {
-        debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
+        debugError("Could not write to node 0x%04X addr 0x%12"PRIX64"\n", nodeId, addr);
         return false;
     }
     return true;
@@ -1777,12 +1781,13 @@ Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
 
 bool
 Device::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERBOSE,"Reading base register offset 0x%08llX, length %u, to %p\n",
-        offset, length, data);
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "Reading base register offset 0x%08"PRIX64", length %zd, to %p\n",
+                offset, length, data);
     const int blocksize_quads = 512/4;
 
     if(offset >= DICE_INVALID_OFFSET) {
-        debugError("invalid offset: 0x%016llX\n", offset);
+        debugError("invalid offset: 0x%012"PRIX64"\n", offset);
         return false;
     }
 
@@ -1795,7 +1800,7 @@ Device::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
         fb_nodeaddr_t curr_addr = addr + quads_done*4;
         fb_quadlet_t *curr_data = data + quads_done;
         int quads_todo = length_quads - quads_done;
-        debugOutput(DEBUG_LEVEL_VERBOSE, "reading addr: 0x%016llX, %d quads to %p\n", curr_addr, quads_todo, curr_data);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "reading addr: 0x%012"PRIX64", %d quads to %p\n", curr_addr, quads_todo, curr_data);
         
         if (quads_todo > blocksize_quads) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Truncating read from %d to %d quadlets\n", quads_todo, blocksize_quads);
@@ -1808,7 +1813,7 @@ Device::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
         #endif
 
         if(!get1394Service().read( nodeId, curr_addr, quads_todo, curr_data ) ) {
-            debugError("Could not read %d quadlets from node 0x%04X addr 0x%012llX\n", quads_todo, nodeId, curr_addr);
+            debugError("Could not read %d quadlets from node 0x%04X addr 0x%012"PRIX64"\n", quads_todo, nodeId, curr_addr);
             return false;
         }
         quads_done += quads_todo;
@@ -1820,12 +1825,12 @@ Device::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
 
 bool
 Device::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08llX, length: %u\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08"PRIX64", length: %zd\n",
         offset, length);
     const int blocksize_quads = 512/4;
 
     if(offset >= DICE_INVALID_OFFSET) {
-        debugError("invalid offset: 0x%016llX\n", offset);
+        debugError("invalid offset: 0x%012"PRIX64"\n", offset);
         return false;
     }
 
@@ -1852,7 +1857,7 @@ Device::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
         #endif
 
         if(!get1394Service().write( nodeId, addr, quads_todo, curr_data ) ) {
-            debugError("Could not write %d quadlets to node 0x%04X addr 0x%012llX\n", quads_todo, nodeId, curr_addr);
+            debugError("Could not write %d quadlets to node 0x%04X addr 0x%012"PRIX64"\n", quads_todo, nodeId, curr_addr);
             return false;
         }
         quads_done += quads_todo;
@@ -1863,7 +1868,7 @@ Device::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
 
 bool
 Device::readGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register offset 0x%04llX\n", offset);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register offset 0x%04"PRIX64"\n", offset);
 
     fb_nodeaddr_t offset_gl = globalOffsetGen(offset, sizeof(fb_quadlet_t));
     return readReg(m_global_reg_offset + offset_gl, result);
@@ -1871,7 +1876,7 @@ Device::readGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
 
 bool
 Device::writeGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register offset 0x%08llX, data: 0x%08X\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register offset 0x%08"PRIX64", data: 0x%08"PRIX32"\n",
         offset, data);
 
     fb_nodeaddr_t offset_gl = globalOffsetGen(offset, sizeof(fb_quadlet_t));
@@ -1880,7 +1885,7 @@ Device::writeGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
 
 bool
 Device::readGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register block offset 0x%04llX, length %u bytes\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading global register block offset 0x%04"PRIX64", length %zd bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_gl = globalOffsetGen(offset, length);
@@ -1889,7 +1894,7 @@ Device::readGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t leng
 
 bool
 Device::writeGlobalRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register block offset 0x%04llX, length %u bytes\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing global register block offset 0x%04"PRIX64", length: %zd bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_gl = globalOffsetGen(offset, length);
@@ -1907,7 +1912,7 @@ Device::globalOffsetGen(fb_nodeaddr_t offset, size_t length) {
     }
     // out-of-range check
     if(offset+length > m_global_reg_offset+m_global_reg_size) {
-        debugError("register offset+length too large: 0x%0llX\n", offset + length);
+        debugError("register offset+length too large: 0x%04"PRIX64"\n", offset + length);
         return DICE_INVALID_OFFSET;
     }
 
@@ -1916,7 +1921,7 @@ Device::globalOffsetGen(fb_nodeaddr_t offset, size_t length) {
 
 bool
 Device::readTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Reading tx %d register offset 0x%04llX\n", i, offset);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "Reading tx %d register offset 0x%04"PRIX64"\n", i, offset);
 
     fb_nodeaddr_t offset_tx = txOffsetGen(i, offset, sizeof(fb_quadlet_t));
     return readReg(m_tx_reg_offset + offset_tx, result);
@@ -1924,7 +1929,7 @@ Device::readTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
 
 bool
 Device::writeTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing tx %d register offset 0x%08llX, data: 0x%08X\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing tx %d register offset 0x%08"PRIX64", data: 0x%08"PRIX32"\n",
         i, offset, data);
 
     fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, sizeof(fb_quadlet_t));
@@ -1933,7 +1938,7 @@ Device::writeTxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) {
 
 bool
 Device::readTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04"PRIX64", length: %zd bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, length);
@@ -1942,7 +1947,7 @@ Device::readTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data,
 
 bool
 Device::writeTxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04llX, length %u bytes\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04"PRIX64", length: %zd bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_tx=txOffsetGen(i, offset, length);
@@ -1974,7 +1979,7 @@ Device::txOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
 
     // out-of-range check
     if(offset_tx + length > m_tx_reg_offset+4+m_tx_reg_size*m_nb_tx) {
-        debugError("register offset+length too large: 0x%0llX\n", offset_tx + length);
+        debugError("register offset+length too large: 0x%04"PRIX64"\n", offset_tx + length);
         return DICE_INVALID_OFFSET;
     }
 
@@ -1983,7 +1988,7 @@ Device::txOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
 
 bool
 Device::readRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx %d register offset 0x%04llX\n", i, offset);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx %d register offset 0x%04"PRIX64"\n", i, offset);
 
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, sizeof(fb_quadlet_t));
     return readReg(m_rx_reg_offset + offset_rx, result);
@@ -1991,7 +1996,7 @@ Device::readRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) {
 
 bool
 Device::writeRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register offset 0x%08llX, data: 0x%08X\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register offset 0x%08"PRIX64", data: 0x%08"PRIX32"\n",
         offset, data);
 
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, sizeof(fb_quadlet_t));
@@ -2000,7 +2005,7 @@ Device::writeRxReg(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) {
 
 bool
 Device::readRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04llX, length %u bytes\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading rx register block offset 0x%04"PRIX64", length: %zd bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, length);
@@ -2009,7 +2014,7 @@ Device::readRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data,
 
 bool
 Device::writeRxRegBlock(unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04llX, length %u bytes\n",
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing rx register block offset 0x%04"PRIX64", length: %zd bytes\n",
         offset, length);
 
     fb_nodeaddr_t offset_rx=rxOffsetGen(i, offset, length);
@@ -2041,7 +2046,7 @@ Device::rxOffsetGen(unsigned int i, fb_nodeaddr_t offset, size_t length) {
 
     // out-of-range check
     if(offset_rx + length > m_rx_reg_offset+4+m_rx_reg_size*m_nb_rx) {
-        debugError("register offset+length too large: 0x%0llX\n", offset_rx + length);
+        debugError("register offset+length too large: 0x%04"PRIX64"\n", offset_rx + length);
         return DICE_INVALID_OFFSET;
     }
     return offset_rx;

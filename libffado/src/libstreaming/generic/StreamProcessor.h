@@ -297,15 +297,11 @@ protected:
 
 //--- data buffering and accounting
 public:
-    void getBufferHeadTimestamp ( ffado_timestamp_t *ts, signed int *fc )
-        {m_data_buffer->getBufferHeadTimestamp(ts, fc);};
-    void getBufferTailTimestamp ( ffado_timestamp_t *ts, signed int *fc )
-        {m_data_buffer->getBufferTailTimestamp(ts, fc);};
+    void getBufferHeadTimestamp ( ffado_timestamp_t *ts, signed int *fc );
+    void getBufferTailTimestamp ( ffado_timestamp_t *ts, signed int *fc );
 
-    void setBufferTailTimestamp ( ffado_timestamp_t new_timestamp )
-        {m_data_buffer->setBufferTailTimestamp(new_timestamp);};
-    void setBufferHeadTimestamp ( ffado_timestamp_t new_timestamp )
-        {m_data_buffer->setBufferHeadTimestamp(new_timestamp);};
+    void setBufferTailTimestamp ( ffado_timestamp_t new_timestamp );
+    void setBufferHeadTimestamp ( ffado_timestamp_t new_timestamp );
 protected:
     Util::TimestampedBuffer *m_data_buffer;
     // the scratch buffer is temporary buffer space that can be
@@ -331,57 +327,32 @@ protected:
         bool canClientTransferFrames(unsigned int nframes);
 
         /**
-         * \brief return the time until the next period boundary should be signaled (in microseconds)
+         * \brief return the time of the next period boundary (in internal units)
          *
-         * Return the time until the next period boundary signal. If this StreamProcessor
-         * is the current synchronization source, this function is called to
-         * determine when a buffer transfer can be made. When this value is
-         * smaller than 0, a period boundary is assumed to be crossed, hence a
-         * transfer can be made.
-         *
-         * \return the time in usecs
-         */
-        int64_t getTimeUntilNextPeriodSignalUsecs();
-        /**
-         * \brief return the time of the next period boundary (in microseconds)
-         *
-         * Returns the time of the next period boundary, in microseconds. The
-         * goal of this function is to determine the exact point of the period
+         * Returns the time of the next period boundary, in internal units, i.e.
+         * in ticks of the 1394 clock of the bus the device is attached to.
+         * The goal of this function is to determine the exact point of the period
          * boundary. This is assumed to be the point at which the buffer transfer should
          * take place, meaning that it can be used as a reference timestamp for transmitting
          * StreamProcessors
-         *
-         * \return the time in usecs
-         */
-        uint64_t getTimeAtPeriodUsecs();
-
-        /**
-         * \brief return the time of the next period boundary (in internal units)
-         *
-         * The same as getTimeAtPeriodUsecs() but in internal units.
          *
          * @return the time in internal units
          */
         uint64_t getTimeAtPeriod();
 
-        uint64_t getTimeNow(); // FIXME: should disappear
-
-
         /**
-         * Returns the sync delay. This is the time a syncsource
-         * delays a period signal, e.g. to cope with buffering.
-         * @return the sync delay (in ticks)
+         * For RECEIVE:
+         * this is the extra amount of space in the receive buffer
+         *
+         * For XMIT:
+         * Sets the number of frames that should be prebuffered
+         * into the ISO transmit buffers. A higher number here means
+         * more reliable operation. It also means higher latency
+         *
+         * @param frames 
          */
-        unsigned int getSyncDelay();
-        unsigned int getSyncDelayFrames();
-        /**
-         * sets the sync delay
-         * 
-         * note: will be rounded to an integer number of packets
-         * 
-         * @param d sync delay
-         */
-        void setSyncDelay(unsigned int ticks);
+        void setExtraBufferFrames(unsigned int frames);
+        unsigned int getExtraBufferFrames();
 
         /**
          * @brief get the maximal frame latency
@@ -452,7 +423,7 @@ protected:
     protected:
         float m_ticks_per_frame;
         float m_dll_bandwidth_hz;
-        unsigned int m_sync_delay_frames;
+        unsigned int m_extra_buffer_frames;
     private:
         bool m_in_xrun;
 

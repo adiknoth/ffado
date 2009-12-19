@@ -116,7 +116,7 @@ Util::XMLSerialize::write( std::string strMemberName,
             // element to be added
             Xml::Node& n = pNode->add( Xml::Node(tokens[tokens.size() - 1].c_str(), NULL) );
             char* valstr;
-            asprintf( &valstr, "%lld", value );
+            asprintf( &valstr, "%"PRId64"", value );
             n.set_child_text( valstr );
             free( valstr );
         } else {
