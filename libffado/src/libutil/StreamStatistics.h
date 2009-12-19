@@ -46,11 +46,11 @@ public:
 
     std::string m_name;
 
-    long m_count;
+    int64_t m_count;
     float m_average;
-    long m_min;
-    long m_max;
-    long m_sum;
+    int64_t m_min;
+    int64_t m_max;
+    int64_t m_sum;
 
     // some tools to do run statistics
     // will keep a histogram of the number of times a certain value

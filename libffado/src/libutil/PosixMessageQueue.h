@@ -24,9 +24,14 @@
 #ifndef __UTIL_POSIX_MESSAGE_QUEUE__
 #define __UTIL_POSIX_MESSAGE_QUEUE__
 
-#include "debugmodule/debugmodule.h"
+#ifdef _XOPEN_SOURCE
+#undef _XOPEN_SOURCE
+#endif
 
 #define _XOPEN_SOURCE 600
+
+#include "debugmodule/debugmodule.h"
+
 #include <time.h>
 #include <mqueue.h>
 #include <string>

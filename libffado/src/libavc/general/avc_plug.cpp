@@ -1422,6 +1422,8 @@ Plug::plugDirectionToString(enum EPlugDirection t) {
             return string("Input");
         case eAPD_Output:
             return string("Output");
+        case eAPD_Unknown:
+            return string("Unknown");
     }
 }
 
