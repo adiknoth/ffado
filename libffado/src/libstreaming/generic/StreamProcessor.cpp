@@ -21,8 +21,6 @@
  *
  */
 
-
-
 #include "StreamProcessor.h"
 #include "../StreamProcessorManager.h"
 
@@ -1892,13 +1890,7 @@ StreamProcessor::dumpInfo()
     #ifdef DEBUG
     debugOutputShort( DEBUG_LEVEL_NORMAL, " StreamProcessor %p, %s:\n", this, ePTToString(m_processor_type));
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Port, Channel    : %d, %d\n", m_1394service.getPort(), m_channel);
-    IsoHandler *h = m_IsoHandlerManager.getHandlerForStream(this);
-    if (h) {
-        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packets, Dropped, Skipped : %d, %d, %d\n",
-                                              h->m_packets, h->m_dropped, h->m_skipped);
-    } else {
-        debugError("No handler for stream??\n");
-    }
+    m_IsoHandlerManager.dumpInfoForStream(this);
     uint64_t now = m_1394service.getCycleTimerTicks();
     debugOutputShort( DEBUG_LEVEL_NORMAL, "  Now                   : %011"PRIu64" (%03us %04uc %04ut)\n",
                         now,

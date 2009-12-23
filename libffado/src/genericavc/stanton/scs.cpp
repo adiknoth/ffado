@@ -148,8 +148,9 @@ ScsDevice::initMessageHandler() {
 
 bool
 ScsDevice::writeHSS1394Message(enum eMessageType message_type, byte_t* buffer, size_t len) {
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing message type: %02X, length: %zd bytes\n",
-        message_type, len);
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                "Writing message type: %02X, length: %zd bytes\n",
+                message_type, len);
     size_t len_quadlets = len/4 + 1;
 
     fb_nodeaddr_t addr = HSS1394_BASE_ADDRESS;

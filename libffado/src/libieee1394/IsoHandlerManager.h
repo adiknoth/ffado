@@ -30,8 +30,6 @@
 
 #include "libutil/Thread.h"
 
-#include "IsoHandler.h"
-
 #include <sys/poll.h>
 #include <errno.h>
 #include <vector>
@@ -46,85 +44,6 @@ namespace Streaming {
     typedef std::vector<StreamProcessor *> StreamProcessorVector;
     typedef std::vector<StreamProcessor *>::iterator StreamProcessorVectorIterator;
 }
-
-typedef std::vector<IsoHandler *> IsoHandlerVector;
-typedef std::vector<IsoHandler *>::iterator IsoHandlerVectorIterator;
-
-class IsoHandlerManager;
-
-// threads that will handle the packet framing
-// one thread per direction, as a compromise for one per
-// channel and one for all
-class IsoTask : public Util::RunnableInterface
-{
-    friend class IsoHandlerManager;
-    public:
-        IsoTask(IsoHandlerManager& manager, enum IsoHandler::EHandlerType);
-        virtual ~IsoTask();
-
-    public:
-        bool Init();
-        bool Execute();
-
-        /**
-         * @brief requests the thread to sync it's stream map with the manager
-         */
-        void requestShadowMapUpdate();
-        enum eActivityResult {
-            eAR_Activity,
-            eAR_Timeout,
-            eAR_Interrupted,
-            eAR_Error
-        };
-
-        /**
-         * @brief signals that something happened in one of the clients of this task
-         */
-        void signalActivity();
-        /**
-         * @brief wait until something happened in one of the clients of this task
-         */
-        enum eActivityResult waitForActivity();
-
-        /**
-         * @brief This should be called when a busreset has happened.
-         */
-        bool handleBusReset();
-
-        void setVerboseLevel(int i);
-    protected:
-        IsoHandlerManager& m_manager;
-
-        // the event request structure
-        int32_t request_update;
-
-        // static allocation due to RT constraints
-        // this is the map used by the actual thread
-        // it is a shadow of the m_StreamProcessors vector
-        struct pollfd   m_poll_fds_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
-        IsoHandler *    m_IsoHandler_map_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
-        unsigned int    m_poll_nfds_shadow;
-        IsoHandler *    m_SyncIsoHandler;
-
-        // updates the streams map
-        void updateShadowMapHelper();
-
-#ifdef DEBUG
-        uint64_t m_last_loop_entry;
-        int m_successive_short_loops;
-#endif
-
-        enum IsoHandler::EHandlerType m_handlerType;
-        bool m_running;
-        bool m_in_busreset;
-
-        // activity signaling
-        sem_t m_activity_semaphore;
-        long long int m_activity_wait_timeout_nsec;
-
-        // debug stuff
-        DECLARE_DEBUG_MODULE;
-};
 
 /*!
 \brief The ISO Handler management class
@@ -142,6 +61,259 @@ class IsoHandlerManager
 {
     friend class IsoTask;
 
+////
+/*!
+    \brief The Base Class for ISO Handlers
+
+    These classes perform the actual ISO communication through libraw1394.
+    They are different from Streaming::StreamProcessors because one handler can provide multiple
+    streams with packets in case of ISO multichannel receive.
+
+ */
+
+    class IsoHandler
+    {
+        public:
+            enum EHandlerType {
+                eHT_Receive,
+                eHT_Transmit
+            };
+            IsoHandler(IsoHandlerManager& manager, enum EHandlerType t);
+            IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
+                       unsigned int buf_packets, unsigned int max_packet_size, int irq);
+            IsoHandler(IsoHandlerManager& manager, enum EHandlerType t,
+                       unsigned int buf_packets, unsigned int max_packet_size, int irq, enum raw1394_iso_speed speed);
+            ~IsoHandler();
+
+            private: // the ISO callback interface
+                static enum raw1394_iso_disposition
+                        iso_receive_handler(raw1394handle_t handle, unsigned char *data,
+                                            unsigned int length, unsigned char channel,
+                                            unsigned char tag, unsigned char sy, unsigned int cycle,
+                                            unsigned int dropped);
+
+                enum raw1394_iso_disposition
+                        putPacket(unsigned char *data, unsigned int length,
+                                  unsigned char channel, unsigned char tag, unsigned char sy,
+                                  unsigned int cycle, unsigned int dropped);
+
+                static enum raw1394_iso_disposition iso_transmit_handler(raw1394handle_t handle,
+                        unsigned char *data, unsigned int *length,
+                        unsigned char *tag, unsigned char *sy,
+                        int cycle, unsigned int dropped);
+                enum raw1394_iso_disposition
+                        getPacket(unsigned char *data, unsigned int *length,
+                                  unsigned char *tag, unsigned char *sy,
+                                  int cycle, unsigned int dropped, unsigned int skipped);
+
+        public:
+
+    /**
+         * Iterate the handler, transporting ISO packets to the client(s)
+         * @return true if success
+     */
+            bool iterate();
+
+    /**
+             * Iterate the handler, transporting ISO packets to the client(s)
+             * @param  ctr_now the CTR time at which the iterate call is done.
+             * @return true if success
+     */
+            bool iterate(uint32_t ctr_now);
+
+            int getFileDescriptor() { return raw1394_get_fd(m_handle);};
+
+            bool init();
+            void setVerboseLevel(int l);
+
+    // the enable/disable functions should only be used from within the loop that iterates()
+    // but not from within the iterate callback. use the requestEnable / requestDisable functions
+    // for that
+            bool enable() {return enable(-1);};
+            bool enable(int cycle);
+            bool disable();
+
+    // functions to request enable or disable at the next opportunity
+            bool requestEnable(int cycle = -1);
+            bool requestDisable();
+
+    /**
+             * updates the internal state if required
+     */
+            void updateState();
+
+            enum EHandlerType getType() {return m_type;};
+            const char *getTypeString() {return eHTToString(m_type); };
+
+    // pretty printing
+            const char *eHTToString(enum EHandlerType);
+
+            bool isEnabled()
+            {return m_State == eHS_Running;};
+
+    // no setter functions, because those would require a re-init
+            unsigned int getMaxPacketSize() { return m_max_packet_size;};
+            unsigned int getNbBuffers() { return m_buf_packets;};
+            int getIrqInterval() { return m_irq_interval;};
+
+            void dumpInfo();
+
+            bool inUse() {return (m_Client != 0) ;};
+            bool isStreamRegistered(Streaming::StreamProcessor *s) {return (m_Client == s);};
+
+            bool registerStream(Streaming::StreamProcessor *);
+            bool unregisterStream(Streaming::StreamProcessor *);
+
+            bool canIterateClient(); // FIXME: implement with functor
+
+
+    /**
+             * @brief get last cycle number seen by handler
+             * @return cycle number
+     */
+            int getLastCycle() {return m_last_cycle;};
+
+    /**
+             * @brief returns the CTR value saved at the last iterate() call
+             * @return CTR value saved at last iterate() call
+     */
+            uint32_t getLastIterateTime() {return m_last_now;};
+
+    /**
+             * @brief returns the CTR value saved at the last iterate handler call
+             * @return CTR value saved at last iterate handler call
+     */
+            uint32_t getLastPacketTime() {return m_last_packet_handled_at;};
+
+    /**
+             * @brief set iso receive mode. doesn't have any effect if the stream is running
+             * @param m receive mode
+     */
+            void setReceiveMode(enum raw1394_iso_dma_recv_mode m)
+            {m_receive_mode = m;}
+
+            void notifyOfDeath();
+            bool handleBusReset();
+
+        private:
+            IsoHandlerManager& m_manager;
+            enum EHandlerType m_type;
+            raw1394handle_t m_handle;
+            unsigned int    m_buf_packets;
+            unsigned int    m_max_packet_size;
+            int             m_irq_interval;
+            int             m_last_cycle;
+            uint32_t        m_last_now;
+            uint32_t        m_last_packet_handled_at;
+            enum raw1394_iso_dma_recv_mode m_receive_mode;
+
+            Streaming::StreamProcessor *m_Client; // FIXME: implement with functors
+
+            enum raw1394_iso_speed m_speed;
+
+    // the state machine
+            enum EHandlerStates {
+                eHS_Stopped,
+                eHS_Running,
+                eHS_Error,
+            };
+            enum EHandlerStates m_State;
+            enum EHandlerStates m_NextState;
+            int m_switch_on_cycle;
+
+        public:
+            unsigned int    m_packets;
+#ifdef DEBUG
+            unsigned int    m_dropped;
+            unsigned int    m_skipped;
+            int             m_min_ahead;
+#endif
+
+        protected:
+            DECLARE_DEBUG_MODULE;
+    };
+
+    typedef std::vector<IsoHandler *> IsoHandlerVector;
+    typedef std::vector<IsoHandler *>::iterator IsoHandlerVectorIterator;
+
+////
+    
+// threads that will handle the packet framing
+// one thread per direction, as a compromise for one per
+// channel and one for all
+    class IsoTask : public Util::RunnableInterface
+    {
+        friend class IsoHandlerManager;
+        public:
+            IsoTask(IsoHandlerManager& manager, enum IsoHandler::EHandlerType);
+            virtual ~IsoTask();
+
+        private:
+            bool Init();
+            bool Execute();
+
+        /**
+             * @brief requests the thread to sync it's stream map with the manager
+         */
+            void requestShadowMapUpdate();
+            enum eActivityResult {
+                eAR_Activity,
+                eAR_Timeout,
+                eAR_Interrupted,
+                eAR_Error
+            };
+
+        /**
+             * @brief signals that something happened in one of the clients of this task
+         */
+            void signalActivity();
+        /**
+             * @brief wait until something happened in one of the clients of this task
+         */
+            enum eActivityResult waitForActivity();
+
+        /**
+             * @brief This should be called when a busreset has happened.
+         */
+            bool handleBusReset();
+
+            void setVerboseLevel(int i);
+
+        protected:
+            IsoHandlerManager& m_manager;
+
+        // the event request structure
+            int32_t request_update;
+
+        // static allocation due to RT constraints
+        // this is the map used by the actual thread
+        // it is a shadow of the m_StreamProcessors vector
+            struct pollfd   m_poll_fds_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
+            IsoHandler *    m_IsoHandler_map_shadow[ISOHANDLERMANAGER_MAX_ISO_HANDLERS_PER_PORT];
+            unsigned int    m_poll_nfds_shadow;
+            IsoHandler *    m_SyncIsoHandler;
+
+        // updates the streams map
+            void updateShadowMapHelper();
+
+#ifdef DEBUG
+            uint64_t m_last_loop_entry;
+            int m_successive_short_loops;
+#endif
+
+            enum IsoHandler::EHandlerType m_handlerType;
+            bool m_running;
+            bool m_in_busreset;
+
+        // activity signaling
+            sem_t m_activity_semaphore;
+            long long int m_activity_wait_timeout_nsec;
+
+        // debug stuff
+            DECLARE_DEBUG_MODULE;
+    };
+    
+//// the IsoHandlerManager itself
     public:
 
         IsoHandlerManager(Ieee1394Service& service);
@@ -153,6 +325,7 @@ class IsoHandlerManager
         void setVerboseLevel(int l); ///< set the verbose level
 
         void dumpInfo(); ///< print some information about the manager to stdout/stderr
+        void dumpInfoForStream(Streaming::StreamProcessor *); ///< print some info about the stream's handler
 
         bool registerStream(Streaming::StreamProcessor *); ///< register an iso stream with the manager
         bool unregisterStream(Streaming::StreamProcessor *); ///< unregister an iso stream from the manager
@@ -184,12 +357,11 @@ class IsoHandlerManager
          * expressed in cycles
          */
         int getPacketLatencyForStream(Streaming::StreamProcessor *);
-
+    private:
         IsoHandler * getHandlerForStream(Streaming::StreamProcessor *stream);
-
-        Ieee1394Service& get1394Service() {return m_service;};
-
         void requestShadowMapUpdate();
+    public:
+        Ieee1394Service& get1394Service() {return m_service;};
 
         /**
          * This should be called when a busreset has happened.

@@ -1425,6 +1425,7 @@ Plug::plugDirectionToString(enum EPlugDirection t) {
         case eAPD_Unknown:
             return string("Unknown");
     }
+    return string("ERROR");
 }
 
 void
