@@ -25,14 +25,14 @@
 #ifndef DICE_FOCUSRITE_FOCUSRITE_EAP_H
 #define DICE_FOCUSRITE_FOCUSRITE_EAP_H
 
-#include "dice/dice_avdevice.h"
+#include "dice/dice_eap.h"
 
 #include "libieee1394/configrom.h"
 
 namespace Dice {
 namespace Focusrite {
 
-class FocusriteEAP : public Dice::Device::EAP
+class FocusriteEAP : public Dice::EAP
 {
 public:
     /**

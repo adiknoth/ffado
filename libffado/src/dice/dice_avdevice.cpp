@@ -161,7 +161,7 @@ Device::discover()
         return false;
     }
 
-    bool supports_eap = Device::EAP::supportsEAP(*this);
+    bool supports_eap = EAP::supportsEAP(*this);
     if (supports_eap) { // FIXME: move to buildMixer() ??
         m_eap = createEAP();
         if(m_eap == NULL) {
@@ -183,9 +183,9 @@ Device::discover()
     return true;
 }
 
-Device::EAP*
+EAP*
 Device::createEAP() {
-    return new Device::EAP(*this);
+    return new EAP(*this);
 }
 
 enum Device::eDiceConfig
@@ -1504,7 +1504,7 @@ Device::maskedCheckNotZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask) {
     return !maskedCheckZeroGlobalReg(offset, mask);
 }
 
-Device::diceNameVector
+diceNameVector
 Device::getTxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_TX_NAMES_SIZE+1];
@@ -1524,7 +1524,7 @@ Device::getTxNameString(unsigned int i) {
     return splitNameString(std::string(namestring));
 }
 
-Device::diceNameVector
+diceNameVector
 Device::getRxNameString(unsigned int i) {
     diceNameVector names;
     char namestring[DICE_RX_NAMES_SIZE+1];
@@ -1544,7 +1544,7 @@ Device::getRxNameString(unsigned int i) {
     return splitNameString(std::string(namestring));
 }
 
-Device::diceNameVector
+diceNameVector
 Device::getClockSourceNameString() {
     diceNameVector names;
     char namestring[DICE_CLOCKSOURCENAMES_SIZE+1];
@@ -1602,7 +1602,7 @@ Device::setDeviceNickName(std::string name) {
     return true;
 }
 
-Device::diceNameVector
+diceNameVector
 Device::splitNameString(std::string in) {
     diceNameVector names;
 

@@ -61,7 +61,7 @@ private:
         Poti* getMonitorPoti(std::string);
         Poti* getDimPoti(std::string);
     };
-    Dice::Device::EAP* createEAP();
+    Dice::EAP* createEAP();
 
     class LineInstSwitch;
     LineInstSwitch *m_ch1, *m_ch2;

@@ -69,11 +69,10 @@ dstBlockToString(const char id)
     }
 }
 
+IMPL_DEBUG_MODULE( EAP, EAP, DEBUG_LEVEL_NORMAL );
 
-Device::EAP::EAP(Device &d)
+EAP::EAP(Device &d)
 : Control::Container(&d, "EAP")
-, m_debugModule(d.m_debugModule) // NOTE: has to be initialized before creating the config classes
-                                 //       otherwise the reference content used by those is bogus
 , m_device(d)
 , m_mixer( NULL )
 , m_router( NULL )
@@ -86,7 +85,7 @@ Device::EAP::EAP(Device &d)
 {
 }
 
-Device::EAP::~EAP()
+EAP::~EAP()
 {
     // remove all control elements registered to this device (w/o free)
     clearElements(false);
@@ -106,7 +105,7 @@ Device::EAP::~EAP()
 }
 
 bool
-Device::EAP::init() {
+EAP::init() {
     if(!supportsEAP(m_device)) {
         debugError("Device does not support EAP");
         return false;
@@ -209,7 +208,7 @@ Device::EAP::init() {
 }
 
 bool
-Device::EAP::updateConfigurationCache()
+EAP::updateConfigurationCache()
 {
     if(!m_current_cfg_routing_low.read()) {
         debugError("Could not initialize current routing configuration (low rates)\n");
@@ -243,13 +242,13 @@ Device::EAP::updateConfigurationCache()
  * Returns the router configuration for the current rate mode
  * @return 
  */
-Device::EAP::RouterConfig *
-Device::EAP::getActiveRouterConfig()
+EAP::RouterConfig *
+EAP::getActiveRouterConfig()
 {
     switch(m_device.getCurrentConfig()) {
-        case eDC_Low: return &m_current_cfg_routing_low;
-        case eDC_Mid: return &m_current_cfg_routing_mid;
-        case eDC_High: return &m_current_cfg_routing_high;
+        case Device::eDC_Low: return &m_current_cfg_routing_low;
+        case Device::eDC_Mid: return &m_current_cfg_routing_mid;
+        case Device::eDC_High: return &m_current_cfg_routing_high;
         default:
             debugError("Unsupported configuration mode\n");
             return NULL;
@@ -260,13 +259,13 @@ Device::EAP::getActiveRouterConfig()
  * Returns the stream configuration for the current rate mode
  * @return 
  */
-Device::EAP::StreamConfig *
-Device::EAP::getActiveStreamConfig()
+EAP::StreamConfig *
+EAP::getActiveStreamConfig()
 {
     switch(m_device.getCurrentConfig()) {
-        case eDC_Low: return &m_current_cfg_stream_low;
-        case eDC_Mid: return &m_current_cfg_stream_mid;
-        case eDC_High: return &m_current_cfg_stream_high;
+        case Device::eDC_Low: return &m_current_cfg_stream_low;
+        case Device::eDC_Mid: return &m_current_cfg_stream_mid;
+        case Device::eDC_High: return &m_current_cfg_stream_high;
         default:
             debugError("Unsupported configuration mode\n");
             return NULL;
@@ -282,7 +281,7 @@ Device::EAP::getActiveStreamConfig()
  * @return true if successful, false otherwise
  */
 bool
-Device::EAP::updateRouterConfig(RouterConfig& rcfg, bool low, bool mid, bool high) {
+EAP::updateRouterConfig(RouterConfig& rcfg, bool low, bool mid, bool high) {
     // write the router config to the appropriate memory space on the device
     if(!rcfg.write(eRT_NewRouting, 0)) {
         debugError("Could not write new router configuration\n");
@@ -304,11 +303,11 @@ Device::EAP::updateRouterConfig(RouterConfig& rcfg, bool low, bool mid, bool hig
  * @return true if successful, false otherwise
  */
 bool
-Device::EAP::updateCurrentRouterConfig(RouterConfig& rcfg) {
+EAP::updateCurrentRouterConfig(RouterConfig& rcfg) {
     switch(m_device.getCurrentConfig()) {
-        case eDC_Low: return updateRouterConfig(rcfg, true, false, false);
-        case eDC_Mid: return updateRouterConfig(rcfg, false, true, false);
-        case eDC_High: return updateRouterConfig(rcfg, false, false, true);
+        case Device::eDC_Low: return updateRouterConfig(rcfg, true, false, false);
+        case Device::eDC_Mid: return updateRouterConfig(rcfg, false, true, false);
+        case Device::eDC_High: return updateRouterConfig(rcfg, false, false, true);
         default:
             debugError("Unsupported configuration mode\n");
             return false;
@@ -324,7 +323,7 @@ Device::EAP::updateCurrentRouterConfig(RouterConfig& rcfg) {
  * @return true if successful, false otherwise
  */
 bool
-Device::EAP::updateStreamConfig(StreamConfig& scfg, bool low, bool mid, bool high) {
+EAP::updateStreamConfig(StreamConfig& scfg, bool low, bool mid, bool high) {
     // write the stream config to the appropriate memory space on the device
     if(!scfg.write(eRT_NewStreamCfg, 0)) {
         debugError("Could not write new stream configuration\n");
@@ -349,7 +348,7 @@ Device::EAP::updateStreamConfig(StreamConfig& scfg, bool low, bool mid, bool hig
  * @return true if successful, false otherwise
  */
 bool
-Device::EAP::updateStreamConfig(RouterConfig& rcfg, StreamConfig& scfg, bool low, bool mid, bool high) {
+EAP::updateStreamConfig(RouterConfig& rcfg, StreamConfig& scfg, bool low, bool mid, bool high) {
     // write the router config to the appropriate memory space on the device
     if(!rcfg.write(eRT_NewRouting, 0)) {
         debugError("Could not write new router configuration\n");
@@ -371,7 +370,7 @@ Device::EAP::updateStreamConfig(RouterConfig& rcfg, StreamConfig& scfg, bool low
 
 
 bool
-Device::EAP::loadFlashConfig() {
+EAP::loadFlashConfig() {
     bool retval = true;
     debugWarning("Untested code\n");
     fb_quadlet_t cmd = DICE_EAP_CMD_OPCODE_LD_FLASH_CFG;
@@ -385,7 +384,7 @@ Device::EAP::loadFlashConfig() {
 }
 
 bool
-Device::EAP::storeFlashConfig() {
+EAP::storeFlashConfig() {
     //debugWarning("Untested code\n") // Works. -Arnold;
     fb_quadlet_t cmd = DICE_EAP_CMD_OPCODE_ST_FLASH_CFG;
     cmd |= DICE_EAP_CMD_OPCODE_FLAG_LD_EXECUTE;
@@ -394,7 +393,7 @@ Device::EAP::storeFlashConfig() {
 
 // helpers
 void
-Device::EAP::show()
+EAP::show()
 {
     printMessage("== DICE EAP ==\n");
     printMessage("Parameter Space info:\n");
@@ -471,7 +470,7 @@ Device::EAP::show()
 
 }
 void
-Device::EAP::showApplication()
+EAP::showApplication()
 {
     printMessage("--- Application space ---\n");
     fb_quadlet_t* tmp = (fb_quadlet_t *)calloc(128, sizeof(fb_quadlet_t));
@@ -490,8 +489,8 @@ Device::EAP::showApplication()
 
 // EAP load/store operations
 
-enum Device::EAP::eWaitReturn
-Device::EAP::operationBusy() {
+enum EAP::eWaitReturn
+EAP::operationBusy() {
     fb_quadlet_t tmp;
     if(!readReg(eRT_Command, DICE_EAP_COMMAND_OPCODE, &tmp)) {
         debugError("Could not read opcode register\n");
@@ -504,8 +503,8 @@ Device::EAP::operationBusy() {
     }
 }
 
-enum Device::EAP::eWaitReturn
-Device::EAP::waitForOperationEnd(int max_wait_time_ms) {
+enum EAP::eWaitReturn
+EAP::waitForOperationEnd(int max_wait_time_ms) {
     int max_waits = max_wait_time_ms;
 
     while(max_waits--) {
@@ -525,7 +524,7 @@ Device::EAP::waitForOperationEnd(int max_wait_time_ms) {
 }
 
 bool
-Device::EAP::commandHelper(fb_quadlet_t cmd) {
+EAP::commandHelper(fb_quadlet_t cmd) {
     // check whether another command is still running
     if(operationBusy() == eWR_Busy) {
         debugError("Other operation in progress\n");
@@ -567,7 +566,7 @@ Device::EAP::commandHelper(fb_quadlet_t cmd) {
 }
 
 bool
-Device::EAP::loadRouterConfig(bool low, bool mid, bool high) {
+EAP::loadRouterConfig(bool low, bool mid, bool high) {
     fb_quadlet_t cmd = DICE_EAP_CMD_OPCODE_LD_ROUTER;
     if(low) cmd |= DICE_EAP_CMD_OPCODE_FLAG_LD_LOW;
     if(mid) cmd |= DICE_EAP_CMD_OPCODE_FLAG_LD_MID;
@@ -577,7 +576,7 @@ Device::EAP::loadRouterConfig(bool low, bool mid, bool high) {
 }
 
 bool
-Device::EAP::loadStreamConfig(bool low, bool mid, bool high) {
+EAP::loadStreamConfig(bool low, bool mid, bool high) {
     debugWarning("Untested code\n");
     fb_quadlet_t cmd = DICE_EAP_CMD_OPCODE_LD_STRM_CFG;
     if(low) cmd |= DICE_EAP_CMD_OPCODE_FLAG_LD_LOW;
@@ -588,7 +587,7 @@ Device::EAP::loadStreamConfig(bool low, bool mid, bool high) {
 }
 
 bool
-Device::EAP::loadRouterAndStreamConfig(bool low, bool mid, bool high) {
+EAP::loadRouterAndStreamConfig(bool low, bool mid, bool high) {
     debugWarning("Untested code\n");
     fb_quadlet_t cmd = DICE_EAP_CMD_OPCODE_LD_RTR_STRM_CFG;
     if(low) cmd |= DICE_EAP_CMD_OPCODE_FLAG_LD_LOW;
@@ -600,31 +599,31 @@ Device::EAP::loadRouterAndStreamConfig(bool low, bool mid, bool high) {
 
 // internal I/O operations
 bool
-Device::EAP::readReg(enum eRegBase base, unsigned offset, fb_quadlet_t *result) {
+EAP::readReg(enum eRegBase base, unsigned offset, fb_quadlet_t *result) {
     fb_nodeaddr_t addr = offsetGen(base, offset, 4);
     return m_device.readReg(addr, result);
 }
 
 bool
-Device::EAP::writeReg(enum eRegBase base, unsigned offset, fb_quadlet_t data) {
+EAP::writeReg(enum eRegBase base, unsigned offset, fb_quadlet_t data) {
     fb_nodeaddr_t addr = offsetGen(base, offset, 4);
     return m_device.writeReg(addr, data);
 }
 
 bool
-Device::EAP::readRegBlock(enum eRegBase base, unsigned offset, fb_quadlet_t *data, size_t length) {
+EAP::readRegBlock(enum eRegBase base, unsigned offset, fb_quadlet_t *data, size_t length) {
     fb_nodeaddr_t addr = offsetGen(base, offset, length);
     return m_device.readRegBlock(addr, data, length);
 }
 
 bool
-Device::EAP::writeRegBlock(enum eRegBase base, unsigned offset, fb_quadlet_t *data, size_t length) {
+EAP::writeRegBlock(enum eRegBase base, unsigned offset, fb_quadlet_t *data, size_t length) {
     fb_nodeaddr_t addr = offsetGen(base, offset, length);
     return m_device.writeRegBlock(addr, data, length);
 }
 
 fb_nodeaddr_t
-Device::EAP::offsetGen(enum eRegBase base, unsigned offset, size_t length) {
+EAP::offsetGen(enum eRegBase base, unsigned offset, size_t length) {
     fb_nodeaddr_t addr;
     fb_nodeaddr_t maxlen;
     switch(base) {
@@ -687,7 +686,7 @@ Device::EAP::offsetGen(enum eRegBase base, unsigned offset, size_t length) {
  * @return true if the device supports EAP
  */
 bool
-Device::EAP::supportsEAP(Device &d)
+EAP::supportsEAP(Device &d)
 {
     DebugModule &m_debugModule = d.m_debugModule;
     quadlet_t tmp;
@@ -707,7 +706,7 @@ Device::EAP::supportsEAP(Device &d)
 }
 
 // ----------- Mixer -------------
-Device::EAP::Mixer::Mixer(EAP &p)
+EAP::Mixer::Mixer(EAP &p)
 : Control::MatrixMixer(&p.m_device, "MatrixMixer")
 , m_eap(p)
 , m_coeff(NULL)
@@ -715,7 +714,7 @@ Device::EAP::Mixer::Mixer(EAP &p)
 {
 }
 
-Device::EAP::Mixer::~Mixer()
+EAP::Mixer::~Mixer()
 {
     if (m_coeff) {
         free(m_coeff);
@@ -724,7 +723,7 @@ Device::EAP::Mixer::~Mixer()
 }
 
 bool
-Device::EAP::Mixer::init()
+EAP::Mixer::init()
 {
     if(!m_eap.m_mixer_exposed) {
         debugError("Device does not expose mixer\n");
@@ -753,7 +752,7 @@ Device::EAP::Mixer::init()
 }
 
 bool
-Device::EAP::Mixer::loadCoefficients()
+EAP::Mixer::loadCoefficients()
 {
     if(m_coeff == NULL) {
         debugError("Coefficient cache not initialized\n");
@@ -769,7 +768,7 @@ Device::EAP::Mixer::loadCoefficients()
 }
 
 bool
-Device::EAP::Mixer::storeCoefficients()
+EAP::Mixer::storeCoefficients()
 {
     if(m_coeff == NULL) {
         debugError("Coefficient cache not initialized\n");
@@ -789,7 +788,7 @@ Device::EAP::Mixer::storeCoefficients()
 }
 
 void
-Device::EAP::Mixer::updateNameCache()
+EAP::Mixer::updateNameCache()
 {
     // figure out the number of i/o's
     int nb_inputs = m_eap.m_mixer_nb_tx;
@@ -872,7 +871,7 @@ Device::EAP::Mixer::updateNameCache()
 }
 
 void
-Device::EAP::Mixer::show()
+EAP::Mixer::show()
 {
     int nb_inputs = m_eap.m_mixer_nb_tx;
     int nb_outputs = m_eap.m_mixer_nb_rx;
@@ -926,7 +925,7 @@ Device::EAP::Mixer::show()
 }
 
 int
-Device::EAP::Mixer::canWrite( const int row, const int col)
+EAP::Mixer::canWrite( const int row, const int col)
 {
     if(m_eap.m_mixer_readonly) {
         return false;
@@ -935,7 +934,7 @@ Device::EAP::Mixer::canWrite( const int row, const int col)
 }
 
 double
-Device::EAP::Mixer::setValue( const int row, const int col, const double val)
+EAP::Mixer::setValue( const int row, const int col, const double val)
 {
     if(m_eap.m_mixer_readonly) {
         debugWarning("Mixer is read-only\n");
@@ -952,7 +951,7 @@ Device::EAP::Mixer::setValue( const int row, const int col, const double val)
 }
 
 double
-Device::EAP::Mixer::getValue( const int row, const int col)
+EAP::Mixer::getValue( const int row, const int col)
 {
     int nb_inputs = m_eap.m_mixer_nb_tx;
     int addr = ((nb_inputs * row) + col) * 4;
@@ -965,25 +964,25 @@ Device::EAP::Mixer::getValue( const int row, const int col)
 }
 
 int
-Device::EAP::Mixer::getRowCount()
+EAP::Mixer::getRowCount()
 {
     return m_eap.m_mixer_nb_tx;
 }
 
 int
-Device::EAP::Mixer::getColCount()
+EAP::Mixer::getColCount()
 {
     return m_eap.m_mixer_nb_rx;
 }
 
 // full map updates are unsupported
 bool
-Device::EAP::Mixer::getCoefficientMap(int &) {
+EAP::Mixer::getCoefficientMap(int &) {
     return false;
 }
 
 bool
-Device::EAP::Mixer::storeCoefficientMap(int &) {
+EAP::Mixer::storeCoefficientMap(int &) {
     if(m_eap.m_mixer_readonly) {
         debugWarning("Mixer is read-only\n");
         return false;
@@ -991,12 +990,33 @@ Device::EAP::Mixer::storeCoefficientMap(int &) {
     return false;
 }
 
+// Names
+std::string
+EAP::Mixer::getColName(const int col) {
+    //debugOutput(DEBUG_LEVEL_VERBOSE, "EAP::Mixer::getColName( %i )\n");
+    char tmp[32];
+    snprintf(tmp, 32, "%s:%d", srcBlockToString(m_input_route_map[col].src), m_input_route_map[col].srcChannel);
+    return tmp;
+}
+std::string
+EAP::Mixer::getRowName(const int row) {
+    if (m_output_route_map[row].size() == 0) {
+        return "Not connected";
+    }
+    if (m_output_route_map[row].size() > 1) {
+        return "Many";
+    }
+    char tmp[32];
+    snprintf(tmp, 32, "%s:%d", dstBlockToString(m_output_route_map[row][0].dst), m_output_route_map[row][0].dstChannel);
+    return tmp;
+}
+
 // ----------- Router -------------
 // FIXME: some more efficient datastructure for the 
 //        sources and destinations might be good
 
 
-Device::EAP::Router::Router(EAP &p)
+EAP::Router::Router(EAP &p)
 : Control::CrossbarRouter(&p.m_device, "Router")
 , m_eap(p)
 , m_peak( *(new PeakSpace(p)) )
@@ -1006,13 +1026,13 @@ Device::EAP::Router::Router(EAP &p)
     setupDestinations();
 }
 
-Device::EAP::Router::~Router()
+EAP::Router::~Router()
 {
     delete &m_peak;
 }
 
 void
-Device::EAP::Router::setupSourcesAddSource(const char *basename, enum eRouteSource srcid, 
+EAP::Router::setupSourcesAddSource(const char *basename, enum eRouteSource srcid, 
                                            unsigned int base, unsigned int cnt)
 {
     unsigned int i=0;
@@ -1025,7 +1045,7 @@ Device::EAP::Router::setupSourcesAddSource(const char *basename, enum eRouteSour
 }
 
 void
-Device::EAP::Router::setupDestinationsAddDestination(const char *basename, enum eRouteDestination dstid,
+EAP::Router::setupDestinationsAddDestination(const char *basename, enum eRouteDestination dstid,
                                                      unsigned int base, unsigned int cnt)
 {
     unsigned int i=0;
@@ -1039,7 +1059,7 @@ Device::EAP::Router::setupDestinationsAddDestination(const char *basename, enum 
 
 
 void
-Device::EAP::Router::setupSources() {
+EAP::Router::setupSources() {
     // add the routing sources and destinations for a DICE chip
     switch(m_eap.m_general_chip) {
         case DICE_EAP_CAP_GENERAL_CHIP_DICEII:
@@ -1084,7 +1104,7 @@ Device::EAP::Router::setupSources() {
 }
 
 void
-Device::EAP::Router::setupDestinations() {
+EAP::Router::setupDestinations() {
     // add the routing sources and destinations for a DICE chip
     switch(m_eap.m_general_chip) {
         case DICE_EAP_CAP_GENERAL_CHIP_DICEII:
@@ -1130,7 +1150,7 @@ Device::EAP::Router::setupDestinations() {
 }
 
 std::string
-Device::EAP::Router::getSourceName(const int srcid)
+EAP::Router::getSourceName(const int srcid)
 {
     if((unsigned)srcid < m_sources.size()) {
         return m_sources.at(srcid).name;
@@ -1141,7 +1161,7 @@ Device::EAP::Router::getSourceName(const int srcid)
 }
 
 std::string
-Device::EAP::Router::getDestinationName(const int dstid)
+EAP::Router::getDestinationName(const int dstid)
 {
     if((unsigned)dstid < m_destinations.size()) {
         return m_destinations.at(dstid).name;
@@ -1152,7 +1172,7 @@ Device::EAP::Router::getDestinationName(const int dstid)
 }
 
 int
-Device::EAP::Router::getSourceIndex(std::string name)
+EAP::Router::getSourceIndex(std::string name)
 {
     int i = 0;
     for ( SourceVectorIterator it = m_sources.begin();
@@ -1166,7 +1186,7 @@ Device::EAP::Router::getSourceIndex(std::string name)
 }
 
 int
-Device::EAP::Router::getDestinationIndex(std::string name)
+EAP::Router::getDestinationIndex(std::string name)
 {
     int i = 0;
     for ( DestinationVectorIterator it = m_destinations.begin();
@@ -1180,7 +1200,7 @@ Device::EAP::Router::getDestinationIndex(std::string name)
 }
 
 int
-Device::EAP::Router::getSourceIndex(enum eRouteSource srcid, int channel)
+EAP::Router::getSourceIndex(enum eRouteSource srcid, int channel)
 {
     int i = 0;
     for ( SourceVectorIterator it = m_sources.begin();
@@ -1194,7 +1214,7 @@ Device::EAP::Router::getSourceIndex(enum eRouteSource srcid, int channel)
 }
 
 int
-Device::EAP::Router::getDestinationIndex(enum eRouteDestination dstid, int channel)
+EAP::Router::getDestinationIndex(enum eRouteDestination dstid, int channel)
 {
     int i = 0;
     for ( DestinationVectorIterator it = m_destinations.begin();
@@ -1208,7 +1228,7 @@ Device::EAP::Router::getDestinationIndex(enum eRouteDestination dstid, int chann
 }
 
 Control::CrossbarRouter::NameVector
-Device::EAP::Router::getSourceNames()
+EAP::Router::getSourceNames()
 {
     Control::CrossbarRouter::NameVector n;
     for ( SourceVectorIterator it = m_sources.begin();
@@ -1221,7 +1241,7 @@ Device::EAP::Router::getSourceNames()
 }
 
 Control::CrossbarRouter::NameVector
-Device::EAP::Router::getDestinationNames()
+EAP::Router::getDestinationNames()
 {
     Control::CrossbarRouter::NameVector n;
     for ( DestinationVectorIterator it = m_destinations.begin();
@@ -1234,21 +1254,21 @@ Device::EAP::Router::getDestinationNames()
 }
 
 Control::CrossbarRouter::Groups
-Device::EAP::Router::getSources()
+EAP::Router::getSources()
 {
-    debugError("Device::EAP::Router::getSources() is not yet implemented!");
+    debugError("EAP::Router::getSources() is not yet implemented!");
     return Control::CrossbarRouter::Groups();
 }
 
 Control::CrossbarRouter::Groups
-Device::EAP::Router::getDestinations()
+EAP::Router::getDestinations()
 {
-    debugError("Device::EAP::Router::getDestinations() is not yet implemented!");
+    debugError("EAP::Router::getDestinations() is not yet implemented!");
     return Control::CrossbarRouter::Groups();
 }
 
 Control::CrossbarRouter::IntVector
-Device::EAP::Router::getDestinationsForSource(const int srcid)
+EAP::Router::getDestinationsForSource(const int srcid)
 {
     IntVector retval;
     if((unsigned)srcid < m_sources.size()) {
@@ -1290,7 +1310,7 @@ Device::EAP::Router::getDestinationsForSource(const int srcid)
 }
 
 int
-Device::EAP::Router::getSourceForDestination(const int dstid)
+EAP::Router::getSourceForDestination(const int dstid)
 {
     if((unsigned)dstid < m_destinations.size()) {
         Destination d = m_destinations.at(dstid);
@@ -1325,19 +1345,19 @@ Device::EAP::Router::getSourceForDestination(const int dstid)
 }
 
 int
-Device::EAP::Router::getNbSources()
+EAP::Router::getNbSources()
 {
     return m_sources.size();
 }
 
 int
-Device::EAP::Router::getNbDestinations()
+EAP::Router::getNbDestinations()
 {
     return m_destinations.size();
 }
 
 bool
-Device::EAP::Router::canConnect(const int source, const int dest)
+EAP::Router::canConnect(const int source, const int dest)
 {
     if((unsigned)source >= m_sources.size()) {
         debugWarning("source id out of range (%d)\n", source);
@@ -1357,7 +1377,7 @@ Device::EAP::Router::canConnect(const int source, const int dest)
 }
 
 bool
-Device::EAP::Router::setConnectionState(const int source, const int dest, const bool enable)
+EAP::Router::setConnectionState(const int source, const int dest, const bool enable)
 {
     if((unsigned)source >= m_sources.size()) {
         debugWarning("source id out of range (%d)\n", source);
@@ -1379,7 +1399,7 @@ Device::EAP::Router::setConnectionState(const int source, const int dest, const 
     }
 
     // build a new routing configuration
-    RouterConfig newcfg = Device::EAP::RouterConfig(*rcfg);
+    RouterConfig newcfg = EAP::RouterConfig(*rcfg);
 
     // construct the routing entry to find
     RouterConfig::Route r = {s.src, s.srcChannel, d.dst, d.dstChannel};
@@ -1394,7 +1414,7 @@ Device::EAP::Router::setConnectionState(const int source, const int dest, const 
         // the route is already present, so we can replace it
         if(enable) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "connection %d => %d already present\n", source, dest);
-            return true;
+            //return true;
         } else {
             // remove the route
             newcfg.removeRoute(idx);
@@ -1411,7 +1431,7 @@ Device::EAP::Router::setConnectionState(const int source, const int dest, const 
 }
 
 bool
-Device::EAP::Router::getConnectionState(const int source, const int dest)
+EAP::Router::getConnectionState(const int source, const int dest)
 {
     if((unsigned)source >= m_sources.size()) {
         debugWarning("source id out of range (%d)\n", source);
@@ -1433,7 +1453,7 @@ Device::EAP::Router::getConnectionState(const int source, const int dest)
     }
 
     // build a new routing configuration
-    RouterConfig newcfg = Device::EAP::RouterConfig(*rcfg);
+    RouterConfig newcfg = EAP::RouterConfig(*rcfg);
 
     // construct the routing entry to find
     RouterConfig::Route r = {s.src, s.srcChannel, d.dst, d.dstChannel};
@@ -1451,7 +1471,7 @@ Device::EAP::Router::getConnectionState(const int source, const int dest)
 }
 
 bool
-Device::EAP::Router::canConnect(std::string src, std::string dst)
+EAP::Router::canConnect(std::string src, std::string dst)
 {
     int srcidx = getSourceIndex(src);
     int dstidx = getDestinationIndex(dst);
@@ -1459,7 +1479,7 @@ Device::EAP::Router::canConnect(std::string src, std::string dst)
 }
 
 bool
-Device::EAP::Router::setConnectionState(std::string src, std::string dst, const bool enable)
+EAP::Router::setConnectionState(std::string src, std::string dst, const bool enable)
 {
     int srcidx = getSourceIndex(src);
     int dstidx = getDestinationIndex(dst);
@@ -1467,7 +1487,7 @@ Device::EAP::Router::setConnectionState(std::string src, std::string dst, const 
 }
 
 bool
-Device::EAP::Router::getConnectionState(std::string src, std::string dst)
+EAP::Router::getConnectionState(std::string src, std::string dst)
 {
     int srcidx = getSourceIndex(src);
     int dstidx = getDestinationIndex(dst);
@@ -1481,7 +1501,7 @@ Device::EAP::Router::getConnectionState(std::string src, std::string dst)
 // note that map as assumed to be big enough and
 // allocated by the user
 bool
-Device::EAP::Router::getConnectionMap(int *map)
+EAP::Router::getConnectionMap(int *map)
 {
     unsigned int nb_sources = getNbSources();
     unsigned int nb_destinations = getNbDestinations();
@@ -1517,16 +1537,16 @@ Device::EAP::Router::getConnectionMap(int *map)
 }
 
 bool
-Device::EAP::Router::setConnectionMap(int *map)
+EAP::Router::setConnectionMap(int *map)
 {
     return false;
 }
 
 bool
-Device::EAP::Router::clearAllConnections()
+EAP::Router::clearAllConnections()
 {
     // build a new empty routing configuration
-    RouterConfig newcfg = Device::EAP::RouterConfig(m_eap);
+    RouterConfig newcfg = EAP::RouterConfig(m_eap);
 
     // upload the new router config
     if(!m_eap.updateCurrentRouterConfig(newcfg)) {
@@ -1537,13 +1557,13 @@ Device::EAP::Router::clearAllConnections()
 }
 
 bool
-Device::EAP::Router::hasPeakMetering()
+EAP::Router::hasPeakMetering()
 {
     return m_eap.m_router_exposed;
 }
 
 double
-Device::EAP::Router::getPeakValue(const int source, const int dest)
+EAP::Router::getPeakValue(const int source, const int dest)
 {
     if((unsigned)source >= m_sources.size()) {
         debugWarning("source id out of range (%d)\n", source);
@@ -1582,7 +1602,7 @@ Device::EAP::Router::getPeakValue(const int source, const int dest)
 }
 
 Control::CrossbarRouter::PeakValues
-Device::EAP::Router::getPeakValues()
+EAP::Router::getPeakValues()
 {
     m_peak.read();
     Control::CrossbarRouter::PeakValues values;
@@ -1597,7 +1617,7 @@ Device::EAP::Router::getPeakValues()
 }
 
 void
-Device::EAP::Router::show()
+EAP::Router::show()
 {
     // print the peak space as it also contains the routing configuration
     printMessage("Active router config:\n");
@@ -1606,23 +1626,23 @@ Device::EAP::Router::show()
 }
 
 // ----------- routing config -------------
-Device::EAP::RouterConfig::RouterConfig(EAP &p)
+EAP::RouterConfig::RouterConfig(EAP &p)
 : m_eap(p)
 , m_base(eRT_None), m_offset(0)
 , m_debugModule(p.m_debugModule)
 {}
 
-Device::EAP::RouterConfig::RouterConfig(EAP &p, enum eRegBase b, unsigned int o)
+EAP::RouterConfig::RouterConfig(EAP &p, enum eRegBase b, unsigned int o)
 : m_eap(p)
 , m_base(b), m_offset(o)
 , m_debugModule(p.m_debugModule)
 {}
 
-Device::EAP::RouterConfig::~RouterConfig()
+EAP::RouterConfig::~RouterConfig()
 {}
 
 bool
-Device::EAP::RouterConfig::read(enum eRegBase base, unsigned offset)
+EAP::RouterConfig::read(enum eRegBase base, unsigned offset)
 {
     // first clear the current route vector
     m_routes.clear();
@@ -1651,7 +1671,7 @@ Device::EAP::RouterConfig::read(enum eRegBase base, unsigned offset)
 }
 
 bool
-Device::EAP::RouterConfig::write(enum eRegBase base, unsigned offset)
+EAP::RouterConfig::write(enum eRegBase base, unsigned offset)
 {
     uint32_t nb_routes = m_routes.size();
     if(nb_routes == 0) {
@@ -1682,7 +1702,7 @@ Device::EAP::RouterConfig::write(enum eRegBase base, unsigned offset)
 }
 
 bool
-Device::EAP::RouterConfig::insertRoute(struct Route r, unsigned int index)
+EAP::RouterConfig::insertRoute(struct Route r, unsigned int index)
 {
     unsigned int nb_routes = getNbRoutes();
     if(index > nb_routes) {
@@ -1700,7 +1720,7 @@ Device::EAP::RouterConfig::insertRoute(struct Route r, unsigned int index)
 }
 
 bool
-Device::EAP::RouterConfig::replaceRoute(unsigned int old_index, struct Route new_route)
+EAP::RouterConfig::replaceRoute(unsigned int old_index, struct Route new_route)
 {
     if(old_index >= getNbRoutes()) {
         debugError("Index out of range\n");
@@ -1714,7 +1734,7 @@ Device::EAP::RouterConfig::replaceRoute(unsigned int old_index, struct Route new
 }
 
 bool
-Device::EAP::RouterConfig::replaceRoute(struct Route old_route, struct Route new_route)
+EAP::RouterConfig::replaceRoute(struct Route old_route, struct Route new_route)
 {
     int idx = getRouteIndex(old_route);
     if(idx < 0) {
@@ -1725,7 +1745,7 @@ Device::EAP::RouterConfig::replaceRoute(struct Route old_route, struct Route new
 }
 
 bool
-Device::EAP::RouterConfig::removeRoute(struct Route r)
+EAP::RouterConfig::removeRoute(struct Route r)
 {
     int idx = getRouteIndex(r);
     if(idx < 0) {
@@ -1736,7 +1756,7 @@ Device::EAP::RouterConfig::removeRoute(struct Route r)
 }
 
 bool
-Device::EAP::RouterConfig::removeRoute(unsigned int index)
+EAP::RouterConfig::removeRoute(unsigned int index)
 {
     if(index >= getNbRoutes()) {
         debugError("Index out of range\n");
@@ -1748,7 +1768,7 @@ Device::EAP::RouterConfig::removeRoute(unsigned int index)
 }
 
 int
-Device::EAP::RouterConfig::getRouteIndex(struct Route r)
+EAP::RouterConfig::getRouteIndex(struct Route r)
 {
     int i = 0;
     for ( RouteVectorIterator it = m_routes.begin();
@@ -1762,8 +1782,8 @@ Device::EAP::RouterConfig::getRouteIndex(struct Route r)
     return -1;
 }
 
-struct Device::EAP::RouterConfig::Route
-Device::EAP::RouterConfig::getRoute(unsigned int idx)
+struct EAP::RouterConfig::Route
+EAP::RouterConfig::getRoute(unsigned int idx)
 {
     if( (idx < 0) || (idx >= m_routes.size()) ) {
         debugWarning("Route index out of range (%d)\n", idx);
@@ -1774,8 +1794,8 @@ Device::EAP::RouterConfig::getRoute(unsigned int idx)
 }
 
 #define CASE_INT_EQUAL_RETURN(_x) case (int)(_x): return _x;
-enum Device::EAP::eRouteDestination
-Device::EAP::RouterConfig::intToRouteDestination(int dst)
+enum EAP::eRouteDestination
+EAP::RouterConfig::intToRouteDestination(int dst)
 {
     switch(dst) {
         CASE_INT_EQUAL_RETURN(eRD_AES);
@@ -1792,8 +1812,8 @@ Device::EAP::RouterConfig::intToRouteDestination(int dst)
     }
 }
 
-enum Device::EAP::eRouteSource
-Device::EAP::RouterConfig::intToRouteSource(int src)
+enum EAP::eRouteSource
+EAP::RouterConfig::intToRouteSource(int src)
 {
     switch(src) {
         CASE_INT_EQUAL_RETURN(eRS_AES);
@@ -1809,8 +1829,8 @@ Device::EAP::RouterConfig::intToRouteSource(int src)
     }
 }
 
-struct Device::EAP::RouterConfig::Route
-Device::EAP::RouterConfig::decodeRoute(uint32_t val) {
+struct EAP::RouterConfig::Route
+EAP::RouterConfig::decodeRoute(uint32_t val) {
     int routerval = val & 0xFFFF;
     int peak = (val >> 16) & 0x0FFF;
     int src_blk = (routerval >> 12) & 0xF;
@@ -1822,7 +1842,7 @@ Device::EAP::RouterConfig::decodeRoute(uint32_t val) {
 }
 
 uint32_t
-Device::EAP::RouterConfig::encodeRoute(struct Route r) {
+EAP::RouterConfig::encodeRoute(struct Route r) {
     if(r.src == eRS_Invalid || r.dst == eRD_Invalid) {
         debugWarning("Encoding invalid source/dest (%d/%d)\n", r.src, r.dst);
 //         return 0xFFFFFFFF;
@@ -1839,8 +1859,8 @@ Device::EAP::RouterConfig::encodeRoute(struct Route r) {
     return routerval;
 }
 
-struct Device::EAP::RouterConfig::Route
-Device::EAP::RouterConfig::getRouteForDestination(enum eRouteDestination dst, int channel)
+struct EAP::RouterConfig::Route
+EAP::RouterConfig::getRouteForDestination(enum eRouteDestination dst, int channel)
 {
     for ( RouteVectorIterator it = m_routes.begin();
         it != m_routes.end();
@@ -1860,8 +1880,8 @@ Device::EAP::RouterConfig::getRouteForDestination(enum eRouteDestination dst, in
     return r;
 }
 
-std::vector<struct Device::EAP::RouterConfig::Route>
-Device::EAP::RouterConfig::getRoutesForSource(enum eRouteSource src, int channel)
+std::vector<struct EAP::RouterConfig::Route>
+EAP::RouterConfig::getRoutesForSource(enum eRouteSource src, int channel)
 {
     std::vector<struct Route>routes;
     for ( RouteVectorIterator it = m_routes.begin();
@@ -1880,7 +1900,7 @@ Device::EAP::RouterConfig::getRoutesForSource(enum eRouteSource src, int channel
 }
 
 void
-Device::EAP::RouterConfig::show()
+EAP::RouterConfig::show()
 {
     for ( RouteVectorIterator it = m_routes.begin();
         it != m_routes.end();
@@ -1897,7 +1917,7 @@ Device::EAP::RouterConfig::show()
 // ----------- peak space -------------
 
 bool
-Device::EAP::PeakSpace::read(enum eRegBase base, unsigned offset)
+EAP::PeakSpace::read(enum eRegBase base, unsigned offset)
 {
     // first clear the current route vector
     m_routes.clear();
@@ -1928,14 +1948,14 @@ Device::EAP::PeakSpace::read(enum eRegBase base, unsigned offset)
 }
 
 bool
-Device::EAP::PeakSpace::write(enum eRegBase base, unsigned offset)
+EAP::PeakSpace::write(enum eRegBase base, unsigned offset)
 {
     debugError("Peak space is read-only\n");
     return true;
 }
 
 void
-Device::EAP::PeakSpace::show()
+EAP::PeakSpace::show()
 {
     for ( RouteVectorIterator it = m_routes.begin();
         it != m_routes.end();
@@ -1950,7 +1970,7 @@ Device::EAP::PeakSpace::show()
 }
 
 // ----------- stream config block -------------
-Device::EAP::StreamConfig::StreamConfig(EAP &p, enum eRegBase b, unsigned int o)
+EAP::StreamConfig::StreamConfig(EAP &p, enum eRegBase b, unsigned int o)
 : m_eap(p)
 , m_base(b), m_offset(o)
 , m_nb_tx(0), m_nb_rx(0)
@@ -1960,14 +1980,14 @@ Device::EAP::StreamConfig::StreamConfig(EAP &p, enum eRegBase b, unsigned int o)
 
 }
 
-Device::EAP::StreamConfig::~StreamConfig()
+EAP::StreamConfig::~StreamConfig()
 {
     if(m_tx_configs) delete[]m_tx_configs;
     if(m_rx_configs) delete[]m_rx_configs;
 }
 
 bool
-Device::EAP::StreamConfig::read(enum eRegBase base, unsigned offset)
+EAP::StreamConfig::read(enum eRegBase base, unsigned offset)
 {
     if(!m_eap.readRegBlock(base, offset, &m_nb_tx, 4)) {
         debugError("Failed to read number of tx entries\n");
@@ -2016,7 +2036,7 @@ Device::EAP::StreamConfig::read(enum eRegBase base, unsigned offset)
 }
 
 bool
-Device::EAP::StreamConfig::write(enum eRegBase base, unsigned offset)
+EAP::StreamConfig::write(enum eRegBase base, unsigned offset)
 {
     if(!m_eap.writeRegBlock(base, offset, &m_nb_tx, 4)) {
         debugError("Failed to write number of tx entries\n");
@@ -2048,8 +2068,8 @@ Device::EAP::StreamConfig::write(enum eRegBase base, unsigned offset)
     return true;
 }
 
-Device::diceNameVector
-Device::EAP::StreamConfig::getNamesForBlock(struct ConfigBlock &b)
+diceNameVector
+EAP::StreamConfig::getNamesForBlock(struct ConfigBlock &b)
 {
     diceNameVector names;
     char namestring[DICE_EAP_CHANNEL_CONFIG_NAMESTR_LEN_BYTES+1];
@@ -2067,7 +2087,7 @@ Device::EAP::StreamConfig::getNamesForBlock(struct ConfigBlock &b)
 }
 
 void
-Device::EAP::StreamConfig::showConfigBlock(struct ConfigBlock &b)
+EAP::StreamConfig::showConfigBlock(struct ConfigBlock &b)
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, " Channel count : %u audio, %u midi\n", b.nb_audio, b.nb_midi);
     debugOutput(DEBUG_LEVEL_VERBOSE, " AC3 Map       : 0x%08X\n", b.ac3_map);
@@ -2082,7 +2102,7 @@ Device::EAP::StreamConfig::showConfigBlock(struct ConfigBlock &b)
 }
 
 void
-Device::EAP::StreamConfig::show()
+EAP::StreamConfig::show()
 {
     for(unsigned int i=0; i<m_nb_tx; i++) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "TX Config block %d\n", i);

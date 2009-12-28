@@ -50,7 +50,7 @@ bool FocusriteEAP::Poti::setValue(int n) {
 }
 
 
-FocusriteEAP::FocusriteEAP(Dice::Device& dev) : Dice::Device::EAP(dev) {
+FocusriteEAP::FocusriteEAP(Dice::Device& dev) : Dice::EAP(dev) {
 }
 
 bool FocusriteEAP::readApplicationReg(unsigned offset, quadlet_t* quadlet) {

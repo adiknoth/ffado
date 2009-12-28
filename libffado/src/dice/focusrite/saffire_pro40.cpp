@@ -23,6 +23,8 @@
 
 #include "saffire_pro40.h"
 
+#include "focusrite_eap.h"
+
 namespace Dice {
 namespace Focusrite {
 
@@ -46,11 +48,11 @@ SaffirePro40::showDevice()
 }
 
 bool SaffirePro40::setNickName(std::string name) {
-    return getEAP()->writeRegBlock(Dice::Device::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
+    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
 }
 std::string SaffirePro40::getNickName() {
     char name[16];
-    getEAP()->readRegBlock(Dice::Device::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
+    getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
     return std::string(name);
 }
 

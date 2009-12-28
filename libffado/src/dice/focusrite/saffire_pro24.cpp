@@ -91,14 +91,14 @@ SaffirePro24::~SaffirePro24()
 bool SaffirePro24::discover() {
     if (Dice::Device::discover()) {
         fb_quadlet_t* tmp = (fb_quadlet_t *)calloc(2, sizeof(fb_quadlet_t));
-        getEAP()->readRegBlock(Dice::Device::EAP::eRT_Application, 0x00, tmp, 1*sizeof(fb_quadlet_t));
+        getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x00, tmp, 1*sizeof(fb_quadlet_t));
         //hexDumpQuadlets(tmp, 2); // DEBUG
         if (tmp[0] != 0x00010004 ) {
             debugError("This is a Focusrite Saffire Pro24 but not the right firmware. Better stop here before something goes wrong.\n");
             debugError("This device has firmware 0x%x while we only know about version 0x%x.\n", tmp[0], 0x10004);
             return false;
         }
-        //getEAP()->readRegBlock(Dice::Device::EAP::eRT_Command, 0x00, tmp, 2*sizeof(fb_quadlet_t)); // DEBUG
+        //getEAP()->readRegBlock(Dice::EAP::eRT_Command, 0x00, tmp, 2*sizeof(fb_quadlet_t)); // DEBUG
         //hexDumpQuadlets(tmp, 2); // DEBUG
 
         FocusriteEAP* eap = dynamic_cast<FocusriteEAP*>(getEAP());
@@ -123,17 +123,17 @@ void SaffirePro24::showDevice()
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a Dice::Focusrite::SaffirePro24\n");
     Dice::Device::showDevice();
 }
-Dice::Device::EAP* SaffirePro24::createEAP() {
+Dice::EAP* SaffirePro24::createEAP() {
     return new SaffirePro24EAP(*this);
 }
 
 bool SaffirePro24::setNickName( std::string name ) {
-    return getEAP()->writeRegBlock( Dice::Device::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name.c_str(), name.size() );
+    return getEAP()->writeRegBlock( Dice::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name.c_str(), name.size() );
 }
 
 std::string SaffirePro24::getNickName() {
     char name[16];
-    getEAP()->readRegBlock( Dice::Device::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name, 16 );
+    getEAP()->readRegBlock( Dice::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name, 16 );
     return std::string( name );
 }
 
