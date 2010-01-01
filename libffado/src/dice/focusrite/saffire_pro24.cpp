@@ -43,6 +43,21 @@ FocusriteEAP::Poti* SaffirePro24::SaffirePro24EAP::getDimPoti(std::string name) 
     return new FocusriteEAP::Poti(this, name, 0x54);
 }
 
+void SaffirePro24::SaffirePro24EAP::setupSources() {
+    addSource("SPDIF",    eRS_AES,   6, 2);
+    addSource("ADAT",     eRS_ADAT,  0, 8);
+    addSource("INS0",     eRS_InS0,  0, 4);
+    addSource("MixerOut", eRS_Mixer, 0, 16);
+    addSource("1394",     eRS_ARX0,  0, 8);
+}
+void SaffirePro24::SaffirePro24EAP::setupDestinations() {
+    addDestination("SPDIF", eRD_AES, 6, 2);
+    addDestination("INS0", eRD_InS0, 0, 6);
+    addDestination("MixerIn", eRD_Mixer0, 0, 16);
+    addDestination("MixerIn", eRD_Mixer1, 16, 2);
+    addDestination("1394", eRD_ATX0, 0, 16);
+}
+
 
 class SaffirePro24::LineInstSwitch : public Dice::Focusrite::FocusriteEAP::Switch
 {

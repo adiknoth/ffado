@@ -60,6 +60,9 @@ private:
 
         Poti* getMonitorPoti(std::string);
         Poti* getDimPoti(std::string);
+
+        void setupSources();
+        void setupDestinations();
     };
     Dice::EAP* createEAP();
 
