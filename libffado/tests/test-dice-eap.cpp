@@ -37,6 +37,8 @@
 #include "libcontrol/CrossbarRouter.h"
 
 #include "dice/dice_avdevice.h"
+#include "dice/dice_eap.h"
+
 using namespace Dice;
 
 #include <argp.h>
@@ -237,7 +239,7 @@ main(int argc, char **argv)
     // now play
     //avDevice->setVerboseLevel(DEBUG_LEVEL_VERY_VERBOSE);
 
-    bool supports_eap = Device::EAP::supportsEAP(*avDevice);
+    bool supports_eap = EAP::supportsEAP(*avDevice);
     if (!supports_eap) {
         printMessage("EAP not supported on this device\n");
         delete m_deviceManager;
@@ -245,7 +247,7 @@ main(int argc, char **argv)
     }
     printMessage("device supports EAP\n");
 
-    Device::EAP &eap = *(avDevice->getEAP());
+    EAP &eap = *(avDevice->getEAP());
 
     if (arguments.application)
         eap.showApplication();
