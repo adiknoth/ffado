@@ -161,24 +161,21 @@ Device::discover()
         return false;
     }
 
-    bool supports_eap = EAP::supportsEAP(*this);
-    if (supports_eap) { // FIXME: move to buildMixer() ??
-        m_eap = createEAP();
-        if(m_eap == NULL) {
-            debugError("Failed to allocate EAP.\n");
-            return false;
-        }
-        if(!m_eap->init()) {
-            debugError("Could not init EAP\n");
-            delete m_eap;
-            m_eap = NULL;
-            return false;
-        }
-        // register the EAP controls to the control structure
-        if(!addElement(m_eap)) {
-            debugError("Failed to add the EAP controls to the control tree\n");
-            return false;
-        }
+    m_eap = createEAP();
+    if(m_eap == NULL) {
+        debugError("Failed to allocate EAP.\n");
+        return false;
+    }
+    if(!m_eap->init()) {
+        debugError("Could not init EAP\n");
+        delete m_eap;
+        m_eap = NULL;
+        return false;
+    }
+    // register the EAP controls to the control structure
+    if(!addElement(m_eap)) {
+        debugError("Failed to add the EAP controls to the control tree\n");
+        return false;
     }
     return true;
 }
@@ -392,7 +389,7 @@ Device::getSupportedClockSources() {
                                     extended_status, clock_status, clock_slipping);
     #endif
 
-    diceNameVector names = getClockSourceNameString();
+    stringlist names = getClockSourceNameString();
     if( names.size() < DICE_CLOCKSOURCE_COUNT) {
         debugError("Not enough clock source names on device\n");
         return r;
@@ -556,7 +553,7 @@ Device::getActiveClockSource() {
                                     extended_status, clock_status, clock_slipping);
     #endif
 
-    diceNameVector names = getClockSourceNameString();
+    stringlist names = getClockSourceNameString();
     if( names.size() < DICE_CLOCKSOURCE_COUNT) {
         debugError("Not enough clock source names on device\n");
         return s;
@@ -650,10 +647,10 @@ Device::showDevice()
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock caps       : 0x%08"PRIX32"\n", tmp_quadlet);
 
-    diceNameVector names=getClockSourceNameString();
+    stringlist names=getClockSourceNameString();
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock sources    :\n");
 
-    for ( diceNameVectorIterator it = names.begin();
+    for ( stringlist::iterator it = names.begin();
           it != names.end();
           ++it )
     {
@@ -680,9 +677,9 @@ Device::showDevice()
         readTxReg(i, DICE_REGISTER_TX_AC3_ENABLE_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08"PRIX32"\n", tmp_quadlet);
 
-        diceNameVector channel_names=getTxNameString(i);
+        stringlist channel_names=getTxNameString(i);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
-        for ( diceNameVectorIterator it = channel_names.begin();
+        for ( stringlist::iterator it = channel_names.begin();
             it != channel_names.end();
             ++it )
         {
@@ -710,9 +707,9 @@ Device::showDevice()
         readTxReg(i, DICE_REGISTER_RX_AC3_ENABLE_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08"PRIX32"\n", tmp_quadlet);
 
-        diceNameVector channel_names=getRxNameString(i);
+        stringlist channel_names=getRxNameString(i);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
-        for ( diceNameVectorIterator it = channel_names.begin();
+        for ( stringlist::iterator it = channel_names.begin();
             it != channel_names.end();
             ++it )
         {
@@ -775,8 +772,8 @@ Device::prepare() {
     config.getValueForDeviceSetting(vendorid, modelid, "xmit_transfer_delay", xmit_transfer_delay);
     config.getValueForDeviceSetting(vendorid, modelid, "xmit_min_cycles_before_presentation", xmit_min_cycles_before_presentation);
 
-    diceNameVector names_audio;
-    diceNameVector names_midi;
+    stringlist names_audio;
+    stringlist names_midi;
     // prepare receive SP's
 //     for (unsigned int i=0;i<1;i++) {
     for (unsigned int i=0; i<m_nb_tx; i++) {
@@ -1504,9 +1501,9 @@ Device::maskedCheckNotZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask) {
     return !maskedCheckZeroGlobalReg(offset, mask);
 }
 
-diceNameVector
+stringlist
 Device::getTxNameString(unsigned int i) {
-    diceNameVector names;
+    stringlist names;
     char namestring[DICE_TX_NAMES_SIZE+1];
 
     if (!readTxRegBlock(i, DICE_REGISTER_TX_NAMES_BASE,
@@ -1524,9 +1521,9 @@ Device::getTxNameString(unsigned int i) {
     return splitNameString(std::string(namestring));
 }
 
-diceNameVector
+stringlist
 Device::getRxNameString(unsigned int i) {
-    diceNameVector names;
+    stringlist names;
     char namestring[DICE_RX_NAMES_SIZE+1];
 
     if (!readRxRegBlock(i, DICE_REGISTER_RX_NAMES_BASE,
@@ -1544,9 +1541,9 @@ Device::getRxNameString(unsigned int i) {
     return splitNameString(std::string(namestring));
 }
 
-diceNameVector
+stringlist
 Device::getClockSourceNameString() {
-    diceNameVector names;
+    stringlist names;
     char namestring[DICE_CLOCKSOURCENAMES_SIZE+1];
 
     if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_CLOCKSOURCENAMES,
@@ -1602,26 +1599,11 @@ Device::setDeviceNickName(std::string name) {
     return true;
 }
 
-diceNameVector
+
+stringlist
 Device::splitNameString(std::string in) {
-    diceNameVector names;
-
-    // find the end of the string
-    string::size_type end = in.find(string("\\\\"));
-    // cut the end
-    in = in.substr(0,end);
-
-    string::size_type cut;
-    while( (cut = in.find(string("\\"))) != in.npos ) {
-        if(cut > 0) {
-            names.push_back(in.substr(0,cut));
-        }
-        in = in.substr(cut+1);
-    }
-    if(in.length() > 0) {
-        names.push_back(in);
-    }
-    return names;
+    in = in.substr(0,in.find("\\\\"));
+    return stringlist::splitString(in, "\\");
 }
 
 

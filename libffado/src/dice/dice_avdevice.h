@@ -24,6 +24,7 @@
 #ifndef DICEDEVICE_H
 #define DICEDEVICE_H
 
+#include "ffadotypes.h"
 #include "ffadodevice.h"
 
 #include "debugmodule/debugmodule.h"
@@ -53,16 +54,20 @@ namespace Dice {
 
 class EAP;
 
-typedef std::vector< std::string > diceNameVector;
-typedef std::vector< std::string >::iterator diceNameVectorIterator;
 
+/**
+  @brief Devices based on the DICE-platform
 
+  This class is the basic implementation for devices using the DICE-chip.
+  */
 class Device : public FFADODevice {
 // private:
     friend class EAP;
 
 public:
+    /// constructor
     Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    /// destructor
     ~Device();
 
     static bool probe( Util::Configuration& c, ConfigRom& configRom, bool generic = false );
@@ -143,10 +148,10 @@ private: // helper functions
     bool maskedCheckZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask);
     bool maskedCheckNotZeroGlobalReg(fb_nodeaddr_t offset, fb_quadlet_t mask);
 
-    diceNameVector splitNameString(std::string in);
-    diceNameVector getTxNameString(unsigned int i);
-    diceNameVector getRxNameString(unsigned int i);
-    diceNameVector getClockSourceNameString();
+    stringlist splitNameString(std::string in);
+    stringlist getTxNameString(unsigned int i);
+    stringlist getRxNameString(unsigned int i);
+    stringlist getClockSourceNameString();
     std::string getDeviceNickName();
     bool setDeviceNickName(std::string name);
 

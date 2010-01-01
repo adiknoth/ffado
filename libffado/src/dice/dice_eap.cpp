@@ -38,16 +38,16 @@ static const char *
 srcBlockToString(const char id)
 {
     switch(id) {
-        case 0: return "AES ";
-        case 1: return "ADAT";
-        case 2: return "MXR ";
-        case 4: return "INS0";
-        case 5: return "INS1";
-        case 10: return "ARM ";
-        case 11: return "AVS0";
-        case 12: return "AVS1";
-        case 15: return "MUTE";
-        default : return "RSVD";
+        case eRS_AES:   return "AES ";
+        case eRS_ADAT:  return "ADAT";
+        case eRS_Mixer: return "MXR ";
+        case eRS_InS0:  return "INS0";
+        case eRS_InS1:  return "INS1";
+        case eRS_ARM:   return "ARM ";
+        case eRS_ARX0:  return "AVS0";
+        case eRS_ARX1:  return "AVS1";
+        case eRS_Muted: return "MUTE";
+        default :       return "RSVD";
     }
 }
 
@@ -55,16 +55,16 @@ static  const char *
 dstBlockToString(const char id)
 {
     switch(id) {
-        case 0: return "AES ";
-        case 1: return "ADAT";
-        case 2: return "MXR0";
-        case 3: return "MXR1";
-        case 4: return "INS0";
-        case 5: return "INS1";
-        case 10: return "ARM ";
-        case 11: return "AVS0";
-        case 12: return "AVS1";
-        case 15: return "MUTE";
+        case eRD_AES:    return "AES ";
+        case eRD_ADAT:   return "ADAT";
+        case eRD_Mixer0: return "MXR0";
+        case eRD_Mixer1: return "MXR1";
+        case eRD_InS0:   return "INS0";
+        case eRD_InS1:   return "INS1";
+        case eRD_ARM:    return "ARM ";
+        case eRD_ATX0:   return "AVS0";
+        case eRD_ATX1:   return "AVS1";
+        case eRD_Muted:  return "MUTE";
         default : return "RSVD";
     }
 }
@@ -76,12 +76,12 @@ EAP::EAP(Device &d)
 , m_device(d)
 , m_mixer( NULL )
 , m_router( NULL )
-, m_current_cfg_routing_low( RouterConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_LOW_ROUTER) )
-, m_current_cfg_routing_mid( RouterConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_MID_ROUTER) )
+, m_current_cfg_routing_low ( RouterConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_LOW_ROUTER ) )
+, m_current_cfg_routing_mid ( RouterConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_MID_ROUTER ) )
 , m_current_cfg_routing_high( RouterConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_HIGH_ROUTER) )
-, m_current_cfg_stream_low( StreamConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_LOW_STREAM) )
-, m_current_cfg_stream_mid( StreamConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_MID_STREAM) )
-, m_current_cfg_stream_high( StreamConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_HIGH_STREAM) )
+, m_current_cfg_stream_low  ( StreamConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_LOW_STREAM ) )
+, m_current_cfg_stream_mid  ( StreamConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_MID_STREAM ) )
+, m_current_cfg_stream_high ( StreamConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_HIGH_STREAM) )
 {
 }
 
@@ -197,6 +197,8 @@ EAP::init() {
             debugError("Could not allocate memory for router\n");
             return false;
         }
+        setupSources();
+        setupDestinations();
 
         // add the router to the EAP control container
         if(!addElement(m_router)) {
@@ -205,6 +207,84 @@ EAP::init() {
     }
 
     return true;
+}
+
+void
+EAP::setupSources() {
+    // add the routing sources and destinations for a DICE chip
+    switch(m_general_chip) {
+        case DICE_EAP_CAP_GENERAL_CHIP_DICEII:
+            // router/EAP currently not supported
+            break;
+        case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
+            // second audio port (unique to the junior)
+            addSource("InS1", eRS_InS1, 0, 8);
+        case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
+            /// these are common to the mini and junior
+            // the AES receiver
+            addSource("AES", eRS_AES, 0, 8);
+            // the ADAT receiver
+            addSource("ADAT", eRS_ADAT, 0, 8);
+            // the Mixer outputs
+            addSource("MixerOut", eRS_Mixer, 0, 16);
+            // the first audio port
+            addSource("InS0", eRS_InS0, 0, 8);
+            // the ARM audio port
+            addSource("ARM", eRS_ARM, 0, 8);
+            // the 1394 stream receivers
+            addSource("1394_0", eRS_ARX0, 0, 16);
+            addSource("1394_1", eRS_ARX1, 0, 16);
+            // mute
+            addSource("Mute", eRS_Muted, 0, 1);
+            break;
+        default:
+            // this is an unsupported chip
+            break;
+    }
+}
+
+void
+EAP::setupDestinations() {
+    // add the routing sources and destinations for a DICE chip
+    switch(m_general_chip) {
+        case DICE_EAP_CAP_GENERAL_CHIP_DICEII:
+            // router/EAP currently not supported
+            break;
+        case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
+            // second audio port (unique to the junior)
+            addDestination("InS1", eRD_InS1, 0, 8);
+        case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
+            /// these are common to the mini and junior
+            // the AES receiver
+            addDestination("AES", eRD_AES, 0, 8);
+            // the ADAT receiver
+            addDestination("ADAT", eRD_ADAT, 0, 8);
+            // the Mixer outputs
+            addDestination("MixerIn", eRD_Mixer0, 0, 16);
+            addDestination("MixerIn", eRD_Mixer1, 16, 2);
+            // the first audio port
+            addDestination("InS0", eRD_InS0, 0, 8);
+            // the ARM audio port
+            addDestination("ARM", eRD_ARM, 0, 8);
+            // the 1394 stream receivers
+            addDestination("1394_0", eRD_ATX0, 0, 16);
+            addDestination("1394_1", eRD_ATX1, 0, 16);
+            // mute
+            addDestination("Mute", eRD_Muted, 0, 1);
+            break;
+        default:
+            // this is an unsupported chip
+            break;
+    }
+}
+
+void
+EAP::addSource( const std::string name, enum eRouteSource srcid, unsigned int base, unsigned int count ) {
+    m_router->setupSourcesAddSource(name.c_str(), srcid, base, count);
+}
+void
+EAP::addDestination( const std::string name, enum eRouteDestination destid, unsigned int base, unsigned int count ) {
+    m_router->setupDestinationsAddDestination(name.c_str(), destid, base, count);
 }
 
 bool
@@ -240,7 +320,6 @@ EAP::updateConfigurationCache()
 
 /**
  * Returns the router configuration for the current rate mode
- * @return 
  */
 EAP::RouterConfig *
 EAP::getActiveRouterConfig()
@@ -257,7 +336,6 @@ EAP::getActiveRouterConfig()
 
 /**
  * Returns the stream configuration for the current rate mode
- * @return 
  */
 EAP::StreamConfig *
 EAP::getActiveStreamConfig()
@@ -597,7 +675,9 @@ EAP::loadRouterAndStreamConfig(bool low, bool mid, bool high) {
     return commandHelper(cmd);
 }
 
-// internal I/O operations
+/*
+  I/O operations
+  */
 bool
 EAP::readReg(enum eRegBase base, unsigned offset, fb_quadlet_t *result) {
     fb_nodeaddr_t addr = offsetGen(base, offset, 4);
@@ -1022,8 +1102,6 @@ EAP::Router::Router(EAP &p)
 , m_peak( *(new PeakSpace(p)) )
 , m_debugModule(p.m_debugModule)
 {
-    setupSources();
-    setupDestinations();
 }
 
 EAP::Router::~Router()
@@ -1054,98 +1132,6 @@ EAP::Router::setupDestinationsAddDestination(const char *basename, enum eRouteDe
         snprintf(name, 16, "%s:%02d", basename, base+i);
         struct Destination d = {name, dstid, i};
         m_destinations.push_back(d);
-    }
-}
-
-
-void
-EAP::Router::setupSources() {
-    // add the routing sources and destinations for a DICE chip
-    switch(m_eap.m_general_chip) {
-        case DICE_EAP_CAP_GENERAL_CHIP_DICEII:
-            // router/EAP currently not supported
-            break;
-        case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
-            // these are unique to the junior
-
-            // second audio port
-            setupSourcesAddSource("InS1", eRS_InS1, 0, 8);
-
-        case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
-            // these are common to the mini and junior
-
-            // the AES receiver
-            setupSourcesAddSource("AES", eRS_AES, 0, 8);
-
-            // the ADAT receiver
-            setupSourcesAddSource("ADAT", eRS_ADAT, 0, 8);
-
-            // the Mixer outputs
-            setupSourcesAddSource("MixerOut", eRS_Mixer, 0, 16);
-
-            // the first audio port
-            setupSourcesAddSource("InS0", eRS_InS0, 0, 8);
-
-            // the ARM audio port
-            setupSourcesAddSource("ARM", eRS_ARM, 0, 8);
-
-            // the 1394 stream receivers
-            setupSourcesAddSource("1394_0", eRS_ARX0, 0, 16);
-            setupSourcesAddSource("1394_1", eRS_ARX1, 0, 16);
-
-            // mute
-            setupSourcesAddSource("Mute", eRS_Muted, 0, 1);
-
-            break;
-        default:
-            // this is an unsupported chip
-            break;
-    }
-}
-
-void
-EAP::Router::setupDestinations() {
-    // add the routing sources and destinations for a DICE chip
-    switch(m_eap.m_general_chip) {
-        case DICE_EAP_CAP_GENERAL_CHIP_DICEII:
-            // router/EAP currently not supported
-            break;
-        case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
-            // these are unique to the junior
-
-            // second audio port
-            setupDestinationsAddDestination("InS1", eRD_InS1, 0, 8);
-
-        case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
-            // these are common to the mini and junior
-
-            // the AES receiver
-            setupDestinationsAddDestination("AES", eRD_AES, 0, 8);
-
-            // the ADAT receiver
-            setupDestinationsAddDestination("ADAT", eRD_ADAT, 0, 8);
-
-            // the Mixer outputs
-            setupDestinationsAddDestination("MixerIn", eRD_Mixer0, 0, 16);
-            setupDestinationsAddDestination("MixerIn", eRD_Mixer1, 16, 2);
-
-            // the first audio port
-            setupDestinationsAddDestination("InS0", eRD_InS0, 0, 8);
-
-            // the ARM audio port
-            setupDestinationsAddDestination("ARM", eRD_ARM, 0, 8);
-
-            // the 1394 stream receivers
-            setupDestinationsAddDestination("1394_0", eRD_ATX0, 0, 16);
-            setupDestinationsAddDestination("1394_1", eRD_ATX1, 0, 16);
-
-            // mute
-            setupDestinationsAddDestination("Mute", eRD_Muted, 0, 1);
-
-            break;
-        default:
-            // this is an unsupported chip
-            break;
     }
 }
 
@@ -1653,7 +1639,7 @@ EAP::RouterConfig::read(enum eRegBase base, unsigned offset)
         return false;
     }
     if(nb_routes == 0) {
-        debugWarning("No routes found\n");
+        debugWarning("No routes found. Base 0x%x, offset 0x%x\n", base, offset);
     }
 
     // read the route info
@@ -1794,7 +1780,7 @@ EAP::RouterConfig::getRoute(unsigned int idx)
 }
 
 #define CASE_INT_EQUAL_RETURN(_x) case (int)(_x): return _x;
-enum EAP::eRouteDestination
+enum eRouteDestination
 EAP::RouterConfig::intToRouteDestination(int dst)
 {
     switch(dst) {
@@ -1812,7 +1798,7 @@ EAP::RouterConfig::intToRouteDestination(int dst)
     }
 }
 
-enum EAP::eRouteSource
+enum eRouteSource
 EAP::RouterConfig::intToRouteSource(int src)
 {
     switch(src) {
@@ -2068,10 +2054,10 @@ EAP::StreamConfig::write(enum eRegBase base, unsigned offset)
     return true;
 }
 
-diceNameVector
+stringlist
 EAP::StreamConfig::getNamesForBlock(struct ConfigBlock &b)
 {
-    diceNameVector names;
+    stringlist names;
     char namestring[DICE_EAP_CHANNEL_CONFIG_NAMESTR_LEN_BYTES+1];
 
     memcpy(namestring, b.names, DICE_EAP_CHANNEL_CONFIG_NAMESTR_LEN_BYTES);
@@ -2091,9 +2077,9 @@ EAP::StreamConfig::showConfigBlock(struct ConfigBlock &b)
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, " Channel count : %u audio, %u midi\n", b.nb_audio, b.nb_midi);
     debugOutput(DEBUG_LEVEL_VERBOSE, " AC3 Map       : 0x%08X\n", b.ac3_map);
-    diceNameVector channel_names  = getNamesForBlock(b);
+    stringlist channel_names  = getNamesForBlock(b);
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Channel names :\n");
-    for ( diceNameVectorIterator it = channel_names.begin();
+    for ( stringlist::iterator it = channel_names.begin();
         it != channel_names.end();
         ++it )
     {

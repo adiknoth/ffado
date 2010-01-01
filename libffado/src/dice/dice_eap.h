@@ -124,18 +124,60 @@
 namespace Dice {
 
 /**
- * this class represents the EAP interface
- * available on some devices
- */
+  @brief Sources for audio hitting the router
+  */
+enum eRouteSource {
+    eRS_AES = 0,
+    eRS_ADAT = 1,
+    eRS_Mixer = 2,
+    eRS_InS0 = 4,
+    eRS_InS1 = 5,
+    eRS_ARM = 10,
+    eRS_ARX0 = 11,
+    eRS_ARX1 = 12,
+    eRS_Muted = 15,
+    eRS_Invalid = 16,
+};
+/**
+  @brief Destinations for audio exiting the router
+  */
+enum eRouteDestination {
+    eRD_AES = 0,
+    eRD_ADAT = 1,
+    eRD_Mixer0 = 2,
+    eRD_Mixer1 = 3,
+    eRD_InS0 = 4,
+    eRD_InS1 = 5,
+    eRD_ARM = 10,
+    eRD_ATX0 = 11,
+    eRD_ATX1 = 12,
+    eRD_Muted = 15,
+    eRD_Invalid = 16,
+};
+
+/**
+  @brief represents the EAP interface available on some devices
+
+  When available, the mixer and router are visible. This class is also the base for custom
+  implementations of EAP extensions.
+  */
 class EAP : public Control::Container
 {
 public:
+    /**
+      @brief Command status
+      */
     enum eWaitReturn {
         eWR_Error,
         eWR_Timeout,
         eWR_Busy,
         eWR_Done,
     };
+    /**
+      @brief Constants for the EAP spaces
+
+      @see offsetGen for the calculation of the real offsets.
+      */
     enum eRegBase {
         eRT_Base,
         eRT_Capability,
@@ -149,36 +191,19 @@ public:
         eRT_Application,
         eRT_None,
     };
-    enum eRouteSource {
-        eRS_AES = 0,
-        eRS_ADAT = 1,
-        eRS_Mixer = 2,
-        eRS_InS0 = 4,
-        eRS_InS1 = 5,
-        eRS_ARM = 10,
-        eRS_ARX0 = 11,
-        eRS_ARX1 = 12,
-        eRS_Muted = 15,
-        eRS_Invalid = 16,
-    };
-    enum eRouteDestination {
-        eRD_AES = 0,
-        eRD_ADAT = 1,
-        eRD_Mixer0 = 2,
-        eRD_Mixer1 = 3,
-        eRD_InS0 = 4,
-        eRD_InS1 = 5,
-        eRD_ARM = 10,
-        eRD_ATX0 = 11,
-        eRD_ATX1 = 12,
-        eRD_Muted = 15,
-        eRD_Invalid = 16,
-    };
 
-public:
+private:
 
-    // ----------
+    /**
+      @brief Description of the routing in the hardware
+      */
     class RouterConfig {
+    private:
+        friend class Dice::EAP;
+        RouterConfig(EAP &);
+        RouterConfig(EAP &, enum eRegBase, unsigned int offset);
+        virtual ~RouterConfig();
+
     public:
         struct Route
         {
@@ -190,9 +215,6 @@ public:
         };
         typedef std::vector<RouterConfig::Route> RouteVector;
         typedef std::vector<RouterConfig::Route>::iterator RouteVectorIterator;
-        RouterConfig(EAP &);
-        RouterConfig(EAP &, enum eRegBase, unsigned int offset);
-        virtual ~RouterConfig();
 
         virtual bool read() {return read(m_base, m_offset);};
         virtual bool write() {return write(m_base, m_offset);};
@@ -230,13 +252,16 @@ public:
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
 
-    // ----------
-    // the peak space is a special version of a router config
+    /**
+      the peak space is a special version of a router config
+      */
     class PeakSpace : public RouterConfig {
-    public:
+    private:
+        friend class Dice::EAP;
         PeakSpace(EAP &p) : RouterConfig(p, eRT_Peak, 0) {};
         virtual ~PeakSpace() {};
 
+    public:
         virtual bool read() {return read(m_base, m_offset);};
         virtual bool write() {return write(m_base, m_offset);};
         virtual bool read(enum eRegBase b, unsigned offset);
@@ -244,8 +269,15 @@ public:
         virtual void show();
     };
 
-    // ----------
+    /**
+      @brief Description of the streams in the hardware
+      */
     class StreamConfig {
+    private:
+        friend class Dice::EAP;
+        StreamConfig(EAP &, enum eRegBase, unsigned int offset);
+        ~StreamConfig();
+
     public:
         struct ConfigBlock { // FIXME: somewhere in the DICE avdevice this is present too
             uint32_t nb_audio;
@@ -254,10 +286,7 @@ public:
             uint32_t ac3_map;
         };
         void showConfigBlock(struct ConfigBlock &);
-        diceNameVector getNamesForBlock(struct ConfigBlock &b);
-    public:
-        StreamConfig(EAP &, enum eRegBase, unsigned int offset);
-        ~StreamConfig();
+        stringlist getNamesForBlock(struct ConfigBlock &b);
 
         bool read() {return read(m_base, m_offset);};
         bool write() {return write(m_base, m_offset);};
@@ -280,7 +309,11 @@ public:
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
 
-public: // mixer control subclass
+public:
+
+    /**
+      @brief The matrixmixer exposed
+      */
     class Mixer : public Control::MatrixMixer {
     public:
         Mixer(EAP &);
@@ -329,7 +362,9 @@ public: // mixer control subclass
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
 
-    // ----------
+    /**
+      @brief The router exposed
+      */
     class Router : public Control::CrossbarRouter {
     private:
         struct Source {
@@ -353,11 +388,6 @@ public: // mixer control subclass
         ~Router();
 
         void show();
-
-        // to be subclassed by the implementing
-        // devices
-        virtual void setupSources();
-        virtual void setupDestinations();
 
         void setupDestinationsAddDestination(const char *name, enum eRouteDestination dstid,
                                              unsigned int base, unsigned int cnt);
@@ -418,33 +448,112 @@ public: // mixer control subclass
     };
 
 public:
+    /** constructor */
     EAP(Device &);
+    /** destructor */
     virtual ~EAP();
 
+    /**
+      @brief Does this device support the EAP?
+
+      When subclassing EAP, return true only on devices that actually have an EAP.
+
+      @todo Shouldn't this be inside Dice::Device?
+      */
     static bool supportsEAP(Device &);
+
+    /**
+      @brief Initialize the EAP
+      */
     bool init();
 
+    /// Show information about the EAP
     void show();
+    /// Dump the first parts of the application space
     void showApplication();
-    enum eWaitReturn operationBusy();
-    enum eWaitReturn waitForOperationEnd(int max_wait_time_ms = 100);
 
-    bool updateConfigurationCache();
-    RouterConfig * getActiveRouterConfig();
-    StreamConfig * getActiveStreamConfig();
-
-    bool updateRouterConfig(RouterConfig&, bool low, bool mid, bool high);
-    bool updateCurrentRouterConfig(RouterConfig&);
-    bool updateStreamConfig(StreamConfig&, bool low, bool mid, bool high);
-    bool updateStreamConfig(RouterConfig&, StreamConfig&, bool low, bool mid, bool high);
-
+    /// Restore from flash
     bool loadFlashConfig();
+    /// Store to flash
     bool storeFlashConfig();
 
+    /// Is the current operation still busy?
+    enum eWaitReturn operationBusy();
+    /// Block until the current operation is done
+    enum eWaitReturn waitForOperationEnd(int max_wait_time_ms = 100);
+
+    /// Update all configurations from the device
+    bool updateConfigurationCache();
+
+    /**
+      @{
+      @brief Read and write registers on the device
+      */
+    bool readReg(enum eRegBase, unsigned offset, quadlet_t *);
+    bool writeReg(enum eRegBase, unsigned offset, quadlet_t);
+    bool readRegBlock(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
+    bool writeRegBlock(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
+    bool readRegBlockSwapped(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
+    bool writeRegBlockSwapped(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
+    //@}
+
+    /** @brief Get access to the mixer */
+    Mixer*  getMixer() {return m_mixer;};
+    /** @brief Get access to the router */
+    Router* getRouter() {return m_router;};
+
+protected:
+    /**
+      @brief Setup all the available sources
+
+      This adds the needed entries for sources to the router. The default implementation decides on
+      the chip which sources to add, subclasses should only add the sources actually usable for the
+      device.
+
+      To ease custom device support, this function is not in EAP::Router but here.
+      */
+    virtual void setupSources();
+    /**
+      @brief Setup all the available destinations
+
+      This adds the needed entries for destinations to the router. The default implementation
+      decides on the chip which destinations to add, subclasses should only add the destinations
+      actually usable for the device.
+
+      To ease custom device support, this function is not in EAP::Router but here.
+      */
+    virtual void setupDestinations();
+
+    /**
+      @brief Actually add the source
+      */
+    void addSource( const std::string name, enum eRouteSource srcid,
+            unsigned int base, unsigned int count );
+    /**
+      @brief Actually add the destination
+      */
+    void addDestination( const std::string name, enum eRouteDestination destid,
+            unsigned int base, unsigned int count );
+
 private:
+    /// Return the router configuration for the current rate
+    RouterConfig * getActiveRouterConfig();
+    /// Return the stream configuration for the current rate
+    StreamConfig * getActiveStreamConfig();
+
+    /// Write a new router configuration to the device
+    bool updateRouterConfig(RouterConfig&, bool low, bool mid, bool high);
+    /// Write a new router configuration to the device
+    bool updateCurrentRouterConfig(RouterConfig&);
+    /// Write a new stream configuration to the device
+    bool updateStreamConfig(StreamConfig&, bool low, bool mid, bool high);
+    /// Write a new stream configuration to the device
+    bool updateStreamConfig(RouterConfig&, StreamConfig&, bool low, bool mid, bool high);
+
     bool loadRouterConfig(bool low, bool mid, bool high);
     bool loadStreamConfig(bool low, bool mid, bool high);
     bool loadRouterAndStreamConfig(bool low, bool mid, bool high);
+
 private:
     bool     m_router_exposed;
     bool     m_router_readonly;
@@ -469,17 +578,8 @@ private:
 
     bool commandHelper(fb_quadlet_t cmd);
 
-public:
-    bool readReg(enum eRegBase, unsigned offset, quadlet_t *);
-    bool writeReg(enum eRegBase, unsigned offset, quadlet_t);
-    bool readRegBlock(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
-    bool writeRegBlock(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
-    bool readRegBlockSwapped(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
-    bool writeRegBlockSwapped(enum eRegBase, unsigned, fb_quadlet_t *, size_t);
+    /// Calculate the real offset for the different spaces
     fb_nodeaddr_t offsetGen(enum eRegBase, unsigned, size_t);
-
-protected:
-    DECLARE_DEBUG_MODULE; //_REFERENCE;
 
 private:
     Device & m_device;
@@ -491,11 +591,6 @@ private:
     StreamConfig m_current_cfg_stream_low;
     StreamConfig m_current_cfg_stream_mid;
     StreamConfig m_current_cfg_stream_high;
-public:
-    Mixer*  getMixer() {return m_mixer;};
-    Router* getRouter() {return m_router;};
-
-private:
 
     fb_quadlet_t m_capability_offset;
     fb_quadlet_t m_capability_size;
@@ -515,6 +610,9 @@ private:
     fb_quadlet_t m_standalone_size;
     fb_quadlet_t m_app_offset;
     fb_quadlet_t m_app_size;
+
+protected:
+    DECLARE_DEBUG_MODULE;
 };
 
 };
