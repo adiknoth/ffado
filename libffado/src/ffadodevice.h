@@ -67,15 +67,15 @@ public:
      * @brief Compares the GUID of two FFADODevices
      *
      * This function compares the GUID of two FFADODevices and returns true
-     * if the GUID of @ref a is larger than the GUID of @ref b . This is intended
-     * to be used with the STL sort() algorithm.
+     * if the GUID of a is larger than the GUID of b . This is intended to be
+     * used with the STL sort() algorithm.
      * 
      * Note that GUID's are converted to integers for this.
      * 
      * @param a pointer to first FFADODevice
      * @param b pointer to second FFADODevice
      * 
-     * @returns true if the GUID of @ref a is larger than the GUID of @ref b .
+     * @returns true if the GUID of a is larger than the GUID of b .
      */
     static bool compareGUID( FFADODevice *a, FFADODevice *b );
 
@@ -404,8 +404,7 @@ public:
      * @note you cannot have two streamprocessors handling the same ISO
      *       channel (on the same port)
      *
-     * @param i : Stream index
-     * @pre @ref i smaller than getStreamCount()
+     * @param i : Stream index (i has to be smaller than getStreamCount())
      * @return a StreamProcessor object if successful, NULL otherwise
      */
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i) = 0;
@@ -421,17 +420,15 @@ public:
      * Channel allocation should be done using the allocation functions provided by the
      * Ieee1394Service object that is passed in the constructor.
      *
-     * @param i : Stream index
-     * @pre @ref i smaller than getStreamCount()
+     * @param i : Stream index (i has to be smaller than getStreamCount())
      * @return true if successful, false if not
      */
     virtual bool startStreamByIndex(int i) = 0;
 
     /**
-     * @brief stops the stream with index @ref i
+     * @brief stops the stream with index i
      *
-     * @param i : Stream index
-     * @pre @ref i smaller than getStreamCount()
+     * @param i : Stream index (i has to be smaller than getStreamCount())
      * @return true if successful, false if not
      */
     virtual bool stopStreamByIndex(int i) = 0;
