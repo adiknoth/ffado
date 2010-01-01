@@ -61,7 +61,7 @@ class EAP;
   This class is the basic implementation for devices using the DICE-chip.
   */
 class Device : public FFADODevice {
-// private:
+private:
     friend class EAP;
 
 public:
