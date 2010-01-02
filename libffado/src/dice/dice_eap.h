@@ -222,7 +222,6 @@ private:
         virtual bool write(enum eRegBase b, unsigned offset);
         virtual void show();
 
-
         bool insertRoute(struct Route r)
             {return insertRoute(r, m_routes.size());};
         bool insertRoute(struct Route r, unsigned int index);
@@ -366,81 +365,54 @@ public:
       @brief The router exposed
       */
     class Router : public Control::CrossbarRouter {
-    private:
-        struct Source {
-            std::string name;
-            enum eRouteSource src;
-            int srcChannel;
-        };
-        typedef std::vector<Source> SourceVector;
-        typedef std::vector<Source>::iterator SourceVectorIterator;
-
-        struct Destination {
-            std::string name;
-            enum eRouteDestination dst;
-            int dstChannel;
-        };
-        typedef std::vector<Destination> DestinationVector;
-        typedef std::vector<Destination>::iterator DestinationVectorIterator;
-
     public:
         Router(EAP &);
         ~Router();
 
         void show();
 
-        void setupDestinationsAddDestination(const char *name, enum eRouteDestination dstid,
-                                             unsigned int base, unsigned int cnt);
-        void setupSourcesAddSource(const char *name, enum eRouteSource srcid,
-                                   unsigned int base, unsigned int cnt);
-
-        int getDestinationIndex(enum eRouteDestination dstid, int channel);
-        int getSourceIndex(enum eRouteSource srcid, int channel);
+        void addDestination(const std::string& name, enum eRouteDestination dstid,
+                            unsigned int base, unsigned int cnt, unsigned int offset=0);
+        void addSource(const std::string& name, enum eRouteSource srcid,
+                       unsigned int base, unsigned int cnt, unsigned int offset=0);
 
         // per-coefficient access
         virtual std::string getSourceName(const int);
         virtual std::string getDestinationName(const int);
         virtual int getSourceIndex(std::string);
         virtual int getDestinationIndex(std::string);
-        virtual NameVector getSourceNames();
-        virtual NameVector getDestinationNames();
+        virtual stringlist getSourceNames();
+        virtual stringlist getDestinationNames();
 
-        virtual Control::CrossbarRouter::Groups getSources();
-        virtual Control::CrossbarRouter::Groups getDestinations();
+        std::string getSourceForDestination(const std::string& dstname);
+        stringlist getDestinationsForSource(const std::string& srcname);
 
-        virtual IntVector getDestinationsForSource(const int);
-        virtual int getSourceForDestination(const int);
+        virtual bool canConnect(const int srcidx, const int dstidx);
+        virtual bool setConnectionState(const int srcidx, const int dstidx, const bool enable);
+        virtual bool getConnectionState(const int srcidx, const int dstidx);
 
-        virtual bool canConnect( const int source, const int dest);
-        virtual bool setConnectionState( const int source, const int dest, const bool enable);
-        virtual bool getConnectionState( const int source, const int dest );
-
-        virtual bool canConnect(std::string, std::string);
-        virtual bool setConnectionState(std::string, std::string, const bool enable);
-        virtual bool getConnectionState(std::string, std::string);
+        virtual bool canConnect(const std::string& srcname, const std::string& dstname);
+        virtual bool setConnectionState(const std::string& srcname, const std::string& dstname, const bool enable);
+        virtual bool getConnectionState(const std::string& srcname, const std::string& dstname);
 
         virtual bool clearAllConnections();
 
-        virtual int getNbSources();
-        virtual int getNbDestinations();
-
-        // functions to access the entire routing map at once
-        // idea is that the row/col nodes that are 1 get a routing entry
-        virtual bool getConnectionMap(int *);
-        virtual bool setConnectionMap(int *);
-
         // peak metering support
         virtual bool hasPeakMetering();
-        virtual bool getPeakValues(double &) {return false;};
-        virtual double getPeakValue(const int source, const int dest);
-        virtual Control::CrossbarRouter::PeakValues getPeakValues();
+        virtual double getPeakValue(const std::string& dest);
+        virtual std::map<std::string, double> getPeakValues();
 
     private:
         EAP &m_eap;
-        // these contain the sources and destinations available for this
-        // router
-        SourceVector      m_sources;
-        DestinationVector m_destinations;
+        /**
+          @{
+          @brief Name-Index pairs for the sources and destinations
+
+          The index is 'artificial' and is the block/channel combination used in the dice.
+          */
+        std::map<std::string, int> m_sources;
+        std::map<std::string, int> m_destinations;
+        // @}
 
         PeakSpace &m_peak;
 
@@ -527,13 +499,13 @@ protected:
     /**
       @brief Actually add the source
       */
-    void addSource( const std::string name, enum eRouteSource srcid,
-            unsigned int base, unsigned int count );
+    void addSource(const std::string name, unsigned int base, unsigned int count,
+                   enum eRouteSource srcid, unsigned int offset=0);
     /**
       @brief Actually add the destination
       */
-    void addDestination( const std::string name, enum eRouteDestination destid,
-            unsigned int base, unsigned int count );
+    void addDestination(const std::string name, unsigned int base, unsigned int count,
+                        enum eRouteDestination destid, unsigned int offset=0);
 
 private:
     /// Return the router configuration for the current rate

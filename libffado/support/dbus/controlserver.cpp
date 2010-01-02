@@ -867,19 +867,7 @@ CrossbarRouter::CrossbarRouter( DBus::Connection& connection, std::string p, Ele
                  path().c_str() );
 }
 
-DBus::String
-CrossbarRouter::getSourceName(const DBus::Int32 &idx)
-{
-    return m_Slave.getSourceName(idx);
-}
-
-DBus::String
-CrossbarRouter::getDestinationName(const DBus::Int32 &idx)
-{
-    return m_Slave.getDestinationName(idx);
-}
-
-DBus::Int32
+/*DBus::Int32
 CrossbarRouter::getSourceIndex(const DBus::String &name)
 {
     return m_Slave.getSourceIndex(name);
@@ -889,7 +877,7 @@ DBus::Int32
 CrossbarRouter::getDestinationIndex(const DBus::String &name)
 {
     return m_Slave.getDestinationIndex(name);
-}
+}*/
 
 std::vector< DBus::String >
 CrossbarRouter::getSourceNames()
@@ -903,62 +891,32 @@ CrossbarRouter::getDestinationNames()
     return m_Slave.getDestinationNames();
 }
 
-std::vector< DBus::Struct<DBus::String, int> >
-CrossbarRouter::getSources()
-{
-    return std::vector< DBus::Struct<DBus::String, int> >();
-}
-
-std::vector< DBus::Struct<DBus::String, int> >
-CrossbarRouter::getDestinations()
-{
-    return std::vector< DBus::Struct<DBus::String, int> >();
-}
-
-std::vector< DBus::Int32 >
-CrossbarRouter::getDestinationsForSource(const DBus::Int32 &idx)
+std::vector< DBus::String >
+CrossbarRouter::getDestinationsForSource(const DBus::String &idx)
 {
     return m_Slave.getDestinationsForSource(idx);
 }
 
-DBus::Int32
-CrossbarRouter::getSourceForDestination(const DBus::Int32 &idx)
+DBus::String
+CrossbarRouter::getSourceForDestination(const DBus::String &idx)
 {
     return m_Slave.getSourceForDestination(idx);
 }
 
 DBus::Bool
-CrossbarRouter::canConnect(const DBus::Int32 &source, const DBus::Int32 &dest)
+CrossbarRouter::canConnect(const DBus::String &source, const DBus::String &dest)
 {
     return m_Slave.canConnect(source, dest);
 }
 
 DBus::Bool
-CrossbarRouter::setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Bool &enable)
+CrossbarRouter::setConnectionState(const DBus::String &source, const DBus::String &dest, const DBus::Bool &enable)
 {
     return m_Slave.setConnectionState(source, dest, enable);
 }
 
 DBus::Bool
-CrossbarRouter::getConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest)
-{
-    return m_Slave.getConnectionState(source, dest);
-}
-
-DBus::Bool
-CrossbarRouter::canConnectNamed(const DBus::String& source, const DBus::String& dest)
-{
-    return m_Slave.canConnect(source, dest);
-}
-
-DBus::Bool
-CrossbarRouter::setConnectionStateNamed(const DBus::String &source, const DBus::String &dest, const DBus::Bool &enable)
-{
-    return m_Slave.setConnectionState(source, dest, enable);
-}
-
-DBus::Bool
-CrossbarRouter::getConnectionStateNamed(const DBus::String &source, const DBus::String &dest)
+CrossbarRouter::getConnectionState(const DBus::String &source, const DBus::String &dest)
 {
     return m_Slave.getConnectionState(source, dest);
 }
@@ -969,18 +927,6 @@ CrossbarRouter::clearAllConnections()
     return m_Slave.clearAllConnections();
 }
 
-DBus::Int32
-CrossbarRouter::getNbSources()
-{
-    return m_Slave.getNbSources();
-}
-
-DBus::Int32
-CrossbarRouter::getNbDestinations()
-{
-    return m_Slave.getNbDestinations();
-}
-
 DBus::Bool
 CrossbarRouter::hasPeakMetering()
 {
@@ -988,15 +934,15 @@ CrossbarRouter::hasPeakMetering()
 }
 
 DBus::Double
-CrossbarRouter::getPeakValue(const DBus::Int32 &source, const DBus::Int32 &dest)
+CrossbarRouter::getPeakValue(const DBus::String &dest)
 {
-    return m_Slave.getPeakValue(source, dest);
+    return m_Slave.getPeakValue(dest);
 }
-std::vector< DBus::Struct<int, double> >
+std::vector< DBus::Struct<DBus::String, double> >
 CrossbarRouter::getPeakValues()
 {
-    //return std::vector< DBus::Struct<int, int, double> >();
-    std::vector< DBus::Struct<int, double> > out;
+    return std::vector< DBus::Struct<DBus::String, double> >();
+    /*std::vector< DBus::Struct<int, double> > out;
     Control::CrossbarRouter::PeakValues values = m_Slave.getPeakValues();
     for ( unsigned int i=0; i<values.size(); ++i ) {
         DBus::Struct<int, double> tmp;
@@ -1004,47 +950,7 @@ CrossbarRouter::getPeakValues()
         tmp._2 = values[i].peakvalue;
         out.push_back(tmp);
     }
-    return out;
-}
-
-std::vector< DBus::Int32 >
-CrossbarRouter::getConnectionMap()
-{
-    std::vector< DBus::Int32 >connmap;
-    unsigned int nb_sources = m_Slave.getNbSources();
-    unsigned int nb_destinations = m_Slave.getNbDestinations();
-    unsigned int nb_entries = nb_sources * nb_destinations;
-
-    int map_data[nb_entries];
-
-    if(!m_Slave.getConnectionMap(map_data)) {
-        debugError("Could not fetch connection map\n");
-        return connmap;
-    }
-
-    for(unsigned int i=0; i<nb_entries; i++) {
-        connmap.push_back(map_data[i]);
-    }
-    return connmap;
-}
-
-DBus::Int32
-CrossbarRouter::setConnectionMap(const std::vector< DBus::Int32 >&connmap)
-{
-    unsigned int nb_sources = m_Slave.getNbSources();
-    unsigned int nb_destinations = m_Slave.getNbDestinations();
-    unsigned int nb_entries = nb_sources * nb_destinations;
-
-    if(connmap.size() != nb_entries) {
-        debugError("bogus map size\n");
-        return false;
-    }
-
-    int map_data[nb_entries];
-    for (unsigned int i=0; i<nb_entries; i++) {
-        map_data[i] = connmap.at(i);
-    }
-    return m_Slave.setConnectionMap(map_data);
+    return out;*/
 }
 
 // --- Boolean

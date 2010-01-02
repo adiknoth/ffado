@@ -294,19 +294,19 @@ main(int argc, char **argv)
 //                         printMessage("Dest %02d: %s\n", i, n.at(i).c_str());
 //                     }
 //                 }
-                #define NELEMS 10
-                double peaks[NELEMS];
-                int srcids[NELEMS];
-                int dstidx = c->getDestinationIndex("MixerIn:00");
-                for(int i=0; i<NELEMS; i++) {
-                    srcids[i] = c->getSourceForDestination(dstidx + i);
-                    peaks[i] = c->getPeakValue(srcids[i], dstidx + i);
-                }
-                for(int i=0; i<NELEMS; i++) {
-                    std::string srcname = c->getSourceName(srcids[i]);
-                    std::string dstname = c->getDestinationName(dstidx + i);
-                    printMessage("Peak %3d (%10s => %10s): %f\n", i, srcname.c_str(), dstname.c_str(), peaks[i]);
-                }
+//                #define NELEMS 10
+//                double peaks[NELEMS];
+//                int srcids[NELEMS];
+//                int dstidx = c->getDestinationIndex("MixerIn:00");
+//                for(int i=0; i<NELEMS; i++) {
+//                    srcids[i] = c->getSourceForDestination(dstidx + i);
+//                    peaks[i] = c->getPeakValue(srcids[i], dstidx + i);
+//                }
+//                for(int i=0; i<NELEMS; i++) {
+//                    std::string srcname = c->getSourceName(srcids[i]);
+//                    std::string dstname = c->getDestinationName(dstidx + i);
+//                    printMessage("Peak %3d (%10s => %10s): %f\n", i, srcname.c_str(), dstname.c_str(), peaks[i]);
+//                }
             }
         }
         // after unlocking, these should not be used anymore

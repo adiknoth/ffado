@@ -218,24 +218,24 @@ EAP::setupSources() {
             break;
         case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
             // second audio port (unique to the junior)
-            addSource("InS1", eRS_InS1, 0, 8);
+            addSource("InS1", 0, 8, eRS_InS1);
         case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
             /// these are common to the mini and junior
             // the AES receiver
-            addSource("AES", eRS_AES, 0, 8);
+            addSource("AES", 0, 8, eRS_AES);
             // the ADAT receiver
-            addSource("ADAT", eRS_ADAT, 0, 8);
+            addSource("ADAT", 0, 8, eRS_ADAT);
             // the Mixer outputs
-            addSource("MixerOut", eRS_Mixer, 0, 16);
+            addSource("MixerOut", 0, 16, eRS_Mixer);
             // the first audio port
-            addSource("InS0", eRS_InS0, 0, 8);
+            addSource("InS0", 0, 8, eRS_InS0);
             // the ARM audio port
-            addSource("ARM", eRS_ARM, 0, 8);
+            addSource("ARM", 0, 8, eRS_ARM);
             // the 1394 stream receivers
-            addSource("1394_0", eRS_ARX0, 0, 16);
-            addSource("1394_1", eRS_ARX1, 0, 16);
+            addSource("1394_0", 0, 16, eRS_ARX0);
+            addSource("1394_1", 0, 16, eRS_ARX1);
             // mute
-            addSource("Mute", eRS_Muted, 0, 1);
+            addSource("Mute", 0, 1, eRS_Muted);
             break;
         default:
             // this is an unsupported chip
@@ -252,25 +252,25 @@ EAP::setupDestinations() {
             break;
         case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
             // second audio port (unique to the junior)
-            addDestination("InS1", eRD_InS1, 0, 8);
+            addDestination("InS1", 0, 8, eRD_InS1);
         case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
             /// these are common to the mini and junior
             // the AES receiver
-            addDestination("AES", eRD_AES, 0, 8);
+            addDestination("AES", 0, 8, eRD_AES);
             // the ADAT receiver
-            addDestination("ADAT", eRD_ADAT, 0, 8);
+            addDestination("ADAT", 0, 8, eRD_ADAT);
             // the Mixer outputs
-            addDestination("MixerIn", eRD_Mixer0, 0, 16);
-            addDestination("MixerIn", eRD_Mixer1, 16, 2);
+            addDestination("MixerIn", 0, 16, eRD_Mixer0);
+            addDestination("MixerIn", 0, 2, eRD_Mixer1, 16);
             // the first audio port
-            addDestination("InS0", eRD_InS0, 0, 8);
+            addDestination("InS0", 0, 8, eRD_InS0);
             // the ARM audio port
-            addDestination("ARM", eRD_ARM, 0, 8);
+            addDestination("ARM", 0, 8, eRD_ARM);
             // the 1394 stream receivers
-            addDestination("1394_0", eRD_ATX0, 0, 16);
-            addDestination("1394_1", eRD_ATX1, 0, 16);
+            addDestination("1394_0", 0, 16, eRD_ATX0);
+            addDestination("1394_1", 0, 16, eRD_ATX1);
             // mute
-            addDestination("Mute", eRD_Muted, 0, 1);
+            addDestination("Mute", 0, 1, eRD_Muted);
             break;
         default:
             // this is an unsupported chip
@@ -279,12 +279,16 @@ EAP::setupDestinations() {
 }
 
 void
-EAP::addSource( const std::string name, enum eRouteSource srcid, unsigned int base, unsigned int count ) {
-    m_router->setupSourcesAddSource(name.c_str(), srcid, base, count);
+EAP::addSource(const std::string name, unsigned int base, unsigned int count,
+               enum eRouteSource srcid, unsigned int offset)
+{
+    m_router->addSource(name, srcid, base, count, offset);
 }
 void
-EAP::addDestination( const std::string name, enum eRouteDestination destid, unsigned int base, unsigned int count ) {
-    m_router->setupDestinationsAddDestination(name.c_str(), destid, base, count);
+EAP::addDestination(const std::string name, unsigned int base, unsigned int count,
+                    enum eRouteDestination destid, unsigned int offset)
+{
+    m_router->addDestination(name, destid, base, count, offset);
 }
 
 bool
@@ -495,9 +499,9 @@ EAP::show()
                                      (m_mixer_exposed?"":"not "),
                                      (m_mixer_readonly?"not ":""),
                                      (m_mixer_flashstored?"":"not "));
-    printMessage("         tx id: %s [%d], rx id: %s [%d]\n", 
-                                     dstBlockToString(m_mixer_tx_id), m_mixer_tx_id,
-                                     srcBlockToString(m_mixer_rx_id), m_mixer_rx_id);
+    printMessage("         tx id: (%d==eRD_Mixer0) ? %s, rx id: (%d==eRS_Mixer) ? %s\n", 
+                                     m_mixer_tx_id, (m_mixer_tx_id == eRD_Mixer0)?"true":"false",
+                                     m_mixer_rx_id, (m_mixer_rx_id == eRS_Mixer) ?"true":"false");
     printMessage("         nb tx channels: %d, nb rx channels: %d\n", m_mixer_nb_tx, m_mixer_nb_rx);
     printMessage(" General: dynamic stream config %ssupported\n",
                                      (m_general_support_dynstream?"":"not "));
@@ -1091,10 +1095,9 @@ EAP::Mixer::getRowName(const int row) {
     return tmp;
 }
 
+//
 // ----------- Router -------------
-// FIXME: some more efficient datastructure for the 
-//        sources and destinations might be good
-
+//
 
 EAP::Router::Router(EAP &p)
 : Control::CrossbarRouter(&p.m_device, "Router")
@@ -1110,242 +1113,113 @@ EAP::Router::~Router()
 }
 
 void
-EAP::Router::setupSourcesAddSource(const char *basename, enum eRouteSource srcid, 
-                                           unsigned int base, unsigned int cnt)
+EAP::Router::addSource(const std::string& basename, enum eRouteSource srcid,
+                       unsigned int base, unsigned int cnt, unsigned int offset)
 {
-    unsigned int i=0;
-    char name[16];
-    for (i=0; i<cnt; i++) {
-        snprintf(name, 16, "%s:%02d", basename, base+i);
-        struct Source s = {name, srcid, i};
-        m_sources.push_back(s);
+    std::string name = basename + ":";
+    char tmp[4];
+    for (unsigned int i=0; i<cnt; i++) {
+        snprintf(tmp, 4, "%02d", offset+i);
+        m_sources[name+tmp] = (srcid<<4) + base+i;
     }
 }
 
 void
-EAP::Router::setupDestinationsAddDestination(const char *basename, enum eRouteDestination dstid,
-                                                     unsigned int base, unsigned int cnt)
+EAP::Router::addDestination(const std::string& basename, enum eRouteDestination dstid,
+                            unsigned int base, unsigned int cnt, unsigned int offset)
 {
-    unsigned int i=0;
-    char name[16];
-    for (i=0; i<cnt; i++) {
-        snprintf(name, 16, "%s:%02d", basename, base+i);
-        struct Destination d = {name, dstid, i};
-        m_destinations.push_back(d);
+    std::string name = basename + ":";
+    char tmp[4];
+    for (unsigned int i=0; i<cnt; i++) {
+        snprintf(tmp, 4, "%02d", offset+i);
+        m_destinations[name+tmp] = (dstid<<4) + base+i;
     }
 }
 
 std::string
 EAP::Router::getSourceName(const int srcid)
 {
-    if((unsigned)srcid < m_sources.size()) {
-        return m_sources.at(srcid).name;
-    } else {
-        debugWarning("source id out of range (%d)\n", srcid);
-        return "";
+    for (std::map<std::string, int>::iterator it=m_sources.begin(); it!=m_sources.end(); ++it) {
+        if (it->second == srcid) {
+            return it->first;
+        }
     }
+    return "";
 }
 
 std::string
 EAP::Router::getDestinationName(const int dstid)
 {
-    if((unsigned)dstid < m_destinations.size()) {
-        return m_destinations.at(dstid).name;
-    } else {
-        debugWarning("destination id out of range (%d)\n", dstid);
-        return "";
+    debugWarning("TODO: Implement getDestinationName(0x%02x)\n", dstid);
+    for (std::map<std::string, int>::iterator it=m_destinations.begin(); it!=m_destinations.end(); ++it) {
+        if (it->second == dstid) {
+            return it->first;
+        }
     }
+    return "";
 }
 
 int
 EAP::Router::getSourceIndex(std::string name)
 {
-    int i = 0;
-    for ( SourceVectorIterator it = m_sources.begin();
-        it != m_sources.end();
-        ++it )
-    {
-        if(it->name == name) return i;
-        i++;
-    }
-    return -1;
+    if (m_sources.count(name) < 1)
+        return -1;
+    return m_sources[name];
 }
 
 int
 EAP::Router::getDestinationIndex(std::string name)
 {
-    int i = 0;
-    for ( DestinationVectorIterator it = m_destinations.begin();
-        it != m_destinations.end();
-        ++it )
-    {
-        if(it->name == name) return i;
-        i++;
-    }
-    return -1;
+    if (m_destinations.count(name) < 1)
+        return -1;
+    return m_destinations[name];
 }
 
-int
-EAP::Router::getSourceIndex(enum eRouteSource srcid, int channel)
-{
-    int i = 0;
-    for ( SourceVectorIterator it = m_sources.begin();
-        it != m_sources.end();
-        ++it )
-    {
-        if((it->src == srcid) && (it->srcChannel == channel)) return i;
-        i++;
-    }
-    return -1;
-}
-
-int
-EAP::Router::getDestinationIndex(enum eRouteDestination dstid, int channel)
-{
-    int i = 0;
-    for ( DestinationVectorIterator it = m_destinations.begin();
-        it != m_destinations.end();
-        ++it )
-    {
-        if((it->dst == dstid) && (it->dstChannel == channel)) return i;
-        i++;
-    }
-    return -1;
-}
-
-Control::CrossbarRouter::NameVector
+stringlist
 EAP::Router::getSourceNames()
 {
-    Control::CrossbarRouter::NameVector n;
-    for ( SourceVectorIterator it = m_sources.begin();
-        it != m_sources.end();
-        ++it )
-    {
-        n.push_back(it->name);
-    }
+    stringlist n;
+    for (std::map<std::string, int>::iterator it=m_sources.begin(); it!=m_sources.end(); ++it)
+        n.push_back(it->first);
     return n;
 }
 
-Control::CrossbarRouter::NameVector
+stringlist
 EAP::Router::getDestinationNames()
 {
-    Control::CrossbarRouter::NameVector n;
-    for ( DestinationVectorIterator it = m_destinations.begin();
-        it != m_destinations.end();
-        ++it )
-    {
-        n.push_back(it->name);
-    }
+    stringlist n;
+    for (std::map<std::string, int>::iterator it=m_destinations.begin(); it!=m_destinations.end(); ++it)
+        n.push_back(it->first);
     return n;
 }
 
-Control::CrossbarRouter::Groups
-EAP::Router::getSources()
-{
-    debugError("EAP::Router::getSources() is not yet implemented!");
-    return Control::CrossbarRouter::Groups();
+stringlist
+EAP::Router::getDestinationsForSource(const std::string& srcname) {
+    debugWarning("TODO: Implement getDestinationsForSource(%s)\n", srcname.c_str());
+    return stringlist();
 }
-
-Control::CrossbarRouter::Groups
-EAP::Router::getDestinations()
-{
-    debugError("EAP::Router::getDestinations() is not yet implemented!");
-    return Control::CrossbarRouter::Groups();
-}
-
-Control::CrossbarRouter::IntVector
-EAP::Router::getDestinationsForSource(const int srcid)
-{
-    IntVector retval;
-    if((unsigned)srcid < m_sources.size()) {
-        Source s = m_sources.at(srcid);
-
-        // get the routing configuration
-        RouterConfig *rcfg = m_eap.getActiveRouterConfig();
-        if(rcfg == NULL) {
-            debugError("Could not request active router configuration\n");
-            return retval;
-        }
-        // get the source routes
-        RouterConfig::RouteVector v = rcfg->getRoutesForSource(s.src, s.srcChannel);
-
-        for ( RouterConfig::RouteVectorIterator it = v.begin();
-            it != v.end();
-            ++it )
-        {
-            // FIXME: some more efficient datastructure might be good to
-            // avoid this loop
-            RouterConfig::Route &r = *it;
-            int i = 0;
-            for ( DestinationVectorIterator it = m_destinations.begin();
-                it != m_destinations.end();
-                ++it )
-            {
-                if((it->dst == r.dst) && (it->dstChannel == r.dstChannel)) {
-                    retval.push_back(i);
-                    break; // can only match once
-                }
-                i++;
-            }
-        }
-        return retval;
-    } else {
-        debugWarning("source id out of range (%d)\n", srcid);
-        return retval;
+std::string
+EAP::Router::getSourceForDestination(const std::string& dstname) {
+    RouterConfig* rcfg = m_eap.getActiveRouterConfig();
+    if(rcfg == NULL) {
+        debugError("Could not request active router configuration\n");
+        return "";
     }
-}
-
-int
-EAP::Router::getSourceForDestination(const int dstid)
-{
-    if((unsigned)dstid < m_destinations.size()) {
-        Destination d = m_destinations.at(dstid);
-
-        // get the routing configuration
-        RouterConfig *rcfg = m_eap.getActiveRouterConfig();
-        if(rcfg == NULL) {
-            debugError("Could not request active router configuration\n");
-            return false;
-        }
-
-        RouterConfig::Route r = rcfg->getRouteForDestination(d.dst, d.dstChannel);
-        if(r.src == eRS_Invalid) {
-            return -1;
-        } else {
-            // FIXME: some more efficient datastructure might be good to
-            // avoid this loop
-            int i = 0;
-            for ( SourceVectorIterator it = m_sources.begin();
-                it != m_sources.end();
-                ++it )
-            {
-                if((it->src == r.src) && (it->srcChannel == r.srcChannel)) return i;
-                i++;
-            }
-            return -1;
-        }
-    } else {
-        debugWarning("destination id out of range (%d)\n", dstid);
-        return -1;
+    eRouteDestination dst = eRouteDestination(m_destinations[dstname]>>4);
+    int dstChannel = m_destinations[dstname]&0xf;
+    RouterConfig::Route r = rcfg->getRouteForDestination(dst, dstChannel);
+    if (r.src == eRS_Invalid) {
+        return "";
     }
+    return getSourceName((r.src<<4)+r.srcChannel);
 }
 
-int
-EAP::Router::getNbSources()
-{
-    return m_sources.size();
-}
-
-int
-EAP::Router::getNbDestinations()
-{
-    return m_destinations.size();
-}
 
 bool
 EAP::Router::canConnect(const int source, const int dest)
 {
-    if((unsigned)source >= m_sources.size()) {
+    debugWarning("TODO: Implement canConnect(0x%02x, 0x%02x)\n", source, dest);
+    /*if((unsigned)source >= m_sources.size()) {
         debugWarning("source id out of range (%d)\n", source);
         return false;
     }
@@ -1355,7 +1229,7 @@ EAP::Router::canConnect(const int source, const int dest)
         debugWarning("destination id out of range (%d)\n", dest);
         return false;
     }
-    Destination d = m_destinations.at(dest);
+    Destination d = m_destinations.at(dest);*/
 
     // we can connect anything
     // FIXME: can we?
@@ -1365,18 +1239,6 @@ EAP::Router::canConnect(const int source, const int dest)
 bool
 EAP::Router::setConnectionState(const int source, const int dest, const bool enable)
 {
-    if((unsigned)source >= m_sources.size()) {
-        debugWarning("source id out of range (%d)\n", source);
-        return false;
-    }
-    Source s = m_sources.at(source);
-
-    if((unsigned)dest >= m_destinations.size()) {
-        debugWarning("destination id out of range (%d)\n", dest);
-        return false;
-    }
-    Destination d = m_destinations.at(dest);
-
     // get the routing configuration
     RouterConfig *rcfg = m_eap.getActiveRouterConfig();
     if(rcfg == NULL) {
@@ -1384,80 +1246,58 @@ EAP::Router::setConnectionState(const int source, const int dest, const bool ena
         return false;
     }
 
-    // build a new routing configuration
-    RouterConfig newcfg = EAP::RouterConfig(*rcfg);
-
-    // construct the routing entry to find
-    RouterConfig::Route r = {s.src, s.srcChannel, d.dst, d.dstChannel};
-
-    // find the appropriate entry
-    int idx = newcfg.getRouteIndex(r);
-
-    if (idx < 0) {
-        // we have to add the route
-        newcfg.insertRoute(r);
-    } else {
-        // the route is already present, so we can replace it
-        if(enable) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "connection %d => %d already present\n", source, dest);
-            //return true;
-        } else {
-            // remove the route
-            newcfg.removeRoute(idx);
-        }
+    RouterConfig::Route r = rcfg->getRouteForDestination(eRouteDestination(dest>>4), dest&0xf);
+    if ( r.srcChannel == -1 && r.dstChannel == -1 && enable ) {
+        r.src = eRouteSource(source>>4);
+        r.srcChannel = source&0xf;
+        r.dst = eRouteDestination(dest>>4);
+        r.dstChannel = dest&0xf;
+        int ret = rcfg->insertRoute(r);
+        m_eap.updateCurrentRouterConfig(*rcfg);
+        return ret;
     }
-
-    // if we get here it means we have to upload a new router config
-    if(!m_eap.updateCurrentRouterConfig(newcfg)) {
-        debugError("Could not update router config\n");
+    if ( r.dst != (dest>>4) || r.dstChannel != (dest&0xf) ) {
+        debugError("Route exists but isn't correct? strange...\n");
+        debugError(" wanted: 0x%02x got: 0x%02x\n", dest, (r.dst<<4)+r.dstChannel);
         return false;
     }
+    if ( !enable ) {
+        int ret = rcfg->removeRoute(r);
+        m_eap.updateCurrentRouterConfig(*rcfg);
+        return ret;
+    }
+    if ( enable ) {
+        int index = rcfg->getRouteIndex(r);
+        r.src = eRouteSource(source>>4);
+        r.srcChannel = (source&0xf);
+        int ret = rcfg->replaceRoute(index, r);
+        m_eap.updateCurrentRouterConfig(*rcfg);
+        return ret;
+    }
 
-    return true;
+    // When we reach this point, something went wrong. Return false by default...
+    return false;
 }
 
 bool
 EAP::Router::getConnectionState(const int source, const int dest)
 {
-    if((unsigned)source >= m_sources.size()) {
-        debugWarning("source id out of range (%d)\n", source);
-        return false;
-    }
-    Source s = m_sources.at(source);
-
-    if((unsigned)dest >= m_destinations.size()) {
-        debugWarning("destination id out of range (%d)\n", dest);
-        return false;
-    }
-    Destination d = m_destinations.at(dest);
-
     // get the routing configuration
     RouterConfig *rcfg = m_eap.getActiveRouterConfig();
     if(rcfg == NULL) {
         debugError("Could not request active router configuration\n");
         return false;
     }
-
-    // build a new routing configuration
-    RouterConfig newcfg = EAP::RouterConfig(*rcfg);
-
-    // construct the routing entry to find
-    RouterConfig::Route r = {s.src, s.srcChannel, d.dst, d.dstChannel};
-
-    // find the appropriate entry
-    int idx = newcfg.getRouteIndex(r);
-
-    if (idx < 0) {
-        // the route is not present
-        return false;
-    } else {
-        // the route is already present
-        return true;
-    }
+    // Construct a route
+    RouterConfig::Route r = { eRouteSource(source>>4), source&0xf, eRouteDestination(dest>>4), dest&0xf };
+    // get the routes index...
+    int idx = rcfg->getRouteIndex(r);
+    // ...and return true if it exists
+    return (idx>=0);
 }
 
 bool
-EAP::Router::canConnect(std::string src, std::string dst)
+EAP::Router::canConnect(const std::string& src, const std::string& dst)
 {
     int srcidx = getSourceIndex(src);
     int dstidx = getDestinationIndex(dst);
@@ -1465,7 +1305,7 @@ EAP::Router::canConnect(std::string src, std::string dst)
 }
 
 bool
-EAP::Router::setConnectionState(std::string src, std::string dst, const bool enable)
+EAP::Router::setConnectionState(const std::string& src, const std::string& dst, const bool enable)
 {
     int srcidx = getSourceIndex(src);
     int dstidx = getDestinationIndex(dst);
@@ -1473,60 +1313,13 @@ EAP::Router::setConnectionState(std::string src, std::string dst, const bool ena
 }
 
 bool
-EAP::Router::getConnectionState(std::string src, std::string dst)
+EAP::Router::getConnectionState(const std::string& src, const std::string& dst)
 {
     int srcidx = getSourceIndex(src);
     int dstidx = getDestinationIndex(dst);
     return getConnectionState(srcidx, dstidx);
 }
 
-// the map is organized as a matrix where the 
-// rows are the destinations and the columns are
-// the sources
-
-// note that map as assumed to be big enough and
-// allocated by the user
-bool
-EAP::Router::getConnectionMap(int *map)
-{
-    unsigned int nb_sources = getNbSources();
-    unsigned int nb_destinations = getNbDestinations();
-
-    // clear the map
-    memset(map, 0, nb_sources * nb_destinations * sizeof(int));
-
-    // get the routing configuration
-    RouterConfig *rcfg = m_eap.getActiveRouterConfig();
-    if(rcfg == NULL) {
-        debugError("Could not request active router configuration\n");
-        return false;
-    }
-
-    unsigned int nb_routes = rcfg->getNbRoutes();
-
-    for(unsigned int i=0; i<nb_routes; i++) {
-        struct RouterConfig::Route r = rcfg->getRoute(i);
-        int srcidx = getSourceIndex(r.src, r.srcChannel);
-        int dstidx = getDestinationIndex(r.dst, r.dstChannel);
-        if(srcidx < 0) {
-            debugWarning("bogus source (%d, %d) in route table\n", r.src, r.srcChannel);
-        } else if(dstidx < 0) {
-            debugWarning("bogus destination (%d, %d) in route table\n", r.dst, r.dstChannel);
-        } else {
-            int *ptr = map;
-            ptr += dstidx * nb_sources;
-            ptr += srcidx;
-            *ptr = 1; // route present
-        }
-    }
-    return true;
-}
-
-bool
-EAP::Router::setConnectionMap(int *map)
-{
-    return false;
-}
 
 bool
 EAP::Router::clearAllConnections()
@@ -1549,9 +1342,10 @@ EAP::Router::hasPeakMetering()
 }
 
 double
-EAP::Router::getPeakValue(const int source, const int dest)
+EAP::Router::getPeakValue(const std::string& dest)
 {
-    if((unsigned)source >= m_sources.size()) {
+    debugError("TODO: Implement getPeakValue(%s)\n", dest.c_str());
+    /*if((unsigned)source >= m_sources.size()) {
         debugWarning("source id out of range (%d)\n", source);
         return false;
     }
@@ -1583,14 +1377,16 @@ EAP::Router::getPeakValue(const int source, const int dest)
         // the route is present
         r = m_peak.getRoute(idx);
         return r.peak;
-    }
+    }*/
+    return -1;
 
 }
 
-Control::CrossbarRouter::PeakValues
+std::map<std::string, double>
 EAP::Router::getPeakValues()
 {
-    m_peak.read();
+    debugError("TODO: implement getPeakValues()\n");
+    /*m_peak.read();
     Control::CrossbarRouter::PeakValues values;
     for (unsigned int i=0; i<m_peak.getNbRoutes(); ++i) {
         Control::CrossbarRouter::PeakValue tmp;
@@ -1599,16 +1395,35 @@ EAP::Router::getPeakValues()
         tmp.peakvalue = route.peak;
         values.push_back(tmp);
     }
-    return values;
+    return values;*/
+    return std::map<std::string, double>();
 }
 
 void
 EAP::Router::show()
 {
     // print the peak space as it also contains the routing configuration
-    printMessage("Active router config:\n");
-    m_peak.read();
-    m_peak.show();
+    printMessage("Router sources:\n");
+    for ( std::map<std::string, int>::iterator it=m_sources.begin(); it!=m_sources.end(); ++it ) {
+        printMessage(" 0x%02x : %s\n", (*it).second, (*it).first.c_str());
+    }
+    printMessage("Router destinations:\n");
+    for ( std::map<std::string, int>::iterator it=m_destinations.begin(); it!=m_destinations.end(); ++it ) {
+        printMessage(" 0x%02x : %s\n", (*it).second, (*it).first.c_str());
+    }
+    printMessage("Router connections:\n");
+    stringlist sources = getSourceNames();
+    stringlist destinations = getDestinationNames();
+    for (stringlist::iterator it1=sources.begin(); it1!=sources.end(); ++it1) {
+        for (stringlist::iterator it2=destinations.begin(); it2!=destinations.end(); ++it2) {
+            if (getConnectionState(*it1, *it2)) {
+                printMessage(" %s -> %s\n", it1->c_str(), it2->c_str());
+            }
+        }
+    }
+    //printMessage("Active router config:\n");
+    //m_peak.read();
+    //m_peak.show();
 }
 
 // ----------- routing config -------------
@@ -1862,7 +1677,7 @@ EAP::RouterConfig::getRouteForDestination(enum eRouteDestination dst, int channe
     }
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "%s:%02d source can't be found\n",
                                           dstBlockToString((int)dst), channel);
-    struct Route r = {eRS_Invalid, -1, eRD_Invalid, 0, 0};
+    struct Route r = {eRS_Invalid, -1, eRD_Invalid, -1, 0};
     return r;
 }
 

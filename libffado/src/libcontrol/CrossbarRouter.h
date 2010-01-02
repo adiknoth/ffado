@@ -25,11 +25,13 @@
 #define CONTROL_CROSSBAR_ROUTER_H
 
 #include "debugmodule/debugmodule.h"
+#include "ffadotypes.h"
 
 #include "Element.h"
 
 #include <vector>
 #include <string>
+#include <map>
 
 namespace Control {
 
@@ -46,62 +48,22 @@ public:
 
     virtual void show() = 0;
 
-    typedef std::vector<std::string> NameVector;
-    typedef std::vector<std::string>::iterator NameVectorIterator;
-    typedef std::vector<int> IntVector;
-    typedef std::vector<int>::iterator IntVectorIterator;
+    virtual stringlist getSourceNames() = 0;
+    virtual stringlist getDestinationNames() = 0;
 
-    struct PeakValue
-    {
-        int destination;
-        double peakvalue;
-    };
-    typedef std::vector<PeakValue> PeakValues;
+    virtual std::string getSourceForDestination(const std::string& dstname) = 0;
+    virtual stringlist getDestinationsForSource(const std::string& srcname) = 0;
 
-    struct Group
-    {
-        std::string name;
-        int nbchannels;
-    };
-    typedef std::vector<Group> Groups;
-
-    virtual std::string getSourceName(const int) = 0;
-    virtual std::string getDestinationName(const int) = 0;
-    virtual int getSourceIndex(std::string) = 0;
-    virtual int getDestinationIndex(std::string) = 0;
-
-    virtual NameVector getSourceNames() = 0;
-    virtual NameVector getDestinationNames() = 0;
-
-    virtual Groups getSources() = 0;
-    virtual Groups getDestinations() = 0;
-
-    virtual IntVector getDestinationsForSource(const int) = 0;
-    virtual int getSourceForDestination(const int) = 0;
-
-    virtual bool canConnect(const int source, const int dest) = 0;
-    virtual bool setConnectionState(const int source, const int dest, const bool enable) = 0;
-    virtual bool getConnectionState(const int source, const int dest) = 0;
-
-    virtual bool canConnect(std::string, std::string) = 0;
-    virtual bool setConnectionState(std::string, std::string, const bool enable) = 0;
-    virtual bool getConnectionState(std::string, std::string) = 0;
+    virtual bool canConnect(const std::string& srcname, const std::string& dstname) = 0;
+    virtual bool setConnectionState(const std::string& srcname, const std::string& dstname, const bool enable) = 0;
+    virtual bool getConnectionState(const std::string& srcname, const std::string& dstname) = 0;
 
     virtual bool clearAllConnections() = 0;
 
-    virtual int getNbSources() = 0;
-    virtual int getNbDestinations() = 0;
-
-    // functions to access the entire routing map at once
-    // idea is that the row/col nodes that are 1 get a routing entry
-    virtual bool getConnectionMap(int *) = 0;
-    virtual bool setConnectionMap(int *) = 0;
-
     // peak metering
     virtual bool hasPeakMetering() = 0;
-    virtual double getPeakValue(const int source, const int dest) = 0;
-    virtual bool getPeakValues(double &) = 0;
-    virtual PeakValues getPeakValues() = 0;
+    virtual double getPeakValue(const std::string& dest) = 0;
+    virtual std::map<std::string, double> getPeakValues() = 0;
 
 protected:
 

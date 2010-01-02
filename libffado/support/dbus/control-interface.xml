@@ -239,100 +239,48 @@
   </interface>
 
   <interface name="org.ffado.Control.Element.CrossbarRouter">
-      <method name="getSourceName">
-          <arg type="i" name="srcid" direction="in"/>
-          <arg type="s" name="sourcename" direction="out"/>
-      </method>
-      <method name="getDestinationName">
-          <arg type="i" name="dstid" direction="in"/>
-          <arg type="s" name="destinationname" direction="out"/>
-      </method>
-      <method name="getSourceIndex">
-          <arg type="s" name="sourcename" direction="in"/>
-          <arg type="i" name="srcid" direction="out"/>
-      </method>
-      <method name="getDestinationIndex">
-          <arg type="s" name="destinationname" direction="in"/>
-          <arg type="i" name="dstid" direction="out"/>
-      </method>
       <method name="getSourceNames">
           <arg type="as" name="sourcenames" direction="out"/>
-      </method>
-      <method name="getSources">
-          <arg type="a(si)" name="sources" direction="out"/>
-      </method>
-      <method name="getDestinations">
-          <arg type="a(si)" name="sources" direction="out"/>
       </method>
       <method name="getDestinationNames">
           <arg type="as" name="destinationnames" direction="out"/>
       </method>
-      <method name="getDestinationsForSource">
-          <arg type="i" name="srcid" direction="in"/>
-          <arg type="ai" name="dstids" direction="out"/>
-      </method>
       <method name="getSourceForDestination">
-          <arg type="i" name="dstid" direction="in"/>
-          <arg type="i" name="srcid" direction="out"/>
+          <arg type="s" name="dstid" direction="in"/>
+          <arg type="s" name="srcid" direction="out"/>
+      </method>
+      <method name="getDestinationsForSource">
+          <arg type="s" name="srcid" direction="in"/>
+          <arg type="as" name="dstids" direction="out"/>
       </method>
       <method name="canConnect">
-          <arg type="i" name="srcid" direction="in"/>
-          <arg type="i" name="dstid" direction="in"/>
+          <arg type="s" name="srcid" direction="in"/>
+          <arg type="s" name="dstid" direction="in"/>
           <arg type="b" name="canconnect" direction="out"/>
       </method>
       <method name="setConnectionState">
-          <arg type="i" name="srcid" direction="in"/>
-          <arg type="i" name="dstid" direction="in"/>
+          <arg type="s" name="srcid" direction="in"/>
+          <arg type="s" name="dstid" direction="in"/>
           <arg type="b" name="state" direction="in"/>
           <arg type="b" name="result" direction="out"/>
       </method>
       <method name="getConnectionState">
-          <arg type="i" name="srcid" direction="in"/>
-          <arg type="i" name="dstid" direction="in"/>
-          <arg type="b" name="state" direction="out"/>
-      </method>
-      <method name="canConnectNamed">
-          <arg type="s" name="srcname" direction="in"/>
-          <arg type="s" name="dstname" direction="in"/>
-          <arg type="b" name="canconnect" direction="out"/>
-      </method>
-      <method name="setConnectionStateNamed">
-          <arg type="s" name="srcname" direction="in"/>
-          <arg type="s" name="dstname" direction="in"/>
-          <arg type="b" name="state" direction="in"/>
-          <arg type="b" name="result" direction="out"/>
-      </method>
-      <method name="getConnectionStateNamed">
-          <arg type="s" name="srcname" direction="in"/>
-          <arg type="s" name="dstname" direction="in"/>
+          <arg type="s" name="srcid" direction="in"/>
+          <arg type="s" name="dstid" direction="in"/>
           <arg type="b" name="state" direction="out"/>
       </method>
       <method name="clearAllConnections">
           <arg type="b" name="state" direction="out"/>
       </method>
-      <method name="getNbSources">
-          <arg type="i" name="state" direction="out"/>
-      </method>
-      <method name="getNbDestinations">
-          <arg type="i" name="state" direction="out"/>
-      </method>
-      <method name="getConnectionMap">
-          <arg type="ai" name="map" direction="out"/>
-      </method>
-      <method name="setConnectionMap">
-          <arg type="ai" name="map" direction="in"/>
-          <arg type="i" name="state" direction="out"/>
-      </method>
       <method name="hasPeakMetering">
           <arg type="b" name="hasmetering" direction="out"/>
       </method>
       <method name="getPeakValue">
-          <arg type="i" name="srcid" direction="in"/>
-          <arg type="i" name="dstid" direction="in"/>
+          <arg type="s" name="dstid" direction="in"/>
           <arg type="d" name="value" direction="out"/>
       </method>
       <method name="getPeakValues">
-          <arg type="a(id)" name="values" direction="out"/>
+          <arg type="a(sd)" name="values" direction="out"/>
       </method>
   </interface>
 

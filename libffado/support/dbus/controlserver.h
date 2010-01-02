@@ -338,40 +338,21 @@ public:
                   std::string p, Element *,
                   Control::CrossbarRouter &slave );
 
-    DBus::String getSourceName(const DBus::Int32 &);
-    DBus::String getDestinationName(const DBus::Int32 &);
-    DBus::Int32 getSourceIndex(const DBus::String &);
-    DBus::Int32 getDestinationIndex(const DBus::String &);
-
     std::vector< DBus::String > getSourceNames();
     std::vector< DBus::String > getDestinationNames();
 
-    std::vector< DBus::Struct<DBus::String, int> > getSources();
-    std::vector< DBus::Struct<DBus::String, int> > getDestinations();
+    std::vector< DBus::String > getDestinationsForSource(const DBus::String &);
+    DBus::String getSourceForDestination(const DBus::String &);
 
-    std::vector< DBus::Int32 > getDestinationsForSource(const DBus::Int32 &);
-    DBus::Int32 getSourceForDestination(const DBus::Int32 &);
-
-    DBus::Bool  canConnect(const DBus::Int32 &source, const DBus::Int32 &dest);
-    DBus::Bool  setConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest, const DBus::Bool &enable);
-    DBus::Bool  getConnectionState(const DBus::Int32 &source, const DBus::Int32 &dest);
-
-    DBus::Bool  canConnectNamed(const DBus::String&, const DBus::String&);
-    DBus::Bool  setConnectionStateNamed(const DBus::String&, const DBus::String&, const DBus::Bool &enable);
-    DBus::Bool  getConnectionStateNamed(const DBus::String&, const DBus::String&);
+    DBus::Bool  canConnect(const DBus::String &source, const DBus::String &dest);
+    DBus::Bool  setConnectionState(const DBus::String &source, const DBus::String &dest, const DBus::Bool &enable);
+    DBus::Bool  getConnectionState(const DBus::String &source, const DBus::String &dest);
 
     DBus::Bool  clearAllConnections();
 
-    DBus::Int32 getNbSources();
-    DBus::Int32 getNbDestinations();
-
     DBus::Bool  hasPeakMetering();
-    DBus::Double getPeakValue(const DBus::Int32 &source, const DBus::Int32 &dest);
-
-    std::vector< DBus::Struct<int, double> > getPeakValues();
-
-    std::vector< DBus::Int32 > getConnectionMap();
-    DBus::Int32 setConnectionMap(const std::vector< DBus::Int32 >&);
+    DBus::Double getPeakValue(const DBus::String &dest);
+    std::vector< DBus::Struct<DBus::String, double> > getPeakValues();
 
 private:
     Control::CrossbarRouter &m_Slave;

@@ -79,8 +79,8 @@ of the mixer is an available output from the routers point.
         self.lbl = QtGui.QLabel(self.outname, self)
         self.layout.addWidget(self.lbl, 0, 0)
 
-        self.vu = VuMeter(self.interface, self.interface.getDestinationIndex(outname), parent=self)
-        self.layout.addWidget(self.vu, 0, 1)
+        #self.vu = VuMeter(self.interface, self.interface.getDestinationIndex(outname), parent=self)
+        #self.layout.addWidget(self.vu, 0, 1)
 
         sources = self.interface.getSourceNames()
 
@@ -88,26 +88,27 @@ of the mixer is an available output from the routers point.
         self.layout.addWidget(self.combo, 1, 0, 1, 2)
         self.combo.addItem("Disconnected")
         self.combo.addItems(sources)
-        idx = self.interface.getDestinationIndex(self.outname)
-        sourceidx = self.interface.getSourceForDestination(idx)
-        if sourceidx > -1:
-            source = self.interface.getSourceName(sourceidx)
-            self.combo.setCurrentIndex(sources.index(source)+1)
+        src = self.interface.getSourceForDestination(self.outname)
+        if src != "":
+            self.combo.setCurrentIndex(self.combo.findText(src))
+        else:
+            self.combo.setCurrentIndex(0)
         self.connect(self.combo, QtCore.SIGNAL("activated(QString)"), self.comboCurrentChanged)
 
 
     def peakValue(self, value):
-        self.vu.updateLevel(value)
+        #self.vu.updateLevel(value)
+        pass
 
     def comboCurrentChanged(self, inname):
         #log.debug("comboCurrentChanged( %s )" % inname)
         if inname == self.lastin:
             return
         if self.lastin != "":
-            self.interface.setConnectionStateNamed(self.lastin, self.outname, False)
+            self.interface.setConnectionState(self.lastin, self.outname, False)
 
         if inname != "Disconnected":
-            if self.interface.setConnectionStateNamed(str(inname), self.outname, True):
+            if self.interface.setConnectionState(str(inname), self.outname, True):
                 self.lastin = str(inname)
             else:
                 log.warning(" Failed to connect %s to %s" % (inname, self.outname))
@@ -123,8 +124,6 @@ class CrossbarRouter(QtGui.QWidget):
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.CrossbarRouter")
 
         self.settings = QtCore.QSettings(self)
-
-        log.info(self.interface.getDestinations())
 
         destinations = self.interface.getDestinationNames()
         self.outgroups = []
@@ -151,7 +150,7 @@ class CrossbarRouter(QtGui.QWidget):
         for out in destinations:
             btn = OutputSwitcher(self.interface, out, self)
             self.layout.addWidget(btn, int(out.split(":")[-1]) + 1, self.outgroups.index(out.split(":")[0]))
-            self.switchers[self.interface.getDestinationIndex(out)] = btn
+            self.switchers[out] = btn
 
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(200)
