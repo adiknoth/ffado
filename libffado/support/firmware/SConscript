@@ -28,7 +28,7 @@ env = env.Clone()
 env.AppendUnique( CPPPATH=["#/", "#/src"] )
 
 if not env.GetOption( "clean" ):
-    env.MergeFlags( "-lrt" )
+    env.MergeFlags( "-lrt -lpthread" )
     env.MergeFlags( env['LIBRAW1394_FLAGS'] )
     env.MergeFlags( env['LIBIEC61883_FLAGS'] )
     if not env['SERIALIZE_USE_EXPAT']:

@@ -269,7 +269,7 @@ if env['ENABLE_GENERICAVC']:
 	pkgdata += genericavc_pkgdata
 
 if not env.GetOption( "clean" ):
-	libenv.MergeFlags( "-lrt" )
+	libenv.MergeFlags( "-lrt -lpthread" )
 	libenv.MergeFlags( env['LIBRAW1394_FLAGS'] )
 	libenv.MergeFlags( env['LIBIEC61883_FLAGS'] )
 	if not env['SERIALIZE_USE_EXPAT']:
