@@ -261,13 +261,13 @@ main(int argc, char **argv)
         Control::MatrixMixer *m = dynamic_cast<Control::MatrixMixer *>(e);
         if(m == NULL) {
             printMessage("Element is not a MatrixMixer control element\n");
-        } else {
+        }/* else {
             for(int row=0; row < 16; row++) {
                 for(int col=0; col < 18; col++) {
-//                     m->setValue(row, col, 0);
+                     m->setValue(row, col, 0);
                 }
             }
-        }
+        }*/
     }
     // after unlocking, these should not be used anymore
     e = NULL;
@@ -283,30 +283,11 @@ main(int argc, char **argv)
             if(c == NULL) {
                 printMessage("Element is not a CrossbarRouter control element\n");
             } else {
-//                 if(cnt == 0) {
-//                     Control::CrossbarRouter::NameVector n;
-//                     n = c->getSourceNames();
-//                     for(int i=0; i<n.size(); i++) {
-//                         printMessage("Src  %02d: %s\n", i, n.at(i).c_str());
-//                     }
-//                     n = c->getDestinationNames();
-//                     for(int i=0; i<n.size(); i++) {
-//                         printMessage("Dest %02d: %s\n", i, n.at(i).c_str());
-//                     }
-//                 }
-//                #define NELEMS 10
-//                double peaks[NELEMS];
-//                int srcids[NELEMS];
-//                int dstidx = c->getDestinationIndex("MixerIn:00");
-//                for(int i=0; i<NELEMS; i++) {
-//                    srcids[i] = c->getSourceForDestination(dstidx + i);
-//                    peaks[i] = c->getPeakValue(srcids[i], dstidx + i);
-//                }
-//                for(int i=0; i<NELEMS; i++) {
-//                    std::string srcname = c->getSourceName(srcids[i]);
-//                    std::string dstname = c->getDestinationName(dstidx + i);
-//                    printMessage("Peak %3d (%10s => %10s): %f\n", i, srcname.c_str(), dstname.c_str(), peaks[i]);
-//                }
+                std::map<std::string, double> peaks = c->getPeakValues();
+                for (std::map<std::string, double>::iterator it=peaks.begin(); it!=peaks.end();
+                        ++it) {
+                    printMessage("%s: %g\n", it->first.c_str(), it->second);
+                }
             }
         }
         // after unlocking, these should not be used anymore
