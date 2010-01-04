@@ -19,7 +19,7 @@
 #
 
 from PyQt4 import QtGui, QtCore
-import dbus
+import dbus, math
 
 import logging
 log = logging.getLogger("crossbarrouter")
@@ -45,7 +45,7 @@ class VuMeter(QtGui.QFrame):
         p = QtGui.QPainter(self)
         value = self.level/4096
         r = self.rect()
-        r.setHeight(r.height() * value)
+        r.setHeight(r.height() * math.sqrt(value))
         r.moveBottom(self.rect().height())
         p.fillRect(r, self.palette().highlight())
 
@@ -90,7 +90,7 @@ of the mixer is an available output from the routers point.
 
 
     def peakValue(self, value):
-        #self.vu.updateLevel(value)
+        self.vu.updateLevel(value)
         pass
 
     def comboCurrentChanged(self, inname):
@@ -131,7 +131,7 @@ class CrossbarRouter(QtGui.QWidget):
         self.toplayout = QtGui.QHBoxLayout()
         self.biglayout.addLayout(self.toplayout)
 
-        self.vubtn = QtGui.QPushButton("Switch VU", self)
+        self.vubtn = QtGui.QPushButton("Switch peak meters", self)
         self.vubtn.setCheckable(True)
         self.connect(self.vubtn, QtCore.SIGNAL("toggled(bool)"), self.runVu)
         self.toplayout.addWidget(self.vubtn)
@@ -167,7 +167,7 @@ class CrossbarRouter(QtGui.QWidget):
     def updateLevels(self):
         #log.debug("CrossbarRouter.updateLevels()")
         peakvalues = self.interface.getPeakValues()
-        log.debug("Got %i peaks" % len(peakvalues))
+        #log.debug("Got %i peaks" % len(peakvalues))
         for peak in peakvalues:
             #log.debug("peak = [%s,%s]" % (str(peak[0]),str(peak[1])))
             if peak[0] >= 0:

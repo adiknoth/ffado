@@ -34,6 +34,7 @@ namespace Dice {
 
 // ----------- helper functions -------------
 
+#if 0
 static const char *
 srcBlockToString(const char id)
 {
@@ -68,6 +69,7 @@ dstBlockToString(const char id)
         default : return "RSVD";
     }
 }
+#endif
 
 IMPL_DEBUG_MODULE( EAP, EAP, DEBUG_LEVEL_NORMAL );
 
@@ -1202,12 +1204,12 @@ EAP::Router::getDestinationsForSource(const std::string& srcname) {
     RouterConfig* rcfg = m_eap.getActiveRouterConfig();
     if(rcfg == NULL) {
         debugError("Could not request active router configuration\n");
-        return "";
+        return stringlist();
     }
     stringlist ret;
-    std::vector<int> dests = rcfg->getDestinationsForSource(m_sources[srcname]);
-    for (int i=0; i<dests.size(); ++i) {
-        ret.push_back(m_destinations[dests[i]]);
+    std::vector<unsigned char> dests = rcfg->getDestinationsForSource(m_sources[srcname]);
+    for (unsigned int i=0; i<dests.size(); ++i) {
+        ret.push_back(getDestinationName(dests[i]));
     }
     return ret;
 }
@@ -1317,59 +1319,21 @@ EAP::Router::hasPeakMetering()
 double
 EAP::Router::getPeakValue(const std::string& dest)
 {
-    debugError("TODO: Implement getPeakValue(%s)\n", dest.c_str());
-    /*if((unsigned)source >= m_sources.size()) {
-        debugWarning("source id out of range (%d)\n", source);
-        return false;
-    }
-    Source s = m_sources.at(source);
-
-    if((unsigned)dest >= m_destinations.size()) {
-        debugWarning("destination id out of range (%d)\n", dest);
-        return false;
-    }
-    Destination d = m_destinations.at(dest);
-
-    debugOutput(DEBUG_LEVEL_VERBOSE, "getting peak info for [%d] %s => [%d] %s\n", 
-                                     source, s.name.c_str(),
-                                     dest, d.name.c_str());
-
-    // update the peak information
     m_peak.read();
-
-    // construct the routing entry to find
-    RouterConfig::Route r = {s.src, s.srcChannel, d.dst, d.dstChannel, 0};
-
-    // find the appropriate entry
-    int idx = m_peak.getRouteIndex(r);
-
-    if (idx < 0) {
-        // the route is not present
-        return -1;
-    } else {
-        // the route is present
-        r = m_peak.getRoute(idx);
-        return r.peak;
-    }*/
-    return -1;
-
+    unsigned char dst = m_destinations[dest];
+    return m_peak.getPeak(dst);
 }
 
 std::map<std::string, double>
 EAP::Router::getPeakValues()
 {
-    debugError("TODO: implement getPeakValues()\n");
-    /*m_peak.read();
-    Control::CrossbarRouter::PeakValues values;
-    for (unsigned int i=0; i<m_peak.getNbRoutes(); ++i) {
-        Control::CrossbarRouter::PeakValue tmp;
-        RouterConfig::Route route = m_peak.getRoute(i);
-        tmp.destination = getDestinationIndex(route.dst, route.dstChannel);
-        tmp.peakvalue = route.peak;
-        values.push_back(tmp);
+    m_peak.read();
+    std::map<std::string, double> ret;
+    std::map<unsigned char, int> peaks = m_peak.getPeaks();
+    for (std::map<unsigned char, int>::iterator it=peaks.begin(); it!=peaks.end(); ++it) {
+        ret[getDestinationName(it->first)] = it->second;
     }
-    return values;*/
-    return std::map<std::string, double>();
+    return ret;
 }
 
 void
@@ -1548,11 +1512,6 @@ EAP::RouterConfig::show()
 bool
 EAP::PeakSpace::read(enum eRegBase base, unsigned offset)
 {
-#warning "Implement me again!"
-#if 0
-    // first clear the current route vector
-    m_routes.clear();
-
     uint32_t nb_routes;
     // we have to figure out the number of entries through the currently
     // active router config
@@ -1563,45 +1522,48 @@ EAP::PeakSpace::read(enum eRegBase base, unsigned offset)
     }
     nb_routes = rcfg->getNbRoutes();
 
-    // read the route info
+    // read the peak/route info
     uint32_t tmp_entries[nb_routes];
     if(!m_eap.readRegBlock(base, offset, tmp_entries, nb_routes*4)) {
         debugError("Failed to read peak block information\n");
         return false;
     }
-
-    // decode into the routing vector
-    for(unsigned int i=0; i < nb_routes; i++) {
-        m_routes.push_back(decodeRoute(tmp_entries[i]));
+    // parse the peaks into the map
+    for (unsigned int i=0; i<nb_routes; ++i) {
+        unsigned char dest = tmp_entries[i]&0xff;
+        int peak = (tmp_entries[i]&0xfff0000)>>16;
+        if (m_peaks.count(dest) == 0 || m_peaks[dest] < peak) {
+            m_peaks[dest] = peak;
+        }
     }
-//     show();
-#endif
     return true;
 }
 
-bool
-EAP::PeakSpace::write(enum eRegBase base, unsigned offset)
-{
-    debugError("Peak space is read-only\n");
-    return true;
-}
 
 void
 EAP::PeakSpace::show()
 {
-    debugError("PeakSpace::show() is currently not implemented!\n");
-#if 0
-    for ( RouteVectorIterator it = m_routes.begin();
-        it != m_routes.end();
-        ++it )
-    {
-        struct Route r = *it;
-        printMessage("%s:%02d => %s:%02d : %06d\n",
-                     srcBlockToString(r.src), r.srcChannel,
-                     dstBlockToString(r.dst), r.dstChannel,
-                     r.peak);
+    printMessage("  %i peaks\n", m_peaks.size());
+    for (std::map<unsigned char, int>::iterator it=m_peaks.begin(); it!=m_peaks.end(); ++it) {
+        printMessage("0x%02x : %i\n", it->first, it->second);
     }
-#endif
+}
+
+int
+EAP::PeakSpace::getPeak(unsigned char dst) {
+    int ret = m_peaks[dst];
+    m_peaks.erase(dst);
+    return ret;
+}
+
+std::map<unsigned char, int>
+EAP::PeakSpace::getPeaks() {
+    // Create a new empty map
+    std::map<unsigned char, int> ret;
+    // Swap the peak map with the new and empty one
+    ret.swap(m_peaks);
+    // Return the now filled map of the peaks :-)
+    return ret;
 }
 
 // ----------- stream config block -------------

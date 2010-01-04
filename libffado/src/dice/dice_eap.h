@@ -202,23 +202,15 @@ private:
         friend class Dice::EAP;
         RouterConfig(EAP &);
         RouterConfig(EAP &, enum eRegBase, unsigned int offset);
-        virtual ~RouterConfig();
+        ~RouterConfig();
 
     public:
 
-        virtual bool read() {return read(m_base, m_offset);};
-        virtual bool write() {return write(m_base, m_offset);};
-        virtual bool read(enum eRegBase b, unsigned offset);
-        virtual bool write(enum eRegBase b, unsigned offset);
-        virtual void show();
-
-        /**
-          @brief map for the routes
-
-          The key is the destination as each destination can only have audio from one source.
-          Sources can be routed to several destinations though.
-          */
-        typedef std::map<unsigned char,unsigned char> RouteVectorV2;
+        bool read() {return read(m_base, m_offset);};
+        bool write() {return write(m_base, m_offset);};
+        bool read(enum eRegBase b, unsigned offset);
+        bool write(enum eRegBase b, unsigned offset);
+        void show();
 
         /**
           @brief Set up a route between src and dest
@@ -253,30 +245,51 @@ private:
 
         unsigned int getNbRoutes() {return m_routes2.size();};
 
-    protected:
+    private:
         EAP &m_eap;
         enum eRegBase m_base;
         unsigned int m_offset;
+
+        /**
+          @brief map for the routes
+
+          The key is the destination as each destination can only have audio from one source.
+          Sources can be routed to several destinations though.
+          */
+        typedef std::map<unsigned char,unsigned char> RouteVectorV2;
         RouteVectorV2 m_routes2;
-    protected:
+    private:
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
 
     /**
       the peak space is a special version of a router config
       */
-    class PeakSpace : public RouterConfig {
+    class PeakSpace {
     private:
         friend class Dice::EAP;
-        PeakSpace(EAP &p) : RouterConfig(p, eRT_Peak, 0) {};
-        virtual ~PeakSpace() {};
+        PeakSpace(EAP &p) : m_eap(p), m_base(eRT_Peak), m_offset(0), m_debugModule(p.m_debugModule) {};
+        ~PeakSpace() {};
 
     public:
-        virtual bool read() {return read(m_base, m_offset);};
-        virtual bool write() {return write(m_base, m_offset);};
-        virtual bool read(enum eRegBase b, unsigned offset);
-        virtual bool write(enum eRegBase b, unsigned offset);
-        virtual void show();
+        bool read() {return read(m_base, m_offset);};
+        bool read(enum eRegBase b, unsigned offset);
+        void show();
+
+        std::map<unsigned char, int> getPeaks();
+        int getPeak(unsigned char dest);
+
+    private:
+        EAP &m_eap;
+        enum eRegBase m_base;
+        unsigned int m_offset;
+
+        /**
+          @brief maps peaks to destinations
+          */
+        std::map<unsigned char, int> m_peaks;
+
+        DECLARE_DEBUG_MODULE_REFERENCE;
     };
 
     /**
