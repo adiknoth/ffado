@@ -941,7 +941,15 @@ CrossbarRouter::getPeakValue(const DBus::String &dest)
 std::vector< DBus::Struct<DBus::String, double> >
 CrossbarRouter::getPeakValues()
 {
-    return std::vector< DBus::Struct<DBus::String, double> >();
+    std::map<std::string, double> peakvalues = m_Slave.getPeakValues();
+    std::vector< DBus::Struct<DBus::String, double> > ret;
+    for (std::map<std::string, double>::iterator it=peakvalues.begin(); it!=peakvalues.end(); ++it) {
+        DBus::Struct<DBus::String, double> tmp;
+        tmp._1 = it->first;
+        tmp._2 = it->second;
+        ret.push_back(tmp);
+    }
+    return ret;
     /*std::vector< DBus::Struct<int, double> > out;
     Control::CrossbarRouter::PeakValues values = m_Slave.getPeakValues();
     for ( unsigned int i=0; i<values.size(); ++i ) {

@@ -874,6 +874,8 @@ EAP::Mixer::storeCoefficients()
 void
 EAP::Mixer::updateNameCache()
 {
+    debugWarning("What is this function about?\n");
+#if 0
     // figure out the number of i/o's
     int nb_inputs = m_eap.m_mixer_nb_tx;
     int nb_outputs = m_eap.m_mixer_nb_rx;
@@ -952,6 +954,7 @@ EAP::Mixer::updateNameCache()
         debugOutput(DEBUG_LEVEL_VERBOSE, "Mixer output channel %2d destinations: %s\n", i, destinations.c_str());
         #endif
     }
+#endif
 }
 
 void
@@ -972,13 +975,13 @@ EAP::Mixer::show()
     }
     printMessage("%s\n", tmp);
 
-    cnt = 0;
+    /*cnt = 0;
     for(int j=0; j < nb_inputs; j++) {
         cnt += snprintf(tmp+cnt, bufflen-cnt, "%s:%02d ",
                         srcBlockToString(m_input_route_map[j].src),
                         m_input_route_map[j].srcChannel);
     }
-    printMessage("%s\n", tmp);
+    printMessage("%s\n", tmp);*/
 
     // display coefficients
     for(int i=0; i < nb_outputs; i++) {
@@ -989,7 +992,7 @@ EAP::Mixer::show()
 
         // construct the set of destinations
         std::string destinations;
-        for ( RouterConfig::RouteVectorIterator it = m_output_route_map[i].begin();
+        /*for ( RouterConfig::RouteVectorIterator it = m_output_route_map[i].begin();
             it != m_output_route_map[i].end();
             ++it )
         {
@@ -1000,7 +1003,7 @@ EAP::Mixer::show()
                 snprintf(tmp, 128, "%s:%d,", dstBlockToString(r.dst), r.dstChannel);
                 destinations += tmp;
             }
-        }
+        }*/
 
         cnt += snprintf(tmp+cnt, bufflen-cnt, "=[%02d]=> %s ", i, destinations.c_str());
         printMessage("%s\n", tmp);
@@ -1075,6 +1078,7 @@ EAP::Mixer::storeCoefficientMap(int &) {
 }
 
 // Names
+#if 0
 std::string
 EAP::Mixer::getColName(const int col) {
     //debugOutput(DEBUG_LEVEL_VERBOSE, "EAP::Mixer::getColName( %i )\n");
@@ -1094,6 +1098,7 @@ EAP::Mixer::getRowName(const int row) {
     snprintf(tmp, 32, "%s:%d", dstBlockToString(m_output_route_map[row][0].dst), m_output_route_map[row][0].dstChannel);
     return tmp;
 }
+#endif
 
 //
 // ----------- Router -------------
@@ -1150,7 +1155,6 @@ EAP::Router::getSourceName(const int srcid)
 std::string
 EAP::Router::getDestinationName(const int dstid)
 {
-    debugWarning("TODO: Implement getDestinationName(0x%02x)\n", dstid);
     for (std::map<std::string, int>::iterator it=m_destinations.begin(); it!=m_destinations.end(); ++it) {
         if (it->second == dstid) {
             return it->first;
@@ -1195,8 +1199,17 @@ EAP::Router::getDestinationNames()
 
 stringlist
 EAP::Router::getDestinationsForSource(const std::string& srcname) {
-    debugWarning("TODO: Implement getDestinationsForSource(%s)\n", srcname.c_str());
-    return stringlist();
+    RouterConfig* rcfg = m_eap.getActiveRouterConfig();
+    if(rcfg == NULL) {
+        debugError("Could not request active router configuration\n");
+        return "";
+    }
+    stringlist ret;
+    std::vector<int> dests = rcfg->getDestinationsForSource(m_sources[srcname]);
+    for (int i=0; i<dests.size(); ++i) {
+        ret.push_back(m_destinations[dests[i]]);
+    }
+    return ret;
 }
 std::string
 EAP::Router::getSourceForDestination(const std::string& dstname) {
@@ -1205,13 +1218,8 @@ EAP::Router::getSourceForDestination(const std::string& dstname) {
         debugError("Could not request active router configuration\n");
         return "";
     }
-    eRouteDestination dst = eRouteDestination(m_destinations[dstname]>>4);
-    int dstChannel = m_destinations[dstname]&0xf;
-    RouterConfig::Route r = rcfg->getRouteForDestination(dst, dstChannel);
-    if (r.src == eRS_Invalid) {
-        return "";
-    }
-    return getSourceName((r.src<<4)+r.srcChannel);
+    int source = rcfg->getSourceForDestination(m_destinations[dstname]);
+    return getSourceName(source);
 }
 
 
@@ -1219,17 +1227,6 @@ bool
 EAP::Router::canConnect(const int source, const int dest)
 {
     debugWarning("TODO: Implement canConnect(0x%02x, 0x%02x)\n", source, dest);
-    /*if((unsigned)source >= m_sources.size()) {
-        debugWarning("source id out of range (%d)\n", source);
-        return false;
-    }
-    Source s = m_sources.at(source);
-
-    if((unsigned)dest >= m_destinations.size()) {
-        debugWarning("destination id out of range (%d)\n", dest);
-        return false;
-    }
-    Destination d = m_destinations.at(dest);*/
 
     // we can connect anything
     // FIXME: can we?
@@ -1239,6 +1236,7 @@ EAP::Router::canConnect(const int source, const int dest)
 bool
 EAP::Router::setConnectionState(const int source, const int dest, const bool enable)
 {
+    debugOutput(DEBUG_LEVEL_VERBOSE,"Router::setConnectionState(0x%02x -> 0x%02x ? %i)\n", source, dest, enable);
     // get the routing configuration
     RouterConfig *rcfg = m_eap.getActiveRouterConfig();
     if(rcfg == NULL) {
@@ -1246,37 +1244,14 @@ EAP::Router::setConnectionState(const int source, const int dest, const bool ena
         return false;
     }
 
-    RouterConfig::Route r = rcfg->getRouteForDestination(eRouteDestination(dest>>4), dest&0xf);
-    if ( r.srcChannel == -1 && r.dstChannel == -1 && enable ) {
-        r.src = eRouteSource(source>>4);
-        r.srcChannel = source&0xf;
-        r.dst = eRouteDestination(dest>>4);
-        r.dstChannel = dest&0xf;
-        int ret = rcfg->insertRoute(r);
-        m_eap.updateCurrentRouterConfig(*rcfg);
-        return ret;
+    bool ret = false;
+    if (enable) {
+        ret = rcfg->setupRoute(source, dest);
+    } else {
+        ret = rcfg->removeRoute(source, dest);
     }
-    if ( r.dst != (dest>>4) || r.dstChannel != (dest&0xf) ) {
-        debugError("Route exists but isn't correct? strange...\n");
-        debugError(" wanted: 0x%02x got: 0x%02x\n", dest, (r.dst<<4)+r.dstChannel);
-        return false;
-    }
-    if ( !enable ) {
-        int ret = rcfg->removeRoute(r);
-        m_eap.updateCurrentRouterConfig(*rcfg);
-        return ret;
-    }
-    if ( enable ) {
-        int index = rcfg->getRouteIndex(r);
-        r.src = eRouteSource(source>>4);
-        r.srcChannel = (source&0xf);
-        int ret = rcfg->replaceRoute(index, r);
-        m_eap.updateCurrentRouterConfig(*rcfg);
-        return ret;
-    }
-
-    // When we reach this point, something went wrong. Return false by default...
-    return false;
+    m_eap.updateCurrentRouterConfig(*rcfg);
+    return ret;
 }
 
 bool
@@ -1288,12 +1263,10 @@ EAP::Router::getConnectionState(const int source, const int dest)
         debugError("Could not request active router configuration\n");
         return false;
     }
-    // Construct a route
-    RouterConfig::Route r = { eRouteSource(source>>4), source&0xf, eRouteDestination(dest>>4), dest&0xf };
-    // get the routes index...
-    int idx = rcfg->getRouteIndex(r);
-    // ...and return true if it exists
-    return (idx>=0);
+    if (rcfg->getSourceForDestination(dest) == source) {
+        return true;
+    }
+    return false;
 }
 
 bool
@@ -1421,9 +1394,11 @@ EAP::Router::show()
             }
         }
     }
-    //printMessage("Active router config:\n");
-    //m_peak.read();
-    //m_peak.show();
+    printMessage("Active router config:\n");
+    m_eap.getActiveRouterConfig()->show();
+    printMessage("Active peak config:\n");
+    m_peak.read();
+    m_peak.show();
 }
 
 // ----------- routing config -------------
@@ -1446,7 +1421,7 @@ bool
 EAP::RouterConfig::read(enum eRegBase base, unsigned offset)
 {
     // first clear the current route vector
-    m_routes.clear();
+    m_routes2.clear();
 
     uint32_t nb_routes;
     if(!m_eap.readRegBlock(base, offset, &nb_routes, 4)) {
@@ -1464,9 +1439,9 @@ EAP::RouterConfig::read(enum eRegBase base, unsigned offset)
         return false;
     }
 
-    // decode into the routing vector
+    // decode into the routing map
     for(unsigned int i=0; i < nb_routes; i++) {
-        m_routes.push_back(decodeRoute(tmp_entries[i]));
+        m_routes2[tmp_entries[i]&0xff] = (tmp_entries[i]>>8)&0xff;
     }
     return true;
 }
@@ -1474,20 +1449,28 @@ EAP::RouterConfig::read(enum eRegBase base, unsigned offset)
 bool
 EAP::RouterConfig::write(enum eRegBase base, unsigned offset)
 {
-    uint32_t nb_routes = m_routes.size();
+    uint32_t nb_routes = m_routes2.size();
     if(nb_routes == 0) {
-        debugWarning("Writing 0 routes?\n");
+        debugWarning("Writing 0 routes? This will deactivate routing and make the device very silent...\n");
+    }
+    if (nb_routes > 128) {
+        debugError("More then 128 are not possible, only the first 128 routes will get saved!\n");
+        nb_routes = 128;
     }
     uint32_t tmp_entries[nb_routes];
 
     // encode from the routing vector
     int i=0;
-    for ( RouteVectorIterator it = m_routes.begin();
-        it != m_routes.end();
-        ++it )
-    {
-        tmp_entries[i] = encodeRoute( *it );
-        i++;
+    for (RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it) {
+        tmp_entries[i] = ((it->second<<8) + it->first)&0xffff;
+        ++i;
+    }
+
+    uint32_t zeros[129];
+    for (int i=0; i<129; ++i) zeros[i] = 0;
+    if(!m_eap.writeRegBlock(base, offset, zeros, 129*4)) {
+        debugError("Failed to write zeros to router config block\n");
+        return false;
     }
 
     // write the result to the device
@@ -1503,223 +1486,70 @@ EAP::RouterConfig::write(enum eRegBase base, unsigned offset)
 }
 
 bool
-EAP::RouterConfig::insertRoute(struct Route r, unsigned int index)
-{
-    unsigned int nb_routes = getNbRoutes();
-    if(index > nb_routes) {
-        debugError("Index out of range\n");
-        return false;
-    }
-    if (index == nb_routes) { // append
-        m_routes.push_back(r);
-        return true;
-    }
-    // insert
-    RouteVectorIterator pos = m_routes.begin() + index;
-    m_routes.insert(pos, r);
+EAP::RouterConfig::setupRoute(unsigned char src, unsigned char dest) {
+    debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::setupRoute( 0x%02x, 0x%02x )\n", src, dest);
+    m_routes2[dest] = src;
     return true;
 }
 
 bool
-EAP::RouterConfig::replaceRoute(unsigned int old_index, struct Route new_route)
-{
-    if(old_index >= getNbRoutes()) {
-        debugError("Index out of range\n");
-        return false;
+EAP::RouterConfig::removeRoute(unsigned char src, unsigned char dest) {
+    debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::removeRoute( 0x%02x, 0x%02x )\n", src, dest);
+    if (m_routes2.count(dest) > 0) {
+        if (src != m_routes2[dest]) {
+            return false;
+        }
+        return removeRoute(dest);
     }
-    if(!removeRoute(old_index)) {
-        debugError("Could not remove old route\n");
-        return false;
-    }
-    return insertRoute(new_route, old_index);
-}
-
-bool
-EAP::RouterConfig::replaceRoute(struct Route old_route, struct Route new_route)
-{
-    int idx = getRouteIndex(old_route);
-    if(idx < 0) {
-        debugWarning("Route not found\n");
-        return false;
-    }
-    return replaceRoute((unsigned int)idx, new_route);
-}
-
-bool
-EAP::RouterConfig::removeRoute(struct Route r)
-{
-    int idx = getRouteIndex(r);
-    if(idx < 0) {
-        debugWarning("Route not found\n");
-        return false;
-    }
-    return removeRoute((unsigned int)idx);
-}
-
-bool
-EAP::RouterConfig::removeRoute(unsigned int index)
-{
-    if(index >= getNbRoutes()) {
-        debugError("Index out of range\n");
-        return false;
-    }
-    RouteVectorIterator pos = m_routes.begin() + index;
-    m_routes.erase(pos);
     return true;
 }
 
-int
-EAP::RouterConfig::getRouteIndex(struct Route r)
-{
-    int i = 0;
-    for ( RouteVectorIterator it = m_routes.begin();
-        it != m_routes.end();
-        ++it )
-    {
-        struct Route t = *it;
-        if ((t.src == r.src) && (t.srcChannel == r.srcChannel) && (t.dst == r.dst) && (t.dstChannel == r.dstChannel)) return i;
-        i++;
+bool
+EAP::RouterConfig::removeRoute(unsigned char dest) {
+    debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::removeRoute( 0x%02x )\n", dest);
+    m_routes2.erase(dest);
+    if (m_routes2.count(dest) < 1) {
+        return false;
+    }
+    return true;
+}
+
+unsigned char
+EAP::RouterConfig::getSourceForDestination(unsigned char dest) {
+    if (m_routes2.count(dest) > 0) {
+        return m_routes2[dest];
     }
     return -1;
 }
 
-struct EAP::RouterConfig::Route
-EAP::RouterConfig::getRoute(unsigned int idx)
-{
-    if( (idx < 0) || (idx >= m_routes.size()) ) {
-        debugWarning("Route index out of range (%d)\n", idx);
-        Route r = {eRS_Invalid, -1, eRD_Invalid, -1, 0};
-        return r;
-    }
-    return m_routes.at(idx);
-}
-
-#define CASE_INT_EQUAL_RETURN(_x) case (int)(_x): return _x;
-enum eRouteDestination
-EAP::RouterConfig::intToRouteDestination(int dst)
-{
-    switch(dst) {
-        CASE_INT_EQUAL_RETURN(eRD_AES);
-        CASE_INT_EQUAL_RETURN(eRD_ADAT);
-        CASE_INT_EQUAL_RETURN(eRD_Mixer0);
-        CASE_INT_EQUAL_RETURN(eRD_Mixer1);
-        CASE_INT_EQUAL_RETURN(eRD_InS0);
-        CASE_INT_EQUAL_RETURN(eRD_InS1);
-        CASE_INT_EQUAL_RETURN(eRD_ARM);
-        CASE_INT_EQUAL_RETURN(eRD_ATX0);
-        CASE_INT_EQUAL_RETURN(eRD_ATX1);
-        CASE_INT_EQUAL_RETURN(eRD_Muted);
-        default: return eRD_Invalid;
-    }
-}
-
-enum eRouteSource
-EAP::RouterConfig::intToRouteSource(int src)
-{
-    switch(src) {
-        CASE_INT_EQUAL_RETURN(eRS_AES);
-        CASE_INT_EQUAL_RETURN(eRS_ADAT);
-        CASE_INT_EQUAL_RETURN(eRS_Mixer);
-        CASE_INT_EQUAL_RETURN(eRS_InS0);
-        CASE_INT_EQUAL_RETURN(eRS_InS1);
-        CASE_INT_EQUAL_RETURN(eRS_ARM);
-        CASE_INT_EQUAL_RETURN(eRS_ARX0);
-        CASE_INT_EQUAL_RETURN(eRS_ARX1);
-        CASE_INT_EQUAL_RETURN(eRS_Muted);
-        default: return eRS_Invalid;
-    }
-}
-
-struct EAP::RouterConfig::Route
-EAP::RouterConfig::decodeRoute(uint32_t val) {
-    int routerval = val & 0xFFFF;
-    int peak = (val >> 16) & 0x0FFF;
-    int src_blk = (routerval >> 12) & 0xF;
-    int src_ch = (routerval >> 8) & 0xF;
-    int dst_blk = (routerval >> 4) & 0xF;
-    int dst_ch = (routerval >> 0) & 0xF;
-    struct Route r = {intToRouteSource(src_blk), src_ch, intToRouteDestination(dst_blk), dst_ch, peak};
-    return r;
-}
-
-uint32_t
-EAP::RouterConfig::encodeRoute(struct Route r) {
-    if(r.src == eRS_Invalid || r.dst == eRD_Invalid) {
-        debugWarning("Encoding invalid source/dest (%d/%d)\n", r.src, r.dst);
-//         return 0xFFFFFFFF;
-    }
-    unsigned int src_blk = ((unsigned int)r.src) & 0xF;
-    unsigned int src_ch = ((unsigned int)r.srcChannel) & 0xF;
-    unsigned int dst_blk = ((unsigned int)r.dst) & 0xF;
-    unsigned int dst_ch = ((unsigned int)r.dstChannel) & 0xF;
-    uint32_t routerval = 0;
-    routerval |= (src_blk << 12);
-    routerval |= (src_ch << 8);
-    routerval |= (dst_blk << 4);
-    routerval |= (dst_ch << 0);
-    return routerval;
-}
-
-struct EAP::RouterConfig::Route
-EAP::RouterConfig::getRouteForDestination(enum eRouteDestination dst, int channel)
-{
-    for ( RouteVectorIterator it = m_routes.begin();
-        it != m_routes.end();
-        ++it )
-    {
-        struct Route r = *it;
-        if((r.dst == (int)dst) && (r.dstChannel == channel)) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "%s:%02d comes from %s:%02d\n",
-                                                  dstBlockToString(r.dst), r.dstChannel,
-                                                  srcBlockToString(r.src), r.srcChannel);
-            return r;
+std::vector<unsigned char>
+EAP::RouterConfig::getDestinationsForSource(unsigned char source) {
+    std::vector<unsigned char> ret;
+    for (RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it) {
+        if (it->second == source) {
+            ret.push_back(it->first);
         }
     }
-    debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "%s:%02d source can't be found\n",
-                                          dstBlockToString((int)dst), channel);
-    struct Route r = {eRS_Invalid, -1, eRD_Invalid, -1, 0};
-    return r;
-}
-
-std::vector<struct EAP::RouterConfig::Route>
-EAP::RouterConfig::getRoutesForSource(enum eRouteSource src, int channel)
-{
-    std::vector<struct Route>routes;
-    for ( RouteVectorIterator it = m_routes.begin();
-        it != m_routes.end();
-        ++it )
-    {
-        struct Route r = *it;
-        if((r.src == (int)src) && (r.srcChannel == channel)) {
-            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "%s:%02d goes to %s:%02d\n",
-                                                  srcBlockToString(r.src), r.srcChannel,
-                                                  dstBlockToString(r.dst), r.dstChannel);
-            routes.push_back(r);
-        }
-    }
-    return routes;
+    return ret;
 }
 
 void
 EAP::RouterConfig::show()
 {
-    for ( RouteVectorIterator it = m_routes.begin();
-        it != m_routes.end();
-        ++it )
-    {
-        struct Route r = *it;
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "%s:%02d => %s:%02d\n",
-                                              srcBlockToString(r.src), r.srcChannel,
-                                              dstBlockToString(r.dst), r.dstChannel);
+    for ( RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it ) {
+        printMessage("0x%02x -> 0x%02x\n", it->second, it->first);
     }
 }
 
-
+//
 // ----------- peak space -------------
+//
 
 bool
 EAP::PeakSpace::read(enum eRegBase base, unsigned offset)
 {
+#warning "Implement me again!"
+#if 0
     // first clear the current route vector
     m_routes.clear();
 
@@ -1745,6 +1575,7 @@ EAP::PeakSpace::read(enum eRegBase base, unsigned offset)
         m_routes.push_back(decodeRoute(tmp_entries[i]));
     }
 //     show();
+#endif
     return true;
 }
 
@@ -1758,16 +1589,19 @@ EAP::PeakSpace::write(enum eRegBase base, unsigned offset)
 void
 EAP::PeakSpace::show()
 {
+    debugError("PeakSpace::show() is currently not implemented!\n");
+#if 0
     for ( RouteVectorIterator it = m_routes.begin();
         it != m_routes.end();
         ++it )
     {
         struct Route r = *it;
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "%s:%02d => %s:%02d : %06d\n",
-                                              srcBlockToString(r.src), r.srcChannel,
-                                              dstBlockToString(r.dst), r.dstChannel,
-                                              r.peak);
+        printMessage("%s:%02d => %s:%02d : %06d\n",
+                     srcBlockToString(r.src), r.srcChannel,
+                     dstBlockToString(r.dst), r.dstChannel,
+                     r.peak);
     }
+#endif
 }
 
 // ----------- stream config block -------------

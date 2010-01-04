@@ -36,13 +36,6 @@ class VuMeter(QtGui.QFrame):
         self.interface = interface
 
         self.output = output
-        if input is None:
-            input = int(self.interface.getSourceForDestination(output))
-        self.setInput(input)
-
-    def setInput(self, input):
-        #log.debug("VuMeter.setInput() %i->%i" % (self.output, input))
-        self.input = input
 
     def updateLevel(self, value):
         self.level = value
@@ -79,8 +72,8 @@ of the mixer is an available output from the routers point.
         self.lbl = QtGui.QLabel(self.outname, self)
         self.layout.addWidget(self.lbl, 0, 0)
 
-        #self.vu = VuMeter(self.interface, self.interface.getDestinationIndex(outname), parent=self)
-        #self.layout.addWidget(self.vu, 0, 1)
+        self.vu = VuMeter(self.interface, outname, parent=self)
+        self.layout.addWidget(self.vu, 0, 1)
 
         sources = self.interface.getSourceNames()
 
@@ -174,7 +167,7 @@ class CrossbarRouter(QtGui.QWidget):
     def updateLevels(self):
         #log.debug("CrossbarRouter.updateLevels()")
         peakvalues = self.interface.getPeakValues()
-        #log.debug("Got %i peaks" % len(peakvalues))
+        log.debug("Got %i peaks" % len(peakvalues))
         for peak in peakvalues:
             #log.debug("peak = [%s,%s]" % (str(peak[0]),str(peak[1])))
             if peak[0] >= 0:

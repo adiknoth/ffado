@@ -205,16 +205,6 @@ private:
         virtual ~RouterConfig();
 
     public:
-        struct Route
-        {
-            enum eRouteSource src;
-            int srcChannel;
-            enum eRouteDestination dst;
-            int dstChannel;
-            int peak;
-        };
-        typedef std::vector<RouterConfig::Route> RouteVector;
-        typedef std::vector<RouterConfig::Route>::iterator RouteVectorIterator;
 
         virtual bool read() {return read(m_base, m_offset);};
         virtual bool write() {return write(m_base, m_offset);};
@@ -222,31 +212,52 @@ private:
         virtual bool write(enum eRegBase b, unsigned offset);
         virtual void show();
 
-        bool insertRoute(struct Route r)
-            {return insertRoute(r, m_routes.size());};
-        bool insertRoute(struct Route r, unsigned int index);
-        bool replaceRoute(unsigned int old_index, struct Route new_route);
-        bool replaceRoute(struct Route old_route, struct Route new_route);
-        bool removeRoute(struct Route r);
-        bool removeRoute(unsigned int index);
-        int getRouteIndex(struct Route r);
-        struct Route getRoute(unsigned int index);
+        /**
+          @brief map for the routes
 
-        unsigned int getNbRoutes() {return m_routes.size();};
+          The key is the destination as each destination can only have audio from one source.
+          Sources can be routed to several destinations though.
+          */
+        typedef std::map<unsigned char,unsigned char> RouteVectorV2;
 
-        struct Route getRouteForDestination(enum eRouteDestination dst, int channel);
-        RouteVector getRoutesForSource(enum eRouteSource src, int channel);
+        /**
+          @brief Set up a route between src and dest
 
-        struct Route decodeRoute(uint32_t val);
-        uint32_t encodeRoute(struct Route r);
-    public:
-        static enum eRouteDestination intToRouteDestination(int);
-        static enum eRouteSource intToRouteSource(int);
+          If a route with that destination exists, it will be replaced. If no route to that
+          destination exists, a new route will be established.
+          */
+        bool setupRoute(unsigned char src, unsigned char dest);
+        /**
+          @brief Remove a route
+
+          @todo is this really necessary?
+          */
+        bool removeRoute(unsigned char src, unsigned char dest);
+        /**
+          @brief Remove the destinations route
+          */
+        bool removeRoute(unsigned char dest);
+
+        /**
+          @brief Return the source for the given destination
+
+          Returns -1 if the destination is not connected.
+          */
+        unsigned char getSourceForDestination(unsigned char dest);
+        /**
+          @brief Return a list of destinations for a given source
+
+          Returns an empty list if no destination is connected to this source.
+          */
+        std::vector<unsigned char> getDestinationsForSource(unsigned char src);
+
+        unsigned int getNbRoutes() {return m_routes2.size();};
+
     protected:
         EAP &m_eap;
         enum eRegBase m_base;
         unsigned int m_offset;
-        RouteVector m_routes;
+        RouteVectorV2 m_routes2;
     protected:
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
@@ -340,9 +351,10 @@ public:
         virtual double setValue( const int, const int, const double );
         virtual double getValue( const int, const int );
 
-        bool hasNames() const { return true; }
-        std::string getRowName( const int );
-        std::string getColName( const int );
+        // @TODO: re-implement names
+        bool hasNames() const { return false; }
+        //std::string getRowName( const int );
+        //std::string getColName( const int );
 
         // TODO: implement connections.
         bool canConnect() const { return false; }
@@ -355,8 +367,8 @@ public:
         EAP &         m_eap;
         fb_quadlet_t *m_coeff;
 
-        std::map<int, RouterConfig::Route> m_input_route_map;
-        std::map<int, RouterConfig::RouteVector> m_output_route_map;
+        //std::map<int, RouterConfig::Route> m_input_route_map;
+        //std::map<int, RouterConfig::RouteVector> m_output_route_map;
 
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
