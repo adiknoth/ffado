@@ -31,6 +31,7 @@ env.PrependUnique( LIBS=["ffado"] )
 
 if not env.GetOption( "clean" ):
 	env.MergeFlags( env['LIBRAW1394_FLAGS'] )
+	env.MergeFlags( "-lrt -lpthread" )
 
 static_env = env.Clone()
 
