@@ -127,6 +127,8 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
                                                 unsigned char tag, unsigned char sy,
                                                 uint32_t pkt_ctr)
 {
+    static int len_shown = 0;
+
     if (length > 8) {
         // The iso data blocks from the MOTUs comprise a CIP-like
         // header followed by a number of events (8 for 1x rates, 16
@@ -154,6 +156,13 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
         // we can just pick it straight from the packet.
         uint32_t last_sph = CondSwapFromBus32(*(quadlet_t *)(data+8+(n_events-1)*m_event_size));
         m_last_timestamp = sphRecvToFullTicks(last_sph, m_Parent.get1394Service().getCycleTimer());
+
+        // For debugging only - to be removed once 896HD issues have been 
+        // resolved.  JMW, 6 Jan 2010.
+        if (!len_shown) {
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Packet from MOTU: length = %d\n", length);
+            len_shown = 1;
+        }
 
         return eCRV_OK;
     } else {
