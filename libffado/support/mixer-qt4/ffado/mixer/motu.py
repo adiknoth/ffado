@@ -706,7 +706,7 @@ class Motu(QWidget):
         # The Traveler has level and boost switchs for analog 5-8.  The 
         # Ultralite and the 896HD don't implement them.  All other interfaces 
         # have them over analog 1-8.
-        if (self.model==MOTU_MODEL_TRAVELER or self.model==MOTU_MODEL_ULTRALITE or self.model=MOTU_MODEL_896HD):
+        if (self.model==MOTU_MODEL_TRAVELER or self.model==MOTU_MODEL_ULTRALITE or self.model==MOTU_MODEL_896HD):
             self.disable_hide(self.ana1_level)
             self.disable_hide(self.ana2_level)
             self.disable_hide(self.ana3_level)
