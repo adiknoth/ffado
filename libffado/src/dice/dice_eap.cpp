@@ -109,7 +109,7 @@ EAP::~EAP()
 bool
 EAP::init() {
     if(!supportsEAP(m_device)) {
-        debugError("Device does not support EAP");
+        debugError("Device does not support EAP\n");
         return false;
     }
 
@@ -1543,7 +1543,7 @@ EAP::PeakSpace::read(enum eRegBase base, unsigned offset)
 void
 EAP::PeakSpace::show()
 {
-    printMessage("  %i peaks\n", m_peaks.size());
+    printMessage("  %zi peaks\n", m_peaks.size());
     for (std::map<unsigned char, int>::iterator it=m_peaks.begin(); it!=m_peaks.end(); ++it) {
         printMessage("0x%02x : %i\n", it->first, it->second);
     }

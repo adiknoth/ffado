@@ -167,15 +167,15 @@ Device::discover()
         return false;
     }
     if(!m_eap->init()) {
-        debugError("Could not init EAP\n");
+        debugWarning("Could not init EAP\n");
         delete m_eap;
         m_eap = NULL;
-        return false;
-    }
-    // register the EAP controls to the control structure
-    if(!addElement(m_eap)) {
-        debugError("Failed to add the EAP controls to the control tree\n");
-        return false;
+    } else {
+        // register the EAP controls to the control structure
+        if(!addElement(m_eap)) {
+            debugError("Failed to add the EAP controls to the control tree\n");
+            return false;
+        }
     }
     return true;
 }
