@@ -704,16 +704,6 @@ DeviceManager::discover( bool useCache, bool rediscover )
             m_avDevices = sorted;
         }
 
-        // set device id's
-        i = 0;
-        for ( FFADODeviceVectorIterator it = m_avDevices.begin();
-            it != m_avDevices.end();
-            ++it )
-        {
-            if ( !(*it)->setId( i++ ) ) {
-                debugError( "setting Id failed\n" );
-            }
-        }
         showDeviceInfo();
 
     } else { // slave mode
@@ -767,9 +757,6 @@ DeviceManager::discover( bool useCache, bool rediscover )
                 return false;
             }
 
-            if ( !avDevice->setId( m_avDevices.size() ) ) {
-                debugError( "setting Id failed\n" );
-            }
             if ( getDebugLevel() >= DEBUG_LEVEL_VERBOSE ) {
                 avDevice->showDevice();
             }

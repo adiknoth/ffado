@@ -276,36 +276,6 @@ public:
     virtual enum eStreamingState getStreamingState();
 
     /**
-     * @brief This is called by the device manager to give the device a unique ID.
-     *
-     * The purpose of this is to allow for unique port naming
-     * in case there are multiple identical devices on the bus.
-     * Some audio API's (e.g. jack) don't work properly when the
-     * port names are not unique.
-     *
-     * Say you have two devices having a port named OutputLeft.
-     * This can cause the streaming
-     * part to present two OutputLeft ports to the audio API,
-     * which won't work. This ID will allow you to construct
-     * the port names as 'dev1_OutputLeft' and 'dev2_OutputLeft'
-     *
-     * @note Currently this is a simple integer that is equal to
-     *       the position of the device in the devicemanager's
-     *       device list. Therefore it is dependant on the order
-     *       in which the devices are detected. The side-effect
-     *       of this is that it is dependant on the bus topology
-     *       and history (e.g. busresets etc). This makes that
-     *       these ID's are not fixed to a specific physical device.
-     *       At some point, we will replaced this with a GUID based
-     *       approach, which is tied to a physical device and is
-     *       bus & time independant.
-     *
-     * @param id
-     * @return true if successful
-     */
-    bool setId(unsigned int id);
-
-    /**
      * @brief Outputs the device configuration to stderr/stdout [debug helper]
      *
      * This function prints out a (detailed) description of the

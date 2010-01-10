@@ -44,7 +44,7 @@ FFADODevice::FFADODevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom 
     , m_pConfigRom( configRom )
     , m_pDeviceManager( d )
 {
-    addOption(Util::OptionContainer::Option("id",std::string("dev?")));
+    addOption(Util::OptionContainer::Option("id",m_pConfigRom->getGuidString()));
 
     std::ostringstream nodestr;
     nodestr << "node" << getConfigRom().getNodeId();
@@ -163,20 +163,6 @@ enum FFADODevice::eStreamingState
 FFADODevice::getStreamingState()
 {
     return eSS_Idle;
-}
-
-bool
-FFADODevice::setId( unsigned int id)
-{
-    Util::MutexLockHelper lock(m_DeviceMutex);
-    bool retval;
-    // FIXME: decent ID system nescessary
-    std::ostringstream idstr;
-    idstr << "dev" << id;
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Set id to %s...\n", idstr.str().c_str());
-
-    retval=setOption("id",idstr.str());
-    return retval;
 }
 
 bool
