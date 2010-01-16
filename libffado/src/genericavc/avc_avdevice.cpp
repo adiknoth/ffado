@@ -689,7 +689,18 @@ Device::addPlugToProcessor(
             const AVC::Plug::ChannelInfo* channelInfo = &( *it );
             std::ostringstream portname;
 
-            portname << id << "_" << channelInfo->m_name;
+            portname << id << "_";
+            if ( channelInfo->m_name.compare(0, 5, "MIDI ") == 0 ) {
+                debugWarning("Midi channel simply named 'MIDI', will add a direction to make it unique!\n");
+                portname << "MIDI ";
+                if (direction == Streaming::Port::E_Playback)
+                    portname << "IN ";
+                else
+                    portname << "OUT ";
+                portname << channelInfo->m_name.substr(5);
+            } else {
+                portname << channelInfo->m_name;
+            }
 
             Streaming::Port *p=NULL;
             switch(clusterInfo->m_portType) {
@@ -711,8 +722,9 @@ Device::addPlugToProcessor(
                 break;
 
             case AVC::ExtendedPlugInfoClusterInfoSpecificData::ePT_MIDI:
-                debugOutput(DEBUG_LEVEL_VERBOSE, " Adding MIDI channel %s (pos=0x%02X, loc=0x%02X)\n",
-                    channelInfo->m_name.c_str(), channelInfo->m_streamPosition, processor->getPortCount(Streaming::Port::E_Midi));
+                debugOutput(DEBUG_LEVEL_VERBOSE, " Adding MIDI channel '%s' (pos=0x%02X, loc=0x%02X)\n",
+                    portname.str().c_str() /*channelInfo->m_name.c_str()*/,
+                    channelInfo->m_streamPosition, processor->getPortCount(Streaming::Port::E_Midi));
                 p=new Streaming::AmdtpMidiPort(
                         *processor,
                         portname.str(),
