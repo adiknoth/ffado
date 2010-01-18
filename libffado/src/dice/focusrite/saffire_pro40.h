@@ -28,6 +28,8 @@
 
 #include "libieee1394/configrom.h"
 
+#include "focusrite_eap.h"
+
 namespace Dice {
 namespace Focusrite {
 
@@ -37,6 +39,8 @@ public:
                   std::auto_ptr<ConfigRom>( configRom ));
     virtual ~SaffirePro40();
 
+    bool discover();
+
     virtual void showDevice();
 
     bool canChangeNickname() { return true; }
@@ -44,6 +48,24 @@ public:
     std::string getNickName();
 
 private:
+
+    class SaffirePro40EAP : public FocusriteEAP
+    {
+    public:
+        SaffirePro40EAP(Dice::Device& dev) : FocusriteEAP(dev) {
+        }
+
+        int commandToFix(unsigned offset);
+
+        Poti* getMonitorPoti(std::string);
+        Poti* getDimPoti(std::string);
+
+        void setupSources();
+        void setupDestinations();
+    };
+    Dice::EAP* createEAP();
+
+    Dice::Focusrite::FocusriteEAP::MonitorSection *m_monitor;
 };
 
 }

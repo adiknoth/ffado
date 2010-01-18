@@ -28,6 +28,39 @@
 namespace Dice {
 namespace Focusrite {
 
+int SaffirePro40::SaffirePro40EAP::commandToFix(unsigned offset) {
+    if (offset<0x14) return 2;
+    if (offset<0x3C && offset>=0x14) return 1;
+    if (offset<0x5C && offset>=0x54) return 1;
+    if (offset<0x44 && offset>=0x3C) return 3;
+    if (offset == 0x5C) return 4;
+    return 0;
+}
+FocusriteEAP::Poti* SaffirePro40::SaffirePro40EAP::getMonitorPoti(std::string name) {
+    return new FocusriteEAP::Poti(this, name, 0x54);
+}
+FocusriteEAP::Poti* SaffirePro40::SaffirePro40EAP::getDimPoti(std::string name) {
+    return new FocusriteEAP::Poti(this, name, 0x58);
+}
+
+void SaffirePro40::SaffirePro40EAP::setupSources() {
+    addSource("SPDIF",  6,  2, eRS_AES);
+    addSource("ADAT",   0,  8, eRS_ADAT);
+    addSource("Analog", 0,  8, eRS_InS0);
+    addSource("Mixer",  0, 16, eRS_Mixer);
+    addSource("1394",   0, 16, eRS_ARX0);
+    addSource("Mute",   0,  1, eRS_Muted);
+}
+void SaffirePro40::SaffirePro40EAP::setupDestinations() {
+    addDestination("SPDIF",  6,  2, eRD_AES);
+    addDestination("ADAT",   0,  8, eRD_ADAT);
+    addDestination("Analog", 0,  8, eRD_InS0);
+    addDestination("Mixer",  0, 16, eRD_Mixer0);
+    addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
+    addDestination("1394",   0, 16, eRD_ATX0);
+    addDestination("Mute",   0,  1, eRD_Muted);
+}
+
 SaffirePro40::SaffirePro40( DeviceManager& d,
                                         std::auto_ptr<ConfigRom>( configRom ))
     : Dice::Device( d , configRom)
@@ -38,6 +71,16 @@ SaffirePro40::SaffirePro40( DeviceManager& d,
 
 SaffirePro40::~SaffirePro40()
 {
+    getEAP()->storeFlashConfig();
+}
+
+bool SaffirePro40::discover() {
+    if (Dice::Device::discover()) {
+        m_monitor = new FocusriteEAP::MonitorSection(dynamic_cast<FocusriteEAP*>(getEAP()), "Monitoring");
+        getEAP()->addElement(m_monitor);
+        return true;
+    }
+    return false;
 }
 
 void
@@ -45,6 +88,10 @@ SaffirePro40::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a Dice::Focusrite::SaffirePro40\n");
     Dice::Device::showDevice();
+}
+
+Dice::EAP* SaffirePro40::createEAP() {
+    return new SaffirePro40EAP(*this);
 }
 
 bool SaffirePro40::setNickName(std::string name) {

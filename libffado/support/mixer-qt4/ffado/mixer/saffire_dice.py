@@ -254,6 +254,8 @@ class Saffire_Dice(QtGui.QWidget):
             self.ch4level = BooleanControl(self.hw, self.hw.basepath + "/EAP/Ch4Level")
             widget.chkLevel4.setChecked(self.ch4level.selected())
             self.connect(widget.chkLevel4, QtCore.SIGNAL("toggled(bool)"), self.ch4level.select)
+            widget.chkSpdif.deleteLater()
+            widget.btnPad.deleteLater()
         else:
             widget.chkInst1.deleteLater()
             widget.chkInst2.deleteLater()

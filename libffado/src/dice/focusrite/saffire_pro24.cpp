@@ -44,20 +44,20 @@ FocusriteEAP::Poti* SaffirePro24::SaffirePro24EAP::getDimPoti(std::string name) 
 }
 
 void SaffirePro24::SaffirePro24EAP::setupSources() {
-    addSource("SPDIF",  6, 2, eRS_AES);
-    addSource("ADAT",   0, 8, eRS_ADAT);
-    addSource("Analog", 0, 4, eRS_InS0);
+    addSource("SPDIF",  6,  2, eRS_AES);
+    addSource("ADAT",   0,  8, eRS_ADAT);
+    addSource("Analog", 0,  4, eRS_InS0);
     addSource("Mixer",  0, 16, eRS_Mixer);
-    addSource("1394",   0, 8, eRS_ARX0);
-    addSource("Mute",   0, 1, eRS_Muted);
+    addSource("1394",   0,  8, eRS_ARX0);
+    addSource("Mute",   0,  1, eRS_Muted);
 }
 void SaffirePro24::SaffirePro24EAP::setupDestinations() {
-    addDestination("SPDIF",  6, 2, eRD_AES);
-    addDestination("Analog", 0, 6, eRD_InS0);
+    addDestination("SPDIF",  6,  2, eRD_AES);
+    addDestination("Analog", 0,  6, eRD_InS0);
     addDestination("Mixer",  0, 16, eRD_Mixer0);
-    addDestination("Mixer",  0, 2, eRD_Mixer1, 16);
+    addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
     addDestination("1394",   0, 16, eRD_ATX0);
-    addDestination("Mute",   0, 1, eRD_Muted);
+    addDestination("Mute",   0,  1, eRD_Muted);
 }
 
 
