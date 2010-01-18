@@ -423,5 +423,13 @@ device_definitions = (
     vendorname = "Weiss Engineering Ltd.";
     modelname = "AFI 1";
     driver = 20;
+},
+{ # Added by david@wwns.com
+   vendorid	= 0x001c2d;
+   modelid	= 0x00000001;
+   vendorname	= "FlexRadio_Systems";
+   modelname	= "Flex-5000";
+   driver	= 20;
+   xmit_max_cycles_early_transmit = 4;
 }
 );
