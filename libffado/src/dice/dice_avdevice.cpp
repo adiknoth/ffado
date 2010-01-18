@@ -806,7 +806,7 @@ Device::prepare() {
         // construct the MIDI names
         for (unsigned int j=0;j<nb_midi;j++) {
             std::ostringstream newname;
-            newname << "midi_in_" << j;
+            newname << "midi " << j;
             names_midi.push_back(newname.str());
         }
 
@@ -917,7 +917,7 @@ Device::prepare() {
         // construct the MIDI names
         for (unsigned int j=0; j < nb_midi; j++) {
             std::ostringstream newname;
-            newname << "midi_out_" << j;
+            newname << "midi " << j;
             names_midi.push_back(newname.str());
         }
 
@@ -1017,14 +1017,7 @@ Device::addChannelToProcessor(
     }
 
     std::ostringstream portname;
-    portname << id;
-    if(direction == Streaming::Port::E_Playback) {
-        portname << "p";
-    } else {
-        portname << "c";
-    }
-
-    portname << "_" << channelInfo->name;
+    portname << id << "_" << channelInfo->name;
 
     Streaming::Port *p=NULL;
     switch(channelInfo->portType) {
