@@ -70,6 +70,7 @@ of the mixer is an available output from the routers point.
         self.setLayout(self.layout)
 
         self.lbl = QtGui.QLabel(self.outname, self)
+        self.lbl.setToolTip("The name of the destination that is to be controlled here.")
         self.layout.addWidget(self.lbl, 0, 0)
 
         self.vu = VuMeter(self.interface, outname, parent=self)
@@ -78,6 +79,7 @@ of the mixer is an available output from the routers point.
         sources = self.interface.getSourceNames()
 
         self.combo = QtGui.QComboBox(self)
+        self.combo.setToolTip("<qt>Select the source for this destination.<br>Each destination can only receive sound from one source at a time. But one source can send sound to multiple destinations.</qt>")
         self.layout.addWidget(self.combo, 1, 0, 1, 2)
         self.combo.addItem("Disconnected")
         self.combo.addItems(sources)

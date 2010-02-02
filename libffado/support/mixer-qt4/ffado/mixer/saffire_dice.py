@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 by Arnold Krille
+# Copyright (C) 2009-2010 by Arnold Krille
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -23,6 +23,7 @@ import dbus
 
 from ffado.widgets.matrixmixer import MatrixMixer
 from ffado.widgets.crossbarrouter import *
+from ffado.mixer.generic_dice_eap import *
 
 from ffado.config import *
 
@@ -196,28 +197,14 @@ class MonitoringDelegate(QtGui.QStyledItemDelegate):
         self.emit(QtCore.SIGNAL("commitData(QWidget*)"), editor)
         self.emit(QtCore.SIGNAL("closeEditor(QWidget*)"), editor)
 
-class Saffire_Dice(QtGui.QWidget):
+class Saffire_Dice(Generic_Dice_EAP):
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
-        self.layout = QtGui.QGridLayout(self)
-        self.setLayout(self.layout)
-        self.tabs = QtGui.QTabWidget(self)
-        self.layout.addWidget(self.tabs)
+        Generic_Dice_EAP.__init__(self, parent)
 
     def buildMixer(self):
         #print self.hw
         #print self.hw.getText("/Generic/Nickname")
-        self.matrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/EAP/MatrixMixer", self)
-        scrollarea = QtGui.QScrollArea(self.tabs)
-        scrollarea.setWidgetResizable(True)
-        scrollarea.setWidget(self.matrix)
-        self.tabs.addTab(scrollarea, "Matrix")
-
-        self.router = CrossbarRouter(self.hw.servername, self.hw.basepath+"/EAP/Router", self)
-        scrollarea = QtGui.QScrollArea(self.tabs)
-        scrollarea.setWidgetResizable(True)
-        scrollarea.setWidget(self.router)
-        self.tabs.addTab(scrollarea, "Routing")
+        Generic_Dice_EAP.buildMixer(self)
 
         model = MonitoringModel(self.hw, self)
 
@@ -242,6 +229,7 @@ class Saffire_Dice(QtGui.QWidget):
         self.connect(widget.volumeKnob, QtCore.SIGNAL("valueChanged(int)"), self.volumeChanged)
 
         if self.configrom.getModelName() == "SAFFIRE_PRO_24":
+            widget.stacked.setCurrentWidget(widget.pagePro24)
             self.ch1inst = BooleanControl(self.hw, self.hw.basepath + "/EAP/Ch1LineInst")
             widget.chkInst1.setChecked(self.ch1inst.selected())
             self.connect(widget.chkInst1, QtCore.SIGNAL("toggled(bool)"), self.ch1inst.select)
@@ -254,13 +242,16 @@ class Saffire_Dice(QtGui.QWidget):
             self.ch4level = BooleanControl(self.hw, self.hw.basepath + "/EAP/Ch4Level")
             widget.chkLevel4.setChecked(self.ch4level.selected())
             self.connect(widget.chkLevel4, QtCore.SIGNAL("toggled(bool)"), self.ch4level.select)
-            widget.chkSpdif.deleteLater()
-            widget.btnPad.deleteLater()
+            #widget.chkSpdif.deleteLater()
+            #widget.btnPad.deleteLater()
+        elif self.configrom.getModelName() == "SAFFIRE_PRO_40":
+            widget.stacked.setCurrentWidget(widget.pagePro40)
+            #widget.chkInst1.deleteLater()
+            #widget.chkInst2.deleteLater()
+            #widget.chkLevel3.deleteLater()
+            #widget.chkLevel4.deleteLater()
         else:
-            widget.chkInst1.deleteLater()
-            widget.chkInst2.deleteLater()
-            widget.chkLevel3.deleteLater()
-            widget.chkLevel4.deleteLater()
+            self.stacked.deleteLater()
 
 
     def muteToggle(self, mute):
