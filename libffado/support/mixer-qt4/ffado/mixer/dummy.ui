@@ -1,4 +1,5 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <comment>Copyright (C) 2005-2008 by Pieter Palmers
 	
 	This file is part of FFADO
@@ -17,8 +18,8 @@
 	GNU General Public License for more details.
 </comment>
  <class>DummyMixerUI</class>
- <widget class="QWidget" name="DummyMixerUI" >
-  <property name="geometry" >
+ <widget class="QWidget" name="DummyMixerUI">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -26,32 +27,32 @@
     <height>290</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>Dummy Panel</string>
   </property>
-  <layout class="QGridLayout" >
-   <item row="0" column="0" colspan="2" >
-    <widget class="QLabel" name="textLabel1" >
-     <property name="text" >
-      <string>This panel is merely a placeholder for devices that don't have a mixer panel yet.</string>
+  <layout class="QGridLayout">
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="textLabel1">
+     <property name="text">
+      <string>This panel is merely a placeholder for devices that don't have a mixer panel (yet).</string>
      </property>
-     <property name="alignment" >
+     <property name="alignment">
       <set>Qt::AlignVCenter</set>
      </property>
-     <property name="wordWrap" >
+     <property name="wordWrap">
       <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="1" column="0" >
+   <item row="1" column="0">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <property name="sizeType" >
+     <property name="sizeType">
       <enum>QSizePolicy::Expanding</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>40</width>
        <height>20</height>
@@ -61,7 +62,7 @@
    </item>
   </layout>
  </widget>
- <layoutdefault spacing="6" margin="11" />
+ <layoutdefault spacing="6" margin="11"/>
  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
  <resources/>
  <connections/>
