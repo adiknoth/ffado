@@ -510,6 +510,10 @@ MotuReceiveStreamProcessor::decodeMotuCtrlEvents(
                     // MIDI is dealt with elsewhere, so just pass it over
                     break;
                 default:
+                    // Uncomment to debug unknown keys
+                    // debugOutput(DEBUG_LEVEL_VERBOSE, "Unknown MOTU key %d, value %d\n",
+                    //   control_key, (signed int)(*arg));
+
                     // Ignore any unknown keys or those we don't care about, at
                     // least for now.
                     break;
