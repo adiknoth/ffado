@@ -692,22 +692,22 @@ Device::showDevice()
     for (unsigned int i=0;i<m_nb_rx;i++) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"  Receiver %d:\n",i);
 
-        readTxReg(i, DICE_REGISTER_RX_ISOC_BASE, &tmp_quadlet);
+        readRxReg(i, DICE_REGISTER_RX_ISOC_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO channel       : %3d\n", tmp_quadlet);
-        readTxReg(i, DICE_REGISTER_RX_SEQ_START_BASE, &tmp_quadlet);
+        readRxReg(i, DICE_REGISTER_RX_SEQ_START_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Sequence start    : %3d\n", tmp_quadlet);
 
-        readTxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &tmp_quadlet);
+        readRxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb audio channels : %3d\n", tmp_quadlet);
-        readTxReg(i, DICE_REGISTER_RX_MIDI_BASE, &tmp_quadlet);
+        readRxReg(i, DICE_REGISTER_RX_MIDI_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb midi channels  : %3d\n", tmp_quadlet);
 
-        readTxReg(i, DICE_REGISTER_RX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
+        readRxReg(i, DICE_REGISTER_RX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08"PRIX32"\n", tmp_quadlet);
-        readTxReg(i, DICE_REGISTER_RX_AC3_ENABLE_BASE, &tmp_quadlet);
+        readRxReg(i, DICE_REGISTER_RX_AC3_ENABLE_BASE, &tmp_quadlet);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08"PRIX32"\n", tmp_quadlet);
 
-        stringlist channel_names=getRxNameString(i);
+        stringlist channel_names = getRxNameString(i);
         debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
         for ( stringlist::iterator it = channel_names.begin();
             it != channel_names.end();
