@@ -106,7 +106,6 @@ public:
         quadlet_t tmp;
         m_eap->readApplicationReg(m_offset, &tmp);
         m_value = - ((tmp>>m_bitshift)&0xff);
-        //printf("%s: %i -> %i\n", name.c_str(), tmp, m_value);
     }
 
     int getValue(int) { return getValue(); }
@@ -120,7 +119,10 @@ public:
         if (n == m_value)
             return true;
         m_value = n;
-        return m_eap->writeApplicationReg(m_offset, (-n)<<m_bitshift);
+        quadlet_t tmp;
+        m_eap->readApplicationReg(m_offset, &tmp);
+        tmp &= ~(0xff<<m_bitshift);
+        return m_eap->writeApplicationReg(m_offset, ((-n)<<m_bitshift)|tmp);
     }
 private:
     FocusriteEAP* m_eap;
