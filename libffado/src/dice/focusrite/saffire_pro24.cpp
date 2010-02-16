@@ -144,11 +144,11 @@ Dice::EAP* SaffirePro24::createEAP() {
     return new SaffirePro24EAP(*this);
 }
 
-bool SaffirePro24::setNickName( std::string name ) {
+bool SaffirePro24::setNickname( std::string name ) {
     return getEAP()->writeRegBlock( Dice::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name.c_str(), name.size() );
 }
 
-std::string SaffirePro24::getNickName() {
+std::string SaffirePro24::getNickname() {
     char name[16];
     getEAP()->readRegBlock( Dice::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name, 16 );
     return std::string( name );

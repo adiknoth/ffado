@@ -45,8 +45,8 @@ public:
     void showDevice();
 
     bool canChangeNickname() { return true; }
-    bool setNickName( std::string name );
-    std::string getNickName();
+    bool setNickname( std::string name );
+    std::string getNickname();
 
 private:
 

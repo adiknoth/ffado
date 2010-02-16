@@ -44,8 +44,8 @@ public:
     virtual void showDevice();
 
     bool canChangeNickname() { return true; }
-    bool setNickName(std::string);
-    std::string getNickName();
+    bool setNickname(std::string);
+    std::string getNickname();
 
 private:
 

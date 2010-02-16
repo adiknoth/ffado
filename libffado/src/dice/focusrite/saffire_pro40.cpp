@@ -94,10 +94,10 @@ Dice::EAP* SaffirePro40::createEAP() {
     return new SaffirePro40EAP(*this);
 }
 
-bool SaffirePro40::setNickName(std::string name) {
+bool SaffirePro40::setNickname(std::string name) {
     return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
 }
-std::string SaffirePro40::getNickName() {
+std::string SaffirePro40::getNickname() {
     char name[16];
     getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
     return std::string(name);
