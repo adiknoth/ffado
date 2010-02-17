@@ -138,17 +138,17 @@ class PanelManager(QWidget):
     def pollPanels(self):
         #log.debug("PanelManager::pollPanels()")
         # only when not modifying the tabs
-        if self.tabs.isEnabled():
-            for guid in self.panels.keys():
-                w = self.panels[guid]
-                for child in w.children():
-                    #log.debug("poll child %s,%s" % (guid,child))
-                    if 'polledUpdate' in dir(child):
-                        try:
+        try:
+            if self.tabs.isEnabled():
+                for guid in self.panels.keys():
+                    w = self.panels[guid]
+                    for child in w.children():
+                        #log.debug("poll child %s,%s" % (guid,child))
+                        if 'polledUpdate' in dir(child):
                             child.polledUpdate()
-                        except:
-                            log.error("error in polled update")
-                            raise
+        except:
+            log.error("error in pollPanels")
+            self.commCheck()
 
     def devlistPreUpdate(self):
         log.debug("devlistPreUpdate")
@@ -200,12 +200,16 @@ class PanelManager(QWidget):
         try:
             nbDevices = self.devmgr.getNbDevices()
         except:
-            log.debug("comms lost")
+            log.error("The communication with ffado-dbus-server was lost.")
             self.tabs.setEnabled(False)
-            self.tabs.hide()
-            self.status.lblMessage.setText("Failed to communicate with DBUS server. Please restart it and restart ffadomixer...")
-            self.status.show()
+            self.polltimer.stop()
             self.alivetimer.stop()
+            keys = self.panels.keys()
+            for panel in keys:
+                w = self.panels[panel]
+                del self.panels[panel]
+                w.deleteLater()
+            self.emit(SIGNAL("connectionLost"))
 
     def updatePanels(self):
         log.debug("PanelManager::updatePanels()")

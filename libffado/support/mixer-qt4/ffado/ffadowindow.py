@@ -26,7 +26,7 @@ import os
 
 from ffado.config import *
 
-import os
+import subprocess
 
 from PyQt4.QtCore import SIGNAL, SLOT, QObject, QTimer, Qt
 from PyQt4.QtGui import *
@@ -42,11 +42,12 @@ class StartDialog(QWidget):
     def __init__(self, parent):
         QWidget.__init__(self, parent)
         self.setObjectName("Restart Dialog")
-        self.label = QLabel("Somehow the connection to the dbus-service of FFADO couldn't be established.\nShall we take another try?",self)
+        self.label = QLabel("<qt>Somehow the connection to the dbus-service of FFADO couldn't be established.<p>\nShall we take another try?</qt>",self)
         self.button = QPushButton("Retry", self)
         self.layout = QGridLayout(self)
-        self.layout.addWidget(self.label, 0, 0, Qt.AlignCenter)
-        self.layout.addWidget(self.button, 1, 0, Qt.AlignCenter)
+        self.layout.setContentsMargins( 50, 10, 50, 10 )
+        self.layout.addWidget(self.label, 0, 0, Qt.AlignHCenter|Qt.AlignBottom)
+        self.layout.addWidget(self.button, 1, 0, Qt.AlignHCenter|Qt.AlignTop)
 
 class FFADOWindow(QMainWindow):
     def __init__(self, parent):
@@ -62,6 +63,7 @@ class FFADOWindow(QMainWindow):
         logging.getLogger('').addHandler(self.statuslogger)
 
         self.manager = PanelManager(self)
+        self.connect(self.manager, SIGNAL("connectionLost"), self.connectToDBUS)
 
         filemenu = self.menuBar().addMenu("File")
         quitaction = QAction("Quit", self)
@@ -97,28 +99,33 @@ class FFADOWindow(QMainWindow):
         event.accept()
 
     def connectToDBUS(self):
+        log.info("connectToDBUS")
         try:
             self.setupDeviceManager()
         except dbus.DBusException, ex:
             log.error("Could not communicate with the FFADO DBus service...")
             if not hasattr(self,"retry"):
                 self.retry = StartDialog(self)
-                self.setCentralWidget(self.retry)
                 self.connect(self.retry.button, SIGNAL("clicked()"), self.tryStartDBUSServer)
-            self.retry.setEnabled(True)
+            if hasattr(self, "retry"):
+                self.manager.setParent(None)
+                self.setCentralWidget(self.retry)
+                self.retry.setEnabled(True)
 
     def tryStartDBUSServer(self):
         try:
             self.setupDeviceManager()
         except dbus.DBusException, ex:
-            self.retry.setEnabled(False)
-            os.spawnlp( os.P_NOWAIT, "ffado-dbus-server" )
-            QTimer.singleShot(2000, self.connectToDBUS)
+            if hasattr(self, "retry"):
+                self.retry.setEnabled(False)
+            subprocess.Popen(['ffado-dbus-server', '-v3']).pid
+            QTimer.singleShot(5000, self.connectToDBUS)
 
     def setupDeviceManager(self):
         devmgr = DeviceManagerInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH)
-        #nbDevices = devmgr.getNbDevices()
         self.manager.setManager(devmgr)
+        if hasattr(self, "retry"):
+            self.retry.setParent(None)
         self.setCentralWidget(self.manager)
         self.updateaction.setEnabled(True)
 
