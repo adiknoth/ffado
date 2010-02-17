@@ -576,13 +576,41 @@ Device::getActiveClockSource() {
 bool
 Device::setNickname( std::string name)
 {
-    return setDeviceNickName(name);
+    char namestring[DICE_NICK_NAME_SIZE+1];
+    strncpy(namestring, name.c_str(), DICE_NICK_NAME_SIZE);
+
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)namestring, DICE_NICK_NAME_SIZE/4);
+    #endif
+
+    if (!writeGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
+                        (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
+        debugError("Could not write nickname string \n");
+        return false;
+    }
+    return true;
 }
 
 std::string
 Device::getNickname()
 {
-    return getDeviceNickName();
+    char namestring[DICE_NICK_NAME_SIZE+1];
+
+    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
+                        (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
+        debugError("Could not read nickname string \n");
+        return std::string("(unknown)");
+    }
+
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)namestring, DICE_NICK_NAME_SIZE/4);
+    #endif
+    namestring[DICE_NICK_NAME_SIZE]='\0';
+    return std::string(namestring);
 }
 
 void
@@ -612,7 +640,7 @@ Device::showDevice()
     debugOutput(DEBUG_LEVEL_VERBOSE,"  Notification     : 0x%08"PRIX32"\n",tmp_quadlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Nick name        : %s\n",getDeviceNickName().c_str());
+    debugOutput(DEBUG_LEVEL_NORMAL,"  Nick name        : %s\n",getNickname().c_str());
 
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &tmp_quadlet);
     debugOutput(DEBUG_LEVEL_NORMAL,"  Clock Select     : 0x%02X 0x%02X\n",
@@ -1552,44 +1580,6 @@ Device::getClockSourceNameString() {
     #endif
     namestring[DICE_CLOCKSOURCENAMES_SIZE]='\0';
     return splitNameString(std::string(namestring));
-}
-
-std::string
-Device::getDeviceNickName() {
-    char namestring[DICE_NICK_NAME_SIZE+1];
-
-    if (!readGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
-                        (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
-        debugError("Could not read nickname string \n");
-        return std::string("(unknown)");
-    }
-
-    // Strings from the device are always little-endian,
-    // so byteswap for big-endian machines
-    #if __BYTE_ORDER == __BIG_ENDIAN
-    byteSwapBlock((quadlet_t *)namestring, DICE_NICK_NAME_SIZE/4);
-    #endif
-    namestring[DICE_NICK_NAME_SIZE]='\0';
-    return std::string(namestring);
-}
-
-bool
-Device::setDeviceNickName(std::string name) {
-    char namestring[DICE_NICK_NAME_SIZE+1];
-    strncpy(namestring, name.c_str(), DICE_NICK_NAME_SIZE);
-
-    // Strings from the device are always little-endian,
-    // so byteswap for big-endian machines
-    #if __BYTE_ORDER == __BIG_ENDIAN
-    byteSwapBlock((quadlet_t *)namestring, DICE_NICK_NAME_SIZE/4);
-    #endif
-
-    if (!writeGlobalRegBlock(DICE_REGISTER_GLOBAL_NICK_NAME,
-                        (fb_quadlet_t *)namestring, DICE_NICK_NAME_SIZE)) {
-        debugError("Could not write nickname string \n");
-        return false;
-    }
-    return true;
 }
 
 

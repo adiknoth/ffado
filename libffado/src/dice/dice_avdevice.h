@@ -152,8 +152,6 @@ private: // helper functions
     stringlist getTxNameString(unsigned int i);
     stringlist getRxNameString(unsigned int i);
     stringlist getClockSourceNameString();
-    std::string getDeviceNickName();
-    bool setDeviceNickName(std::string name);
 
     enum eClockSourceType  clockIdToType(unsigned int id);
     bool isClockSourceIdLocked(unsigned int id, quadlet_t ext_status_reg);
