@@ -87,7 +87,7 @@ class FFADOWindow(QMainWindow):
 
         log.info( "Starting up" )
 
-        QTimer.singleShot( 1, self.connectToDBUS )
+        QTimer.singleShot( 1, self.tryStartDBUSServer )
 
     def __del__(self):
         log.info("__del__")
