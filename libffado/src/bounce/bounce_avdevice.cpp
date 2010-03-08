@@ -326,7 +326,7 @@ Device::startStreamByIndex(int i) {
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!readReg(BOUNCE_REGISTER_TX_ISOCHANNEL, &reg_isoch)) {
-            debugError("Could not read ISO_CHANNEL register\n", n);
+            debugError("Could not read ISO_CHANNEL register\n");
             p->setChannel(-1);
             deallocateIsoChannel(isochannel);
             return false;
@@ -420,7 +420,7 @@ Device::stopStreamByIndex(int i) {
 
         // deallocate ISO channel
         if(!deallocateIsoChannel(isochannel)) {
-            debugError("Could not deallocate iso channel for SP\n",i);
+            debugError("Could not deallocate iso channel for SP\n");
             return false;
         }
 
@@ -499,7 +499,7 @@ Device::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     if(!get1394Service().read_quadlet( nodeId, addr, result ) ) {
-        debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, addr);
+        debugError("Could not read from node 0x%04X addr 0x%012X\n", nodeId, (unsigned int)addr);
         return false;
     }
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08X\n", *result);
@@ -521,7 +521,7 @@ Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     fb_nodeid_t nodeId=getNodeId() | 0xFFC0;
 
     if(!get1394Service().write_quadlet( nodeId, addr, data ) ) {
-        debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, addr);
+        debugError("Could not write to node 0x%04X addr 0x%012X\n", nodeId, (unsigned int)addr);
         return false;
     }
     return true;

@@ -402,7 +402,7 @@ SlaveDevice::init_config_rom(raw1394handle_t handle)
     /* add an AV/C unit directory */
     dir.unit_spec_id    = FFADO_BOUNCE_SERVER_SPECID;
     dir.unit_sw_version = 0x00010001;
-    leaf = FFADO_BOUNCE_SERVER_MODELNAME;
+    leaf = (char*)FFADO_BOUNCE_SERVER_MODELNAME;
     dir.nr_textual_leafs = 1;
     dir.textual_leafs = &leaf;
 
