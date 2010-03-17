@@ -622,49 +622,49 @@ Device::showDevice()
     debugOutput(DEBUG_LEVEL_NORMAL, "Device is a DICE device\n");
     FFADODevice::showDevice();
 
-    debugOutput(DEBUG_LEVEL_VERBOSE," DICE Parameter Space info:\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Global  : offset=0x%04X size=%04d\n", m_global_reg_offset, m_global_reg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  TX      : offset=0x%04X size=%04d\n", m_tx_reg_offset, m_tx_reg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"                nb=%4d size=%04d\n", m_nb_tx, m_tx_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  RX      : offset=0x%04X size=%04d\n", m_rx_reg_offset, m_rx_reg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"                nb=%4d size=%04d\n", m_nb_rx, m_rx_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  UNUSED1 : offset=0x%04X size=%04d\n", m_unused1_reg_offset, m_unused1_reg_size);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  UNUSED2 : offset=0x%04X size=%04d\n", m_unused2_reg_offset, m_unused2_reg_size);
+    printMessage(" DICE Parameter Space info:\n");
+    printMessage("  Global  : offset=0x%04X size=%04d\n", m_global_reg_offset, m_global_reg_size);
+    printMessage("  TX      : offset=0x%04X size=%04d\n", m_tx_reg_offset, m_tx_reg_size);
+    printMessage("                nb=%4d size=%04d\n", m_nb_tx, m_tx_size);
+    printMessage("  RX      : offset=0x%04X size=%04d\n", m_rx_reg_offset, m_rx_reg_size);
+    printMessage("                nb=%4d size=%04d\n", m_nb_rx, m_rx_size);
+    printMessage("  UNUSED1 : offset=0x%04X size=%04d\n", m_unused1_reg_offset, m_unused1_reg_size);
+    printMessage("  UNUSED2 : offset=0x%04X size=%04d\n", m_unused2_reg_offset, m_unused2_reg_size);
 
-    debugOutput(DEBUG_LEVEL_VERBOSE," Global param space:\n");
+    printMessage(" Global param space:\n");
 
     readGlobalRegBlock(DICE_REGISTER_GLOBAL_OWNER, reinterpret_cast<fb_quadlet_t *>(&tmp_octlet), sizeof(fb_octlet_t));
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Owner            : 0x%016"PRIX64"\n",tmp_octlet);
+    printMessage("  Owner            : 0x%016"PRIX64"\n",tmp_octlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Notification     : 0x%08"PRIX32"\n",tmp_quadlet);
+    printMessage("  Notification     : 0x%08"PRIX32"\n",tmp_quadlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_NOTIFICATION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Nick name        : %s\n",getNickname().c_str());
+    printMessage("  Nick name        : %s\n",getNickname().c_str());
 
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Clock Select     : 0x%02X 0x%02X\n",
+    printMessage("  Clock Select     : 0x%02X 0x%02X\n",
         (tmp_quadlet>>8) & 0xFF, tmp_quadlet & 0xFF);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_ENABLE, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Enable           : %s\n",
+    printMessage("  Enable           : %s\n",
         (tmp_quadlet&0x1?"true":"false"));
 
     readGlobalReg(DICE_REGISTER_GLOBAL_STATUS, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Clock Status     : %s 0x%02X\n",
+    printMessage("  Clock Status     : %s 0x%02X\n",
         (tmp_quadlet&0x1?"locked":"not locked"), (tmp_quadlet>>8) & 0xFF);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_EXTENDED_STATUS, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  Extended Status  : 0x%08"PRIX32"\n", tmp_quadlet);
+    printMessage("  Extended Status  : 0x%08"PRIX32"\n", tmp_quadlet);
 
     readGlobalReg(DICE_REGISTER_GLOBAL_SAMPLE_RATE, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_NORMAL, "  Samplerate       : 0x%08"PRIX32" (%"PRIu32")\n", tmp_quadlet, tmp_quadlet);
+    printMessage("  Samplerate       : 0x%08"PRIX32" (%"PRIu32")\n", tmp_quadlet, tmp_quadlet);
 
     readGlobalRegBlock(DICE_REGISTER_GLOBAL_VERSION, reinterpret_cast<fb_quadlet_t *>(&tmp_quadlet), sizeof(fb_quadlet_t));
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08"PRIX32"\n", tmp_quadlet);
+    printMessage("  Version          : 0x%08"PRIX32"\n", tmp_quadlet);
     
     readGlobalReg(DICE_REGISTER_GLOBAL_VERSION, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_NORMAL,"  Version          : 0x%08"PRIX32" (%u.%u.%u.%u)\n",
+    printMessage("  Version          : 0x%08"PRIX32" (%u.%u.%u.%u)\n",
         tmp_quadlet,
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_A(tmp_quadlet),
         DICE_DRIVER_SPEC_VERSION_NUMBER_GET_B(tmp_quadlet),
@@ -673,75 +673,75 @@ Device::showDevice()
         );
 
     readGlobalReg(DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES, &tmp_quadlet);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock caps       : 0x%08"PRIX32"\n", tmp_quadlet);
+    printMessage("  Clock caps       : 0x%08"PRIX32"\n", tmp_quadlet);
 
     stringlist names=getClockSourceNameString();
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Clock sources    :\n");
+    printMessage("  Clock sources    :\n");
 
     for ( stringlist::iterator it = names.begin();
           it != names.end();
           ++it )
     {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"    %s\n", (*it).c_str());
+        printMessage("    %s\n", (*it).c_str());
     }
 
-    debugOutput(DEBUG_LEVEL_VERBOSE," TX param space:\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Nb of xmit        : %1d\n", m_nb_tx);
+    printMessage(" TX param space:\n");
+    printMessage("  Nb of xmit        : %1d\n", m_nb_tx);
     for (unsigned int i=0;i<m_nb_tx;i++) {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"  Transmitter %d:\n",i);
+        printMessage("  Transmitter %d:\n",i);
 
         readTxReg(i, DICE_REGISTER_TX_ISOC_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO channel       : %3d\n", tmp_quadlet);
+        printMessage("   ISO channel       : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_SPEED_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO speed         : %3d\n", tmp_quadlet);
+        printMessage("   ISO speed         : %3d\n", tmp_quadlet);
 
         readTxReg(i, DICE_REGISTER_TX_NB_AUDIO_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb audio channels : %3d\n", tmp_quadlet);
+        printMessage("   Nb audio channels : %3d\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_MIDI_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb midi channels  : %3d\n", tmp_quadlet);
+        printMessage("   Nb midi channels  : %3d\n", tmp_quadlet);
 
         readTxReg(i, DICE_REGISTER_TX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08"PRIX32"\n", tmp_quadlet);
+        printMessage("   AC3 caps          : 0x%08"PRIX32"\n", tmp_quadlet);
         readTxReg(i, DICE_REGISTER_TX_AC3_ENABLE_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08"PRIX32"\n", tmp_quadlet);
+        printMessage("   AC3 enable        : 0x%08"PRIX32"\n", tmp_quadlet);
 
         stringlist channel_names=getTxNameString(i);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
+        printMessage("   Channel names     :\n");
         for ( stringlist::iterator it = channel_names.begin();
             it != channel_names.end();
             ++it )
         {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"     %s\n", (*it).c_str());
+            printMessage("     %s\n", (*it).c_str());
         }
     }
 
-    debugOutput(DEBUG_LEVEL_VERBOSE," RX param space:\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Nb of recv        : %1d\n", m_nb_tx);
+    printMessage(" RX param space:\n");
+    printMessage("  Nb of recv        : %1d\n", m_nb_tx);
     for (unsigned int i=0;i<m_nb_rx;i++) {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"  Receiver %d:\n",i);
+        printMessage("  Receiver %d:\n",i);
 
         readRxReg(i, DICE_REGISTER_RX_ISOC_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   ISO channel       : %3d\n", tmp_quadlet);
+        printMessage("   ISO channel       : %3d\n", tmp_quadlet);
         readRxReg(i, DICE_REGISTER_RX_SEQ_START_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Sequence start    : %3d\n", tmp_quadlet);
+        printMessage("   Sequence start    : %3d\n", tmp_quadlet);
 
         readRxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb audio channels : %3d\n", tmp_quadlet);
+        printMessage("   Nb audio channels : %3d\n", tmp_quadlet);
         readRxReg(i, DICE_REGISTER_RX_MIDI_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Nb midi channels  : %3d\n", tmp_quadlet);
+        printMessage("   Nb midi channels  : %3d\n", tmp_quadlet);
 
         readRxReg(i, DICE_REGISTER_RX_AC3_CAPABILITIES_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 caps          : 0x%08"PRIX32"\n", tmp_quadlet);
+        printMessage("   AC3 caps          : 0x%08"PRIX32"\n", tmp_quadlet);
         readRxReg(i, DICE_REGISTER_RX_AC3_ENABLE_BASE, &tmp_quadlet);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   AC3 enable        : 0x%08"PRIX32"\n", tmp_quadlet);
+        printMessage("   AC3 enable        : 0x%08"PRIX32"\n", tmp_quadlet);
 
         stringlist channel_names = getRxNameString(i);
-        debugOutput(DEBUG_LEVEL_VERBOSE,"   Channel names     :\n");
+        printMessage("   Channel names     :\n");
         for ( stringlist::iterator it = channel_names.begin();
             it != channel_names.end();
             ++it )
         {
-            debugOutput(DEBUG_LEVEL_VERBOSE,"     %s\n", (*it).c_str());
+            printMessage("     %s\n", (*it).c_str());
         }
     }
     flushDebugOutput();
@@ -1670,23 +1670,24 @@ Device::initIoFunctions() {
         return false;
     }
 
-    // FIXME: verify this and clean it up.
-    /* special case for Alesis io14, which announces two receive transmitters,
-     * but only has one. Same is true for Alesis Multimix16.
-     */
-    if (FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) {
-        /* we may want to use a switch-case-statement some day... */
-        if ((0x00000001 == getConfigRom().getModelId()) ||
-            (0x00000000 == getConfigRom().getModelId())) {
-            m_nb_rx = 1;
-        }
-    }
-
     if(!readReg(m_tx_reg_offset + DICE_REGISTER_RX_SZ_RX, &m_rx_size)) {
         debugError("Could not initialize m_rx_size\n");
         return false;
     }
     m_rx_size*=4;
+
+    // FIXME: verify this and clean it up.
+    /* special case for Alesis io14, which announces two receive transmitters,
+     * but only has one. Same is true for Alesis Multimix16.
+     */
+    if (FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) {
+        switch (getConfigRom().getModelId()) {
+            case 0x00000001:
+            case 0x00000000:
+                m_nb_rx = 1;
+                break;
+        }
+    }
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"DICE Parameter Space info:\n");
     debugOutput(DEBUG_LEVEL_VERBOSE," Global  : offset=%04X size=%04d\n", m_global_reg_offset, m_global_reg_size);

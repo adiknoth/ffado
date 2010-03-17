@@ -263,7 +263,7 @@ private:
     };
 
     /**
-      the peak space is a special version of a router config
+      @brief Description of the peak space in hardware
       */
     class PeakSpace {
     private:

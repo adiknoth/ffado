@@ -27,6 +27,7 @@
 #include "dice_defines.h"
 
 #include "libutil/SystemTimeSource.h"
+#include "libutil/ByteSwap.h"
 
 #include <cstdio>
 
@@ -533,11 +534,12 @@ EAP::show()
         m_router->show();
     }
 
-    printMessage("--- Active Router/Stream ---\n");
+    printMessage("--- Active Router ---\n");
     RouterConfig *rcfg = getActiveRouterConfig();
     if(rcfg) {
         rcfg->show();
     }
+    printMessage("--- Active Stream ---\n");
     StreamConfig *scfg = getActiveStreamConfig();
     if(scfg) {
         scfg->show();
@@ -1686,15 +1688,15 @@ EAP::StreamConfig::getNamesForBlock(struct ConfigBlock &b)
 void
 EAP::StreamConfig::showConfigBlock(struct ConfigBlock &b)
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, " Channel count : %u audio, %u midi\n", b.nb_audio, b.nb_midi);
-    debugOutput(DEBUG_LEVEL_VERBOSE, " AC3 Map       : 0x%08X\n", b.ac3_map);
+    printMessage(" Channel count : %u audio, %u midi\n", b.nb_audio, b.nb_midi);
+    printMessage(" AC3 Map       : 0x%08X\n", b.ac3_map);
     stringlist channel_names  = getNamesForBlock(b);
-    debugOutput(DEBUG_LEVEL_VERBOSE,"  Channel names :\n");
+    printMessage("  Channel names :\n");
     for ( stringlist::iterator it = channel_names.begin();
         it != channel_names.end();
         ++it )
     {
-        debugOutput(DEBUG_LEVEL_VERBOSE,"     %s\n", (*it).c_str());
+        printMessage("     %s\n", (*it).c_str());
     }
 }
 
@@ -1702,11 +1704,11 @@ void
 EAP::StreamConfig::show()
 {
     for(unsigned int i=0; i<m_nb_tx; i++) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "TX Config block %d\n", i);
+        printMessage("TX Config block %d\n", i);
         showConfigBlock(m_tx_configs[i]);
     }
     for(unsigned int i=0; i<m_nb_rx; i++) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "RX Config block %d\n", i);
+        printMessage("RX Config block %d\n", i);
         showConfigBlock(m_rx_configs[i]);
     }
 }
@@ -1714,4 +1716,4 @@ EAP::StreamConfig::show()
 } // namespace Dice
 
 
-
+// vim: et
