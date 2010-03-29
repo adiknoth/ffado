@@ -1,0 +1,318 @@
+Protocol details for MOTU "mark 3" devices, obtained in the first instance
+using an 828 Mk 3.
+
+Version: 20100329-1
+Author: Jonathan Woithe
+
+
+Audio data streaming packets
+----------------------------
+
+It appears the streaming packets in the "mark 3" devices use a very similar
+protocol to the earlier interfaces.  Each iso packet begins with a 64-bit
+CIP header.  Following this are N data blocks, where N varies according to
+the sample rate selected (8 for 1x, 16 for 2x, 32 for 4x).  Each data block
+comprises a 32-bit SPH field (consisting of a standard SPH timestamp), 48
+bits of control/MIDI data and then the audio data itself.  The audio data is
+sent as packed big-endian signed integer data, as for the earlier
+interfaces.
+
+At 1x rates, the maximum packet size sent to the MOTU is 0x328 (808) bytes:
+  8 bytes CIP header
+  8 data blocks
+Each data block contains:
+  4 bytes SPH timestamp
+  6 bytes control/MIDI data
+  90 bytes of audio data (30 channels)
+The audio data is ordered as follows: phones, analog 1-8, main out, SPDIF,
+ADAT1 1-8, ADAT2 1-8.
+
+At 1x rates the MOTU sends 0x388 (904) bytes per packet, providing space
+for 32 audio channels (order to be investigated): mic/guitar 1-2, analog
+1-8, return 1-2, reverb 1-2, SPDIF, ADAT1 1-8, ADAT2 1-8.
+
+At 2x rates, packets sent to the MOTU have a maximum size of 0x4c8 (1224)
+bytes while those sent by the MOTU are 0x0588 (1416) bytes.  16 blocks are
+send in each packet.  22 channels sent to the MOTU (order to be confirmed):
+phones, analog 1-8, main out, SPDIF, ADAT1 1-4, ADAT2 1-4.  There is space
+for 26 channels sent from the MOTU (order to be investigated): analog 1-8,
+mic/guitar 1-2, SPDIF, return 1-2, ADAT1 1-4, ADAT2 1-4, unknown 1-4.
+
+At 4x rates 0x0508 (1288) bytes are sent to the MOTU and 0x0688 (1672) are
+sent from the MOTU.  For sending to the MOTU there are 32 blocks with room
+for 10 audio channels: unknown 1-2, analog 1-8.  The MOTU sends 14 audio
+channels (order to be investigated): analog 1-8, mic/guitar 1-2, return 1-2,
+unknown 1-2.
+
+
+CuemixFX control
+----------------
+
+Control of the CuemixFX system is via writes starting at register
+0xffff00010000.  Either 1, 2 or 3 quadlets are written depending on what is
+being done.  Each packet includes a serial number which is incremented after
+sending each control packet.  The same serial number counter is used
+regardless of the type of control packet being sent.
+
+
+CuemixFX heartbeats
+-------------------
+
+The MOTU periodically sends a heartbeat packet back to the PC.  This is sent
+to address 0x000300000000 and consists of a single quadlet length write
+block request of the following form:
+
+  00 aa 00 00
+
+"aa" is the serial number ranging from 0x00 to 0xff.
+
+It appears that heartbeat packets are sometimes sent to the MOTU.  These take
+the form of single-quadlet writes to the CuemixFX address.  The quadlet
+takes the following form:
+
+  02 aa 00 00
+
+"aa" is the serial number of the packet ranging from 0x00 to 0xff.
+
+It's not yet certain what purpose these packets serve and whether they are
+in fact necessary.  It is also not yet known whether the MOTU or the PC
+initiates the process (that is, which one sends a packet with a given serial
+number first).
+
+
+Pedal events
+------------
+
+When a pedal event occurs the MOTU sends a quadlet write request to address
+0x000300000000 on the PC.  The format of the quadlet is as follows.
+
+  bb 00 00 c2
+
+"bb" is 0 for a "pedal up" event and 1 for a "pedal down" event.  The pedal
+is "down" when the pedal switch is closed.
+
+
+CuemixFX variable controls
+--------------------------
+
+The control of continuously variable controls (for example, faders, pan
+controls) is by way of 3-quadlet writes to the CuemixFX register.  The
+format of these writes is as follows:
+
+  02 aa 66 bb - cc dd ee v1 - v2 v3 v4 00
+
+where:
+  aa = packet serial number as previously described
+  bb = the bus/channel number (0x00 = mix bus 1, mic 1)
+  cc-dd-ee = the key of the control being changed
+  v1-v4 = the value being written.  v1 is the least-significant byte
+
+Keys presently identified are as follows.
+
+  00-01-02 = Bus reverb send (0-0x3f800000)
+  00-0c-01 = Input reverb send (0 ("-inf") to 0x3f800000 ("0 dB")).  bb is
+             the zero-based input channel index for this key.
+  01-01-02 = Bus reverb return (0-0x3f800000)
+  02-00-01 = Input trim control (mic inputs: 0 ("+0 dB") - 0x42540000 ("+53
+             dB"); line inputs: 0xc2c00000 ("-96") - 0x41b00000 ("+22")). 
+             For this key, bb is the zero-based channel index.
+  02-00-02 = Bus master fader
+  02-mm-02 = Channel pan.  mm is the standard channel index.  Values range
+             from 0xbf800000 (L) to 0x3f800000 (R).
+  03-mm-02 = Channel fader.  mm is the channel index starting at 0x02 for
+             the first channel (on the 828-mk3 this is mic 1).  Values range
+             from 0 (-inf) to 0x3f800000 (0 dB).
+  05-mm-02 = Channel balance (active only for stereo paired channels). 
+             Values are from 0xbf800000 ("-1") to 0x3f800000 ("1").
+  06-mm-02 = Channel width (active only for MS-paired channels).  Values are
+             from 0 ("0") to 0x3f800000 ("1").
+  07-00-00 = Focus select.  v4 = 0x01 for channel select, 0x03 for bus
+             select.  For channel select one is focusing the actual input,
+             not the channel in the current bus.  Therefore the bus select
+             byte (bb) is always zero for this key. v1 = 0x00 (mic 1 or 2),
+             0x01 (ana 1 or 2) and so forth for channel pairs.  Bus focus
+             focuses the output assigned to the bus, not the bus itself.  v1
+             in this case is 0x00 for Main, 0x01 for Analog 1-2 and so
+             forth.  Again the bus select byte is always zero.
+             v2 and v3 are always zero.
+
+Channel EQ controls:
+  02-yy-01 = Input EQ frequency.  Value range 0x41a00001 (20 Hz) to
+             0x469c4004 (20 kHz)
+  03-yy-01 = Input EQ gain.  Value range 0xc1a00000 (-20 dB) to 0x41a00000
+             (+20 dB)
+  04-yy-01 = Input EQ Q.  Value range 0x3c23d70a (0.01) to 0x40400000 (3.00)
+  02-yy-03 = Output EQ frequency.  Value range 0x41a00001 (20 Hz) to
+             0x469c4004 (20 kHz)
+  03-yy-03 = Output EQ gain.  Value range 0xc1a00000 (-20 dB) to 0x41a00000
+             (+20 dB)
+  04-yy-03 = Output EQ Q.  Value range 0x3c23d70a (0.01) to 0x40400000 (3.00)
+The EQ number ("yy" in this table) is as follows:
+  02 = EQ F
+  03 = EQ A
+  04 = EQ C
+  05 = EQ D
+  06 = EQ E
+  07 = EQ B
+  80 = EQ G
+
+Input channel dynamics controls:
+  01-0a-01 = compressor threshold.  Value range 0xc2400000 (-48 dB) to
+             0x00000000 (0 dB).
+  02-0a-01 = compressor ratio.  Value range 0x3f800000 (1.0:1) to 
+             0x41200000 (10.0:1).
+  03-0a-01 = compressor attack.  Value range 0x41200000 (10 ms) to
+             0x42c80000 (100 ms)
+  04-0a-01 = compressor release.  Value range 0x41200000 (10 ms) to
+             0x44fa0000 (2 s)
+  05-0a-01 = compressor trim.  Value range 0xc0c00000 (-6 dB) to 
+             0x00000000 (0 dB)
+  02-0b-01 = leveler makeup gain.  Value range 0x00000000 to 0x42c80000.
+  03-0b-01 = leveler gain reduction.  Value range 0x00000000 to 0x42c80000.
+
+Output channel dynamics controls:
+  01-09-03 = compressor threshold.  Value range 0xc2400000 (-48 dB) to
+             0x00000000 (0 dB).
+  02-09-03 = compressor ratio.  Value range 0x3f800000 (1.0:1) to 
+             0x41200000 (10.0:1).
+  03-09-03 = compressor attack.  Value range 0x41200000 (10 ms) to
+             0x42c80000 (100 ms)
+  04-09-03 = compressor release.  Value range 0x41200000 (10 ms) to
+             0x44fa0000 (2 s)
+  05-09-03 = compressor trim.  Value range 0xc0c00000 (-6 dB) to 
+             0x00000000 (0 dB)
+  02-0a-03 = leveler makeup gain.  Value range 0x00000000 to 0x42c80000.
+  03-0a-03 = leveler gain reduction.  Value range 0x00000000 to 0x42c80000.
+
+Channel index values (mm in the above tables) are as follows on the 828 Mk3.
+
+  0x02 = mic 1
+  0x03 = mic 2
+  0x04 - 0x0b = analog 1-8
+  0x0c - 0x0d = SPDIF 1 and 2
+  0x0e - 0x15 = ADAT A 1-8
+  0x16 - 0x1c = ADAT B 1-8
+
+If a channel pair is flagged as a stereo pair then only the first control
+register is written to.
+
+Reverb parameters:
+  02-00-04 = predelay. 0x00000000 (0 ms) to 0x42c80000 (100 ms).
+  03-00-04 = shelf filter frequency.  0x447a0000 (1 kHz) to 0x469c4000 (20
+             kHz).
+  04-00-04 = shelf filter cut.  0xc2200000 (-40 dB) to 0x00000000 (0 dB).
+  05-00-04 = reverb time.  0x42c80000 (100 ms) to 0x476a6000 (60 sec).
+  06-00-04 = reverb design: low time.  0x00000000 (0%) to 0x42c80000 (100%).
+  07-00-04 = reverb design: mid time.  0x00000000 (0%) to 0x42c80000 (100%).
+  08-00-04 = reverb design: high time.  0x00000000 (0%) to 0x42c80000
+             (100%).
+  09-00-04 = reverb design: crossover low.  0x42c80000 (100 Hz) to
+             0x469c4004 (20 kHz).
+  0a-00-04 = reverb design: crossover high.  0x447a0000 (1 kHz) to
+             0x469c4004 (20 kHz).
+  0b-00-04 = reverb design: width.  0xbf800000 (-100%) to 0x3f800000
+             (+100%).
+  0d-00-04 = early reflections size.  0x42480000 (50%) to 0x43c64000 (400%).
+  0e-00-04 = early reflections level.  0x00000000 (-inf) to 0x3f800000 (0
+             dB).
+
+
+CuemixFX switches
+-----------------
+
+Switches and discrete controls in CuemixFX are controlled through a
+2-quadlet write to the CuemixFX register.  The format of this is
+
+  02 aa 69 v1 - bb k1 k2 k3
+
+where:
+  aa = packet serial number
+  bb = bus/channel index (0x00 = mix bus 1 or mic 1, depending on the control)
+  v1 = the value of the switch / discrete control
+  k1-k2-k3 = the key of the control being set
+
+Depending on the control, the channel number being set is communicated
+either as part of the key (for controls which operate on a per-mixbus basis)
+or in the "bb" field of the packet (for controls which operate on a
+per-input/output basis.
+
+The keys appear to be rather structured.  The value of k3 appears to
+indicate what kind of object the key applies to:
+
+  00 = global resource (eg: talkback)
+  01 = input channel (corresponding to a physical device input)
+  02 = a channel in a bus mix
+  03 = output channel (corresponding to a physical device output)
+  04 = global configuration
+
+Keys presently identified:
+  00-00-01 = Input channel phase.  Value is 0x00 (normal), 0x01 (invert)
+             bb is the input channel index (0 is mic 1).  When two adjacent
+             channels are paired the phase of each can still be independently 
+             controlled.  FIXME: also under the 00-cc-01 entry.
+  00-00-02 = bus output assignment.  Values are:
+              0xff = disabled
+              0x00 = main L-R
+              0x01-0x04 = Analog 1-2 though 7-8
+              0x05 = SPDIF 1-2
+              0x06 = Phones L-R
+              0x07-0x0a = ADAT A 1-2 through 7-8
+              0x0b-0x0e = ADAT B 1-2 through 7-8
+  00-03-00 = talkback channel select.  The value is the 0-based channel index
+             of the talkback channel.
+  00-cc-01 = input channel EQ/dynamics switches.  Value is 0x00 (off) or 0x01
+             (on).  cc values identified to date:
+               00 = phase (0x00 normal, 0x01 invert)
+               02 = EQ F enable
+               03 = EQ A enable
+               04 = EQ C enable
+               05 = EQ D enable
+               06 = EQ E enable
+               07 = EQ B enable
+               08 = EQ G enable
+               0a = Compressor enable
+               0b = Leveler enable
+             FIXME: work out some way to identify the EQs.
+  00-cc-03 = output channel EQ/dynamics switches.  Value is 0x00 (off) or
+             0x01 (on).  cc values identified to date:
+               01 = EQ F enable
+               02 = EQ A enable
+               03 = EQ C enable
+               04 = EQ D enable
+               05 = EQ E enable
+               06 = EQ B enable
+               07 = EQ G enable
+               09 = Compressor enable
+               0a = Leveler enable
+  00-04-00 = talkback listen channel select.  The value is the 0-based
+             channel index of the talkback listen channel.
+  00-mm-02 = mix channel mute.  mm is the channel index as for other keys. 
+             Value is 0x00 (off) or 0x01 (on).
+  00-01-02 = bus mute.  Values are 0x00 (off), 0x01 (on).
+  00-0c-03 = output channel monitor enable (0x00=off, 0x01=on)
+  01-00-01 = input channel mono/stereo mode.  Value is 0x00 (mono), 0x01
+             (stereo).  bb (bus select byte) is always zero for this key
+             since this acts globally on the input.
+  01-00-04 = Reverb split point.  Value is 0x00 for "mixes", 0x01 for
+             "outputs".
+  01-mm-02 = mix channel solo.  mm is as for the mute control.  Value is
+             0x00 (off) or 0x01 (on).
+  01-0a-03 = output channel leveler mode (0x00=compress, 0x01=limit)
+  01-0c-03 = output channel talkback talk (0x00=off, 0x01=on)
+  02-0c-03 = output channel talkback listen (0x00=off, 0x01=on)
+  03-00-01 = input channel swap L and R.  Value is 0x00 (no swap), 0x01
+             (swap).  bb is the input channel index.
+  04-00-01 = input channel stereo mode.  Value is 0x00 for normal stereo,
+             0x01 for MS.  Relevant only if input channel is in stereo mode
+             (and thus part of a stereo pair).
+  06-00-01 = input channel Vlimit on (mic channels only).  Values are 0x00
+             (off), 0x01 (on).
+  06-0a-01 = input channel compressor mode (0x00=peak, 0x01=RMS)
+  06-0b-01 = input channel leveler mode (0x00=compress, 0x01=limit)
+  06-09-03 = output channel compressor mode (0x00=peak, 0x01=RMS)
+  07-00-01 = input channel Vlimit lookahead (mic channels only).  Values are 
+             0x00 (off), 0x01 (on).
+  08-00-01 = input channel soft clip (mic channels only).  Values are 0x00 
+             (off), 0x01 (on).
+  0c-00-04 = Reverb early reflections model.  Value is 0x00-0x04 for "Room
+             A" through to "Room E".  bb is zero.
