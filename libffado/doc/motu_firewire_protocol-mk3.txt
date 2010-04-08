@@ -1,7 +1,7 @@
 Protocol details for MOTU "mark 3" devices, obtained in the first instance
 using an 828 Mk 3.
 
-Version: 20100329-1
+Version: 20100408-1
 Author: Jonathan Woithe
 
 
@@ -105,7 +105,9 @@ where:
   aa = packet serial number as previously described
   bb = the bus/channel number (0x00 = mix bus 1, mic 1)
   cc-dd-ee = the key of the control being changed
-  v1-v4 = the value being written.  v1 is the least-significant byte
+  v1-v4 = the value being written.  v1 is the most-significant byte.  The
+          value appears to be a 32-bit float.  That is, v1..v4 is a big
+          endian 32-bit float.
 
 Keys presently identified are as follows.
 
