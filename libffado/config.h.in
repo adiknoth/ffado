@@ -70,8 +70,8 @@
 #define MAX_XMIT_PACKET_SIZE                         (2048-16)
 #define MIN_XMIT_PACKET_SIZE                                72
 #define MAX_XMIT_NB_BUFFERS                                128
-#define MAX_RECV_NB_BUFFERS                                 64
-#define MIN_RECV_PACKET_SIZE                               130
+#define MAX_RECV_NB_BUFFERS                                128
+#define MIN_RECV_PACKET_SIZE                                72
 
 // the default ISO receive mode. 
 // 0 = auto, 1 = packet-per-buffer, 2 = bufferfill. 
