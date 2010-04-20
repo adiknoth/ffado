@@ -1,7 +1,7 @@
 Protocol details for MOTU "mark 3" devices, obtained in the first instance
 using an 828 Mk 3.
 
-Version: 20100419-1
+Version: 20100420-1
 Author: Jonathan Woithe
 
 
@@ -86,6 +86,126 @@ Offset       1x Rates              2x Rates              4x Rates
 103               ADAT2-8?
 ------------------------------------------------------------------------  
 #ch    30         32         22         26         10         14
+
+
+Device control
+--------------
+
+ADAT modes
+
+The modes of the two ADAT ports can be controlled independently.  The
+primary mechanism for this is via a quadlet write to register
+0xfffff0000c94.
+
+  Bit 17: ADAT port B mode (0=ADAT, 1=Toslink)
+  Bit 16: ADAT port A mode (0=ADAT, 1=Toslink)
+  Bit  1: ADAT port B enabled (0=disabled, 1=enabled)
+  Bit  0: ADAT port A enabled (0=disabled, 1=enabled)
+
+Other systems also appear to refresh the device status with writes to
+other registers at the time the optical mode is updated:
+  0xfffff0000c04
+  0xfffff0000c60 - 0xfffff0000c6c (ASCII name of clock source)
+  0xfffff0000c94
+  0xfffff0000b14
+  0xfffff0000b38
+  0xfffff0000b3c
+  0xfffff0000b04
+  0xfffff0000b08
+  0xfffff0000b38
+  0xfffff0000b3c
+  0xfffff0000b1c
+It is not known whether these additional writes are necessary.
+
+
+Clock source control and sample rate
+
+The clock source is set with a quadlet write to bits 0, 3 and 4 of register 
+0xfffff0000b14.  Values for bits 4-3-1:
+  0-0-0 = internal / SMTPE
+  0-0-1 = Word clock
+  1-0-0 = SPDIF
+  1-1-0 = ADAT port A
+  1-1-1 = ADAT port B
+
+The sample rate is selected using bits 10-8 of register 0xfffff0000b14:
+  0x0 = 44.1 kHz
+  0x1 = 48 kHz
+  0x2 = 88.2 kHz
+  0x3 = 96 kHz
+  0x4 = 176.4 kHz
+  0x5 = 192 kHz
+
+Bits 25 and 24 of register 0xfffff0000b14 are used in connection with
+streaming control (see separate section).  All other bits not mentioned
+are set to zero.
+
+Writes to other registers (as for ADAT modes) accompany the setting of 
+register 0xfffff0000b14.
+
+
+MainOut/Phones assign
+
+Register 0xfffff0000c04 controls the MainOut assign via bits 7-4:
+  0x0 = MainOut
+  0x1 = Ana 1-2
+  0x2 = Ana 3-4
+  0x3 = Ana 5-6
+  0x4 = Ana 7-8
+  0x5 = SPDIF
+  0x6 = Phones
+  0x7 = ADAT-A 1-2 (or Toslink if ADAT-A optical out mode is Toslink)
+  0x8 = ADAT-A 3-4
+  0x9 = ADAT-A 5-6
+  0xa = ADAT-A 7-8
+  0xb = ADAT-B 1-2 (or Toslink if ADAT-B optical out mode is Toslink)
+  0xc = ADAT-B 3-4
+  0xd = ADAT-B 5-6
+  0xe = ADAT-B 7-8
+
+Bits 3-0 of register 0xfffff0000c04 control the Phones assign.  The meaning
+of the bit combinations is as per the MainOut assign case.
+
+Bits 11-8 of register 0xfffff0000c04 control the "Return" assign.  Again,
+the meaning of the bit combinations is as per the MainOut assign case.
+
+All other bits in register 0xfffff0000c04 appear to be zero at present.
+
+
+Streaming control
+
+Bits 31 to 16 of register 0xfffff0000b00 control the streaming channels
+in the same way as for earlier MOTU devices.
+
+To start streaming:
+ - a value of 0x00000002 is written to register 0xfffff0000b10.
+ - bit 24 of register 0xfffff0000b14 is set to 1 (other bits are set to
+   their current values)
+ - a bunch of other registers are written to which, given experience with
+   earlier MOTU interfaces, are not strictly required
+ - register 0xfffff0000c04 is polled.  A result of 0x00000111 requires
+   another poll.  Polling stops when the value is 0x00000303.
+ - register 0xfffff0000b14 is read.
+ - bits 24 and 25 in register 0xfffff0000b14 are set (other bits remain
+   unchanged)
+ - another bunch of (possibly inconsequential) registers is written to.
+ - register 0xfffff0000b14 is read again.
+ - writes to the same collection of registers again.
+
+To stop streaming:
+ - bit 25 of register 0xfffff0000b14 is cleared (other bits remain
+   unchanged; this includes leaving bit 24 set to 1)
+ - register 0xfffff0000b00 is used to stop streaming in the same way as for
+   earlier MOTU interfaces
+ - write to other registers of potentially little value
+ - register 0xfffff0000b14 has bit 24 cleared (all other bits remain
+   unchanged, so bits 25 and 24 are both zero)
+ - immediately, register 0xfffff0000b14 has bit 24 set (all other bits
+   remain unchanged).
+ - other registers are read again.
+
+It appears based on this that the streaming control of the Mark3 MOTU
+devices is the same as for previous generations.
 
 
 CuemixFX control
