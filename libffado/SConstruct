@@ -1,7 +1,7 @@
 #! /usr/bin/python
 #
-# Copyright (C) 2007-2008 Arnold Krille
-# Copyright (C) 2007-2008 Pieter Palmers
+# Copyright (C) 2007, 2008, 2010 Arnold Krille
+# Copyright (C) 2007, 2008 Pieter Palmers
 # Copyright (C) 2008 Jonathan Woithe
 #
 # This file is part of FFADO
@@ -216,14 +216,13 @@ if not env.GetOption('clean'):
     # The following checks are for headers and libs and packages we need.
     #
     allpresent = 1;
-    # for DBUS C++ bindings
+    # for DBUS C++ bindings and cache-serialization.
     allpresent &= conf.CheckHeader( "expat.h" )
     allpresent &= conf.CheckLib( 'expat', 'XML_ExpatVersion', '#include <expat.h>' )
-    
+
     pkgs = {
         'libraw1394' : '1.3.0',
         'libiec61883' : '1.1.0',
-        'dbus-1' : '1.0',
         }
 
     if env['REQUIRE_LIBAVC']:
@@ -300,15 +299,31 @@ mixer.
 Therefor the qt4 mixer will not get installed.
 """
 
-# ALSA checks
-pkg = 'alsa'
-name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
-env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, '1.0.0' )
+#
+# Optional pkg-config
+#
+pkgs = {
+    'alsa': '0',
+    'dbus-1': '1.0',
+    }
+for pkg in pkgs:
+    name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
+    env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, pkgs[pkg] )
 
 #
 # Get the directory where dbus stores the service-files
 #
-env['dbus_service_dir'] = conf.GetPKGVariable( 'dbus-1', 'session_bus_services_dir' ).strip()
+if env['DBUS1_FLAGS']:
+    env['dbus_service_dir'] = conf.GetPKGVariable( 'dbus-1', 'session_bus_services_dir' ).strip()
+    # this is required to indicate that the DBUS version we use has support
+    # for platform dependent threading init functions
+    # this is true for DBUS >= 0.96 or so. Since we require >= 1.0 it is
+    # always true
+    env.MergeFlags( "-DDBUS_HAS_THREADS_INIT_DEFAULT" )
+else:
+    print """
+The dbus-headers where not found. The dbus-server for ffado will therefor not be built.
+"""
 
 config_guess = conf.ConfigGuess()
 
@@ -327,12 +342,6 @@ if env['PROFILE']:
 if env['PEDANTIC']:
     env.MergeFlags( "-Werror" )
 
-
-# this is required to indicate that the DBUS version we use has support
-# for platform dependent threading init functions
-# this is true for DBUS >= 0.96 or so. Since we require >= 1.0 it is
-# always true
-env.MergeFlags( "-DDBUS_HAS_THREADS_INIT_DEFAULT" )
 
 if env['ENABLE_ALL']:
     env['ENABLE_BEBOB'] = True
@@ -380,7 +389,8 @@ env.Alias( "install", env['libdir'] )
 env.Alias( "install", env['includedir'] )
 env.Alias( "install", env['sharedir'] )
 env.Alias( "install", env['bindir'] )
-env.Alias( "install", env['pypkgdir'] )
+if build_mixer:
+    env.Alias( "install", env['pypkgdir'] )
 
 #
 # shamelessly copied from the Ardour scons file

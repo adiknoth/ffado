@@ -1,6 +1,6 @@
 #
-# Copyright (C) 2007-2008 Arnold Krille
-# Copyright (C) 2007-2008 Pieter Palmers
+# Copyright (C) 2007, 2008, 2010 Arnold Krille
+# Copyright (C) 2007, 2008 Pieter Palmers
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -25,5 +25,10 @@ Import( 'env' )
 
 env = env.Clone()
 
-env.SConscript( dirs=["dbus", "libconfig"], exports="env" )
+dirs=['libconfig']
+
+if env['DBUS1_FLAGS']:
+    dirs.append('dbus')
+
+env.SConscript( dirs=dirs, exports="env" )
 
