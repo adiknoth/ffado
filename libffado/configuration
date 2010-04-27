@@ -223,6 +223,15 @@ device_definitions = (
 }, 
 {
     vendorid = 0x1486;
+    modelid = 0xAF9;
+    vendorname = "Echo";
+    modelname = "AudioFire8a";
+    driver = 2;
+    mixer = "AudioFire";
+    xmit_max_cycles_early_transmit = 2;
+}, 
+{
+    vendorid = 0x1486;
     modelid = 0xAF12;
     vendorname = "Echo";
     modelname = "AudioFire12";
