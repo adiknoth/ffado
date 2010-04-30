@@ -91,7 +91,14 @@ MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(FFADODevice &parent, unsi
 unsigned int
 MotuReceiveStreamProcessor::getMaxPacketSize() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
-    return framerate<=48000?616:(framerate<=96000?1032:1160);
+    // What's returned here is the maximum packet size seen at the current
+    // frame rate.  This depends both on the device and its configuration,
+    // and is futher complicated by the IN/OUT channel asymmetry in some
+    // devices.  To avoid most of these complications, just return the
+    // largest packet sizes seen by any supported MOTU device.  Presently
+    // all these sizes come from the receive side of the 828mk3.  
+    // Previously the figures came from the Traveler (I think).
+    return framerate<=48000?904:(framerate<=96000?1416:1672);
 }
 
 unsigned int

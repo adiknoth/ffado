@@ -1,7 +1,7 @@
 Protocol details for MOTU "mark 3" devices, obtained in the first instance
 using an 828 Mk 3.
 
-Version: 20100420-1
+Version: 20100426-1
 Author: Jonathan Woithe
 
 
@@ -28,8 +28,8 @@ The audio data is ordered as follows: phones, analog 1-8, main out, SPDIF,
 ADAT1 1-8, ADAT2 1-8.
 
 At 1x rates the MOTU sends 0x388 (904) bytes per packet, providing space
-for 32 audio channels (order to be investigated): mic/guitar 1-2, analog
-1-8, return 1-2, reverb 1-2, SPDIF, ADAT1 1-8, ADAT2 1-8.
+for 34 audio channels (order to be investigated): mic/guitar 1-2, analog
+1-8, return 1-2, reverb 1-2, SPDIF, Unknown 1-2, ADAT1 1-8, ADAT2 1-8.
 
 At 2x rates, packets sent to the MOTU have a maximum size of 0x4c8 (1224)
 bytes while those sent by the MOTU are 0x0588 (1416) bytes.  16 blocks are
@@ -47,7 +47,9 @@ unknown 1-2.
 
 The following matrix represents the current best guess as to the layout of
 the audio channels in the iso data.  Offset refers to the number of bytes
-from the start of the data block.
+from the start of the data block.  "?" signifies that the channel assignment
+is yet to be confirmed and/or is positioned as a result of educated
+guesswork.
 
 Offset       1x Rates              2x Rates              4x Rates
        Playback   Capture    Playback   Capture    Playback   Capture 
@@ -68,24 +70,26 @@ Offset       1x Rates              2x Rates              4x Rates
 49     SPDIF-2    SPDIF-2?   SPDIF-2?   SPDIF-2?              Unknown-2
 52     ADAT1-1    Reverb-1?  ADAT1-1?   Reverb-1?
 55     ADAT1-2    Reverb-2?  ADAT1-2?   Reverb-2?
-58     ADAT1-3    ADAT1-1?   ADAT1-3?   ADAT1-1?
-61     ADAT1-4    ADAT1-2?   ADAT1-4?   ADAT1-2?
-64     ADAT1-5    ADAT1-3?   ADAT2-1?   ADAT1-3?
-67     ADAT1-6    ADAT1-4?   ADAT2-2?   ADAT1-4?
-70     ADAT1-7    ADAT1-5?   ADAT2-3?   ADAT2-1?
-73     ADAT1-8    ADAT1-6?   ADAT2-4?   ADAT2-2?
-76     ADAT2-1    ADAT1-7?              ADAT2-3?
-79     ADAT2-2    ADAT1-8?              ADAT2-4?
-82     ADAT2-3    ADAT2-1?              Unknown-1?
-85     ADAT2-4    ADAT2-2?              Unknown-2?
-88     ADAT2-5    ADAT2-3?
-91     ADAT2-6    ADAT2-4?
-94     ADAT2-7    ADAT2-5?
-97     ADAT2-8    ADAT2-6?
-100               ADAT2-7?
-103               ADAT2-8?
+58     ADAT1-3    Unknown-1? ADAT1-3?   ADAT1-1?
+61     ADAT1-4    Unknown-2? ADAT1-4?   ADAT1-2?
+64     ADAT1-5    ADAT1-1?   ADAT2-1?   ADAT1-3?
+67     ADAT1-6    ADAT1-2?   ADAT2-2?   ADAT1-4?
+70     ADAT1-7    ADAT1-3?   ADAT2-3?   ADAT2-1?
+73     ADAT1-8    ADAT1-4?   ADAT2-4?   ADAT2-2?
+76     ADAT2-1    ADAT1-5?              ADAT2-3?
+79     ADAT2-2    ADAT1-6?              ADAT2-4?
+82     ADAT2-3    ADAT1-7?              Unknown-1?
+85     ADAT2-4    ADAT1-8?              Unknown-2?
+88     ADAT2-5    ADAT2-1?
+91     ADAT2-6    ADAT2-2?
+94     ADAT2-7    ADAT2-3?
+97     ADAT2-8    ADAT2-4?
+100               ADAT2-5?
+103               ADAT2-6?
+106               ADAT2-7?
+109               ADAT2-8?
 ------------------------------------------------------------------------  
-#ch    30         32         22         26         10         14
+#ch    30         34         22         26         10         14
 
 
 Device control
