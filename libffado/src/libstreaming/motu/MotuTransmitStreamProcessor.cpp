@@ -86,7 +86,9 @@ MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(FFADODevice &parent, un
 unsigned int
 MotuTransmitStreamProcessor::getMaxPacketSize() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
-    return framerate<=48000?616:(framerate<=96000?1032:1160);
+    // All devices tend to have larger rx packets than tx packets, so for
+    // now just use the rx numbers here.
+    return framerate<=48000?904:(framerate<=96000?1416:1672);
 }
 
 unsigned int

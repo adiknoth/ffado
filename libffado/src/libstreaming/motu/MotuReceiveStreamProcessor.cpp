@@ -151,7 +151,13 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
         // standards.  Do this check early on because for invalid packets
         // dbs may not be what we expect, potentially causing issues later
         // on.
-        if (tag!=1 || fdf_size!=32 || dbs==0) {
+        //
+        // Mark 3 devices are a little different.  Previous generations set
+        // the fdf_size to 32.  Mark 3 devices appear to set fdf_size to 0. 
+        // Allow for this at present.  However, if too many variations
+        // appear we might have to omit this test in the interests of
+        // brevity.
+        if (tag!=1 || (fdf_size!=32 && fdf_size!=0) || dbs==0) {
             return eCRV_Invalid;
         }
 
