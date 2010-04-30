@@ -611,8 +611,8 @@ else:
             action = "install"
         else:
             action = "uninstall"
-        mixerdesktopaction = env.Action( "xdg-desktop-menu %s support/xdg/ffado.org-ffadomixer.desktop" % action )
-        mixericonaction = env.Action( "xdg-icon-resource %s --size 64 --novendor --context apps support/xdg/hi64-apps-ffado.png ffado" % action )
+        mixerdesktopaction = env.Action( "-xdg-desktop-menu %s support/xdg/ffado.org-ffadomixer.desktop" % action )
+        mixericonaction = env.Action( "-xdg-icon-resource %s --size 64 --novendor --context apps support/xdg/hi64-apps-ffado.png ffado" % action )
         env.Command( "__xdgstuff1", None, mixerdesktopaction )
         env.Command( "__xdgstuff2", None, mixericonaction )
         env.Alias( "install", ["__xdgstuff1", "__xdgstuff2" ] )
