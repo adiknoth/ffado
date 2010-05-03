@@ -128,7 +128,7 @@ ExtendedPlugInfoPlugNameSpecificData::deserialize( Util::Cmd::IISDeserialize& de
     return true;
 }
 
-ExtendedPlugInfoPlugNameSpecificData::ExtendedPlugInfoPlugNameSpecificData*
+ExtendedPlugInfoPlugNameSpecificData*
 ExtendedPlugInfoPlugNameSpecificData::clone() const
 {
     return new ExtendedPlugInfoPlugNameSpecificData( *this );
@@ -164,7 +164,7 @@ ExtendedPlugInfoPlugNumberOfChannelsSpecificData::deserialize( Util::Cmd::IISDes
     return true;
 }
 
-ExtendedPlugInfoPlugNumberOfChannelsSpecificData::ExtendedPlugInfoPlugNumberOfChannelsSpecificData*
+ExtendedPlugInfoPlugNumberOfChannelsSpecificData*
 ExtendedPlugInfoPlugNumberOfChannelsSpecificData::clone() const
 {
     return new ExtendedPlugInfoPlugNumberOfChannelsSpecificData( *this );
@@ -237,7 +237,7 @@ ExtendedPlugInfoPlugChannelPositionSpecificData::deserialize( Util::Cmd::IISDese
     return true;
 }
 
-ExtendedPlugInfoPlugChannelPositionSpecificData::ExtendedPlugInfoPlugChannelPositionSpecificData*
+ExtendedPlugInfoPlugChannelPositionSpecificData*
 ExtendedPlugInfoPlugChannelPositionSpecificData::clone() const
 {
     return new ExtendedPlugInfoPlugChannelPositionSpecificData( *this );
@@ -295,7 +295,7 @@ ExtendedPlugInfoPlugChannelNameSpecificData::deserialize( Util::Cmd::IISDeserial
     return true;
 }
 
-ExtendedPlugInfoPlugChannelNameSpecificData::ExtendedPlugInfoPlugChannelNameSpecificData*
+ExtendedPlugInfoPlugChannelNameSpecificData*
 ExtendedPlugInfoPlugChannelNameSpecificData::clone() const
 {
     return new ExtendedPlugInfoPlugChannelNameSpecificData( *this );
@@ -342,7 +342,7 @@ ExtendedPlugInfoPlugInputSpecificData::deserialize( Util::Cmd::IISDeserialize& d
     return m_plugAddress->deserialize( de );
 }
 
-ExtendedPlugInfoPlugInputSpecificData::ExtendedPlugInfoPlugInputSpecificData*
+ExtendedPlugInfoPlugInputSpecificData*
 ExtendedPlugInfoPlugInputSpecificData::clone() const
 {
     return new ExtendedPlugInfoPlugInputSpecificData( *this );
@@ -418,7 +418,7 @@ ExtendedPlugInfoPlugOutputSpecificData::deserialize( Util::Cmd::IISDeserialize& 
     return true;
 }
 
-ExtendedPlugInfoPlugOutputSpecificData::ExtendedPlugInfoPlugOutputSpecificData*
+ExtendedPlugInfoPlugOutputSpecificData*
 ExtendedPlugInfoPlugOutputSpecificData::clone() const
 {
     return new ExtendedPlugInfoPlugOutputSpecificData( *this );
@@ -480,7 +480,7 @@ ExtendedPlugInfoClusterInfoSpecificData::deserialize( Util::Cmd::IISDeserialize&
     return true;
 }
 
-ExtendedPlugInfoClusterInfoSpecificData::ExtendedPlugInfoClusterInfoSpecificData*
+ExtendedPlugInfoClusterInfoSpecificData*
 ExtendedPlugInfoClusterInfoSpecificData::clone() const
 {
     return new ExtendedPlugInfoClusterInfoSpecificData( *this );
