@@ -165,9 +165,9 @@ class MonitoringModel(QtCore.QAbstractTableModel):
 
 
 
-class MonitoringDelegate(QtGui.QStyledItemDelegate):
+class MonitoringDelegate(QtGui.QItemDelegate):
     def __init__(self, parent):
-        QtGui.QStyledItemDelegate.__init__(self, parent)
+        QtGui.QItemDelegate.__init__(self, parent)
 
     def createEditor(self, parent, option, index):
         if index.data(Qt.Qt.EditRole).type() == QtCore.QVariant.StringList:
@@ -175,7 +175,7 @@ class MonitoringDelegate(QtGui.QStyledItemDelegate):
             self.connect(combo, QtCore.SIGNAL("activated(int)"), self.currentChanged)
             return combo
         else:
-            return QtGui.QStyledItemDelegate.createEditor(self, parent, option, index)
+            return QtGui.QItemDelegate.createEditor(self, parent, option, index)
 
     def setEditorData(self, editor, index):
         if isinstance(editor, QtGui.QComboBox):
@@ -183,13 +183,13 @@ class MonitoringDelegate(QtGui.QStyledItemDelegate):
             editor.addItems(list)
             editor.setCurrentIndex(list.indexOf(index.data(Qt.Qt.DisplayRole).toString()))
         else:
-            QtGui.QStyledItemDelegate.setEditorData(self, editor, index)
+            QtGui.QItemDelegate.setEditorData(self, editor, index)
 
     def setModelData(self, editor, model, index):
         if isinstance(editor, QtGui.QComboBox):
             model.setData(index, editor.currentText(), Qt.Qt.EditRole)
         else:
-            QtGui.QStyledItemDelegate.setModelData(self, editor, model, index)
+            QtGui.QItemDelegate.setModelData(self, editor, model, index)
 
     def currentChanged(self):
         #print "currentChanged() sender=%s" % (str(self.sender()))
