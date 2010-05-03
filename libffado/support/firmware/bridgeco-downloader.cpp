@@ -180,7 +180,7 @@ main( int argc, char** argv )
             cerr << "FILE arguments is missing" << endl;
             return -1;
         }
-        BeBoB::BCD* bcd = new BeBoB::BCD::BCD( args->args[2] );
+        BeBoB::BCD* bcd = new BeBoB::BCD( args->args[2] );
         if ( !bcd ) {
             cerr << "Could no open file " << args->args[2] << endl;
             return -1;
