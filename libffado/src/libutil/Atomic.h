@@ -158,7 +158,9 @@ static inline char CAS(volatile uint32_t value, uint32_t newvalue, volatile void
     return ret;
 }
 
-#else
+#endif
+
+#if !defined(__i386__) && !defined(__x86_64__) && !defined(__PPC__)
 #warning using builtin gcc (version >4.1) atomic
 
 static inline char CAS(volatile uint32_t value, uint32_t newvalue, volatile int32_t* addr)
