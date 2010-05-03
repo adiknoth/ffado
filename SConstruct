@@ -78,6 +78,7 @@ vars_to_check = [
 	'HOME',
 	'CC',
 	'CFLAGS',
+	'CCFLAGS',
 	'CXX',
 	'CXXFLAGS',
 	'CPPFLAGS',
@@ -91,15 +92,17 @@ for var in vars_to_check:
 env = Environment( tools=['default','scanreplace','pyuic','pyuic4','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
 if os.environ.has_key('LDFLAGS'):
-	env['LINKFLAGS'] = os.environ['LDFLAGS']
+	env.MergeFlags = os.environ['LDFLAGS']
 
 # grab OS CFLAGS / CCFLAGS
 env['OS_CFLAGS']=[]
 if os.environ.has_key('CFLAGS'):
 	env['OS_CFLAGS'] = os.environ['CFLAGS']
+	env.MergeFlags( os.environ['CFLAGS'] )
 env['OS_CCFLAGS']=[]
 if os.environ.has_key('CCFLAGS'):
 	env['OS_CCFLAGS'] = os.environ['CCFLAGS']
+	env.MergeFlags( os.environ['CCFLAGS'] )
 
 Help( """
 For building ffado you can set different options as listed below. You have to
