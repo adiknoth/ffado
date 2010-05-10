@@ -1,7 +1,7 @@
 Protocol details for MOTU "mark 3" devices, obtained in the first instance
 using an 828 Mk 3.
 
-Version: 20100426-1
+Version: 20100510-1
 Author: Jonathan Woithe
 
 
@@ -125,7 +125,7 @@ It is not known whether these additional writes are necessary.
 Clock source control and sample rate
 
 The clock source is set with a quadlet write to bits 0, 3 and 4 of register 
-0xfffff0000b14.  Values for bits 4-3-1:
+0xfffff0000b14.  Values for bits 4-3-0:
   0-0-0 = internal / SMTPE
   0-0-1 = Word clock
   1-0-0 = SPDIF

@@ -684,42 +684,37 @@ OpticalMode::OpticalMode(MotuDevice &parent, unsigned int dev_reg,
 bool
 OpticalMode::setValue(int v)
 {
-    unsigned int val;
+    unsigned int val, dir;
     debugOutput(DEBUG_LEVEL_VERBOSE, "setValue for optical mode %d to %d\n", m_register, v);
 
-    // Need to get current optical modes so we can preserve the one we're
-    // not setting.  Input mode is in bits 9-8, output is in bits 11-10.
-    val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF) & 0x00000f00;
-
-    // Set mode as requested.  An invalid setting is effectively ignored.
-    if (v>=0 && v<=3) {
-      if (m_register == MOTU_CTRL_DIR_IN) {
-        val = (val & ~0x0300) | ((v & 0x03) << 8);
-      } else {
-        val = (val & ~0x0c00) | ((v & 0x03) << 10);
-      }
+    /* Assume v is 0 for "off", 1 for "ADAT" and 2 for "Toslink" */
+    switch (v) {
+        case 0: val = MOTU_OPTICAL_MODE_OFF; break;
+        case 1: val = MOTU_OPTICAL_MODE_ADAT; break;
+        case 2: val = MOTU_OPTICAL_MODE_TOSLINK; break;
+        default: return true;
     }
-    // Bit 25 indicates that optical modes are being set
-    val |= 0x02000000;
-    m_parent.WriteRegister(MOTU_REG_ROUTE_PORT_CONF, val);
-
+    dir = (m_register==MOTU_CTRL_DIR_IN)?MOTU_DIR_IN:MOTU_DIR_OUT;
+    m_parent.setOpticalMode(0, dir, val);
     return true;
 }
 
 int
 OpticalMode::getValue()
 {
-    unsigned int val;
+    unsigned int dir;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for optical mode %d\n", m_register);
 
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
-    val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
-    if (m_register == MOTU_CTRL_DIR_IN)
-      val = (val >> 8) & 0x03;
-    else
-      val = (val >> 10) & 0x03;
-    return val;
+    dir = (m_register==MOTU_CTRL_DIR_IN)?MOTU_DIR_IN:MOTU_DIR_OUT;
+    switch (m_parent.getOpticalMode(0, dir)) {
+        case MOTU_OPTICAL_MODE_OFF: return 0;
+        case MOTU_OPTICAL_MODE_ADAT: return 1;
+        case MOTU_OPTICAL_MODE_TOSLINK: return 2;
+        default: return 0;
+    }
+    return 0;
 }
 
 InputGainPadInv::InputGainPadInv(MotuDevice &parent, unsigned int channel, unsigned int mode)

@@ -38,7 +38,12 @@
 
 #define MOTU_BASE_ADDR               0xfffff0000000ULL
 
-/* Bitmasks and values used when setting MOTU device registers */
+/* Bitmasks and values used when setting MOTU device registers.  Note that
+ * the only "generation 1" device presently supported is the original 828.
+ * "Generation 2" devices include the original Traveler, the 828Mk2, the
+ * original Ultralite, the 896/896HD and so forth.  "Generation 3" devices
+ * are all those which carry the "Mark 3" moniker.
+ */
 #define MOTU_RATE_BASE_44100         (0<<3)
 #define MOTU_RATE_BASE_48000         (1<<3)
 #define MOTU_RATE_MULTIPLIER_1X      (0<<4)
@@ -47,12 +52,14 @@
 #define MOTU_RATE_BASE_MASK          (0x00000008)
 #define MOTU_RATE_MULTIPLIER_MASK    (0x00000030)
 
-#define MOTU_OPTICAL_MODE_OFF        0x00
-#define MOTU_OPTICAL_MODE_ADAT       0x01
-#define MOTU_OPTICAL_MODE_TOSLINK    0x02
-#define MOTU_OPTICAL_IN_MODE_MASK    (0x00000300)
-#define MOTU_OPTICAL_OUT_MODE_MASK   (0x00000c00)
-#define MOTU_OPTICAL_MODE_MASK       (MOTU_OPTICAL_IN_MODE_MASK|MOTU_OPTICAL_MODE_MASK)
+#define MOTU_G2_OPTICAL_MODE_OFF       0x00
+#define MOTU_G2_OPTICAL_MODE_ADAT      0x01
+#define MOTU_G2_OPTICAL_MODE_TOSLINK   0x02
+#define MOTU_G2_OPTICAL_IN_MODE_MASK   (0x00000300)
+#define MOTU_G2_OPTICAL_IN_MODE_BIT0   8
+#define MOTU_G2_OPTICAL_OUT_MODE_MASK  (0x00000c00)
+#define MOTU_G2_OPTICAL_OUT_MODE_BIT0  10
+#define MOTU_G2_OPTICAL_MODE_MASK      (MOTU_G2_OPTICAL_IN_MODE_MASK|MOTU_G2_OPTICAL_MODE_MASK)
 
 #define MOTU_CLKSRC_MASK             0x00000007
 #define MOTU_CLKSRC_INTERNAL         0
@@ -137,9 +144,27 @@
 #define MOTU_G1_MONIN_R_CH8        0x3000
 
 /* Mark3 device registers - these don't have MOTU_BASE_ADDR as the base
- * address so for now we'll define them as absolute addresses.
+ * address so for now we'll define them as absolute addresses.  The "Mark 3"
+ * (aka G3) devices share a number of control registers with the G2 devices. 
+ * Where this occurs we just use the G2 definitions since there's little to
+ * be gained by adding duplicate defines.
  */
 #define MOTU_MARK3_REG_MIXER     0xffff00010000LL
+
+/* Mark3 (aka G3) register constants for cases where the G3 devices differ
+ * from the G2s.
+ */
+#define MOTU_G3_CLKSRC_MASK      0x00000019
+#define MOTU_G3_CLKSRC_INTERNAL  0x00000000
+#define MOTU_G3_CLKSRC_WORDCLOCK 0x00000001
+#define MOTU_G3_CLKSRC_SPDIR     0x00000010
+#define MOTU_G3_CLKSRC_ADAT_A    0x00000018
+#define MOTU_G3_CLKSRC_ADAT_B    0x00000019
+
+/* The following values are used when defining configuration structures and
+ * calling driver functions.  They are generally not raw values written to
+ * registers.
+ */
 
 /* Port Active Flags (ports declaration) */
 #define MOTU_PA_RATE_1x          0x0001    /* 44k1 or 48k */
@@ -177,6 +202,19 @@
 #define MOTU_DIR_IN          1
 #define MOTU_DIR_OUT         2
 #define MOTU_DIR_INOUT       (MOTU_DIR_IN | MOTU_DIR_OUT)
+
+/* Optical port mode settings/flags */
+#define MOTU_OPTICAL_MODE_OFF     0x0000
+#define MOTU_OPTICAL_MODE_ADAT    0x0001
+#define MOTU_OPTICAL_MODE_TOSLINK 0x0002
+#define MOTU_OPTICAL_PORT_A       0x0001
+#define MOTU_OPTICAL_PORT_B       0x0002
+#define MOTU_OPTICAL_PORT_ALL     (MOTU_OPTICAL_PORT_A|MOTU_OPTICAL_PORT_B)
+
+/* Device generation identifiers */
+#define MOTU_DEVICE_G1            0x0001
+#define MOTU_DEVICE_G2            0x0002
+#define MOTU_DEVICE_G3            0x0003
 
 class ConfigRom;
 class Ieee1394Service;
@@ -299,10 +337,12 @@ public:
     virtual bool startStreamByIndex(int i);
     virtual bool stopStreamByIndex(int i);
 
+    signed int getDeviceGeneration(void);
+
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);
-    unsigned int getOpticalMode(unsigned int dir);
-    signed int setOpticalMode(unsigned int dir, unsigned int mode);
+    unsigned int getOpticalMode(unsigned int port, unsigned int dir);
+    signed int setOpticalMode(unsigned int port, unsigned int dir, unsigned int mode);
 
     signed int getEventSize(unsigned int dir);
 
