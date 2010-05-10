@@ -154,7 +154,7 @@ def CheckForPyModule( context, module ):
 def CompilerCheck( context ):
     context.Message( "Checking for a working C-compiler " )
     ret = context.TryRun( """
-#include <stdlib.h>
+#include <stdio.h>
 
 int main() {
     printf( "Hello World!" );
