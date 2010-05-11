@@ -207,10 +207,7 @@
 #define MOTU_OPTICAL_MODE_OFF     0x0000
 #define MOTU_OPTICAL_MODE_ADAT    0x0001
 #define MOTU_OPTICAL_MODE_TOSLINK 0x0002
-#define MOTU_OPTICAL_PORT_A       0x0001
-#define MOTU_OPTICAL_PORT_B       0x0002
-#define MOTU_OPTICAL_PORT_ALL     (MOTU_OPTICAL_PORT_A|MOTU_OPTICAL_PORT_B)
-
+#define MOTU_OPTICAL_MODE_KEEP    0xffff
 /* Device generation identifiers */
 #define MOTU_DEVICE_G1            0x0001
 #define MOTU_DEVICE_G2            0x0002
@@ -341,8 +338,10 @@ public:
 
     signed int getIsoRecvChannel(void);
     signed int getIsoSendChannel(void);
-    unsigned int getOpticalMode(unsigned int port, unsigned int dir);
-    signed int setOpticalMode(unsigned int port, unsigned int dir, unsigned int mode);
+    unsigned int getOpticalMode(unsigned int dir, unsigned int *port_a_mode, 
+        unsigned int *port_b_mode);
+    signed int setOpticalMode(unsigned int dir, 
+        unsigned int port_a_mode, unsigned int port_b_mode);
 
     signed int getEventSize(unsigned int dir);
 

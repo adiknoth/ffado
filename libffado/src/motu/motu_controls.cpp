@@ -695,20 +695,21 @@ OpticalMode::setValue(int v)
         default: return true;
     }
     dir = (m_register==MOTU_CTRL_DIR_IN)?MOTU_DIR_IN:MOTU_DIR_OUT;
-    m_parent.setOpticalMode(0, dir, val);
+    m_parent.setOpticalMode(dir, val, MOTU_OPTICAL_MODE_KEEP);
     return true;
 }
 
 int
 OpticalMode::getValue()
 {
-    unsigned int dir;
+    unsigned int dir, omode_a;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for optical mode %d\n", m_register);
 
     // FIXME: we could just read the appropriate mixer status field from the
     // receive stream processor once we work out an efficient way to do this.
     dir = (m_register==MOTU_CTRL_DIR_IN)?MOTU_DIR_IN:MOTU_DIR_OUT;
-    switch (m_parent.getOpticalMode(0, dir)) {
+    m_parent.getOpticalMode(dir, &omode_a, NULL);
+    switch (omode_a) {
         case MOTU_OPTICAL_MODE_OFF: return 0;
         case MOTU_OPTICAL_MODE_ADAT: return 1;
         case MOTU_OPTICAL_MODE_TOSLINK: return 2;

@@ -656,7 +656,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
         // this stage it will be up to the user to re-enable the optical
         // port if the sample rate is set to a 1x or 2x rate later.
         if (cancel_adat) {
-            setOpticalMode(0, MOTU_CTRL_DIR_INOUT, MOTU_OPTICAL_MODE_OFF);
+            setOpticalMode(MOTU_CTRL_DIR_INOUT, MOTU_OPTICAL_MODE_OFF, MOTU_OPTICAL_MODE_OFF);
         }
 
         // Set up new frequency if requested
@@ -712,12 +712,15 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
             case MOTU_CLKSRC_ADAT_OPTICAL:
                 src_name = "ADAT Optical    ";
                 break;
-            case MOTU_CLKSRC_SPDIF_TOSLINK:
-                if (getOpticalMode(0, MOTU_DIR_IN) == MOTU_OPTICAL_MODE_TOSLINK)
+            case MOTU_CLKSRC_SPDIF_TOSLINK: {
+                unsigned int p0_mode;
+                getOpticalMode(MOTU_DIR_IN, &p0_mode, NULL);
+                if (p0_mode == MOTU_OPTICAL_MODE_TOSLINK)
                     src_name = "TOSLink         ";
                 else
                     src_name = "SPDIF           ";
                 break;
+            }
             case MOTU_CLKSRC_SMPTE:
                 src_name = "SMPTE           ";
                 break;
@@ -894,20 +897,22 @@ bool
 MotuDevice::prepare() {
 
     int samp_freq = getSamplingFrequency();
-    unsigned int optical_in_mode = getOpticalMode(0, MOTU_DIR_IN);
-    unsigned int optical_out_mode = getOpticalMode(0, MOTU_DIR_OUT);
+    unsigned int optical_in_mode, optical_out_mode;
     unsigned int event_size_in = getEventSize(MOTU_DIR_IN);
     unsigned int event_size_out= getEventSize(MOTU_DIR_OUT);
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
+
+    getOpticalMode(MOTU_DIR_IN, &optical_in_mode, NULL);
+    getOpticalMode(MOTU_DIR_OUT, &optical_out_mode, NULL);
 
     // Explicitly set the optical mode, primarily to ensure that the
     // MOTU_REG_OPTICAL_CTRL register is initialised.  We need to do this to
     // because some interfaces (the Ultralite for example) appear to power
     // up without this set to anything sensible.  In this case, writes to
     // MOTU_REG_ISOCTRL fail more often than not, which is bad.
-    setOpticalMode(0, MOTU_DIR_IN, optical_in_mode);
-    setOpticalMode(0, MOTU_DIR_OUT, optical_out_mode);
+    setOpticalMode(MOTU_DIR_IN, optical_in_mode, MOTU_OPTICAL_MODE_KEEP);
+    setOpticalMode(MOTU_DIR_OUT, optical_out_mode, MOTU_OPTICAL_MODE_KEEP);
 
     // Allocate bandwidth if not previously done.
     // FIXME: The bandwidth allocation calculation can probably be
@@ -1229,12 +1234,20 @@ signed int MotuDevice::getDeviceGeneration(void) {
     return MOTU_DEVICE_G2;
 }
 
-unsigned int MotuDevice::getOpticalMode(unsigned int port, unsigned int dir) {
-    // Only the "Mark 3" (aka G3) MOTU devices had more than one optical port.
-    // Therefore the "port" parameter is ignored for all devices other than
-    // the Mark 3 devices.
+unsigned int MotuDevice::getOpticalMode(unsigned int dir,
+  unsigned int *port_a_mode, unsigned int *port_b_mode) {
+    // Only the "Mark 3" (aka G3) MOTU devices had more than one optical
+    // port.  Therefore the "port_b_mode" parameter is unused by all
+    // devices other than the Mark 3 devices.
+    //
+    // If a mode parameter pointer is NULL it will not be returned.
     unsigned int reg;
     unsigned int mask, shift;
+
+    if (port_b_mode != NULL)
+        *port_b_mode = MOTU_OPTICAL_MODE_OFF;
+    if (getDeviceGeneration()!=MOTU_DEVICE_G3 && port_a_mode==NULL)
+        return 0;
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         // The early devices used a different register layout.  
@@ -1242,8 +1255,8 @@ unsigned int MotuDevice::getOpticalMode(unsigned int port, unsigned int dir) {
         mask = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_MASK:MOTU_G1_OPT_OUT_MODE_MASK;
         shift = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_BIT0:MOTU_G1_OPT_OUT_MODE_BIT0;
         switch ((reg & mask) >> shift) {
-            case MOTU_G1_OPTICAL_OFF: return MOTU_OPTICAL_MODE_OFF;
-            case MOTU_G1_OPTICAL_TOSLINK: return MOTU_OPTICAL_MODE_TOSLINK;
+            case MOTU_G1_OPTICAL_OFF: *port_a_mode = MOTU_OPTICAL_MODE_OFF; break;
+            case MOTU_G1_OPTICAL_TOSLINK: *port_a_mode = MOTU_OPTICAL_MODE_TOSLINK; break;
             // MOTU_G1_OPTICAL_OFF and MOTU_G1_OPTICAL_ADAT seem to be
             // identical, so currently we don't know how to differentiate
             // these two modes.
@@ -1260,20 +1273,18 @@ unsigned int MotuDevice::getOpticalMode(unsigned int port, unsigned int dir) {
     reg = ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
     mask = (dir==MOTU_DIR_IN)?MOTU_G2_OPTICAL_IN_MODE_MASK:MOTU_G2_OPTICAL_OUT_MODE_MASK;
     shift = (dir==MOTU_DIR_IN)?MOTU_G2_OPTICAL_IN_MODE_BIT0:MOTU_G2_OPTICAL_OUT_MODE_BIT0;
-
     switch ((reg & mask) >> shift) {
-        case MOTU_G2_OPTICAL_MODE_OFF: return MOTU_OPTICAL_MODE_OFF;
-        case MOTU_G2_OPTICAL_MODE_ADAT: return MOTU_OPTICAL_MODE_ADAT;
-        case MOTU_G2_OPTICAL_MODE_TOSLINK: return MOTU_OPTICAL_MODE_TOSLINK;
+        case MOTU_G2_OPTICAL_MODE_OFF: *port_a_mode = MOTU_OPTICAL_MODE_OFF; break;
+        case MOTU_G2_OPTICAL_MODE_ADAT: *port_a_mode = MOTU_OPTICAL_MODE_ADAT; break;
+        case MOTU_G2_OPTICAL_MODE_TOSLINK: *port_a_mode = MOTU_OPTICAL_MODE_TOSLINK; break;
     }
-
     return 0;
 }
 
-signed int MotuDevice::setOpticalMode(unsigned int port, unsigned int dir, 
-  unsigned int mode) {
+signed int MotuDevice::setOpticalMode(unsigned int dir, 
+  unsigned int port_a_mode, unsigned int port_b_mode) {
     // Only the "Mark 3" (aka G3) MOTU devices had more than one optical port.
-    // Therefore the "port" parameter is ignored for all devices other than
+    // Therefore the "port B" mode is ignored for all devices other than
     // the Mark 3 devices.
     unsigned int reg, g2mode;
     unsigned int opt_ctrl = 0x0000002;
@@ -1281,8 +1292,11 @@ signed int MotuDevice::setOpticalMode(unsigned int port, unsigned int dir,
     /* THe 896HD doesn't have an SPDIF/TOSLINK optical mode, so don't try to
      * set it
      */
-    if (m_motu_model==MOTU_MODEL_896HD && mode==MOTU_OPTICAL_MODE_TOSLINK)
+    if (m_motu_model==MOTU_MODEL_896HD && port_a_mode==MOTU_OPTICAL_MODE_TOSLINK)
         return -1;
+
+    if (getDeviceGeneration()!=MOTU_DEVICE_G3 && port_a_mode==MOTU_OPTICAL_MODE_KEEP)
+        return 0;
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         // The earlier MOTUs handle this differently.
@@ -1290,7 +1304,7 @@ signed int MotuDevice::setOpticalMode(unsigned int port, unsigned int dir,
         reg = ReadRegister(MOTU_G1_REG_CONFIG);
         mask = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_MASK:MOTU_G1_OPT_OUT_MODE_MASK;
         shift = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_BIT0:MOTU_G1_OPT_OUT_MODE_BIT0;
-        switch (mode) {
+        switch (port_a_mode) {
             case MOTU_OPTICAL_MODE_OFF: g1mode = MOTU_G1_OPTICAL_OFF; break;
             case MOTU_OPTICAL_MODE_ADAT: g1mode = MOTU_G1_OPTICAL_ADAT; break;
             // See comment in getOpticalMode() about mode ambiguity
@@ -1309,7 +1323,7 @@ signed int MotuDevice::setOpticalMode(unsigned int port, unsigned int dir,
 
     // Map from user mode to values sent to the device registers.
     g2mode = 0;
-    switch (mode) {
+    switch (port_a_mode) {
         case MOTU_OPTICAL_MODE_OFF: g2mode = MOTU_G2_OPTICAL_MODE_OFF; break;
         case MOTU_OPTICAL_MODE_ADAT: g2mode = MOTU_G2_OPTICAL_MODE_ADAT; break;
         case MOTU_OPTICAL_MODE_TOSLINK: g2mode = MOTU_G2_OPTICAL_MODE_TOSLINK; break;
@@ -1334,7 +1348,7 @@ signed int MotuDevice::setOpticalMode(unsigned int port, unsigned int dir,
     }
     if (dir & MOTU_DIR_OUT) {
         reg &= ~MOTU_G2_OPTICAL_OUT_MODE_MASK;
-        reg |= (mode << MOTU_G2_OPTICAL_OUT_MODE_BIT0) & MOTU_G2_OPTICAL_OUT_MODE_MASK;
+        reg |= (g2mode << MOTU_G2_OPTICAL_OUT_MODE_BIT0) & MOTU_G2_OPTICAL_OUT_MODE_MASK;
         if (g2mode != MOTU_G2_OPTICAL_MODE_ADAT)
             opt_ctrl |= 0x00000040;
         else
@@ -1369,12 +1383,14 @@ signed int MotuDevice::getEventSize(unsigned int direction) {
 // bytes (6 bytes).
 // Note that all audio channels are sent using 3 bytes.
 signed int sample_rate = getSamplingFrequency();
-signed int optical_mode = getOpticalMode(0, direction);
+unsigned int optical_mode;
 signed int size = 4+6;
 
 unsigned int i;
 unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
 unsigned int flags = (1 << ( optical_mode + 4 ));
+
+    getOpticalMode(direction, &optical_mode, NULL);
 
     if ( sample_rate > 96000 )
         flags |= MOTU_PA_RATE_4x;
