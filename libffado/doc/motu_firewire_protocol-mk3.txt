@@ -1,7 +1,7 @@
 Protocol details for MOTU "mark 3" devices, obtained in the first instance
 using an 828 Mk 3.
 
-Version: 20100510-1
+Version: 20100516-1
 Author: Jonathan Woithe
 
 
@@ -95,19 +95,19 @@ Offset       1x Rates              2x Rates              4x Rates
 Device control
 --------------
 
-ADAT modes
+Optical port modes
 
-The modes of the two ADAT ports can be controlled independently.  The
+The modes of the two optical ports can be controlled independently.  The
 primary mechanism for this is via a quadlet write to register
 0xfffff0000c94.
 
-  Bit 17: ADAT port B mode (0=ADAT, 1=Toslink)
-  Bit 16: ADAT port A mode (0=ADAT, 1=Toslink)
-  Bit  1: ADAT port B enabled (0=disabled, 1=enabled)
-  Bit  0: ADAT port A enabled (0=disabled, 1=enabled)
+  Bit 17: optical port B mode (0=ADAT, 1=Toslink)
+  Bit 16: optical port A mode (0=ADAT, 1=Toslink)
+  Bit  1: optical port B enabled (0=disabled, 1=enabled)
+  Bit  0: optical port A enabled (0=disabled, 1=enabled)
 
-Other systems also appear to refresh the device status with writes to
-other registers at the time the optical mode is updated:
+Other areas of the driver also appear to refresh the device status with
+writes to other registers at the time the optical mode is updated:
   0xfffff0000c04
   0xfffff0000c60 - 0xfffff0000c6c (ASCII name of clock source)
   0xfffff0000c94
@@ -124,13 +124,14 @@ It is not known whether these additional writes are necessary.
 
 Clock source control and sample rate
 
-The clock source is set with a quadlet write to bits 0, 3 and 4 of register 
-0xfffff0000b14.  Values for bits 4-3-0:
-  0-0-0 = internal / SMTPE
-  0-0-1 = Word clock
-  1-0-0 = SPDIF
-  1-1-0 = ADAT port A
-  1-1-1 = ADAT port B
+The clock source is set with a quadlet write to bits 0, 1, 3 and 4 of
+register 0xfffff0000b14.  Values for bits 4-3-1-0:
+  0-0-0-0 = internal
+  0-0-1-0 = SMTPE
+  0-0-0-1 = Word clock
+  1-0-0-0 = SPDIF
+  1-1-0-0 = ADAT port A / Toslink-A (depending on current optical port mode)
+  1-1-0-1 = ADAT port B / Toslink-B (depending on current optical port mode)
 
 The sample rate is selected using bits 10-8 of register 0xfffff0000b14:
   0x0 = 44.1 kHz

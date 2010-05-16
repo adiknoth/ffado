@@ -553,6 +553,34 @@ MotuDevice::getConfigurationId()
     return 0;
 }
 
+unsigned int
+MotuDevice::getHwClockSource()
+{
+    unsigned int reg;
+
+    if (m_motu_model == MOTU_MODEL_828MkI) {
+        reg = ReadRegister(MOTU_G1_REG_CONFIG);
+        switch (reg & MOTU_G1_CLKSRC_MASK) {
+            case MOTU_G1_CLKSRC_INTERNAL: return MOTU_CLKSRC_INTERNAL;
+            case MOTU_G1_CLKSRC_ADAT_9PIN: return MOTU_CLKSRC_ADAT_9PIN;
+            case MOTU_G1_CLKSRC_SPDIF: return MOTU_CLKSRC_SPDIF_TOSLINK;
+        }
+        return MOTU_CLKSRC_NONE;
+    }
+
+    reg = ReadRegister(MOTU_REG_CLK_CTRL);
+    switch (reg & MOTU_G2_CLKSRC_MASK) {
+        case MOTU_G2_CLKSRC_INTERNAL: return MOTU_CLKSRC_INTERNAL;
+        case MOTU_G2_CLKSRC_ADAT_OPTICAL: return MOTU_CLKSRC_ADAT_OPTICAL;
+        case MOTU_G2_CLKSRC_SPDIF_TOSLINK: return MOTU_CLKSRC_SPDIF_TOSLINK;
+        case MOTU_G2_CLKSRC_SMPTE: return MOTU_CLKSRC_SMPTE;
+        case MOTU_G2_CLKSRC_WORDCLOCK: return MOTU_CLKSRC_WORDCLOCK;
+        case MOTU_G2_CLKSRC_ADAT_9PIN: return MOTU_CLKSRC_ADAT_9PIN;
+        case MOTU_G2_CLKSRC_AES_EBU: return MOTU_CLKSRC_AES_EBU;
+    }
+    return MOTU_CLKSRC_NONE;
+}
+
 bool
 MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int clock_source)
 {
@@ -565,6 +593,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
     quadlet_t q, new_rate=0xffffffff;
     int i, supported=true, cancel_adat=false;
     quadlet_t reg;
+    unsigned int old_clock_src = getHwClockSource();
 
     /* Don't touch anything if there's nothing to do */
     if (samplingFrequency<=0 && clock_source==MOTU_CLKSRC_NONE)
@@ -643,7 +672,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
     }
 
     // Sanity check the clock source
-    if ((clock_source>7 || clock_source==6) && clock_source!=MOTU_CLKSRC_UNCHANGED)
+    if (clock_source>MOTU_CLKSRC_LAST && clock_source!=MOTU_CLKSRC_UNCHANGED)
         supported = false;
 
     // Update the clock control register.  FIXME: while this is now rather
@@ -667,8 +696,22 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
 
         // Set up new clock source if required
         if (clock_source != MOTU_CLKSRC_UNCHANGED) {
-            reg &= ~MOTU_CLKSRC_MASK;
-            reg |= (clock_source & MOTU_CLKSRC_MASK);
+            reg &= ~MOTU_G2_CLKSRC_MASK;
+            switch (clock_source) {
+              case MOTU_CLKSRC_INTERNAL: reg |= MOTU_G2_CLKSRC_INTERNAL; break;
+              case MOTU_CLKSRC_ADAT_OPTICAL: reg |= MOTU_G2_CLKSRC_ADAT_OPTICAL; break;
+              case MOTU_CLKSRC_SPDIF_TOSLINK: reg |= MOTU_G2_CLKSRC_SPDIF_TOSLINK; break;
+              case MOTU_CLKSRC_SMPTE: reg |= MOTU_G2_CLKSRC_SMPTE; break;
+              case MOTU_CLKSRC_WORDCLOCK: reg |= MOTU_G2_CLKSRC_WORDCLOCK; break;
+              case MOTU_CLKSRC_ADAT_9PIN: reg |= MOTU_G2_CLKSRC_ADAT_9PIN; break;
+              case MOTU_CLKSRC_AES_EBU: reg |= MOTU_G2_CLKSRC_AES_EBU; break;
+            }
+        } else {
+            /* Use the device's current clock source to set the clock
+             * source name registers, which must be done even if we aren't
+             * changing the clock source.
+             */
+            clock_source = old_clock_src;
         }
 
         // Bits 24-26 of MOTU_REG_CLK_CTRL behave a little differently
@@ -705,7 +748,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
         // A write to the rate/clock control register requires the
         // textual name of the current clock source be sent to the
         // clock source name registers.
-        switch (reg & MOTU_CLKSRC_MASK) {
+        switch (clock_source) {
             case MOTU_CLKSRC_INTERNAL:
                 src_name = "Internal        ";
                 break;
@@ -778,7 +821,7 @@ MotuDevice::getSupportedSamplingFrequencies()
 FFADODevice::ClockSource
 MotuDevice::clockIdToClockSource(unsigned int id) {
     ClockSource s;
-    bool g1_model = (m_motu_model == MOTU_MODEL_828MkI);
+    signed int device_gen = getDeviceGeneration();
     s.id = id;
 
     // Assume a clock source is valid/active unless otherwise overridden.
@@ -794,7 +837,7 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
         case MOTU_CLKSRC_ADAT_OPTICAL:
             s.type = eCT_ADAT;
             s.description = "ADAT optical";
-            s.valid = s.active = s.locked = !g1_model;
+            s.valid = s.active = s.locked = (device_gen!=MOTU_DEVICE_G1);
             break;
         case MOTU_CLKSRC_SPDIF_TOSLINK:
             s.type = eCT_SPDIF;
@@ -803,8 +846,8 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
         case MOTU_CLKSRC_SMPTE:
             s.type = eCT_SMPTE;
             s.description = "SMPTE";
-            // Since we don't currently know how to deal with SMPTE on these devices
-            // make sure the SMPTE clock source is disabled.
+            // Since we don't currently know how to deal with SMPTE on these
+            // devices make sure the SMPTE clock source is disabled.
             s.valid = false;
             s.active = false;
             s.locked = false;
@@ -812,7 +855,7 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
         case MOTU_CLKSRC_WORDCLOCK:
             s.type = eCT_WordClock;
             s.description = "Wordclock";
-            s.valid = s.active = s.locked = !g1_model;
+            s.valid = s.active = s.locked = (device_gen!=MOTU_DEVICE_G1);
             break;
         case MOTU_CLKSRC_ADAT_9PIN:
             s.type = eCT_ADAT;
@@ -821,7 +864,7 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
         case MOTU_CLKSRC_AES_EBU:
             s.type = eCT_AES;
             s.description = "AES/EBU";
-            s.valid = s.active = s.locked = !g1_model;
+            s.valid = s.active = s.locked = (device_gen!=MOTU_DEVICE_G1);
             break;
         default:
             s.type = eCT_Invalid;
@@ -866,7 +909,7 @@ MotuDevice::setActiveClockSource(ClockSource s) {
 FFADODevice::ClockSource
 MotuDevice::getActiveClockSource() {
     ClockSource s;
-    quadlet_t clock_id = ReadRegister(MOTU_REG_CLK_CTRL) & MOTU_CLKSRC_MASK;
+    quadlet_t clock_id = getHwClockSource();
     s = clockIdToClockSource(clock_id);
     s.active = true;
     return s;
@@ -1245,7 +1288,7 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
     unsigned int mask, shift;
 
     if (port_b_mode != NULL)
-        *port_b_mode = MOTU_OPTICAL_MODE_OFF;
+        *port_b_mode = MOTU_OPTICAL_MODE_NONE;
     if (getDeviceGeneration()!=MOTU_DEVICE_G3 && port_a_mode==NULL)
         return 0;
 

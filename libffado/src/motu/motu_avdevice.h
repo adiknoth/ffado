@@ -61,16 +61,14 @@
 #define MOTU_G2_OPTICAL_OUT_MODE_BIT0  10
 #define MOTU_G2_OPTICAL_MODE_MASK      (MOTU_G2_OPTICAL_IN_MODE_MASK|MOTU_G2_OPTICAL_MODE_MASK)
 
-#define MOTU_CLKSRC_MASK             0x00000007
-#define MOTU_CLKSRC_INTERNAL         0
-#define MOTU_CLKSRC_ADAT_OPTICAL     1
-#define MOTU_CLKSRC_SPDIF_TOSLINK    2
-#define MOTU_CLKSRC_SMPTE            3
-#define MOTU_CLKSRC_WORDCLOCK        4
-#define MOTU_CLKSRC_ADAT_9PIN        5
-#define MOTU_CLKSRC_AES_EBU          7
-#define MOTU_CLKSRC_NONE             0xffff
-#define MOTU_CLKSRC_UNCHANGED        MOTU_CLKSRC_NONE
+#define MOTU_G2_CLKSRC_MASK             0x00000007
+#define MOTU_G2_CLKSRC_INTERNAL         0
+#define MOTU_G2_CLKSRC_ADAT_OPTICAL     1
+#define MOTU_G2_CLKSRC_SPDIF_TOSLINK    2
+#define MOTU_G2_CLKSRC_SMPTE            3
+#define MOTU_G2_CLKSRC_WORDCLOCK        4
+#define MOTU_G2_CLKSRC_ADAT_9PIN        5
+#define MOTU_G2_CLKSRC_AES_EBU          7
 
 #define MOTU_METER_PEAKHOLD_MASK     0x3800
 #define MOTU_METER_PEAKHOLD_SHIFT    11
@@ -154,12 +152,17 @@
 /* Mark3 (aka G3) register constants for cases where the G3 devices differ
  * from the G2s.
  */
-#define MOTU_G3_CLKSRC_MASK      0x00000019
+#define MOTU_G3_CLKSRC_MASK      0x0000001b
 #define MOTU_G3_CLKSRC_INTERNAL  0x00000000
 #define MOTU_G3_CLKSRC_WORDCLOCK 0x00000001
-#define MOTU_G3_CLKSRC_SPDIR     0x00000010
-#define MOTU_G3_CLKSRC_ADAT_A    0x00000018
-#define MOTU_G3_CLKSRC_ADAT_B    0x00000019
+#define MOTU_G3_CLKSRC_SMTPE     0x00000002
+#define MOTU_G3_CLKSRC_SPDIF     0x00000010
+#define MOTU_G3_CLKSRC_OPTICAL_A 0x00000018
+#define MOTU_G3_CLKSRC_OPTICAL_B 0x00000019
+#define MOTU_G3_CLKSRC_ADAT_A    MOTU_G3_CLKSRC_OPTICAL_A
+#define MOTU_G3_CLKSRC_ADAT_B    MOTU_G3_CLKSRC_OPTICAL_B
+#define MOTU_G3_CLKSRC_TOSLINK_A MOTU_G3_CLKSRC_OPTICAL_A
+#define MOTU_G3_CLKSRC_TOSLINK_B MOTU_G3_CLKSRC_OPTICAL_A
 
 /* The following values are used when defining configuration structures and
  * calling driver functions.  They are generally not raw values written to
@@ -208,6 +211,20 @@
 #define MOTU_OPTICAL_MODE_ADAT    0x0001
 #define MOTU_OPTICAL_MODE_TOSLINK 0x0002
 #define MOTU_OPTICAL_MODE_KEEP    0xffff
+#define MOTU_OPTICAL_MODE_NONE    0xffffffff
+
+/* Clock source settings/flags */
+#define MOTU_CLKSRC_INTERNAL         0
+#define MOTU_CLKSRC_ADAT_OPTICAL     1
+#define MOTU_CLKSRC_SPDIF_TOSLINK    2
+#define MOTU_CLKSRC_SMPTE            3
+#define MOTU_CLKSRC_WORDCLOCK        4
+#define MOTU_CLKSRC_ADAT_9PIN        5
+#define MOTU_CLKSRC_AES_EBU          7
+#define MOTU_CLKSRC_LAST             7
+#define MOTU_CLKSRC_NONE             0xffff
+#define MOTU_CLKSRC_UNCHANGED        MOTU_CLKSRC_NONE
+
 /* Device generation identifiers */
 #define MOTU_DEVICE_G1            0x0001
 #define MOTU_DEVICE_G2            0x0002
@@ -313,6 +330,7 @@ public:
 
     virtual void showDevice();
 
+    unsigned int getHwClockSource();
     bool setClockCtrlRegister(signed int samplingFrequency, unsigned int clock_source);
     virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
