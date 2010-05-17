@@ -569,14 +569,26 @@ MotuDevice::getHwClockSource()
     }
 
     reg = ReadRegister(MOTU_REG_CLK_CTRL);
-    switch (reg & MOTU_G2_CLKSRC_MASK) {
-        case MOTU_G2_CLKSRC_INTERNAL: return MOTU_CLKSRC_INTERNAL;
-        case MOTU_G2_CLKSRC_ADAT_OPTICAL: return MOTU_CLKSRC_ADAT_OPTICAL;
-        case MOTU_G2_CLKSRC_SPDIF_TOSLINK: return MOTU_CLKSRC_SPDIF_TOSLINK;
-        case MOTU_G2_CLKSRC_SMPTE: return MOTU_CLKSRC_SMPTE;
-        case MOTU_G2_CLKSRC_WORDCLOCK: return MOTU_CLKSRC_WORDCLOCK;
-        case MOTU_G2_CLKSRC_ADAT_9PIN: return MOTU_CLKSRC_ADAT_9PIN;
-        case MOTU_G2_CLKSRC_AES_EBU: return MOTU_CLKSRC_AES_EBU;
+    if (getDeviceGeneration() == MOTU_DEVICE_G2) {
+        switch (reg & MOTU_G2_CLKSRC_MASK) {
+            case MOTU_G2_CLKSRC_INTERNAL: return MOTU_CLKSRC_INTERNAL;
+            case MOTU_G2_CLKSRC_ADAT_OPTICAL: return MOTU_CLKSRC_ADAT_OPTICAL;
+            case MOTU_G2_CLKSRC_SPDIF_TOSLINK: return MOTU_CLKSRC_SPDIF_TOSLINK;
+            case MOTU_G2_CLKSRC_SMPTE: return MOTU_CLKSRC_SMPTE;
+            case MOTU_G2_CLKSRC_WORDCLOCK: return MOTU_CLKSRC_WORDCLOCK;
+            case MOTU_G2_CLKSRC_ADAT_9PIN: return MOTU_CLKSRC_ADAT_9PIN;
+            case MOTU_G2_CLKSRC_AES_EBU: return MOTU_CLKSRC_AES_EBU;
+        }
+    } else {
+        /* Handle G3 devices */
+        switch (reg & MOTU_G3_CLKSRC_MASK) {
+            case MOTU_G3_CLKSRC_INTERNAL: return MOTU_CLKSRC_INTERNAL;
+            case MOTU_G3_CLKSRC_SPDIF: return MOTU_CLKSRC_SPDIF_TOSLINK;
+            case MOTU_G3_CLKSRC_SMPTE: return MOTU_CLKSRC_SMPTE;
+            case MOTU_G3_CLKSRC_WORDCLOCK: return MOTU_CLKSRC_WORDCLOCK;
+            case MOTU_G3_CLKSRC_OPTICAL_A: return MOTU_CLKSRC_OPTICAL_A;
+            case MOTU_G3_CLKSRC_OPTICAL_B: return MOTU_CLKSRC_OPTICAL_B;
+        }
     }
     return MOTU_CLKSRC_NONE;
 }
@@ -594,6 +606,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
     int i, supported=true, cancel_adat=false;
     quadlet_t reg;
     unsigned int old_clock_src = getHwClockSource();
+    signed int device_gen = getDeviceGeneration();
 
     /* Don't touch anything if there's nothing to do */
     if (samplingFrequency<=0 && clock_source==MOTU_CLKSRC_NONE)
@@ -644,6 +657,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
 
     reg = ReadRegister(MOTU_REG_CLK_CTRL);
 
+    /* Control of sampling rate is the same for both G2 and G3 devices */
     switch ( samplingFrequency ) {
         case -1:
             break;
@@ -696,15 +710,27 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
 
         // Set up new clock source if required
         if (clock_source != MOTU_CLKSRC_UNCHANGED) {
-            reg &= ~MOTU_G2_CLKSRC_MASK;
-            switch (clock_source) {
-              case MOTU_CLKSRC_INTERNAL: reg |= MOTU_G2_CLKSRC_INTERNAL; break;
-              case MOTU_CLKSRC_ADAT_OPTICAL: reg |= MOTU_G2_CLKSRC_ADAT_OPTICAL; break;
-              case MOTU_CLKSRC_SPDIF_TOSLINK: reg |= MOTU_G2_CLKSRC_SPDIF_TOSLINK; break;
-              case MOTU_CLKSRC_SMPTE: reg |= MOTU_G2_CLKSRC_SMPTE; break;
-              case MOTU_CLKSRC_WORDCLOCK: reg |= MOTU_G2_CLKSRC_WORDCLOCK; break;
-              case MOTU_CLKSRC_ADAT_9PIN: reg |= MOTU_G2_CLKSRC_ADAT_9PIN; break;
-              case MOTU_CLKSRC_AES_EBU: reg |= MOTU_G2_CLKSRC_AES_EBU; break;
+            if (device_gen == MOTU_DEVICE_G2) {
+                reg &= ~MOTU_G2_CLKSRC_MASK;
+                switch (clock_source) {
+                    case MOTU_CLKSRC_INTERNAL: reg |= MOTU_G2_CLKSRC_INTERNAL; break;
+                    case MOTU_CLKSRC_ADAT_OPTICAL: reg |= MOTU_G2_CLKSRC_ADAT_OPTICAL; break;
+                    case MOTU_CLKSRC_SPDIF_TOSLINK: reg |= MOTU_G2_CLKSRC_SPDIF_TOSLINK; break;
+                    case MOTU_CLKSRC_SMPTE: reg |= MOTU_G2_CLKSRC_SMPTE; break;
+                    case MOTU_CLKSRC_WORDCLOCK: reg |= MOTU_G2_CLKSRC_WORDCLOCK; break;
+                    case MOTU_CLKSRC_ADAT_9PIN: reg |= MOTU_G2_CLKSRC_ADAT_9PIN; break;
+                    case MOTU_CLKSRC_AES_EBU: reg |= MOTU_G2_CLKSRC_AES_EBU; break;
+                }
+            } else {
+                reg &= ~MOTU_G3_CLKSRC_MASK;
+                switch (clock_source) {
+                    case MOTU_CLKSRC_INTERNAL: reg |= MOTU_G3_CLKSRC_INTERNAL; break;
+                    case MOTU_CLKSRC_SPDIF_TOSLINK: reg |= MOTU_G3_CLKSRC_SPDIF; break;
+                    case MOTU_CLKSRC_SMPTE: reg |= MOTU_G3_CLKSRC_SMPTE; break;
+                    case MOTU_CLKSRC_WORDCLOCK: reg |= MOTU_G3_CLKSRC_WORDCLOCK; break;
+                    case MOTU_CLKSRC_OPTICAL_A: reg |= MOTU_G3_CLKSRC_OPTICAL_A; break; 
+                    case MOTU_CLKSRC_OPTICAL_B: reg |= MOTU_G3_CLKSRC_OPTICAL_B; break;
+                }
             }
         } else {
             /* Use the device's current clock source to set the clock
@@ -747,7 +773,8 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
         }
         // A write to the rate/clock control register requires the
         // textual name of the current clock source be sent to the
-        // clock source name registers.
+        // clock source name registers.  This appears to be the same for
+        // both G2 and G3 devices.
         switch (clock_source) {
             case MOTU_CLKSRC_INTERNAL:
                 src_name = "Internal        ";
@@ -776,6 +803,24 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
             case MOTU_CLKSRC_AES_EBU:
                 src_name = "AES-EBU         ";
                 break;
+            case MOTU_CLKSRC_OPTICAL_A: {
+                unsigned int p0_mode;
+                getOpticalMode(MOTU_DIR_IN, &p0_mode, NULL);
+                if (p0_mode == MOTU_OPTICAL_MODE_TOSLINK)
+                    src_name = "Toslink-A       ";
+                else
+                    src_name = "ADAT-A Optical  ";
+                break;
+            }
+            case MOTU_CLKSRC_OPTICAL_B: {
+                unsigned int p1_mode;
+                getOpticalMode(MOTU_DIR_IN, &p1_mode, NULL);
+                if (p1_mode == MOTU_OPTICAL_MODE_TOSLINK)
+                    src_name = "Toslink-B       ";
+                else
+                    src_name = "ADAT-B Optical  ";
+                break;
+            }
             default:
                 src_name = "Unknown         ";
         }
@@ -841,7 +886,10 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
             break;
         case MOTU_CLKSRC_SPDIF_TOSLINK:
             s.type = eCT_SPDIF;
-            s.description = "SPDIF/Toslink";
+            if (device_gen < MOTU_DEVICE_G3)
+                s.description = "SPDIF/Toslink";
+            else
+                s.description = "SPDIF";
             break;
         case MOTU_CLKSRC_SMPTE:
             s.type = eCT_SMPTE;
@@ -866,6 +914,14 @@ MotuDevice::clockIdToClockSource(unsigned int id) {
             s.description = "AES/EBU";
             s.valid = s.active = s.locked = (device_gen!=MOTU_DEVICE_G1);
             break;
+        case MOTU_CLKSRC_OPTICAL_A:
+            s.type = eCT_ADAT;
+            s.description = "ADAT/Toslink port A";
+            break;
+        case MOTU_CLKSRC_OPTICAL_B:
+            s.type = eCT_ADAT;
+            s.description = "ADAT/Toslink port B";
+            break;
         default:
             s.type = eCT_Invalid;
     }
@@ -878,22 +934,39 @@ FFADODevice::ClockSourceVector
 MotuDevice::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
     ClockSource s;
+    signed int device_gen = getDeviceGeneration();
 
     /* Form a list of clocks supported by MOTU interfaces */
+
+    /* All interfaces support an internal clock */
     s = clockIdToClockSource(MOTU_CLKSRC_INTERNAL);
     r.push_back(s);
-    s = clockIdToClockSource(MOTU_CLKSRC_ADAT_OPTICAL);
-    r.push_back(s);
+
+    if (device_gen == MOTU_DEVICE_G2) {
+        s = clockIdToClockSource(MOTU_CLKSRC_ADAT_OPTICAL);
+        r.push_back(s);
+    }
+
     s = clockIdToClockSource(MOTU_CLKSRC_SPDIF_TOSLINK);
     r.push_back(s);
     s = clockIdToClockSource(MOTU_CLKSRC_SMPTE);
     r.push_back(s);
     s = clockIdToClockSource(MOTU_CLKSRC_WORDCLOCK);
     r.push_back(s);
-    s = clockIdToClockSource(MOTU_CLKSRC_ADAT_9PIN);
-    r.push_back(s);
+
+    if (device_gen < MOTU_DEVICE_G3) {
+        s = clockIdToClockSource(MOTU_CLKSRC_ADAT_9PIN);
+        r.push_back(s);
+    }
     s = clockIdToClockSource(MOTU_CLKSRC_AES_EBU);
     r.push_back(s);
+
+    if (device_gen == MOTU_DEVICE_G3) {
+        s = clockIdToClockSource(MOTU_CLKSRC_OPTICAL_A);
+        r.push_back(s);
+        s = clockIdToClockSource(MOTU_CLKSRC_OPTICAL_B);
+        r.push_back(s);
+    }
 
     return r;
 }
