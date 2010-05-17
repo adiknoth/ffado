@@ -1,7 +1,7 @@
 Protocol details for MOTU "mark 3" devices, obtained in the first instance
 using an 828 Mk 3.
 
-Version: 20100516-1
+Version: 20100517-1
 Author: Jonathan Woithe
 
 
@@ -90,6 +90,17 @@ Offset       1x Rates              2x Rates              4x Rates
 109               ADAT2-8?
 ------------------------------------------------------------------------  
 #ch    30         34         22         26         10         14
+
+When an optical port is configured in Toslink mode, the two Toslink channels
+take the place of that port's 8 ADAT channels in the data stream.  That is,
+ADAT-x 1-8 are removed and in their place Toslink-A 1-2 are added.  So in
+the case of 1x playback, the Toslink channels appear at offset 52, with
+ADAT-B's channels commencing at offset 58 (the total packet size in this
+case being 0x02c8 bytes).
+
+Unlike previous MOTU generations, the Toslink outputs in the Mark 3 devices
+are present as channels in their own right - they do not mirror the SPDIF
+channel.
 
 
 Device control

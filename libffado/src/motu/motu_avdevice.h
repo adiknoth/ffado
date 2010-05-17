@@ -198,7 +198,7 @@
 #define MOTU_PA_MK3_OPT_B_TOSLINK 0x4000
 #define MOTU_PA_MK3_OPT_B_ON      (MOTU_PA_MK3_OPT_B_ADAT|MOTU_PA_MK3_OPT_B_TOSLINK)
 #define MOTU_PA_MK3_OPT_B_ANY     (MOTU_PA_MK3_OPT_B_OFF|MOTU_PA_MK3_OPT_B_ON)
-#define MOTU_PA_MK3_OPT_B_MASK    MOTU_PA_MK3_OPT_B_MASK
+#define MOTU_PA_MK3_OPT_B_MASK    MOTU_PA_MK3_OPT_B_ANY
 #define MOTU_PA_MK3_OPT_ANY       (MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ANY)
 
 /* Generic "direction" flags */
@@ -382,8 +382,8 @@ private:
         enum Streaming::Port::E_Direction direction,
         int position, int size);
     bool addDirPorts(
-        enum Streaming::Port::E_Direction direction,
-        unsigned int sample_rate, unsigned int optical_mode);
+        enum Streaming::Port::E_Direction direction, unsigned int sample_rate, 
+        unsigned int optical_a_mode, unsigned int optical_b_mode);
 
 public:
     unsigned int ReadRegister(unsigned int reg);

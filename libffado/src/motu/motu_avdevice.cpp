@@ -286,68 +286,155 @@ const PortEntry Ports_828mk3[] =
     {"MainOut-R", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 43},
     {"Return-1", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, 40},
     {"Return-2", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, 43},
-    {"SPDIF1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_A_ADAT, 46},
-    {"SPDIF2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_A_ADAT, 49},
-    {"Toslink1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK, 46},
-    {"Toslink2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK, 49},
+    {"SPDIF1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 46},
+    {"SPDIF2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 49},
     {"Unknown-1", MOTU_PA_OUT | MOTU_PA_RATE_4x|MOTU_PA_MK3_OPT_ANY, 46},
     {"Unknown-2", MOTU_PA_OUT | MOTU_PA_RATE_4x|MOTU_PA_MK3_OPT_ANY, 49},
     {"Reverb-1", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 52},
     {"Reverb-2", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 55},
     //
-    // FIXME: PortEntry will need to be expanded to allow for an optional
-    // exact match on the optical modes.  This is needed because the A and B
-    // optical ports can have their mode set independently, so the presence
-    // of some ADAT ports depends on the precise mode setting of both ADAT
-    // ports.  Currently the match is effectively an "OR".
+    // Optical port locations are a bit messy with the Mark 3 devices since
+    // there are two optical ports whose modes can be independently set.
+    // First take care of the output direction.
     //
-    {"ADAT1", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 52},
-    {"ADAT2", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 55},
-    {"ADAT3", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 58},
-    {"ADAT4", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 61},
-    {"ADAT5", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 64},
-    {"ADAT6", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 67},
-    {"ADAT7", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 70},
-    {"ADAT8", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, 73},
+    {"Toslink-A1", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, 52},
+    {"Toslink-A2", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, 55},
+    {"ADAT-A1", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, 52},
+    {"ADAT-A2", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, 55},
+    {"ADAT-A3", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, 58},
+    {"ADAT-A4", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, 61},
+    {"ADAT-A5", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, 64},
+    {"ADAT-A6", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, 67},
+    {"ADAT-A7", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, 70},
+    {"ADAT-A8", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, 73},
     //
-    {"ADAT9", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 76},
-    {"ADAT10", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 79},
-    {"ADAT11", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 82},
-    {"ADAT12", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 85},
-    {"ADAT13", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 88},
-    {"ADAT14", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 91},
-    {"ADAT15", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 94},
-    {"ADAT16", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 97},
+    {"Toslink-B1", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_TOSLINK, 52},
+    {"Toslink-B2", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_TOSLINK, 55},
+    {"Toslink-B1", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_TOSLINK, 58},
+    {"Toslink-B2", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_TOSLINK, 61},
+    {"Toslink-B1", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_TOSLINK, 76},
+    {"Toslink-B2", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_TOSLINK, 79},
+    {"Toslink-B1", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_TOSLINK, 64},
+    {"Toslink-B2", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_TOSLINK, 67},
+    {"ADAT-B1", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 76},
+    {"ADAT-B2", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 79},
+    {"ADAT-B3", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 82},
+    {"ADAT-B4", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 85},
+    {"ADAT-B5", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 88},
+    {"ADAT-B6", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 91},
+    {"ADAT-B7", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 94},
+    {"ADAT-B8", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 97},
+    {"ADAT-B1", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 64},
+    {"ADAT-B2", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 67},
+    {"ADAT-B3", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 70},
+    {"ADAT-B4", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 73},
+    //
+    {"ADAT-B1", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 58},
+    {"ADAT-B2", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 61},
+    {"ADAT-B3", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 64},
+    {"ADAT-B4", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 67},
+    {"ADAT-B5", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 70},
+    {"ADAT-B6", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 73},
+    {"ADAT-B7", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 76},
+    {"ADAT-B8", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 79},
+    {"ADAT-B1", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 58},
+    {"ADAT-B2", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 61},
+    {"ADAT-B3", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 64},
+    {"ADAT-B4", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 67},
+    //
+    {"ADAT-B1", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 52},
+    {"ADAT-B2", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 55},
+    {"ADAT-B3", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 58},
+    {"ADAT-B4", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 61},
+    {"ADAT-B5", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 64},
+    {"ADAT-B6", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 67},
+    {"ADAT-B7", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 70},
+    {"ADAT-B8", MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 73},
+    {"ADAT-B1", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 52},
+    {"ADAT-B2", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 55},
+    {"ADAT-B3", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 58},
+    {"ADAT-B4", MOTU_PA_OUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_ADAT, 61},
 
+    // Now deal with the input side of things.  Firstly comes two channels
+    // which are yet to be identified at 1x rates.
     {"Unknown-1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 58},
     {"Unknown-2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, 61},
-    {"ADAT1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
-    {"ADAT2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
-    {"ADAT3", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
-    {"ADAT4", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
-    {"ADAT5", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 76},
-    {"ADAT6", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 79},
-    {"ADAT7", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 82},
-    {"ADAT8", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 85},
-    {"ADAT9", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 88},
-    {"ADAT10", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 91},
-    {"ADAT11", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 94},
-    {"ADAT12", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 97},
-    {"ADAT13", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 100},
-    {"ADAT14", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 103},
-    {"ADAT15", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 106},
-    {"ADAT16", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 109},
 
-    {"ADAT1", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 58},
-    {"ADAT2", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 61},
-    {"ADAT3", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 64},
-    {"ADAT4", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 67},
-    {"ADAT5", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 70},
-    {"ADAT6", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 73},
-    {"ADAT7", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 76},
-    {"ADAT8", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 79},
-    {"Unknown-3", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 82},
-    {"Unknown-4", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 85},
+    // Follow up with the optical input port details.
+    //
+    {"Toslink-A1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, 64},
+    {"Toslink-A2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, 67},
+    {"Toslink-A1", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, 58},
+    {"Toslink-A2", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, 61},
+    {"ADAT-A1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 64},
+    {"ADAT-A2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 67},
+    {"ADAT-A3", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 70},
+    {"ADAT-A4", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 73},
+    {"ADAT-A5", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 76},
+    {"ADAT-A6", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 79},
+    {"ADAT-A7", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 82},
+    {"ADAT-A8", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 85},
+    {"ADAT-B1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 88},
+    {"ADAT-B2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 91},
+    {"ADAT-B3", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 94},
+    {"ADAT-B4", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 97},
+    {"ADAT-B5", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 100},
+    {"ADAT-B6", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 103},
+    {"ADAT-B7", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 106},
+    {"ADAT-B8", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 109},
+    {"ADAT-A1", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 58},
+    {"ADAT-A2", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 61},
+    {"ADAT-A3", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 64},
+    {"ADAT-A4", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ANY, 67},
+    {"ADAT-B1", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 70},
+    {"ADAT-B2", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 73},
+    {"ADAT-B3", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 76},
+    {"ADAT-B4", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 79},
+    {"Unknown-3", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 82},
+    {"Unknown-4", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT|MOTU_PA_MK3_OPT_B_ADAT, 85},
+    //
+    {"Toslink-B1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_TOSLINK, 64},
+    {"Toslink-B2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_TOSLINK, 67},
+    {"Toslink-B1", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_TOSLINK, 58},
+    {"Toslink-B2", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_OFF|MOTU_PA_MK3_OPT_B_TOSLINK, 61},
+    {"Toslink-B1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_TOSLINK, 70},
+    {"Toslink-B2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_TOSLINK, 73},
+    {"Toslink-B1", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_TOSLINK, 64},
+    {"Toslink-B2", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_TOSLINK, 67},
+    {"Toslink-B1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_TOSLINK, 88},
+    {"Toslink-B2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_TOSLINK, 91},
+    {"Toslink-B1", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_TOSLINK, 70},
+    {"Toslink-B2", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_TOSLINK, 73},
+    {"ADAT-B1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 64},
+    {"ADAT-B2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 67},
+    {"ADAT-B3", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 70},
+    {"ADAT-B4", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 73},
+    {"ADAT-B5", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 76},
+    {"ADAT-B6", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 79},
+    {"ADAT-B7", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 82},
+    {"ADAT-B8", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 85},
+    {"ADAT-B1", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 58},
+    {"ADAT-B2", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 61},
+    {"ADAT-B3", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 64},
+    {"ADAT-B4", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 67},
+    {"Unknown-3", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 70},
+    {"Unknown-4", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_MK3_OPT_B_ADAT, 73},
+    //
+    {"ADAT-B1", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 70},
+    {"ADAT-B2", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 73},
+    {"ADAT-B3", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 76},
+    {"ADAT-B4", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 79},
+    {"ADAT-B5", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 82},
+    {"ADAT-B6", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 85},
+    {"ADAT-B7", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 88},
+    {"ADAT-B8", MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 91},
+    {"ADAT-B1", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 64},
+    {"ADAT-B2", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 67},
+    {"ADAT-B3", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 70},
+    {"ADAT-B4", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 73},
+    {"Unknown-3", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 76},
+    {"Unknown-4", MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_TOSLINK|MOTU_PA_MK3_OPT_B_ADAT, 79},
+
 };
 
 const PortEntry Ports_ULTRALITEmk3[] =
@@ -784,7 +871,10 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
                 break;
             case MOTU_CLKSRC_SPDIF_TOSLINK: {
                 unsigned int p0_mode;
-                getOpticalMode(MOTU_DIR_IN, &p0_mode, NULL);
+                if (device_gen < MOTU_DEVICE_G3) {
+                    getOpticalMode(MOTU_DIR_IN, &p0_mode, NULL);
+                } else
+                    p0_mode = MOTU_OPTICAL_MODE_OFF;
                 if (p0_mode == MOTU_OPTICAL_MODE_TOSLINK)
                     src_name = "TOSLink         ";
                 else
@@ -814,7 +904,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
             }
             case MOTU_CLKSRC_OPTICAL_B: {
                 unsigned int p1_mode;
-                getOpticalMode(MOTU_DIR_IN, &p1_mode, NULL);
+                getOpticalMode(MOTU_DIR_IN, NULL, &p1_mode);
                 if (p1_mode == MOTU_OPTICAL_MODE_TOSLINK)
                     src_name = "Toslink-B       ";
                 else
@@ -1013,22 +1103,23 @@ bool
 MotuDevice::prepare() {
 
     int samp_freq = getSamplingFrequency();
-    unsigned int optical_in_mode, optical_out_mode;
+    unsigned int optical_in_mode_a, optical_out_mode_a;
+    unsigned int optical_in_mode_b, optical_out_mode_b;
     unsigned int event_size_in = getEventSize(MOTU_DIR_IN);
     unsigned int event_size_out= getEventSize(MOTU_DIR_OUT);
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
 
-    getOpticalMode(MOTU_DIR_IN, &optical_in_mode, NULL);
-    getOpticalMode(MOTU_DIR_OUT, &optical_out_mode, NULL);
+    getOpticalMode(MOTU_DIR_IN, &optical_in_mode_a, &optical_in_mode_b);
+    getOpticalMode(MOTU_DIR_OUT, &optical_out_mode_a, &optical_out_mode_b);
 
     // Explicitly set the optical mode, primarily to ensure that the
     // MOTU_REG_OPTICAL_CTRL register is initialised.  We need to do this to
     // because some interfaces (the Ultralite for example) appear to power
     // up without this set to anything sensible.  In this case, writes to
     // MOTU_REG_ISOCTRL fail more often than not, which is bad.
-    setOpticalMode(MOTU_DIR_IN, optical_in_mode, MOTU_OPTICAL_MODE_KEEP);
-    setOpticalMode(MOTU_DIR_OUT, optical_out_mode, MOTU_OPTICAL_MODE_KEEP);
+    setOpticalMode(MOTU_DIR_IN, optical_in_mode_a, optical_in_mode_b);
+    setOpticalMode(MOTU_DIR_OUT, optical_out_mode_a, optical_out_mode_b);
 
     // Allocate bandwidth if not previously done.
     // FIXME: The bandwidth allocation calculation can probably be
@@ -1122,7 +1213,7 @@ MotuDevice::prepare() {
     }
 
     // Add audio capture ports
-    if (!addDirPorts(Streaming::Port::E_Capture, samp_freq, optical_in_mode)) {
+    if (!addDirPorts(Streaming::Port::E_Capture, samp_freq, optical_in_mode_a, optical_in_mode_b)) {
         return false;
     }
 
@@ -1180,7 +1271,7 @@ MotuDevice::prepare() {
     debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
 
     // Add audio playback ports
-    if (!addDirPorts(Streaming::Port::E_Playback, samp_freq, optical_out_mode)) {
+    if (!addDirPorts(Streaming::Port::E_Playback, samp_freq, optical_out_mode_a, optical_out_mode_b)) {
         return false;
     }
 
@@ -1382,7 +1473,9 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
     }
 
     if (getDeviceGeneration() == MOTU_DEVICE_G3) {
+        /* FIXME */
         debugOutput(DEBUG_LEVEL_INFO, "Optical mode control not implemented for Mark3/G3 devices yet");
+        *port_a_mode = *port_b_mode = MOTU_OPTICAL_MODE_ADAT;
         return 0;
     }
 
@@ -1431,6 +1524,7 @@ signed int MotuDevice::setOpticalMode(unsigned int dir,
     }
 
     if (getDeviceGeneration() == MOTU_DEVICE_G3) {
+        /* FIXME */
         debugOutput(DEBUG_LEVEL_INFO, "Optical mode control not implemented for Mark3/G3 devices yet");
         return 0;
     }
@@ -1499,14 +1593,15 @@ signed int MotuDevice::getEventSize(unsigned int direction) {
 // bytes (6 bytes).
 // Note that all audio channels are sent using 3 bytes.
 signed int sample_rate = getSamplingFrequency();
-unsigned int optical_mode;
+unsigned int optical_mode_a, optical_mode_b;
 signed int size = 4+6;
 
 unsigned int i;
 unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
-unsigned int flags = (1 << ( optical_mode + 4 ));
+unsigned int flags = 0;
+unsigned int port_flags;
 
-    getOpticalMode(direction, &optical_mode, NULL);
+    getOpticalMode(direction, &optical_mode_a, &optical_mode_b);
 
     if ( sample_rate > 96000 )
         flags |= MOTU_PA_RATE_4x;
@@ -1515,12 +1610,32 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     else
         flags |= MOTU_PA_RATE_1x;
 
+    switch (optical_mode_a) {
+        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_OPTICAL_OFF; break;
+        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_OPTICAL_ADAT; break;
+        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_OPTICAL_TOSLINK; break;
+    }
+    switch (optical_mode_b) {
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_MK3_OPT_ANY; break;
+        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_MK3_OPT_B_OFF; break;
+        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_MK3_OPT_B_ADAT; break;
+        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_MK3_OPT_B_TOSLINK; break;
+    }
+
     // Don't test for padding port flag here since we need to include such
     // pseudo-ports when calculating the event size.
     for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
-        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & dir ) &&
-	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_RATE_MASK & flags ) &&
-	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_OPTICAL_MASK & flags )) {
+        port_flags = DevicesProperty[m_motu_model-1].port_entry[i].port_flags;
+        /* Make sure the "port B" test returns true for devices without
+         * a port B.
+         */
+        if (optical_mode_b == MOTU_OPTICAL_MODE_NONE) {
+            port_flags |= MOTU_PA_MK3_OPT_ANY;
+        }
+        if (( port_flags & dir ) &&
+	   ( port_flags & MOTU_PA_RATE_MASK & flags ) &&
+	   ( port_flags & MOTU_PA_MK3_OPT_B_MASK & flags ) &&
+	   ( port_flags & MOTU_PA_OPTICAL_MASK & flags )) {
             size += 3;
         }
     }
@@ -1552,8 +1667,8 @@ Streaming::Port *p=NULL;
 /* ======================================================================= */
 
 bool MotuDevice::addDirPorts(
-  enum Streaming::Port::E_Direction direction,
-  unsigned int sample_rate, unsigned int optical_mode) {
+  enum Streaming::Port::E_Direction direction, unsigned int sample_rate, 
+  unsigned int optical_a_mode, unsigned int optical_b_mode) {
 /*
  * Internal helper method: adds all required ports for the given direction
  * based on the indicated sample rate and optical mode.
@@ -1567,7 +1682,9 @@ Streaming::StreamProcessor *s_processor;
 unsigned int i;
 char *buff;
 unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
-unsigned int flags = (1 << ( optical_mode + 4 ));
+unsigned int flags = 0;
+unsigned int port_flags;
+
 
     if ( sample_rate > 96000 )
         flags |= MOTU_PA_RATE_4x;
@@ -1575,6 +1692,18 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
         flags |= MOTU_PA_RATE_2x;
     else
         flags |= MOTU_PA_RATE_1x;
+
+    switch (optical_a_mode) {
+        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_OPTICAL_OFF; break;
+        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_OPTICAL_ADAT; break;
+        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_OPTICAL_TOSLINK; break;
+    }
+    switch (optical_b_mode) {
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_MK3_OPT_ANY; break;
+        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_MK3_OPT_B_OFF; break;
+        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_MK3_OPT_B_ADAT; break;
+        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_MK3_OPT_B_TOSLINK; break;
+    }
 
     // retrieve the ID
     std::string id=std::string("dev?");
@@ -1589,10 +1718,18 @@ unsigned int flags = (1 << ( optical_mode + 4 ));
     }
 
     for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
-        if (( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & dir ) &&
-	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_RATE_MASK & flags ) &&
-	   ( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
-	   !( DevicesProperty[m_motu_model-1].port_entry[i].port_flags & MOTU_PA_PADDING )) {
+        port_flags = DevicesProperty[m_motu_model-1].port_entry[i].port_flags;
+        /* For devices without an optical port B ensure the test on the 
+         * optical port B mode always returns "true".
+         */
+        if (optical_b_mode == MOTU_OPTICAL_MODE_NONE)
+            port_flags |= MOTU_PA_MK3_OPT_ANY;
+
+        if (( port_flags & dir ) &&
+	   ( port_flags & MOTU_PA_RATE_MASK & flags ) &&
+	   ( port_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
+	   ( port_flags & MOTU_PA_MK3_OPT_B_MASK & flags ) &&
+	   !( port_flags & MOTU_PA_PADDING )) {
 	    asprintf(&buff,"%s_%s_%s" , id.c_str(), mode_str,
               DevicesProperty[m_motu_model-1].port_entry[i].port_name);
             if (!addPort(s_processor, buff, direction, DevicesProperty[m_motu_model-1].port_entry[i].port_offset, 0))
