@@ -703,10 +703,10 @@ class Motu(QWidget):
         self.disable_hide(self.ana6_pad)
         self.disable_hide(self.ana7_pad)
         self.disable_hide(self.ana8_pad)
-        # The Traveler has level and boost switchs for analog 5-8.  The 
-        # Ultralite and the 896HD don't implement them.  All other interfaces 
-        # have them over analog 1-8.
-        if (self.model==MOTU_MODEL_TRAVELER or self.model==MOTU_MODEL_ULTRALITE or self.model==MOTU_MODEL_896HD):
+        # The Traveler has level and boost switches for analog 5-8.  The
+        # 8pre, Ultralite and the 896HD don't implement them.  All other
+        # interfaces have them over analog 1-8.
+        if (self.model==MOTU_MODEL_TRAVELER or self.model==MOTU_MODEL_ULTRALITE or self.model==MOTU_MODEL_896HD or self.model==MOTU_MODEL_8PRE):
             self.disable_hide(self.ana1_level)
             self.disable_hide(self.ana2_level)
             self.disable_hide(self.ana3_level)
@@ -715,7 +715,7 @@ class Motu(QWidget):
             self.disable_hide(self.ana2_boost)
             self.disable_hide(self.ana3_boost)
             self.disable_hide(self.ana4_boost)
-        if (self.model==MOTU_MODEL_ULTRALITE or self.model==MOTU_MODEL_896HD):
+        if (self.model==MOTU_MODEL_ULTRALITE or self.model==MOTU_MODEL_896HD or self.model==MOTU_MODEL_8PRE):
             self.disable_hide(self.ana5_level)
             self.disable_hide(self.ana6_level)
             self.disable_hide(self.ana7_level)
