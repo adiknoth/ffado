@@ -36,8 +36,6 @@
 #include "motu_controls.h"
 #include "motu_mark3_controls.h"
 
-#define MOTU_BASE_ADDR               0xfffff0000000ULL
-
 /* Bitmasks and values used when setting MOTU device registers.  Note that
  * the only "generation 1" device presently supported is the original 828.
  * "Generation 2" devices include the original Traveler, the 828Mk2, the
@@ -79,7 +77,13 @@
 #define MOTU_METER_PROG_SRC_MASK     0x0003
 #define MOTU_METER_PROG_SRC_SHIFT    0
 
-/* Device registers */
+/* Device registers.  The "base" registers (that is, those shared
+ * between the G1, G2 and G3 interfaces) are specified and assumed to
+ * be relative to MOTU_REG_BASE_ADDR.  The following block is notionally
+ * for G2 devices, although some of these are shared with G1 and G3 
+ * units too.
+ */
+#define MOTU_REG_BASE_ADDR         0xfffff0000000ULL
 #define MOTU_REG_ISOCTRL           0x0b00
 #define MOTU_REG_OPTICAL_CTRL      0x0b10
 #define MOTU_REG_CLK_CTRL          0x0b14
@@ -98,7 +102,9 @@
 #define MOTU_G1_REG_CONFIG         0x0b00
 #define MOTU_G1_REG_ISOCTRL        0x0b10
 
-/* There's an unknown subtlety regarding the optical mode of the "generation
+/* Values written to registers in G1 devices.
+ *
+ * There's an unknown subtlety regarding the optical mode of the "generation
  * 1" devices such as the 828Mk1.  It seems that the same configuration
  * register setting is used for "off" and "adat" modes.  There must be more
  * to this though because the number of audio channels sent presumedly
@@ -141,13 +147,14 @@
 #define MOTU_G1_MONIN_R_CH6        0x2000
 #define MOTU_G1_MONIN_R_CH8        0x3000
 
-/* Mark3 device registers - these don't have MOTU_BASE_ADDR as the base
- * address so for now we'll define them as absolute addresses.  The "Mark 3"
- * (aka G3) devices share a number of control registers with the G2 devices. 
- * Where this occurs we just use the G2 definitions since there's little to
- * be gained by adding duplicate defines.
+/* Mark3 device registers - these don't always have MOTU_BASE_ADDR as the
+ * base address so for now we'll define them as absolute addresses.  The
+ * "Mark 3" (aka G3) devices share a number of control registers with the G2
+ * devices.  Where this occurs we just use the G2 definitions since there's
+ * little to be gained by adding duplicate defines.
  */
-#define MOTU_MARK3_REG_MIXER     0xffff00010000LL
+#define MOTU_G3_REG_MIXER        0xffff00010000ULL
+#define MOTU_G3_REG_OPTICAL_CTRL 0xfffff0000c94ULL
 
 /* Mark3 (aka G3) register constants for cases where the G3 devices differ
  * from the G2s.
@@ -163,6 +170,19 @@
 #define MOTU_G3_CLKSRC_ADAT_B    MOTU_G3_CLKSRC_OPTICAL_B
 #define MOTU_G3_CLKSRC_TOSLINK_A MOTU_G3_CLKSRC_OPTICAL_A
 #define MOTU_G3_CLKSRC_TOSLINK_B MOTU_G3_CLKSRC_OPTICAL_A
+
+#define MOTU_G3_OPT_A_IN_ENABLE   0x00000001
+#define MOTU_G3_OPT_B_IN_ENABLE   0x00000002
+#define MOTU_G3_OPT_A_OUT_ENABLE  0x00000100
+#define MOTU_G3_OPT_B_OUT_ENABLE  0x00000200
+#define MOTU_G3_OPT_A_IN_TOSLINK  0x00010000  // If these mode bits are not 
+#define MOTU_G3_OPT_A_OUT_TOSLINK 0x00040000  //   set the mode is ADAT if
+#define MOTU_G3_OPT_B_IN_TOSLINK  0x00100000  //   the port is enabled
+#define MOTU_G3_OPT_B_OUT_TOSLINK 0x00400000
+#define MOTU_G3_OPT_A_IN_MASK     (MOTU_G3_OPT_A_IN_ENABLE|MOTU_G3_OPT_A_IN_TOSLINK)
+#define MOTU_G3_OPT_A_OUT_MASK    (MOTU_G3_OPT_A_OUT_ENABLE|MOTU_G3_OPT_A_OUT_TOSLINK)
+#define MOTU_G3_OPT_B_IN_MASK     (MOTU_G3_OPT_B_IN_ENABLE|MOTU_G3_OPT_B_IN_TOSLINK)
+#define MOTU_G3_OPT_B_OUT_MASK    (MOTU_G3_OPT_B_OUT_ENABLE|MOTU_G3_OPT_B_OUT_TOSLINK)
 
 /* The following values are used when defining configuration structures and
  * calling driver functions.  They are generally not raw values written to
@@ -386,8 +406,8 @@ private:
         unsigned int optical_a_mode, unsigned int optical_b_mode);
 
 public:
-    unsigned int ReadRegister(unsigned int reg);
-    signed int WriteRegister(unsigned int reg, quadlet_t data);
+    unsigned int ReadRegister(fb_nodeaddr_t reg);
+    signed int WriteRegister(fb_nodeaddr_t reg, quadlet_t data);
 
 private:
     Control::Container *m_MixerContainer;

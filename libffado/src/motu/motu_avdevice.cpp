@@ -1473,9 +1473,32 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
     }
 
     if (getDeviceGeneration() == MOTU_DEVICE_G3) {
-        /* FIXME */
-        debugOutput(DEBUG_LEVEL_INFO, "Optical mode control not implemented for Mark3/G3 devices yet");
-        *port_a_mode = *port_b_mode = MOTU_OPTICAL_MODE_ADAT;
+        unsigned int mask, enable, toslink;
+        reg = ReadRegister(MOTU_G3_REG_OPTICAL_CTRL);
+        if (port_a_mode != NULL) {
+            mask = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_A_IN_MASK:MOTU_G3_OPT_A_OUT_MASK;
+            enable = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_A_IN_ENABLE:MOTU_G3_OPT_A_OUT_ENABLE;
+            toslink = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_A_IN_TOSLINK:MOTU_G3_OPT_A_OUT_TOSLINK;
+            if ((reg & enable) == 0)
+              *port_a_mode = MOTU_OPTICAL_MODE_OFF;
+            else
+            if ((reg * toslink) == 0)
+              *port_a_mode = MOTU_OPTICAL_MODE_TOSLINK;
+            else
+              *port_a_mode = MOTU_OPTICAL_MODE_ADAT;
+        }
+        if (port_b_mode != NULL) {
+            mask = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_B_IN_MASK:MOTU_G3_OPT_B_OUT_MASK;
+            enable = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_B_IN_ENABLE:MOTU_G3_OPT_B_OUT_ENABLE;
+            toslink = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_B_IN_TOSLINK:MOTU_G3_OPT_B_OUT_TOSLINK;
+            if ((reg & enable) == 0)
+              *port_b_mode = MOTU_OPTICAL_MODE_OFF;
+            else
+            if ((reg * toslink) == 0)
+              *port_b_mode = MOTU_OPTICAL_MODE_TOSLINK;
+            else
+              *port_b_mode = MOTU_OPTICAL_MODE_ADAT;
+        }
         return 0;
     }
 
@@ -1523,10 +1546,52 @@ signed int MotuDevice::setOpticalMode(unsigned int dir,
         return WriteRegister(MOTU_G1_REG_CONFIG, reg);
     }
 
+    /* The G3 devices are also quite a bit different to the G2 units */
     if (getDeviceGeneration() == MOTU_DEVICE_G3) {
-        /* FIXME */
-        debugOutput(DEBUG_LEVEL_INFO, "Optical mode control not implemented for Mark3/G3 devices yet");
-        return 0;
+        unsigned int mask, enable, toslink;
+        reg = ReadRegister(MOTU_G3_REG_OPTICAL_CTRL);
+        if (port_a_mode != MOTU_OPTICAL_MODE_KEEP) {
+            mask = enable = toslink = 0;
+            if (dir & MOTU_DIR_IN) {
+                 mask |= MOTU_G3_OPT_A_IN_MASK;
+                 enable |= MOTU_G3_OPT_A_IN_ENABLE;
+                 toslink |= MOTU_G3_OPT_A_IN_TOSLINK;
+            }
+            if (dir & MOTU_DIR_OUT) {
+                 mask |= MOTU_G3_OPT_A_OUT_MASK;
+                 enable |= MOTU_G3_OPT_A_OUT_ENABLE;
+                 toslink |= MOTU_G3_OPT_A_OUT_TOSLINK;
+            }
+            reg = (reg & ~mask) | enable;
+            switch (port_a_mode) {
+                case MOTU_OPTICAL_MODE_OFF: reg &= ~enable; break;
+                case MOTU_OPTICAL_MODE_TOSLINK: reg |= toslink; break;
+            }
+        }
+        if (port_b_mode != MOTU_OPTICAL_MODE_KEEP) {
+            mask = enable = toslink = 0;
+            if (dir & MOTU_DIR_IN) {
+                 mask |= MOTU_G3_OPT_B_IN_MASK;
+                 enable |= MOTU_G3_OPT_B_IN_ENABLE;
+                 toslink |= MOTU_G3_OPT_B_IN_TOSLINK;
+            }
+            if (dir & MOTU_DIR_OUT) {
+                 mask |= MOTU_G3_OPT_B_OUT_MASK;
+                 enable |= MOTU_G3_OPT_B_OUT_ENABLE;
+                 toslink |= MOTU_G3_OPT_B_OUT_TOSLINK;
+            }
+            reg = (reg & ~mask) | enable;
+            switch (port_a_mode) {
+                case MOTU_OPTICAL_MODE_OFF: reg &= ~enable; break;
+                case MOTU_OPTICAL_MODE_TOSLINK: reg |= toslink; break;
+            }
+            reg = (reg & ~mask) | enable;
+            switch (port_b_mode) {
+                case MOTU_OPTICAL_MODE_OFF: reg &= ~enable; break;
+                case MOTU_OPTICAL_MODE_TOSLINK: reg |= toslink; break;
+            }
+        }
+        return WriteRegister(MOTU_G3_REG_OPTICAL_CTRL, reg);
     }
 
     reg = ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
@@ -1616,7 +1681,7 @@ unsigned int port_flags;
         case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_OPTICAL_TOSLINK; break;
     }
     switch (optical_mode_b) {
-        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_MK3_OPT_ANY; break;
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_MK3_OPT_B_ANY; break;
         case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_MK3_OPT_B_OFF; break;
         case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_MK3_OPT_B_ADAT; break;
         case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_MK3_OPT_B_TOSLINK; break;
@@ -1630,7 +1695,7 @@ unsigned int port_flags;
          * a port B.
          */
         if (optical_mode_b == MOTU_OPTICAL_MODE_NONE) {
-            port_flags |= MOTU_PA_MK3_OPT_ANY;
+            port_flags |= MOTU_PA_MK3_OPT_B_ANY;
         }
         if (( port_flags & dir ) &&
 	   ( port_flags & MOTU_PA_RATE_MASK & flags ) &&
@@ -1699,7 +1764,7 @@ unsigned int port_flags;
         case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_OPTICAL_TOSLINK; break;
     }
     switch (optical_b_mode) {
-        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_MK3_OPT_ANY; break;
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_MK3_OPT_B_ANY; break;
         case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_MK3_OPT_B_OFF; break;
         case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_MK3_OPT_B_ADAT; break;
         case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_MK3_OPT_B_TOSLINK; break;
@@ -1723,7 +1788,7 @@ unsigned int port_flags;
          * optical port B mode always returns "true".
          */
         if (optical_b_mode == MOTU_OPTICAL_MODE_NONE)
-            port_flags |= MOTU_PA_MK3_OPT_ANY;
+            port_flags |= MOTU_PA_MK3_OPT_B_ANY;
 
         if (( port_flags & dir ) &&
 	   ( port_flags & MOTU_PA_RATE_MASK & flags ) &&
@@ -1741,38 +1806,49 @@ unsigned int port_flags;
 }
 /* ======================================================================== */
 
-unsigned int MotuDevice::ReadRegister(unsigned int reg) {
+unsigned int MotuDevice::ReadRegister(fb_nodeaddr_t reg) {
 /*
  * Attempts to read the requested register from the MOTU.
  */
 
-  quadlet_t quadlet;
+    quadlet_t quadlet = 0;
 
-  quadlet = 0;
-  // Note: 1394Service::read() expects a physical ID, not the node id
-  if (get1394Service().read(0xffc0 | getNodeId(), MOTU_BASE_ADDR+reg, 1, &quadlet) <= 0) {
-    debugError("Error doing motu read from register 0x%06x\n",reg);
-  }
+    /* If the supplied register has no upper bits set assume it's a G1/G2
+     * register which is assumed to be relative to MOTU_REG_BASE_ADDR.
+     */
+    if ((reg & MOTU_REG_BASE_ADDR) == 0)
+        reg |= MOTU_REG_BASE_ADDR;
 
-  return CondSwapFromBus32(quadlet);
+    // Note: 1394Service::read() expects a physical ID, not the node id
+    if (get1394Service().read(0xffc0 | getNodeId(), reg, 1, &quadlet) <= 0) {
+        debugError("Error doing motu read from register 0x%012llx\n",reg);
+    }
+
+    return CondSwapFromBus32(quadlet);
 }
 
-signed int MotuDevice::WriteRegister(unsigned int reg, quadlet_t data) {
+signed int MotuDevice::WriteRegister(fb_nodeaddr_t reg, quadlet_t data) {
 /*
  * Attempts to write the given data to the requested MOTU register.
  */
 
-  unsigned int err = 0;
-  data = CondSwapToBus32(data);
+    unsigned int err = 0;
+    data = CondSwapToBus32(data);
 
-  // Note: 1394Service::write() expects a physical ID, not the node id
-  if (get1394Service().write(0xffc0 | getNodeId(), MOTU_BASE_ADDR+reg, 1, &data) <= 0) {
-    err = 1;
-    debugError("Error doing motu write to register 0x%06x\n",reg);
-  }
+    /* If the supplied register has no upper bits set assume it's a G1/G2
+     * register which is assumed to be relative to MOTU_REG_BASE_ADDR.
+     */
+    if ((reg & MOTU_REG_BASE_ADDR) == 0)
+        reg |= MOTU_REG_BASE_ADDR;
 
-  SleepRelativeUsec(100);
-  return (err==0)?0:-1;
+    // Note: 1394Service::write() expects a physical ID, not the node id
+    if (get1394Service().write(0xffc0 | getNodeId(), reg, 1, &data) <= 0) {
+        err = 1;
+        debugError("Error doing motu write to register 0x%012llx\n",reg);
+    }
+
+    SleepRelativeUsec(100);
+    return (err==0)?0:-1;
 }
 
 }

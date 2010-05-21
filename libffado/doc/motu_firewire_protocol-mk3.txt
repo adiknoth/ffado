@@ -112,10 +112,14 @@ The modes of the two optical ports can be controlled independently.  The
 primary mechanism for this is via a quadlet write to register
 0xfffff0000c94.
 
-  Bit 17: optical port B mode (0=ADAT, 1=Toslink)
-  Bit 16: optical port A mode (0=ADAT, 1=Toslink)
-  Bit  1: optical port B enabled (0=disabled, 1=enabled)
-  Bit  0: optical port A enabled (0=disabled, 1=enabled)
+  Bit 22: optical port B output mode (0=ADAT, 1=Toslink)
+  Bit 20: optical port B input mode (0=ADAT, 1=Toslink)
+  Bit 18: optical port A output mode (0=ADAT, 1=Toslink)
+  Bit 16: optical port A input mode (0=ADAT, 1=Toslink)
+  Bit  9: optical port B output enabled (0=disabled, 1=enabled)
+  Bit  8: optical port A output enabled (0=disabled, 1=enabled)
+  Bit  1: optical port B input enabled (0=disabled, 1=enabled)
+  Bit  0: optical port A input enabled (0=disabled, 1=enabled)
 
 Other areas of the driver also appear to refresh the device status with
 writes to other registers at the time the optical mode is updated:
