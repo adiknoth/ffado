@@ -269,6 +269,17 @@ const MatrixMixChannel MixerChannels_8pre[] = {
     {"Analog 6", MOTU_CTRL_STD_CHANNEL, 0x0014, },
     {"Analog 7", MOTU_CTRL_STD_CHANNEL, 0x0018, },
     {"Analog 8", MOTU_CTRL_STD_CHANNEL, 0x001c, },
+    //
+    // The Ultralite doesn't include AES/EBU or SPDIF mixer controls, but
+    // "pad" mixer entries are required so the index of the ADAT controls
+    // within the various matrix mixers remain unchanged compared to other
+    // interfaces.  This in turn means the python ffado-mixer code doesn't
+    // have to deal with differing layouts within the matrix mixer controls.
+    {"AES/EBU 1", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"AES/EBU 2", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"SPDIF 1", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    {"SPDIF 2", MOTU_CTRL_STD_CHANNEL, MOTU_CTRL_NONE, },
+    //
     {"ADAT 1", MOTU_CTRL_STD_CHANNEL, 0x0020, },
     {"ADAT 2", MOTU_CTRL_STD_CHANNEL, 0x0024, },
     {"ADAT 3", MOTU_CTRL_STD_CHANNEL, 0x0028, },

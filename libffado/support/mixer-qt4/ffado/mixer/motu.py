@@ -632,6 +632,11 @@ class Motu(QWidget):
             self.optical_in_mode.removeItem(2)
             self.optical_out_mode.removeItem(2)
 
+        # The 8pre doesn't have software phones/main fader controls
+        if (self.model==MOTU_MODEL_8PRE):
+            self.disable_hide(self.mainout_fader)
+            self.disable_hide(self.phones_fader)
+
         # Only the 896HD has meter controls
         if (self.model != MOTU_MODEL_896HD):
             self.disable_hide(self.meter_src)
