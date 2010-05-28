@@ -29,13 +29,16 @@ import logging
 log = logging.getLogger('motu')
 
 # Model defines.  These must agree with what is used in motu_avdevice.h.
-MOTU_MODEL_NONE     = 0x0000
-MOTU_MODEL_828mkII  = 0x0001
-MOTU_MODEL_TRAVELER = 0x0002
-MOTU_MODEL_ULTRALITE= 0x0003
-MOTU_MODEL_8PRE     = 0x0004
-MOTU_MODEL_828MkI   = 0x0005
-MOTU_MODEL_896HD    = 0x0006
+MOTU_MODEL_NONE             = 0x0000
+MOTU_MODEL_828mkII          = 0x0001
+MOTU_MODEL_TRAVELER         = 0x0002
+MOTU_MODEL_ULTRALITE        = 0x0003
+MOTU_MODEL_8PRE             = 0x0004
+MOTU_MODEL_828MkI           = 0x0005
+MOTU_MODEL_896HD            = 0x0006
+MOTU_MODEL_828mk3           = 0x0007
+MOTU_MODEL_ULTRALITEmk3     = 0x0008
+MOTU_MODEL_ULTRALITEmk3_HYB = 0x0009
 
 class Motu(QWidget):
     def __init__(self,parent = None):
@@ -563,6 +566,12 @@ class Motu(QWidget):
         log.debug("device model identifier: %d" % (self.model))
         self.sample_rate = self.hw.getDiscrete('/Mixer/Info/SampleRate')
         log.debug("device sample rate: %d" % (self.sample_rate))
+
+        # For the moment none of the "Mk3" (aka Generation-3) devices are
+        # supported by ffado-mixer.
+        if (self.model==MOTU_MODEL_828mk3 or self.mode==MOTU_MODEL_ULTRALITEmk3 or self.mode==MOTU_MODEL_ULTRALITEmk3_HYB):
+            log.debug("Generation-3 MOTU devices are not yet supported by ffado-mixer")
+            return
 
         # The 828Mk2 has separate Mic inputs but no AES/EBU, so use the
         # AES/EBU mixer controls as "Mic" controls.  If a device comes along

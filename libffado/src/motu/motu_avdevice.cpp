@@ -68,7 +68,8 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_MOTU, 0, 0x00000001, 0x000001f2, MOTU_MODEL_828MkI, "MOTU", "828MkI"},
     {FW_VENDORID_MOTU, 0, 0x00000005, 0x000001f2, MOTU_MODEL_896HD, "MOTU", "896HD"},
     {FW_VENDORID_MOTU, 0, 0x00000015, 0x000001f2, MOTU_MODEL_828mk3, "MOTU", "828Mk3"},
-    {FW_VENDORID_MOTU, 0, 0x00000019, 0x000001f2, MOTU_MODEL_ULTRALITEmk3, "MOTU", "UltraLineMk3"},
+    {FW_VENDORID_MOTU, 0, 0x00000019, 0x000001f2, MOTU_MODEL_ULTRALITEmk3, "MOTU", "UltraLiteMk3"},
+    {FW_VENDORID_MOTU, 0, 0x00000030, 0x000001f2, MOTU_MODEL_ULTRALITEmk3_HYB, "MOTU", "UltraLiteMk3-hybrid"},
 };
 
 // Ports declarations
@@ -477,7 +478,8 @@ const DevicePropertyEntry DevicesProperty[] = {
     { Ports_828MKI,       N_ELEMENTS( Ports_828MKI ),        48000 },
     { Ports_896HD,        N_ELEMENTS( Ports_896HD ),        192000, &Mixer_896HD, NULL, },
     { Ports_828mk3,       N_ELEMENTS( Ports_828mk3 ),       192000 },
-    { Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 },
+    { Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 }, // Ultralite mk3
+    { Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 }, // Ultralite mk3 hybrid
 };
 
 MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
@@ -1438,7 +1440,8 @@ signed int MotuDevice::getDeviceGeneration(void) {
     if (m_motu_model == MOTU_MODEL_828MkI)
         return MOTU_DEVICE_G1;
     if (m_motu_model==MOTU_MODEL_828mk3 ||
-        m_motu_model==MOTU_MODEL_ULTRALITEmk3)
+        m_motu_model==MOTU_MODEL_ULTRALITEmk3 ||
+        m_motu_model==MOTU_MODEL_ULTRALITEmk3_HYB)
         return MOTU_DEVICE_G3;
     return MOTU_DEVICE_G2;
 }

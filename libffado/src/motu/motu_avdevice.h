@@ -262,15 +262,16 @@ namespace Util {
 namespace Motu {
 
 enum EMotuModel {
-    MOTU_MODEL_NONE         = 0x0000,
-    MOTU_MODEL_828mkII      = 0x0001,
-    MOTU_MODEL_TRAVELER     = 0x0002,
-    MOTU_MODEL_ULTRALITE    = 0x0003,
-    MOTU_MODEL_8PRE         = 0x0004,
-    MOTU_MODEL_828MkI       = 0x0005,
-    MOTU_MODEL_896HD        = 0x0006,
-    MOTU_MODEL_828mk3       = 0x0007,
-    MOTU_MODEL_ULTRALITEmk3 = 0x0008,
+    MOTU_MODEL_NONE             = 0x0000,
+    MOTU_MODEL_828mkII          = 0x0001,
+    MOTU_MODEL_TRAVELER         = 0x0002,
+    MOTU_MODEL_ULTRALITE        = 0x0003,
+    MOTU_MODEL_8PRE             = 0x0004,
+    MOTU_MODEL_828MkI           = 0x0005,
+    MOTU_MODEL_896HD            = 0x0006,
+    MOTU_MODEL_828mk3           = 0x0007,
+    MOTU_MODEL_ULTRALITEmk3     = 0x0008,
+    MOTU_MODEL_ULTRALITEmk3_HYB = 0x0009,
 };
 
 struct VendorModelEntry {
