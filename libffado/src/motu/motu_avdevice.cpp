@@ -1048,14 +1048,24 @@ MotuDevice::getSupportedClockSources() {
     s = clockIdToClockSource(MOTU_CLKSRC_WORDCLOCK);
     r.push_back(s);
 
-    if (device_gen < MOTU_DEVICE_G3) {
+    /* The 9-pin ADAT sync was only present on selected G2
+     * devices.
+     */
+    if (m_motu_model==MOTU_MODEL_828mkII || m_motu_model==MOTU_MODEL_TRAVELER ||
+        m_motu_model==MOTU_MODEL_896HD) {
         s = clockIdToClockSource(MOTU_CLKSRC_ADAT_9PIN);
         r.push_back(s);
     }
-    s = clockIdToClockSource(MOTU_CLKSRC_AES_EBU);
-    r.push_back(s);
+    /* AES/EBU is present on the G2/G3 Travelers and 896HDs */
+    if (m_motu_model==MOTU_MODEL_TRAVELER || m_motu_model==MOTU_MODEL_TRAVELERmk3 ||
+        m_motu_model==MOTU_MODEL_896HD || m_motu_model==MOTU_MODEL_896HDmk3) {
+        s = clockIdToClockSource(MOTU_CLKSRC_AES_EBU);
+        r.push_back(s);
+    }
 
-    if (device_gen == MOTU_DEVICE_G3) {
+    /* Dual-port ADAT is a feature of the G3 devices, and then only some */
+    if (m_motu_model==MOTU_MODEL_828mk3 || m_motu_model==MOTU_MODEL_TRAVELERmk3 ||
+        m_motu_model==MOTU_MODEL_896HDmk3) {
         s = clockIdToClockSource(MOTU_CLKSRC_OPTICAL_A);
         r.push_back(s);
         s = clockIdToClockSource(MOTU_CLKSRC_OPTICAL_B);
