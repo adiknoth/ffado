@@ -1489,6 +1489,14 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
 
     if (getDeviceGeneration() == MOTU_DEVICE_G3) {
         unsigned int mask, enable, toslink;
+        /* The Ultralite Mk3s don't have any optical ports.  All others have 2. */
+        if (m_motu_model==MOTU_MODEL_ULTRALITEmk3 || m_motu_model==MOTU_MODEL_ULTRALITEmk3_HYB) {
+            if (port_a_mode != NULL)
+                *port_a_mode = MOTU_OPTICAL_MODE_NONE;
+            if (port_b_mode != NULL)
+                *port_b_mode = MOTU_OPTICAL_MODE_NONE;
+            return 0;
+        }
         reg = ReadRegister(MOTU_G3_REG_OPTICAL_CTRL);
         if (port_a_mode != NULL) {
             mask = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_A_IN_MASK:MOTU_G3_OPT_A_OUT_MASK;
@@ -1691,6 +1699,7 @@ unsigned int port_flags;
         flags |= MOTU_PA_RATE_1x;
 
     switch (optical_mode_a) {
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_OPTICAL_ANY; break;
         case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_OPTICAL_OFF; break;
         case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_OPTICAL_ADAT; break;
         case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_OPTICAL_TOSLINK; break;
@@ -1706,9 +1715,12 @@ unsigned int port_flags;
     // pseudo-ports when calculating the event size.
     for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
         port_flags = DevicesProperty[m_motu_model-1].port_entry[i].port_flags;
-        /* Make sure the "port B" test returns true for devices without
-         * a port B.
+        /* Make sure the optical port tests return true for devices without
+         * one or both optical ports.
          */
+        if (optical_mode_a == MOTU_OPTICAL_MODE_NONE) {
+            port_flags |= MOTU_PA_OPTICAL_ANY;
+        }
         if (optical_mode_b == MOTU_OPTICAL_MODE_NONE) {
             port_flags |= MOTU_PA_MK3_OPT_B_ANY;
         }
@@ -1774,6 +1786,7 @@ unsigned int port_flags;
         flags |= MOTU_PA_RATE_1x;
 
     switch (optical_a_mode) {
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_OPTICAL_ANY; break;
         case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_OPTICAL_OFF; break;
         case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_OPTICAL_ADAT; break;
         case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_OPTICAL_TOSLINK; break;
@@ -1799,9 +1812,11 @@ unsigned int port_flags;
 
     for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
         port_flags = DevicesProperty[m_motu_model-1].port_entry[i].port_flags;
-        /* For devices without an optical port B ensure the test on the 
-         * optical port B mode always returns "true".
+        /* For devices without one or more optical ports, ensure the tests
+         * on the optical ports always returns "true".
          */
+        if (optical_a_mode == MOTU_OPTICAL_MODE_NONE)
+            port_flags |= MOTU_PA_OPTICAL_ANY;
         if (optical_b_mode == MOTU_OPTICAL_MODE_NONE)
             port_flags |= MOTU_PA_MK3_OPT_B_ANY;
 
