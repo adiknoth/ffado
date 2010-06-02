@@ -694,8 +694,9 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
  */
     const char *src_name;
     quadlet_t q, new_rate=0xffffffff;
-    int i, supported=true, cancel_adat=false;
+    signed int i, supported=true, cancel_adat=false;
     quadlet_t reg;
+    unsigned int rate_mask = 0;
     unsigned int old_clock_src = getHwClockSource();
     signed int device_gen = getDeviceGeneration();
 
@@ -748,32 +749,42 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
 
     reg = ReadRegister(MOTU_REG_CLK_CTRL);
 
-    /* Control of sampling rate is the same for both G2 and G3 devices */
-    switch ( samplingFrequency ) {
-        case -1:
-            break;
-        case 44100:
-            new_rate = MOTU_RATE_BASE_44100 | MOTU_RATE_MULTIPLIER_1X;
-            break;
-        case 48000:
-            new_rate = MOTU_RATE_BASE_48000 | MOTU_RATE_MULTIPLIER_1X;
-            break;
-        case 88200:
-            new_rate = MOTU_RATE_BASE_44100 | MOTU_RATE_MULTIPLIER_2X;
-            break;
-        case 96000:
-            new_rate = MOTU_RATE_BASE_48000 | MOTU_RATE_MULTIPLIER_2X;
-            break;
-        case 176400:
-            new_rate = MOTU_RATE_BASE_44100 | MOTU_RATE_MULTIPLIER_4X;
-            cancel_adat = true;  // current ADAT protocol doesn't support sample rate > 96000
-            break;
-        case 192000:
-            new_rate = MOTU_RATE_BASE_48000 | MOTU_RATE_MULTIPLIER_4X;
-            cancel_adat = true;
-            break;
-        default:
-            supported=false;
+    /* The method of controlling the sampling rate is the same for G2/G3 
+     * devices but the actual bits used in the rate control register differ.
+     */
+    if (device_gen == MOTU_DEVICE_G2) {
+        rate_mask = MOTU_RATE_BASE_MASK | MOTU_RATE_MULTIPLIER_MASK;
+        switch ( samplingFrequency ) {
+            case -1: break;
+            case 44100: new_rate = MOTU_RATE_BASE_44100 | MOTU_RATE_MULTIPLIER_1X; break;
+            case 48000: new_rate = MOTU_RATE_BASE_48000 | MOTU_RATE_MULTIPLIER_1X; break;
+            case 88200: new_rate = MOTU_RATE_BASE_44100 | MOTU_RATE_MULTIPLIER_2X; break;
+            case 96000: new_rate = MOTU_RATE_BASE_48000 | MOTU_RATE_MULTIPLIER_2X; break;
+            case 176400: new_rate = MOTU_RATE_BASE_44100 | MOTU_RATE_MULTIPLIER_4X; break;
+            case 192000: new_rate = MOTU_RATE_BASE_48000 | MOTU_RATE_MULTIPLIER_4X; break;
+            default:
+                supported=false;
+        }
+    } else 
+    if (device_gen == MOTU_DEVICE_G3) {
+        rate_mask = MOTU_G3_RATE_BASE_MASK | MOTU_G3_RATE_MULTIPLIER_MASK;
+        switch ( samplingFrequency ) {
+            case -1: break;
+            case 44100: new_rate = MOTU_G3_RATE_BASE_44100 | MOTU_G3_RATE_MULTIPLIER_1X; break;
+            case 48000: new_rate = MOTU_G3_RATE_BASE_48000 | MOTU_G3_RATE_MULTIPLIER_1X; break;
+            case 88200: new_rate = MOTU_G3_RATE_BASE_44100 | MOTU_G3_RATE_MULTIPLIER_2X; break;
+            case 96000: new_rate = MOTU_G3_RATE_BASE_48000 | MOTU_G3_RATE_MULTIPLIER_2X; break;
+            case 176400: new_rate = MOTU_G3_RATE_BASE_44100 | MOTU_G3_RATE_MULTIPLIER_4X; break;
+            case 192000: new_rate = MOTU_G3_RATE_BASE_48000 | MOTU_G3_RATE_MULTIPLIER_4X; break;
+            default:
+                supported=false;
+        }
+    }
+    /* ADAT output is only possible for sample rates up to 96 kHz.  For
+     * anything higher, force the ADAT channels off.
+     */
+    if (samplingFrequency > 96000) {
+      cancel_adat = true;
     }
 
     // Sanity check the clock source
@@ -795,7 +806,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
 
         // Set up new frequency if requested
         if (new_rate != 0xffffffff) {
-            reg &= ~(MOTU_RATE_BASE_MASK|MOTU_RATE_MULTIPLIER_MASK);
+            reg &= ~rate_mask;
             reg |= new_rate;
         }
 
