@@ -72,6 +72,9 @@ RmeReceiveStreamProcessor::RmeReceiveStreamProcessor(FFADODevice &parent,
 unsigned int
 RmeReceiveStreamProcessor::getMaxPacketSize() {
     int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
+    // FIXME: the additional 8 bytes is not needed.
+    // FIXME: the upper bounds of the 1x and 2x rates need to account for the
+    //   DDS capability to run fast by 4%.
     if (m_rme_model == Rme::RME_MODEL_FIREFACE800)
         return 8 + (framerate<=48000?784:(framerate<=96000?1200:1200));
     else
@@ -106,7 +109,7 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
                                                 uint32_t pkt_ctr)
 {
 // For testing
-debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header\n");
+debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
 
     if (length > 8) {
         // The iso data blocks from the RMEs comprise 24-bit audio
@@ -128,8 +131,11 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header\n");
         // rest of the FFADO infrastructure.  For now just take the current
         // value of the cycle timer as the "last timestamp".  In practice 
         // there a fixed offset that we'll have to include eventually.
-        m_last_timestamp = CYCLE_TIMER_TO_TICKS(m_Parent.get1394Service().getCycleTimer());
-
+uint32_t ct = m_Parent.get1394Service().getCycleTimer();
+//        m_last_timestamp = CYCLE_TIMER_TO_TICKS(ctm_Parent.get1394Service().getCycleTimer());
+        m_last_timestamp = CYCLE_TIMER_TO_TICKS(ct);
+debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, ct,
+  CYCLE_TIMER_GET_SECS(ct), CYCLE_TIMER_GET_CYCLES(ct), CYCLE_TIMER_GET_OFFSET(ct));
         return eCRV_OK;
     } else {
         return eCRV_Invalid;
@@ -150,7 +156,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header\n");
 enum StreamProcessor::eChildReturnValue
 RmeReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int length) {
     // m_event_size should never be zero
-    unsigned int n_events = (length-8) / m_event_size;
+    unsigned int n_events = length / m_event_size;
 
     // we have to keep in mind that there are also
     // some packets buffered by the ISO layer,
@@ -167,7 +173,7 @@ RmeReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int l
     #endif
 
 // For testing
-debugOutput(DEBUG_LEVEL_VERBOSE, "data packet data\n");
+debugOutput(DEBUG_LEVEL_VERBOSE, "data packet data, length=%d, ev_size=%d, n_events=%d\n", length, m_event_size, n_events);
 
     if(m_data_buffer->writeFrames(n_events, (char *)data, m_last_timestamp)) {
         return eCRV_OK;

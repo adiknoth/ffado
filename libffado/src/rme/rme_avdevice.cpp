@@ -644,10 +644,12 @@ printf("\n");
     config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "recv_sp_dll_bw", recv_sp_dll_bw);
     config.getValueForDeviceSetting(getConfigRom().getNodeVendorId(), getConfigRom().getModelId(), "xmit_sp_dll_bw", xmit_sp_dll_bw);
 
+    // Calculate the event size.  Each audio channel is allocated 4 bytes in
+    // the data stream.
+    /* FIXME: this will still require fine-tuning, but it's a start */
+    signed int event_size = num_channels * 4;
+
     // Set up receive stream processor, initialise it and set DLL bw
-    // TODO: set event_size properly; the value below is just a placeholder.
-    signed int event_size = 0x1000;
-    #warning event_size needs setting up
     m_receiveProcessor = new Streaming::RmeReceiveStreamProcessor(*this, 
       m_rme_model, event_size);
     m_receiveProcessor->setVerboseLevel(getDebugLevel());
