@@ -109,6 +109,7 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
                                                 uint32_t pkt_ctr)
 {
 // For testing
+quadlet_t *adata = (quadlet_t *)data;
 debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
 
     if (length > 8) {
@@ -136,6 +137,12 @@ uint32_t ct = m_Parent.get1394Service().getCycleTimer();
         m_last_timestamp = CYCLE_TIMER_TO_TICKS(ct);
 debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, ct,
   CYCLE_TIMER_GET_SECS(ct), CYCLE_TIMER_GET_CYCLES(ct), CYCLE_TIMER_GET_OFFSET(ct));
+debugOutput(DEBUG_LEVEL_VERBOSE, "  %02x %02x %02x %02x %02x %02x %02x %02x\n",
+  adata[0] & 0xff, adata[1] & 0xff, adata[2] & 0xff, adata[3] & 0xff,
+  adata[4] & 0xff, adata[5] & 0xff, adata[6] & 0xff, adata[7] & 0xff);
+debugOutput(DEBUG_LEVEL_VERBOSE, "  tx size=%d, rxcount=%d\n",
+  ((adata[5] & 0xff) << 8) | (adata[0] & 0xff),
+  ((adata[4] & 0xff) << 8) | (adata[1] & 0xff));
         return eCRV_OK;
     } else {
         return eCRV_Invalid;

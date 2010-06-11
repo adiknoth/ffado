@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.18
+Version: 0.19
 Author: Jonathan Woithe
-Date: 17 October 2009
+Date: 11 June 2010
 
 
 Definitions
@@ -619,10 +619,10 @@ is sent on iso channel 1.
 No CIP header is included in the iso data packet.  Fireface data follows
 immediately after the standard 2-quadlet firewire iso packet header.
 
-Each iso packet contains a number of samples across all 28 device channels.
-For 1x rates, 7 samples per channel seem to be sent.  Thus the size of 
-the data portion of a 1x iso packet is 28*4*7 = 784, with a total packet
-size being 784 + 8 = 792.
+Each iso packet contains a number of samples across all 28 device channels
+(18 channels in the case of the ff400).  For 1x rates, 7 samples per channel
+seem to be sent.  Thus the size of the data portion of a 1x iso packet is
+28*4*7 = 784, with a total packet size being 784 + 8 = 792.
 
 The data is sent with one audio channel per quadlet.  The audio data is a 24
 bit integer stored in the most-significant 3 bytes of a quadlet.  The LSB
@@ -654,6 +654,15 @@ though this is the same as the number of samples per channel per packet, a
 given packet can experience a change in the "current frame" part way
 through.  In other words, the "current frame" is not necessarily constant
 for all samples in a packet.
+
+With the number of samples per channel contained in each iso packet it is
+not necessary for the RME to send audio data in every iso cycle.  When it is
+deemed that a cycle can be skipped the RME simply doesn't send any packet at
+all in that cycle.  This contrasts with other devices which tend to send
+empty "placeholder" packets when the need arises.  This means that a cycle
+without a packet from the RME is not necessarily an error condition.  To
+detect dropped packets one must instead rely on the rx sample counter
+embedded in the audio data stream.
 
 
 Input preamp / output amp gain control
