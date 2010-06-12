@@ -32,6 +32,7 @@
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
+#include "libieee1394/IsoHandlerManager.h"
 
 #include "debugmodule/debugmodule.h"
 
@@ -524,6 +525,14 @@ Device::prepare() {
     unsigned int stat[4];
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
+
+    // If there is no iso data to send in a given cycle the RMEs simply
+    // don't send anything.  This is in contrast to most other interfaces
+    // which at least send an empty packet.  As a result the IsoHandler
+    // contains code which detects missing packets as dropped packets.
+    // For RME devices we must turn this test off since missing packets
+    // are in fact to be expected.
+    get1394Service().getIsoHandlerManager().setMissedCyclesOK(true);
 
     freq = getSamplingFrequency();
     if (freq <= 0) {
