@@ -357,6 +357,14 @@ class IsoHandlerManager
          * expressed in cycles
          */
         int getPacketLatencyForStream(Streaming::StreamProcessor *);
+
+        /**
+         * Enables the isohandler manager to ignore missed packets.  This
+         * behaviour is needed by some interfaces which don't send empty
+         * placeholder packets when no data needs to be sent.
+         */
+        void setMissedCyclesOK(bool ok) { m_MissedCyclesOK = ok; };
+
     private:
         IsoHandler * getHandlerForStream(Streaming::StreamProcessor *stream);
         void requestShadowMapUpdate();
@@ -407,6 +415,8 @@ class IsoHandlerManager
         IsoTask *       m_IsoTaskTransmit;
         Util::Thread *  m_IsoThreadReceive;
         IsoTask *       m_IsoTaskReceive;
+
+        bool            m_MissedCyclesOK;
 
         // debug stuff
         DECLARE_DEBUG_MODULE;

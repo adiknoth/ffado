@@ -465,6 +465,7 @@ IsoHandlerManager::IsoHandlerManager(Ieee1394Service& service, bool run_rt, int 
    , m_IsoTaskTransmit ( NULL )
    , m_IsoThreadReceive ( NULL )
    , m_IsoTaskReceive ( NULL )
+   , m_MissedCyclesOK ( false )
 {
 }
 
@@ -1453,7 +1454,7 @@ enum raw1394_iso_disposition IsoHandlerManager::IsoHandler::putPacket(
                     unsigned int cycle, unsigned int dropped) {
     // keep track of dropped cycles
     int dropped_cycles = 0;
-    if (m_last_cycle != (int)cycle && m_last_cycle != -1) {
+    if (m_last_cycle != (int)cycle && m_last_cycle != -1 && m_manager.m_MissedCyclesOK == false) {
         dropped_cycles = diffCycles(cycle, m_last_cycle) - 1;
         #ifdef DEBUG
         if (dropped_cycles < 0) {
