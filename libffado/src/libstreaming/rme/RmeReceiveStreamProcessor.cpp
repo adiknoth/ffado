@@ -111,6 +111,7 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
 // For testing
 quadlet_t *adata = (quadlet_t *)data;
 debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
+//fprintf(stderr, "recv len=%d\n", length);
 
     if (length > 8) {
         // The iso data blocks from the RMEs comprise 24-bit audio

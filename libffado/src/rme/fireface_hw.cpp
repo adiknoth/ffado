@@ -791,7 +791,7 @@ printf("start 0x%016llx data: %08x\n", addr, data);
         set_hardware_channel_mute(0);
 
     } else
-        ret = -1;
+        ret = 0;
     config_unlock();
 
     return ret;
@@ -822,7 +822,7 @@ Device::hardware_stop_streaming(void)
         set_hardware_channel_mute(1);
 
     } else
-        ret = -1;
+        ret = 0;
     config_unlock();
 
     return ret;
