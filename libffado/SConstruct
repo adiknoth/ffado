@@ -1,4 +1,5 @@
 #! /usr/bin/python
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2007, 2008, 2010 Arnold Krille
 # Copyright (C) 2007, 2008 Pieter Palmers
@@ -73,42 +74,23 @@ Build the tests in their directory. As some contain quite some functionality,
     EnumOption('DIST_TARGET', 'Build target for cross compiling packagers', 'auto', allowed_values=('auto', 'i386', 'i686', 'x86_64', 'powerpc', 'powerpc64', 'none' ), ignorecase=2),
     BoolOption( "ENABLE_OPTIMIZATIONS", "Enable optimizations and the use of processor specific extentions (MMX/SSE/...).", False ),
     BoolOption( "PEDANTIC", "Enable -Werror and more pedantic options during compile.", False ),
+    ( "COMPILE_FLAGS", "Add additional flags to the environment.\nOnly meant for distributors and gentoo-users who want to over-optimize their built.\n Using this is not supported by the ffado-devs!" ),
 
     )
 
 ## Load the builders in config
 buildenv=os.environ
-vars_to_check = [
-    'PATH',
-    'PKG_CONFIG_PATH',
-    'LD_LIBRARY_PATH',
-    'XDG_CONFIG_DIRS',
-    'XDG_DATA_DIRS',
-    'HOME',
-    'CC',
-    'CFLAGS',
-    'CXX',
-    'CXXFLAGS',
-    'CPPFLAGS',
-]
-for var in vars_to_check:
-    if os.environ.has_key(var):
-        buildenv[var]=os.environ[var]
-    else:
-        buildenv[var]=''
 
 env = Environment( tools=['default','scanreplace','pyuic','pyuic4','dbus','doxygen','pkgconfig'], toolpath=['admin'], ENV = buildenv, options=opts )
 
-if os.environ.has_key('LDFLAGS'):
-    env['LINKFLAGS'] = os.environ['LDFLAGS']
-
-# grab OS CFLAGS / CCFLAGS
-env['OS_CFLAGS']=[]
-if os.environ.has_key('CFLAGS'):
-    env['OS_CFLAGS'] = os.environ['CFLAGS']
-env['OS_CCFLAGS']=[]
-if os.environ.has_key('CCFLAGS'):
-    env['OS_CCFLAGS'] = os.environ['CCFLAGS']
+if env.has_key('COMPILE_FLAGS') and len(env['COMPILE_FLAGS']) > 0:
+    print '''
+ * Usage of additional flags is not supported by the ffado-devs.
+ * Use at own risk!
+ *
+ * Currentl value is '%s'
+ ''' % env['COMPILE_FLAGS']
+    env.MergeFlags(env['COMPILE_FLAGS'])
 
 Help( """
 For building ffado you can set different options as listed below. You have to
@@ -504,7 +486,7 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
         print "Doing a 32-bit build"
         env.MergeFlags( "-m32" )
 
-if needs_fPIC or '-fPIC' in env['OS_CFLAGS'] or "-fPIC" in env['OS_CCFLAGS']:
+if needs_fPIC or ( env.has_key('COMPILE_FLAGS') and '-fPIC' in env['COMPILE_FLAGS'] ):
     env.MergeFlags( "-fPIC" )
 
 # end of processor-specific section
