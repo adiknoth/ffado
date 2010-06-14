@@ -291,8 +291,12 @@ RmeTransmitStreamProcessor::generatePacketData (
 
         return eCRV_OK;
     }
-    else return eCRV_XRun;
-
+    else
+    {
+        // FIMXE: debugOutput() for initial testing only
+        debugOutput(DEBUG_LEVEL_VERBOSE, "readFrames() failure\n");
+        return eCRV_XRun;
+    }
 }
 
 enum StreamProcessor::eChildReturnValue
