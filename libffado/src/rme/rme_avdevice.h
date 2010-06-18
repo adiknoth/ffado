@@ -116,6 +116,7 @@ public:
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }
     signed int getTcoPresent(void) { return dev_config->tco_present; }
+    Streaming::RmeReceiveStreamProcessor *getRxSP(void) { return m_receiveProcessor; }
 
 protected:
     enum ERmeModel m_rme_model;

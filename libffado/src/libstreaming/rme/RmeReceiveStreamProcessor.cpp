@@ -62,6 +62,7 @@ namespace Streaming {
 RmeReceiveStreamProcessor::RmeReceiveStreamProcessor(FFADODevice &parent, 
   unsigned int model, unsigned int event_size)
     : StreamProcessor(parent, ePT_Receive)
+    , n_hw_tx_buffer_samples ( -1 )
     , m_rme_model( model )
     , m_event_size( event_size )
     , mb_head ( 0 )
@@ -144,6 +145,8 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "  %02x %02x %02x %02x %02x %02x %02x %02x\n",
 debugOutput(DEBUG_LEVEL_VERBOSE, "  tx size=%d, rxcount=%d\n",
   ((adata[5] & 0xff) << 8) | (adata[0] & 0xff),
   ((adata[4] & 0xff) << 8) | (adata[1] & 0xff));
+n_hw_tx_buffer_samples = adata[7] & 0xff;
+debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%02x\n", n_hw_tx_buffer_samples);
         return eCRV_OK;
     } else {
         return eCRV_Invalid;

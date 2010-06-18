@@ -74,6 +74,9 @@ public:
                     { return 1; };
     virtual unsigned int getNominalFramesPerPacket();
 
+    /* For testing only at this stage */
+    signed int n_hw_tx_buffer_samples;
+
 protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
 

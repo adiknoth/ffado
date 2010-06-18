@@ -115,6 +115,7 @@ RmeTransmitStreamProcessor::generatePacketHeader (
     // Do housekeeping expected for all packets, irrespective of whether
     // they will contain data.
     *sy = 0x00;
+    *length = 0;
 
     signed int fc;
     uint64_t presentation_time;
@@ -288,7 +289,10 @@ RmeTransmitStreamProcessor::generatePacketData (
 //            int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
 //            *quadlet = CondSwapToBus32(fullTicksToSph(ts_frame));
 //        }
-
+        // FIXME: temporary
+        if (*length > 0) {
+            memset(data, *length, 0);
+        }
         return eCRV_OK;
     }
     else
@@ -323,7 +327,12 @@ RmeTransmitStreamProcessor::generateEmptyPacketHeader (
     // the dry running state in order to kick the process into gear.
     if (isDryRunning()) {
 //        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
+RmeReceiveStreamProcessor *rxsp = static_cast<Rme::Device *>
+  (&m_Parent)->getRxSP();
+debugOutput(DEBUG_LEVEL_VERBOSE, "hw tx: 0x%08x\n", rxsp->n_hw_tx_buffer_samples);
+if (rxsp->n_hw_tx_buffer_samples < 0x38)
         *length = getMaxPacketSize();
+debugOutput(DEBUG_LEVEL_VERBOSE, "  txsize=%d\n", *length);
     }
 
 //    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
