@@ -237,14 +237,14 @@ Configuration::getValueForSetting(std::string path, int32_t &ref)
         Setting::Type t = s->getType();
         if(t == Setting::TypeInt) {
             ref = *s;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has value %d\n", path.c_str(), ref);
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "path '%s' has value %d\n", path.c_str(), ref);
             return true;
         } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has wrong type\n", path.c_str());
+            debugWarning("path '%s' has wrong type\n", path.c_str());
             return false;
         }
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' not found\n", path.c_str());
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "path '%s' not found\n", path.c_str());
         return false;
     }
 }
@@ -258,14 +258,14 @@ Configuration::getValueForSetting(std::string path, int64_t &ref)
         Setting::Type t = s->getType();
         if(t == Setting::TypeInt64) {
             ref = *s;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has value %"PRId64"\n", path.c_str(), ref);
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "path '%s' has value %"PRId64"\n", path.c_str(), ref);
             return true;
         } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has wrong type\n", path.c_str());
+            debugWarning("path '%s' has wrong type\n", path.c_str());
             return false;
         }
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' not found\n", path.c_str());
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "path '%s' not found\n", path.c_str());
         return false;
     }
 }
@@ -279,14 +279,14 @@ Configuration::getValueForSetting(std::string path, float &ref)
         Setting::Type t = s->getType();
         if(t == Setting::TypeFloat) {
             ref = *s;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has value %f\n", path.c_str(), ref);
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "path '%s' has value %f\n", path.c_str(), ref);
             return true;
         } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' has wrong type\n", path.c_str());
+            debugWarning("path '%s' has wrong type\n", path.c_str());
             return false;
         }
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "path '%s' not found\n", path.c_str());
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "path '%s' not found\n", path.c_str());
         return false;
     }
 }
@@ -303,7 +303,7 @@ Configuration::getSetting( std::string path )
             Setting &s = c->lookup(path);
             return &s;
         } catch (...) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "  %s has no setting %s\n",
+            debugOutput(DEBUG_LEVEL_VERY_VERBOSE, "  %s has no setting %s\n",
                         c->getName().c_str(), path.c_str());
         }
     }
