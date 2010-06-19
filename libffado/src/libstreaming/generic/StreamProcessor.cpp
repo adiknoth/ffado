@@ -779,8 +779,8 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
 send_empty_packet:
     // note that only the wait state changes are synchronized with the cycles
     if(m_state != m_next_state) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Should update state from %s to %s\n",
-                                        ePSToString(m_state), ePSToString(m_next_state));
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Should update '%s' state from %s to %s\n",
+                                        getTypeString(), ePSToString(m_state), ePSToString(m_next_state));
         // execute the requested change
         if (!updateState()) { // we are allowed to change the state directly
             debugError("Could not update state!\n");

@@ -1628,7 +1628,7 @@ IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *leng
 
     #ifdef DEBUG
     if(m_last_cycle == -1) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive (cycle = %d)\n", getTypeString(), this, cycle);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Handler for %s SP %p is alive. cycle=%d state=%i\n", getTypeString(), this, cycle, m_State);
     }
     #endif
 
@@ -1826,11 +1826,11 @@ bool
 IsoHandlerManager::IsoHandler::requestEnable(int cycle)
 {
     if (m_State == eHS_Running) {
-        debugError("Enable requested on enabled stream\n");
+        debugError("Enable requested on enabled stream '%s'\n", getTypeString());
         return false;
     }
     if (m_State != eHS_Stopped) {
-        debugError("Enable requested on stream with state: %d\n", m_State);
+        debugError("Enable requested on stream '%s' with state: %d\n", getTypeString(), m_State);
         return false;
     }
     m_NextState = eHS_Running;

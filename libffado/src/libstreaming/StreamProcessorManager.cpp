@@ -396,7 +396,6 @@ bool
 StreamProcessorManager::startDryRunning()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Putting StreamProcessor streams into dry-running state...\n");
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Schedule start dry-running...\n");
     for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
             it != m_TransmitProcessors.end();
             ++it ) {
@@ -406,7 +405,7 @@ StreamProcessorManager::startDryRunning()
         }
         if (!(*it)->isDryRunning()) {
             if(!(*it)->scheduleStartDryRunning(-1)) {
-                debugError("Could not put SP %p into the dry-running state\n", *it);
+                debugError("Could not put '%s' SP %p into the dry-running state\n", (*it)->getTypeString(), *it);
                 return false;
             }
         } else {
@@ -422,7 +421,7 @@ StreamProcessorManager::startDryRunning()
         }
         if (!(*it)->isDryRunning()) {
             if(!(*it)->scheduleStartDryRunning(-1)) {
-                debugError("Could not put SP %p into the dry-running state\n", *it);
+                debugError("Could not put '%s' SP %p into the dry-running state\n", (*it)->getTypeString(), *it);
                 return false;
             }
         } else {
