@@ -1508,7 +1508,9 @@ signed int MotuDevice::getDeviceGeneration(void) {
         return MOTU_DEVICE_G1;
     if (m_motu_model==MOTU_MODEL_828mk3 ||
         m_motu_model==MOTU_MODEL_ULTRALITEmk3 ||
-        m_motu_model==MOTU_MODEL_ULTRALITEmk3_HYB)
+        m_motu_model==MOTU_MODEL_ULTRALITEmk3_HYB ||
+        m_motu_model==MOTU_MODEL_TRAVELERmk3 ||
+        m_motu_model==MOTU_MODEL_896HDmk3)
         return MOTU_DEVICE_G3;
     return MOTU_DEVICE_G2;
 }
