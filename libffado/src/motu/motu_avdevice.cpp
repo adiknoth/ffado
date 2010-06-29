@@ -69,6 +69,7 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_MOTU, 0, 0x00000005, 0x000001f2, MOTU_MODEL_896HD, "MOTU", "896HD"},
     {FW_VENDORID_MOTU, 0, 0x00000015, 0x000001f2, MOTU_MODEL_828mk3, "MOTU", "828Mk3"},
     {FW_VENDORID_MOTU, 0, 0x00000019, 0x000001f2, MOTU_MODEL_ULTRALITEmk3, "MOTU", "UltraLiteMk3"},
+    {FW_VENDORID_MOTU, 0, 0x0000001b, 0x000001f2, MOTU_MODEL_TRAVELERmk3, "MOTU", "TravelerMk3"},
     {FW_VENDORID_MOTU, 0, 0x00000030, 0x000001f2, MOTU_MODEL_ULTRALITEmk3_HYB, "MOTU", "UltraLiteMk3-hybrid"},
 };
 
@@ -466,6 +467,50 @@ const PortEntry Ports_ULTRALITEmk3[] =
     {"SPDIF2", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 49},
 };
 
+/* FIXME: this is currently a direct copy of the Traveler's ports.  Things
+ * are definitely different to this.  Changes will be made once more is
+ * known about the channels provided by the Traveler mk3.  This is included
+ * now more or less as a placeholder.
+ */
+const PortEntry Ports_TRAVELERmk3[] = 
+{
+    {"Mix-L", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Phones-L", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 10},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 37},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_4x|MOTU_PA_OPTICAL_ANY, 31},
+    {"AES/EBU1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
+    {"AES/EBU2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
+    {"SPDIF1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 46},
+    {"SPDIF2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, 49},
+    {"Toslink1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 46},
+    {"Toslink2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, 49},
+    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 55},
+    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 58},
+    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, 61},
+    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 64},
+    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 67},
+    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 70},
+    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 73},
+};
+
+
 /* The order of DevicesProperty entries must match the numeric order of the
  * MOTU model enumeration (EMotuModel).
  */
@@ -480,6 +525,7 @@ const DevicePropertyEntry DevicesProperty[] = {
     { Ports_828mk3,       N_ELEMENTS( Ports_828mk3 ),       192000 },
     { Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 }, // Ultralite mk3
     { Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 }, // Ultralite mk3 hybrid
+    { Ports_TRAVELERmk3,  N_ELEMENTS( Ports_TRAVELERmk3 ),  192000 },
 };
 
 MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
