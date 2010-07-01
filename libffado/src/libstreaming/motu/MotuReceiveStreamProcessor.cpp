@@ -172,10 +172,9 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
 
         // For debugging only - to be removed once Ultralite mk3 issues have been 
         // resolved.  JMW, 31 May 2010.
-        if (!len_shown) {
+        if (!len_shown && getDebugLevel()>0 ) {
             unsigned int i;
             debugOutput(DEBUG_LEVEL_VERBOSE,"Packet from MOTU: length = %d\n", length);
-            len_shown = 1;
             for (i=0; i<length; i++) {
               if ((i&0x000f) == 0)
                 fprintf(stderr, "%08x  ", i);
@@ -187,6 +186,7 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
             }
             fprintf(stderr, "\n");
         }
+        len_shown = 1;
 
         return eCRV_OK;
     } else {
