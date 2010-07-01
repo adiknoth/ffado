@@ -46,9 +46,7 @@ apps = {
 	"ffado-test" : "test-ffado.cpp",
 	"test-fw410" : "test-fw410.cpp",
 	#"test-extplugcmd" : "test-extplugcmd.cpp",
- 	"test-volume" : "test-volume.cpp",
 	#"test-mixer" : "test-mixer.cpp",
- 	"test-enhanced-mixer" : "test-enhanced-mixer.cpp",
 	"test-timestampedbuffer" : "test-timestampedbuffer.cpp",
 	"test-ieee1394service" : "test-ieee1394service.cpp",
 	"test-streamdump" : "test-streamdump.cpp",
@@ -68,6 +66,8 @@ if env['ENABLE_GENERICAVC']:
 	if env.has_key("ALSA_FLAGS") and env["ALSA_FLAGS"]:
 		env.MergeFlags( env["ALSA_FLAGS"] )
 		apps.update( { "test-scs" : "test-scs.cpp" } )
+	apps.update( { "test-volume" : "test-volume.cpp" } )
+	apps.update( { "test-enhanced-mixer" : "test-enhanced-mixer.cpp" } )
 	apps.update( { "test-avccmd" : "test-avccmd.cpp" } )
 if env['ENABLE_FIREWORKS']:
 	apps.update( { "test-echomixer" : "test-echomixer.cpp" } )
