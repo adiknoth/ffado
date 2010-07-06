@@ -448,6 +448,27 @@ device_definitions = (
     modelname = "AFI 1";
     driver = 20;
 },
+{
+    vendorid = 0x001C6A;
+    modelid = 0x00000005;
+    vendorname = "Weiss Engineering Ltd.";
+    modelname = "TAG DAC1";
+    driver = 20;
+},
+{
+    vendorid = 0x001C6A;
+    modelid = 0x00000006;
+    vendorname = "Weiss Engineering Ltd.";
+    modelname = "INT 202";
+    driver = 20;
+},
+{
+    vendorid = 0x001C6A;
+    modelid = 0x00000007;
+    vendorname = "Weiss Engineering Ltd.";
+    modelname = "DAC 202";
+    driver = 20;
+},
 { # Added by david@wwns.com
    vendorid	= 0x001c2d;
    modelid	= 0x00000001;
