@@ -130,15 +130,14 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
 //        }
 
         // Timestamps are not transmitted explicitly by the RME interfaces
-        // so we'll have to fake it somehow in order to fit in with the
-        // rest of the FFADO infrastructure.  For now just take the current
-        // value of the cycle timer as the "last timestamp".  In practice 
-        // there a fixed offset that we'll have to include eventually.
-uint32_t ct = m_Parent.get1394Service().getCycleTimer();
+        // so we'll have to fake it somehow in order to fit in with the rest
+        // of the FFADO infrastructure.  For now just take the packet
+        // arrival time as the "last timestamp".  In practice there is a
+        // fixed offset that we'll have to include eventually.
 //        m_last_timestamp = CYCLE_TIMER_TO_TICKS(ctm_Parent.get1394Service().getCycleTimer());
-        m_last_timestamp = CYCLE_TIMER_TO_TICKS(ct);
-debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, ct,
-  CYCLE_TIMER_GET_SECS(ct), CYCLE_TIMER_GET_CYCLES(ct), CYCLE_TIMER_GET_OFFSET(ct));
+        m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
+debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,
+  CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
 debugOutput(DEBUG_LEVEL_VERBOSE, "  %02x %02x %02x %02x %02x %02x %02x %02x\n",
   adata[0] & 0xff, adata[1] & 0xff, adata[2] & 0xff, adata[3] & 0xff,
   adata[4] & 0xff, adata[5] & 0xff, adata[6] & 0xff, adata[7] & 0xff);

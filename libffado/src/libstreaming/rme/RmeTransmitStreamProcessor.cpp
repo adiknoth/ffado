@@ -309,6 +309,7 @@ RmeTransmitStreamProcessor::generateEmptyPacketHeader (
     unsigned char *tag, unsigned char *sy,
     uint32_t pkt_ctr )
 {
+static signed int cx = 0;
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u, TSP=%011llu (%04u)\n",
                 CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp, 
                 ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
@@ -329,9 +330,15 @@ RmeTransmitStreamProcessor::generateEmptyPacketHeader (
 //        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 RmeReceiveStreamProcessor *rxsp = static_cast<Rme::Device *>
   (&m_Parent)->getRxSP();
-debugOutput(DEBUG_LEVEL_VERBOSE, "hw tx: 0x%08x\n", rxsp->n_hw_tx_buffer_samples);
-if (rxsp->n_hw_tx_buffer_samples < 0x38)
+debugOutput(DEBUG_LEVEL_VERBOSE, "tx timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n",
+  m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
+debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%08x\n", rxsp->n_hw_tx_buffer_samples);
+//if (rxsp->n_hw_tx_buffer_samples < 0x38)
+if (cx < 7) {
         *length = getMaxPacketSize();
+  cx++;
+} else
+  cx=0;
 debugOutput(DEBUG_LEVEL_VERBOSE, "  txsize=%d\n", *length);
     }
 
