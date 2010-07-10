@@ -310,6 +310,9 @@ RmeTransmitStreamProcessor::generateEmptyPacketHeader (
     uint32_t pkt_ctr )
 {
 static signed int cx = 0;
+static signed int has_dryrun = 0;
+static signed int has_run = 0;
+
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u, TSP=%011llu (%04u)\n",
                 CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp, 
                 ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
@@ -326,7 +329,13 @@ static signed int cx = 0;
     // Since the receive stream processor won't register as dry running 
     // until data is received, we therefore need to send some data during
     // the dry running state in order to kick the process into gear.
-    if (isDryRunning()) {
+    //
+    // Non-empty "empty" packets are not desired during the dry-running
+    // state encountered during closedown, however, so take steps to ensure
+    // they are only sent during the startup sequence.  This logic is
+    // presently a quick and dirty hack and will be revisited in due course
+    // once a final control method has been established.
+    if (has_run==0 && isDryRunning()) {
 //        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 RmeReceiveStreamProcessor *rxsp = static_cast<Rme::Device *>
   (&m_Parent)->getRxSP();
@@ -337,10 +346,14 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%08x\n", rxsp->n_hw_tx_buffer_sampl
 if (cx < 7) {
         *length = getMaxPacketSize();
   cx++;
+  has_dryrun = 1;
 } else
   cx=0;
 debugOutput(DEBUG_LEVEL_VERBOSE, "  txsize=%d\n", *length);
     }
+
+if (!isDryRunning() && has_dryrun==1)
+  has_run=1;
 
 //    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
     return eCRV_OK;
