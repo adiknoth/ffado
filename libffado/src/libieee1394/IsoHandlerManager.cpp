@@ -1841,8 +1841,17 @@ bool
 IsoHandlerManager::IsoHandler::requestDisable()
 {
     if (m_State == eHS_Stopped) {
-        debugError("Disable requested on disabled stream\n");
-        return false;
+        // Don't treat this as an error condition because during a user
+        // shutdown the stream would have been disabled by
+        // stopHandlerForStream().  Therefore when requestDisable() is
+        // subnsequently called by IsoHandlerManager::stopHandlers() in the
+        // IsoHandlerManager destructor with the stream disabled the
+        // condition is not an error.
+        //
+        // For now print a warning, but this might be removed in future if
+        // the above framework remains in place.
+        debugWarning("Disable requested on disabled stream\n");
+        return true;
     }
     if (m_State != eHS_Running) {
         debugError("Disable requested on stream with state=%d\n", m_State);
