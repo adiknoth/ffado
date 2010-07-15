@@ -339,17 +339,27 @@ static signed int has_run = 0;
 //        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 RmeReceiveStreamProcessor *rxsp = static_cast<Rme::Device *>
   (&m_Parent)->getRxSP();
+#if 0
 debugOutput(DEBUG_LEVEL_VERBOSE, "tx timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n",
   m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
 debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%08x\n", rxsp->n_hw_tx_buffer_samples);
+#endif
 //if (rxsp->n_hw_tx_buffer_samples < 0x38)
-if (cx < 7) {
-        *length = getMaxPacketSize();
+has_dryrun = 1;
+if (rxsp->n_hw_tx_buffer_samples == -1) {
+  // Effectively delay a bit before starting to send packets
+  if (cx > 255) {
+    *length = getMaxPacketSize();
+  }
   cx++;
-  has_dryrun = 1;
-} else
-  cx=0;
-debugOutput(DEBUG_LEVEL_VERBOSE, "  txsize=%d\n", *length);
+} else {
+  if (cx < 7) {
+        *length = getMaxPacketSize();
+    cx++;
+  } else
+    cx=0;
+}
+//debugOutput(DEBUG_LEVEL_VERBOSE, "  txsize=%d\n", *length);
     }
 
 if (!isDryRunning() && has_dryrun==1)

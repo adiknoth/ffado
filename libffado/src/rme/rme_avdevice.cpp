@@ -100,6 +100,9 @@ Device::Device( DeviceManager& d,
 
 Device::~Device()
 {
+    delete m_receiveProcessor;
+    delete m_transmitProcessor;
+
     if (iso_tx_channel>=0 && !get1394Service().freeIsoChannel(iso_tx_channel)) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free tx iso channel %d\n", iso_tx_channel);
     }
