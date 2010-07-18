@@ -114,7 +114,7 @@ quadlet_t *adata = (quadlet_t *)data;
 debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
 //fprintf(stderr, "recv len=%d\n", length);
 
-    if (length > 8) {
+    if (length > 0) {
         // The iso data blocks from the RMEs comprise 24-bit audio
         // data encoded in 32-bit integers.  The LSB of the 32-bit integers
         // of certain channels are used for house-keeping information.
@@ -237,14 +237,12 @@ signed int RmeReceiveStreamProcessor::decodeRmeEventsToPort(RmeAudioPort *p,
 {
     unsigned int j=0;
 
-    // Use char here since a port's source address won't necessarily be
-    // aligned; use of an unaligned quadlet_t may cause issues on certain
-    // architectures.  Besides, the source (data coming directly from the
-    // RME) isn't structured in quadlets anyway; it consists 24-bit integers
-    // within 32-bit quadlets with the LSB being a housekeeping byte.
-
-    unsigned char *src_data;
-    src_data = (unsigned char *)data + p->getPosition();
+    // For RME interfaces the audio data is contained in the most significant
+    // 24 bits of a 32-bit field.  Thus it makes sense to treat the source
+    // data as 32 bit and simply mask/shift as necessary to isolate the
+    // audio data.
+    quadlet_t *src_data;
+    src_data = data + p->getPosition()/4;
 
     switch(m_StreamProcessorManager.getAudioDataType()) {
         default:
@@ -261,16 +259,16 @@ signed int RmeReceiveStreamProcessor::decodeRmeEventsToPort(RmeAudioPort *p,
                 buffer+=offset;
 
                 for(j = 0; j < nevents; j += 1) { // Decode nsamples
-                    *buffer = (*src_data<<16)+(*(src_data+1)<<8)+*(src_data+2);
-                    // Sign-extend highest bit of 24-bit int.
-                    // This isn't strictly needed since E_Int24 is a 24-bit,
-                    // but doing so shouldn't break anything and makes the data
-                    // easier to deal with during debugging.
-                    if (*src_data & 0x80)
+                    *buffer = (*src_data >> 8) & 0x00ffffff;
+                    // Sign-extend highest bit of 24-bit int.  This isn't
+                    // strictly needed since E_Int24 is a 24-bit, but doing
+                    // so shouldn't break anything and makes the data easier
+                    // to deal with during debugging.
+                    if (*src_data & 0x80000000)
                         *buffer |= 0xff000000;
 
                     buffer++;
-                    src_data+=m_event_size;
+                    src_data+=m_event_size/4;
                 }
             }
             break;
@@ -284,14 +282,13 @@ signed int RmeReceiveStreamProcessor::decodeRmeEventsToPort(RmeAudioPort *p,
                 buffer+=offset;
 
                 for(j = 0; j < nevents; j += 1) { // decode max nsamples
-
-                    signed int v = (*src_data<<16)+(*(src_data+1)<<8)+*(src_data+2);
+                    signed int v = (*src_data >> 8) & 0x00ffffff;
                     /* Sign-extend highest bit of incoming 24-bit integer */
-                    if (*src_data & 0x80)
+                    if (*src_data & 0x80000000)
                       v |= 0xff000000;
                     *buffer = v * multiplier;
                     buffer++;
-                    src_data+=m_event_size;
+                    src_data+=m_event_size/4;
                 }
             }
             break;

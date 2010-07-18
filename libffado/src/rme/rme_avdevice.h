@@ -92,6 +92,11 @@ public:
     signed int getNumChannels(void) { return num_channels; };
     signed int getFramesPerPacket(void);
 
+    bool addPort(Streaming::StreamProcessor *s_processor,
+             char *name, enum Streaming::Port::E_Direction direction,
+             int position, int size);
+    bool addDirPorts(enum Streaming::Port::E_Direction direction);
+
     unsigned int readRegister(fb_nodeaddr_t reg);
     signed int readBlock(fb_nodeaddr_t reg, quadlet_t *buf, unsigned int n_quads);
     signed int writeRegister(fb_nodeaddr_t reg, quadlet_t data);

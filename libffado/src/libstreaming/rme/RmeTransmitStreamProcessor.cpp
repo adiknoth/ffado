@@ -106,6 +106,7 @@ RmeTransmitStreamProcessor::generatePacketHeader (
     uint32_t pkt_ctr )
 {
     unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
+    signed n_events = getNominalFramesPerPacket();
 
     // Called once per packet.  Need to work out whether data should be sent
     // in this cycle or not and then act accordingly.  Need to deal with 
@@ -115,7 +116,7 @@ RmeTransmitStreamProcessor::generatePacketHeader (
     // Do housekeeping expected for all packets, irrespective of whether
     // they will contain data.
     *sy = 0x00;
-    *length = 0;
+    *length = n_events*m_event_size;
 
     signed int fc;
     uint64_t presentation_time;
@@ -272,8 +273,6 @@ enum StreamProcessor::eChildReturnValue
 RmeTransmitStreamProcessor::generatePacketData (
     unsigned char *data, unsigned int *length)
 {
-    quadlet_t *quadlet = (quadlet_t *)data;
-    quadlet += 2; // skip the header
     // Size of a single data frame in quadlets
 //    unsigned dbs = m_event_size / 4;
 
@@ -282,7 +281,7 @@ RmeTransmitStreamProcessor::generatePacketData (
     // all channels plus possibly other midi and control data.
     signed n_events = getNominalFramesPerPacket();
 
-    if (m_data_buffer->readFrames(n_events, (char *)(data + 8))) {
+    if (m_data_buffer->readFrames(n_events, (char *)(data))) {
 //        float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
 
 //        for (int i=0; i < n_events; i++, quadlet += dbs) {
@@ -290,14 +289,30 @@ RmeTransmitStreamProcessor::generatePacketData (
 //            *quadlet = CondSwapToBus32(fullTicksToSph(ts_frame));
 //        }
         // FIXME: temporary
-        if (*length > 0) {
-            memset(data, *length, 0);
-        }
+//        if (*length > 0) {
+//            memset(data, *length, 0);
+//        }
+//
+// 1 kHz tone into ch7 (phones L) for testing
+{
+float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
+  signed int i, int_tpf = lrintf(ticks_per_frame);
+  quadlet_t *sample = (quadlet_t *)data + 6;
+  for (i=0; i<n_events; i++, sample+=m_event_size/4) {
+    static signed int a_cx = 0;
+    signed int val = lrintf(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx));
+    *sample = val << 8;
+    if ((a_cx+=int_tpf) >= 24576000) {
+      a_cx -= 24576000;
+    }
+  }
+}
+
         return eCRV_OK;
     }
     else
     {
-        // FIMXE: debugOutput() for initial testing only
+        // FIXME: debugOutput() for initial testing only
         debugOutput(DEBUG_LEVEL_VERBOSE, "readFrames() failure\n");
         return eCRV_XRun;
     }
@@ -408,7 +423,7 @@ RmeTransmitStreamProcessor::generateSilentPacketHeader (
     /* Assume the packet will have audio data.  If it turns out we need an empty packet
      * the length will be overridden by fillNoDataPacketHeader().
      */
-    *length = n_events*m_event_size + 8;
+    *length = n_events*m_event_size;
 
     uint64_t presentation_time;
     unsigned int presentation_cycle;
@@ -468,27 +483,9 @@ RmeTransmitStreamProcessor::generateSilentPacketData (
     unsigned char *data, unsigned int *length )
 {
     // Simply set all audio data to zero since that's what's meant by
-    // a "silent" packet.  Note that m_event_size is in bytes.
+    // a "silent" packet.
+    memset(data, 0, *length);
 
-    quadlet_t *quadlet = (quadlet_t *)data;
-    quadlet += 2; // skip the header
-    // Size of a single data frame in quadlets
-    unsigned dbs = m_event_size / 4;
-
-    // The number of events per packet expected by the RME is solely
-    // dependent on the current sample rate.  An 'event' is one sample from
-    // all channels plus possibly other midi and control data.
-    signed n_events = getNominalFramesPerPacket();
-
-    memset(quadlet, 0, n_events*m_event_size);
-//    float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
-
-    // Set up each frames's SPH.
-    for (int i=0; i < n_events; i++, quadlet += dbs) {
-//        int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
-// FIXME:
-//        *quadlet = CondSwapToBus32(fullTicksToSph(ts_frame));
-    }
     return eCRV_OK;
 }
 
@@ -505,32 +502,13 @@ unsigned int RmeTransmitStreamProcessor::fillDataPacketHeader (
     // all channels plus possibly other midi and control data.
     signed n_events = getNominalFramesPerPacket();
 
-    // construct the packet CIP-like header.  Even if this is a data-less
-    // packet the dbs field is still set as if there were data blocks
-    // present.  For data-less packets the dbc is the same as the previously
-    // transmitted block.
-//    *quadlet = CondSwapToBus32(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
-//    quadlet++;
-//    *quadlet = CondSwapToBus32(0x8222ffff);
-//    quadlet++;
     return n_events;
 }
 
 unsigned int RmeTransmitStreamProcessor::fillNoDataPacketHeader (
     quadlet_t *data, unsigned int* length )
 {
-//    quadlet_t *quadlet = (quadlet_t *)data;
-    // Size of a single data frame in quadlets.
-//    unsigned dbs = m_event_size / 4;
-    // construct the packet CIP-like header.  Even if this is a data-less
-    // packet the dbs field is still set as if there were data blocks
-    // present.  For data-less packets the dbc is the same as the previously
-    // transmitted block.
-//    *quadlet = CondSwapToBus32(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
-//    quadlet++;
-//    *quadlet = CondSwapToBus32(0x8222ffff);
-//    quadlet++;
-    *length = 8;
+    *length = 0;
     return 0;
 }
 
@@ -546,13 +524,6 @@ bool RmeTransmitStreamProcessor::prepareChild()
 bool RmeTransmitStreamProcessor::processWriteBlock(char *data,
                        unsigned int nevents, unsigned int offset) {
     bool no_problem=true;
-    unsigned int i;
-
-    // Start with MIDI and control streams all zeroed.  Due to the sparce nature
-    // of these streams it is best to simply fill them in on an as-needs basis.
-    for (i=0; i<nevents; i++) {
-        memset(data+4+i*m_event_size, 0x00, 6);
-    }
 
     for ( PortVectorIterator it = m_Ports.begin();
       it != m_Ports.end();
@@ -639,13 +610,8 @@ int RmeTransmitStreamProcessor::encodePortToRmeEvents(RmeAudioPort *p, quadlet_t
 
     unsigned int j=0;
 
-    // Use char here since the target address won't necessarily be
-    // aligned; use of an unaligned quadlet_t may cause issues on certain
-    // architectures.  Besides, the target (data going directly to the RME)
-    // isn't structured in quadlets anyway; it mainly consists of packed
-    // 24-bit integers.
-    unsigned char *target;
-    target = (unsigned char *)data + p->getPosition();
+    quadlet_t *target;
+    target = data + p->getPosition()/4;
 
     switch(m_StreamProcessorManager.getAudioDataType()) {
         default:
@@ -662,12 +628,9 @@ int RmeTransmitStreamProcessor::encodePortToRmeEvents(RmeAudioPort *p, quadlet_t
                 buffer+=offset;
 
                 for(j = 0; j < nevents; j += 1) { // Decode nsamples
-                    *target = (*buffer >> 16) & 0xff;
-                    *(target+1) = (*buffer >> 8) & 0xff;
-                    *(target+2) = (*buffer) & 0xff;
-
+                    *target = (*buffer & 0x00ffffff) << 8;
                     buffer++;
-                    target+=m_event_size;
+                    target+=m_event_size/4;
                 }
             }
             break;
@@ -687,12 +650,9 @@ int RmeTransmitStreamProcessor::encodePortToRmeEvents(RmeAudioPort *p, quadlet_t
                     if (unlikely(in < -1.0)) in = -1.0;
 #endif
                     unsigned int v = lrintf(in * multiplier);
-                    *target = (v >> 16) & 0xff;
-                    *(target+1) = (v >> 8) & 0xff;
-                    *(target+2) = v & 0xff;
-
+                    *target = (v << 8);
                     buffer++;
-                    target+=m_event_size;
+                    target+=m_event_size/4;
                 }
             }
             break;
@@ -704,15 +664,15 @@ int RmeTransmitStreamProcessor::encodePortToRmeEvents(RmeAudioPort *p, quadlet_t
 int RmeTransmitStreamProcessor::encodeSilencePortToRmeEvents(RmeAudioPort *p, quadlet_t *data,
                        unsigned int offset, unsigned int nevents) {
     unsigned int j=0;
-    unsigned char *target = (unsigned char *)data + p->getPosition();
+    quadlet_t *target = data + p->getPosition()/4;
 
     switch (m_StreamProcessorManager.getAudioDataType()) {
     default:
         case StreamProcessorManager::eADT_Int24:
         case StreamProcessorManager::eADT_Float:
         for (j = 0; j < nevents; j++) {
-            *target = *(target+1) = *(target+2) = 0;
-            target += m_event_size;
+            *target = 0;
+            target += m_event_size/4;
         }
         break;
     }

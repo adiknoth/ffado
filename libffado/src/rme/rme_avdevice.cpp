@@ -36,6 +36,8 @@
 
 #include "debugmodule/debugmodule.h"
 
+#include "libstreaming/rme/RmePort.h"
+
 #include "devicemanager.h"
 
 #include <string>
@@ -681,6 +683,7 @@ printf("\n");
     if (!getOption("id", id)) {
         debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
     }
+    addDirPorts(Streaming::Port::E_Capture);
 
     /* Now set up the transmit stream processor */
     m_transmitProcessor = new Streaming::RmeTransmitStreamProcessor(*this,
@@ -699,6 +702,7 @@ printf("\n");
 
     // Other things to be done:
     //  * add ports to transmit stream processor
+    addDirPorts(Streaming::Port::E_Playback);
 
     return true;
 }
@@ -760,6 +764,51 @@ Device::getFramesPerPacket(void) {
         return 7;
     }
     return 7;
+}
+
+bool 
+Device::addPort(Streaming::StreamProcessor *s_processor,
+    char *name, enum Streaming::Port::E_Direction direction,
+    int position, int size) {
+
+    Streaming::Port *p;
+    p = new Streaming::RmeAudioPort(*s_processor, name, direction, position, size);
+    if (p == NULL) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n",name);
+    }
+    return true;
+}
+
+bool 
+Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
+
+    const char *mode_str = direction==Streaming::Port::E_Capture?"cap":"pbk";
+    Streaming::StreamProcessor *s_processor;
+    std::string id;
+    char name[128];
+
+    if (direction == Streaming::Port::E_Capture) {
+        s_processor = m_receiveProcessor;
+    } else {
+        s_processor = m_transmitProcessor;
+    }
+
+    id = std::string("dev?");
+    if (!getOption("id", id)) {
+        debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
+    }
+
+    // Just add a few ports for initial testing
+    snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_0");
+    addPort(s_processor, name, direction, 0, 0);
+    snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_1");
+    addPort(s_processor, name, direction, 4, 0);
+    snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_6");
+    addPort(s_processor, name, direction, 24, 0);
+    snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_7");
+    addPort(s_processor, name, direction, 28, 0);
+
+    return true;
 }
 
 unsigned int 
