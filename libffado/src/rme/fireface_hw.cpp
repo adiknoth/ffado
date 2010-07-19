@@ -939,10 +939,16 @@ Device::set_hardware_channel_mute(signed int mute) {
 // required.
     quadlet_t buf[28];
     signed int i;
+    signed int n_channels = (m_rme_model==RME_MODEL_FIREFACE400)?
+        RME_FF400_MAX_CHANNELS:RME_FF800_MAX_CHANNELS;
 
-    for (i=0; i<28; i++)
-        buf[i] = (mute!=0);
-
+    i = 0;
+    while (i<n_channels && i<28) {
+        buf[i++] = (mute!=0);
+    }
+    while (i < 28) {
+        buf[i++] = 0x00000001;
+    }
     // Write 28 quadlets even for FF400
     return writeBlock(RME_FF_CHANNEL_MUTE_MASK, buf, 28);
 }

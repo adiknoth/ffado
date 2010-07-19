@@ -295,9 +295,15 @@ RmeTransmitStreamProcessor::generatePacketData (
 //
 // 1 kHz tone into ch7 (phones L) for testing
 {
+static signed int dpy = 0;
 float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
   signed int i, int_tpf = lrintf(ticks_per_frame);
   quadlet_t *sample = (quadlet_t *)data + 6;
+if (dpy==0) {
+  fprintf(stderr, "ticks per frame: %d %d %d\n", int_tpf, n_events, m_event_size);
+}
+if (++dpy == 8000)
+dpy=0;
   for (i=0; i<n_events; i++, sample+=m_event_size/4) {
     static signed int a_cx = 0;
     signed int val = lrintf(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx));
