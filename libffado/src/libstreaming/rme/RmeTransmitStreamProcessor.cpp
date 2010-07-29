@@ -302,7 +302,7 @@ float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().
 //  quadlet_t *sample = (quadlet_t *)data;
   quadlet_t *sample = (quadlet_t *)data + 6;
 if (dpy==0) {
-  fprintf(stderr, "ticks per frame: %d %d %d\n", int_tpf, n_events, m_event_size);
+  fprintf(stderr, "ticks per frame: %d %d %d (len=%d)\n", int_tpf, n_events, m_event_size, *length);
 }
 if (++dpy == 8000)
 dpy=0;
