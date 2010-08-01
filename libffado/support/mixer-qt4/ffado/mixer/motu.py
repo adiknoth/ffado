@@ -569,7 +569,7 @@ class Motu(QWidget):
 
         # For the moment none of the "Mk3" (aka Generation-3) devices are
         # supported by ffado-mixer.
-        if (self.model==MOTU_MODEL_828mk3 or self.mode==MOTU_MODEL_ULTRALITEmk3 or self.mode==MOTU_MODEL_ULTRALITEmk3_HYB):
+        if (self.model==MOTU_MODEL_828mk3 or self.model==MOTU_MODEL_ULTRALITEmk3 or self.model==MOTU_MODEL_ULTRALITEmk3_HYB):
             log.debug("Generation-3 MOTU devices are not yet supported by ffado-mixer")
             return
 
