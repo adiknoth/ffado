@@ -467,6 +467,37 @@ const PortEntry Ports_ULTRALITEmk3[] =
     {"SPDIF2", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 49},
 };
 
+const PortEntry Ports_ULTRALITEmk3_hybrid[] =
+{
+    {"Main-L", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 40},
+    {"Main-R", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 43},
+    {"Mix-L", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Mix-R", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Mic1", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Mic2", MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog1", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog2", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
+    {"Phones-L", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Phones-R", MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"SPDIF1", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 40},
+    {"SPDIF2", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 43},
+    {"Reverb1", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 46},
+    {"Reverb2", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 49},
+    {"Unknown1", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 52},
+    {"Unknown2", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 55},
+    {"Unknown3", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 58},
+    {"Unknown4", MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 61},
+
+    {"SPDIF1", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 46},
+    {"SPDIF2", MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 49},
+};
+
 /* FIXME: this is currently a direct copy of the Traveler's ports.  Things
  * are definitely different to this.  Changes will be made once more is
  * known about the channels provided by the Traveler mk3.  This is included
@@ -524,7 +555,7 @@ const DevicePropertyEntry DevicesProperty[] = {
     { Ports_896HD,        N_ELEMENTS( Ports_896HD ),        192000, &Mixer_896HD, NULL, },
     { Ports_828mk3,       N_ELEMENTS( Ports_828mk3 ),       192000 },
     { Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 }, // Ultralite mk3
-    { Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 }, // Ultralite mk3 hybrid
+    { Ports_ULTRALITEmk3_hybrid, N_ELEMENTS( Ports_ULTRALITEmk3_hybrid ), 192000 }, // Ultralite mk3 hybrid
     { Ports_TRAVELERmk3,  N_ELEMENTS( Ports_TRAVELERmk3 ),  192000 },
 };
 
