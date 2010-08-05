@@ -135,6 +135,7 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
                                                 uint32_t pkt_ctr)
 {
     static int len_shown = 0;
+    static int ts_print_cx = 0;
 
     if (length > 8) {
         // The iso data blocks from the MOTUs comprise a CIP-like
@@ -174,7 +175,7 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
         // resolved.  JMW, 31 May 2010.
         if (!len_shown && getDebugLevel()>0 ) {
             unsigned int i;
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Packet from MOTU: length = %d\n", length);
+            debugOutput(DEBUG_LEVEL_VERBOSE,"Packet from MOTU: length=%d, eventsize=%d, n_events=%d\n", length, m_event_size, n_events);
             for (i=0; i<length; i++) {
               if ((i&0x000f) == 0)
                 fprintf(stderr, "%08x  ", i);
@@ -187,6 +188,10 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
             fprintf(stderr, "\n");
         }
         len_shown = 1;
+        if (ts_print_cx<20 && getDebugLevel()>0 ) {
+          debugOutput(DEBUG_LEVEL_VERBOSE,"last ts=0x%08x\n", last_sph);
+          ts_print_cx++;
+        }
 
         return eCRV_OK;
     } else {
