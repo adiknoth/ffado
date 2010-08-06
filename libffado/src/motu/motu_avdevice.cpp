@@ -1591,7 +1591,7 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
             if ((reg & enable) == 0)
               *port_a_mode = MOTU_OPTICAL_MODE_OFF;
             else
-            if ((reg * toslink) == 0)
+            if ((reg & toslink) == 0)
               *port_a_mode = MOTU_OPTICAL_MODE_TOSLINK;
             else
               *port_a_mode = MOTU_OPTICAL_MODE_ADAT;
@@ -1603,7 +1603,7 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
             if ((reg & enable) == 0)
               *port_b_mode = MOTU_OPTICAL_MODE_OFF;
             else
-            if ((reg * toslink) == 0)
+            if ((reg & toslink) == 0)
               *port_b_mode = MOTU_OPTICAL_MODE_TOSLINK;
             else
               *port_b_mode = MOTU_OPTICAL_MODE_ADAT;
