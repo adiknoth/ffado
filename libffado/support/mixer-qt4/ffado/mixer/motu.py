@@ -39,6 +39,8 @@ MOTU_MODEL_896HD            = 0x0006
 MOTU_MODEL_828mk3           = 0x0007
 MOTU_MODEL_ULTRALITEmk3     = 0x0008
 MOTU_MODEL_ULTRALITEmk3_HYB = 0x0009
+MOTU_MODEL_TRAVELERmk3      = 0x000a
+MOTU_MODEL_896HDmk3         = 0x000b
 
 class Motu(QWidget):
     def __init__(self,parent = None):
@@ -569,7 +571,7 @@ class Motu(QWidget):
 
         # For the moment none of the "Mk3" (aka Generation-3) devices are
         # supported by ffado-mixer.
-        if (self.model==MOTU_MODEL_828mk3 or self.model==MOTU_MODEL_ULTRALITEmk3 or self.model==MOTU_MODEL_ULTRALITEmk3_HYB):
+        if (self.model==MOTU_MODEL_828mk3 or self.model==MOTU_MODEL_ULTRALITEmk3 or self.model==MOTU_MODEL_ULTRALITEmk3_HYB or self.model==MOTU_MODEL_TRAVELERmk3 or self.model==MOTU_MODEL_896HDmk3):
             log.debug("Generation-3 MOTU devices are not yet supported by ffado-mixer")
             return
 
