@@ -680,6 +680,8 @@ MotuDevice::getSamplingFrequency( ) {
  */
     quadlet_t q = 0;
     int rate = 0;
+    unsigned int rate_base_mask, rate_base48k;
+    unsigned int rate_mult_mask, rate_mult2, rate_mult4;
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         /* The original MOTU interfaces did things rather differently */
@@ -691,23 +693,34 @@ MotuDevice::getSamplingFrequency( ) {
         return rate;
     }
 
+    /* The way the rate is managed is the same across G2 and G3 devices,
+     * but the actual bits used in the clock control register is different.
+     */
+    if (getDeviceGeneration() == MOTU_DEVICE_G2) {
+        rate_base_mask = MOTU_RATE_BASE_MASK;
+        rate_base48k = MOTU_RATE_BASE_48000;
+        rate_mult_mask = MOTU_RATE_MULTIPLIER_MASK;
+        rate_mult2 = MOTU_RATE_MULTIPLIER_2X;
+        rate_mult4 = MOTU_RATE_MULTIPLIER_4X;
+    } else {
+        rate_base_mask = MOTU_G3_RATE_BASE_MASK;
+        rate_base48k = MOTU_G3_RATE_BASE_48000;
+        rate_mult_mask = MOTU_G3_RATE_MULTIPLIER_MASK;
+        rate_mult2 = MOTU_G3_RATE_MULTIPLIER_2X;
+        rate_mult4 = MOTU_G3_RATE_MULTIPLIER_4X;
+    }
+
     q = ReadRegister(MOTU_REG_CLK_CTRL);
-    switch (q & MOTU_RATE_BASE_MASK) {
-        case MOTU_RATE_BASE_44100:
-            rate = 44100;
-            break;
-        case MOTU_RATE_BASE_48000:
-            rate = 48000;
-            break;
-    }
-    switch (q & MOTU_RATE_MULTIPLIER_MASK) {
-        case MOTU_RATE_MULTIPLIER_2X:
-            rate *= 2;
-            break;
-        case MOTU_RATE_MULTIPLIER_4X:
-            rate *= 4;
-            break;
-    }
+    if ((q & rate_base_mask) == rate_base48k)
+        rate = 48000;
+    else
+        rate = 44100;
+    if ((q & rate_mult_mask) == rate_mult4)
+        rate *= 4;
+    else
+    if ((q & rate_mult_mask) == rate_mult2)
+        rate *= 2;
+
     return rate;
 }
 
