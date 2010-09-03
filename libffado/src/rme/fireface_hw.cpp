@@ -152,12 +152,13 @@ readRegister(0xfffff000040cLL);
 readRegister(0xfffff0000410LL);
             }
             for (src=0; src<n_channels; src++) {
-                set_hardware_mixergain(RME_FF_MM_PLAYBACK, src, dest, 0);
+                set_hardware_mixergain(RME_FF_MM_PLAYBACK, src, dest, 
+                  src==dest?0x8000:0);
 readRegister(0xfffff0000410LL);
             }
         }
         for (src=0; src<n_channels; src++) {
-            set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, 0);
+            set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, 0x8000);
 readRegister(0xfffff0000410LL);
         }
 

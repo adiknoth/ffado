@@ -306,17 +306,21 @@ if (dpy==0) {
 }
 if (++dpy == 8000)
 dpy=0;
-  for (i=0; i<n_events; i++, sample+=m_event_size/4) {
-    static signed int a_cx = 0;
-    signed int val = lrintf(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx));
+#if TESTTONE
+        if (getDebugLevel() > 0) {
+            for (i=0; i<n_events; i++, sample+=m_event_size/4) {
+                static signed int a_cx = 0;
+                signed int val = lrintf(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx));
 //for (j=0; j<18;j++)
 //*(sample+j) = val << 8;
-    *sample = val << 8;
-    if ((a_cx+=int_tpf) >= 24576000) {
-      a_cx -= 24576000;
-    }
-  }
+                *sample = val << 8;
+                if ((a_cx+=int_tpf) >= 24576000) {
+                    a_cx -= 24576000;
+                }
+            }
+        }
 }
+#endif
 
         return eCRV_OK;
     }
