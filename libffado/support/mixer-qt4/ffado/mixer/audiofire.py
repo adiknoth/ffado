@@ -51,6 +51,8 @@ class AudioFire(QWidget):
             return "AudioFire4"
         if modelId == 0x0AF8:
             return "AudioFire8"
+        if modelId == 0x0AF9:
+            return "AudioFirePre8"
         if modelId == 0x0AF12:
             return "AudioFire12"
         return "Generic FireWorks"
@@ -249,10 +251,10 @@ class AudioFire(QWidget):
 
             label = QLabel( grpInput )
             grpInputLayout.addWidget( label )
-            label.setText("frienlyname %d" % (inpair+1))
+            label.setText("In %d" % (inpair+1))
             label.setAlignment(Qt.AlignCenter)
 
-            btn = QPushButton( grpInput )
+            btn = QToolButton( grpInput )
             grpInputLayout.addWidget( btn )
             btn.setText("Pad")
             btn.setCheckable(True)

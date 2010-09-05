@@ -1,4 +1,5 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <comment>Copyright (C) 2005-2008 by Pieter Palmers
 	
 	This file is part of FFADO
@@ -17,35 +18,32 @@
 	GNU General Public License for more details.
 </comment>
  <class>AfSettingsWidget</class>
- <widget class="QWidget" name="AfSettingsWidget" >
-  <property name="geometry" >
+ <widget class="QWidget" name="AfSettingsWidget">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>192</width>
-    <height>239</height>
+    <width>203</width>
+    <height>258</height>
    </rect>
   </property>
-  <property name="windowTitle" >
-   <string>Form2</string>
-  </property>
-  <layout class="QVBoxLayout" >
+  <layout class="QVBoxLayout">
    <item>
-    <widget class="QGroupBox" name="groupBox" >
-     <property name="title" >
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
       <string>S/PDIF Mode</string>
      </property>
-     <layout class="QVBoxLayout" >
+     <layout class="QVBoxLayout">
       <item>
-       <widget class="QRadioButton" name="radioConsumer" >
-        <property name="text" >
+       <widget class="QRadioButton" name="radioConsumer">
+        <property name="text">
          <string>Consumer</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QRadioButton" name="radioProfessional" >
-        <property name="text" >
+       <widget class="QRadioButton" name="radioProfessional">
+        <property name="text">
          <string>Professional</string>
         </property>
        </widget>
@@ -55,13 +53,13 @@
    </item>
    <item>
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeType" >
+     <property name="sizeType">
       <enum>QSizePolicy::Expanding</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>41</width>
        <height>16</height>
@@ -70,24 +68,24 @@
     </spacer>
    </item>
    <item>
-    <widget class="QPushButton" name="btnPhantom" >
-     <property name="text" >
+    <widget class="QPushButton" name="btnPhantom">
+     <property name="text">
       <string>Phantom Power</string>
      </property>
-     <property name="checkable" >
+     <property name="checkable">
       <bool>true</bool>
      </property>
     </widget>
    </item>
    <item>
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeType" >
+     <property name="sizeType">
       <enum>QSizePolicy::Expanding</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>41</width>
        <height>16</height>
@@ -96,28 +94,28 @@
     </spacer>
    </item>
    <item>
-    <widget class="QPushButton" name="btnSaveSettings" >
-     <property name="text" >
+    <widget class="QPushButton" name="btnSaveSettings">
+     <property name="text">
       <string>Save Settings to Device</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="btnIdentify" >
-     <property name="text" >
+    <widget class="QPushButton" name="btnIdentify">
+     <property name="text">
       <string>Identify Device</string>
      </property>
     </widget>
    </item>
    <item>
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeType" >
+     <property name="sizeType">
       <enum>QSizePolicy::Expanding</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>41</width>
        <height>16</height>
@@ -127,8 +125,15 @@
    </item>
   </layout>
  </widget>
- <layoutdefault spacing="6" margin="11" />
+ <layoutdefault spacing="6" margin="11"/>
  <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+ <tabstops>
+  <tabstop>radioConsumer</tabstop>
+  <tabstop>radioProfessional</tabstop>
+  <tabstop>btnPhantom</tabstop>
+  <tabstop>btnSaveSettings</tabstop>
+  <tabstop>btnIdentify</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
