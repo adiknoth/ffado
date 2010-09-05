@@ -177,6 +177,7 @@ device_definitions = (
     vendorname  = "M-Audio";
     modelname   = "ProFire 610";
     driver      = 20;
+    mixer       = "Generic_Dice_EAP";
 },
 {
     vendorid    = 0x000aac;
