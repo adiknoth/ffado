@@ -272,17 +272,13 @@ if not env.GetOption( "clean" ):
 	libenv.MergeFlags( "-lrt -lpthread" )
 	libenv.MergeFlags( env['LIBRAW1394_FLAGS'] )
 	libenv.MergeFlags( env['LIBIEC61883_FLAGS'] )
+	libenv.MergeFlags( env['LIBCONFIG_FLAGS'] )
 	if not env['SERIALIZE_USE_EXPAT']:
 		libenv.MergeFlags( env['LIBXML26_FLAGS'] )
 	else:
 		libenv.PrependUnique( LIBS=["expat"] )
 	if env['REQUIRE_LIBAVC']:
 		libenv.MergeFlags( env['LIBAVC1394_FLAGS'] )
-
-# add the libconfig
-libenv.MergeFlags( "-I#/external/libconfig" )
-libenv.MergeFlags( "-L"+env['build_base']+"external/libconfig" )
-libenv.MergeFlags( "-lconfigpp" )
 
 libname_versioned = "libffado.so.%s" % libenv['VERSION']
 libname_versioned_short = "libffado.so.%s" % libenv['VERSION'].split('.')[0]

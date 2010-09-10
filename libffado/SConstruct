@@ -198,13 +198,15 @@ if not env.GetOption('clean'):
     # The following checks are for headers and libs and packages we need.
     #
     allpresent = 1;
-    # for DBUS C++ bindings and cache-serialization.
-    allpresent &= conf.CheckHeader( "expat.h" )
-    allpresent &= conf.CheckLib( 'expat', 'XML_ExpatVersion', '#include <expat.h>' )
+    # for cache-serialization.
+    if env['SERIALIZE_USE_EXPAT']:
+        allpresent &= conf.CheckHeader( "expat.h" )
+        allpresent &= conf.CheckLib( 'expat', 'XML_ExpatVersion', '#include <expat.h>' )
 
     pkgs = {
         'libraw1394' : '1.3.0',
         'libiec61883' : '1.1.0',
+        'libconfig++' : '0'
         }
 
     if env['REQUIRE_LIBAVC']:
@@ -287,25 +289,43 @@ Therefor the qt4 mixer will not get installed.
 pkgs = {
     'alsa': '0',
     'dbus-1': '1.0',
+    'dbus-c++-1' : '0',
     }
 for pkg in pkgs:
     name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
     env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, pkgs[pkg] )
 
-#
-# Get the directory where dbus stores the service-files
-#
-if env['DBUS1_FLAGS']:
+dbus_checkfail = False
+
+if not env['DBUS1_FLAGS']:
+    dbus_checkfail = True
+    print """
+The dbus headers were not found.""" 
+
+if not env['DBUSC1_FLAGS']:
+    dbus_checkfail = True
+    print """
+The dbus-c++ headers were not found.""" 
+
+if not conf.CheckForApp( 'which dbusxx-xml2cpp' ):
+    dbus_checkfail = True
+    print """
+The program dbusxx-xml2cpp could not be found."""
+
+if dbus_checkfail:
+    env['DBUS1_FLAGS'] = ""
+    env['DBUSC1_FLAGS'] = ""
+    print """The dbus-server for ffado will therefore not be built.
+"""
+else:
+    # Get the directory where dbus stores the service-files
     env['dbus_service_dir'] = conf.GetPKGVariable( 'dbus-1', 'session_bus_services_dir' ).strip()
     # this is required to indicate that the DBUS version we use has support
     # for platform dependent threading init functions
     # this is true for DBUS >= 0.96 or so. Since we require >= 1.0 it is
     # always true
     env.MergeFlags( "-DDBUS_HAS_THREADS_INIT_DEFAULT" )
-else:
-    print """
-The dbus-headers where not found. The dbus-server for ffado will therefor not be built.
-"""
+
 
 config_guess = conf.ConfigGuess()
 
@@ -550,7 +570,7 @@ env.Install( env['libdir'] + '/pkgconfig', pkgconfig )
 
 env.Install( env['sharedir'], 'configuration' )
 
-subdirs=['external','src','libffado','support','doc']
+subdirs=['src','libffado','support','doc']
 if env['BUILD_TESTS']:
     subdirs.append('tests')
 

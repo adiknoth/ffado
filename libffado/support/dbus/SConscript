@@ -32,12 +32,13 @@ env = env.Clone()
 # For the debugging apps
 #
 
-env.AppendUnique( CPPPATH=["#/", "#/src", "#/external/dbus/include"] )
-env.PrependUnique( LIBPATH=[env['build_base']+"src", env['build_base']+"external/dbus"] )
-env.PrependUnique( LIBS=["ffado", "dbus-c++"] )
+env.AppendUnique( CPPPATH=["#/", "#/src"] )
+env.PrependUnique( LIBPATH=[env['build_base']+"src"] )
+env.PrependUnique( LIBS=["ffado"] )
 
 if not env.GetOption( "clean" ):
     env.MergeFlags( env["DBUS1_FLAGS"] )
+    env.MergeFlags( env["DBUSC1_FLAGS"] )
     env.MergeFlags( env['LIBRAW1394_FLAGS'] )
     if not env['SERIALIZE_USE_EXPAT']:
         env.MergeFlags( env['LIBXML26_FLAGS'] )

@@ -333,7 +333,8 @@ Configuration::getValueForDeviceSetting(unsigned int vendor_id, unsigned model_i
     libconfig::Setting *s = getDeviceSetting( vendor_id, model_id );
     if(s) {
         try {
-            return s->lookupValue(setting, ref);
+            long long int refverylong = ref;
+            return s->lookupValue(setting, refverylong);
         } catch (...) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Setting %s not found\n", setting.c_str());
             return false;

@@ -52,19 +52,19 @@ Element::Element( DBus::Connection& connection, std::string p, Element* parent, 
     setVerboseLevel(m_Slave.getVerboseLevel());
 }
 
-void Element::setVerboseLevel( const DBus::Int32 &i)
+void Element::setVerboseLevel( const int32_t &i)
 {
     setDebugLevel(i);
     m_Slave.setVerboseLevel(i);
     if(m_UpdateLock) m_UpdateLock->setVerboseLevel(i);
 }
 
-DBus::Int32 Element::getVerboseLevel()
+int32_t Element::getVerboseLevel()
 {
     return getDebugLevel();
 }
 
-DBus::Bool
+bool
 Element::canChangeValue()
 {
     return m_Slave.canChangeValue();
@@ -110,28 +110,28 @@ Element::getLock()
     }
 }
 
-DBus::UInt64
+uint64_t
 Element::getId( )
 {
     return m_Slave.getId();
 }
 
-DBus::String
+std::string
 Element::getName( )
 {
-    return DBus::String(m_Slave.getName());
+    return std::string(m_Slave.getName());
 }
 
-DBus::String
+std::string
 Element::getLabel( )
 {
-    return DBus::String(m_Slave.getLabel());
+    return std::string(m_Slave.getLabel());
 }
 
-DBus::String
+std::string
 Element::getDescription( )
 {
-    return DBus::String(m_Slave.getDescription());
+    return std::string(m_Slave.getDescription());
 }
 
 // --- Container
@@ -183,7 +183,7 @@ Container::~Container() {
 }
 
 void
-Container::setVerboseLevel( const DBus::Int32 & i)
+Container::setVerboseLevel( const int32_t & i)
 {
     Element::setVerboseLevel(i);
     for ( ElementVectorIterator it = m_Children.begin();
@@ -194,13 +194,13 @@ Container::setVerboseLevel( const DBus::Int32 & i)
     }
 }
 
-DBus::Int32
+int32_t
 Container::getNbElements( ) {
     return m_Slave.countElements();
 }
 
-DBus::String
-Container::getElementName( const DBus::Int32& i ) {
+std::string
+Container::getElementName( const int32_t& i ) {
     int nbElements=m_Slave.countElements();
     if (i<nbElements) {
         m_Slave.lockControl();
@@ -461,8 +461,8 @@ Continuous::Continuous( DBus::Connection& connection, std::string p, Element* pa
                  path().c_str() );
 }
 
-DBus::Double
-Continuous::setValue( const DBus::Double& value )
+double
+Continuous::setValue( const double& value )
 {
     m_Slave.setValue(value);
 /*    
@@ -474,7 +474,7 @@ Continuous::setValue( const DBus::Double& value )
     return value;
 }
 
-DBus::Double
+double
 Continuous::getValue(  )
 {
     double val = m_Slave.getValue();
@@ -482,8 +482,8 @@ Continuous::getValue(  )
     return val;
 }
 
-DBus::Double
-Continuous::setValueIdx( const DBus::Int32 & idx, const DBus::Double& value )
+double
+Continuous::setValueIdx( const int32_t & idx, const double& value )
 {
     m_Slave.setValue(idx, value);
 /*    
@@ -495,15 +495,15 @@ Continuous::setValueIdx( const DBus::Int32 & idx, const DBus::Double& value )
     return value;
 }
 
-DBus::Double
-Continuous::getValueIdx( const DBus::Int32 & idx )
+double
+Continuous::getValueIdx( const int32_t & idx )
 {
     double val = m_Slave.getValue(idx);
     debugOutput( DEBUG_LEVEL_VERBOSE, "getValue(%d) => %lf\n", idx, val );
     return val;
 }
 
-DBus::Double
+double
 Continuous::getMinimum()
 {
     double val = m_Slave.getMinimum();
@@ -511,7 +511,7 @@ Continuous::getMinimum()
     return val;
 }
 
-DBus::Double
+double
 Continuous::getMaximum()
 {
     double val = m_Slave.getMaximum();
@@ -529,8 +529,8 @@ Discrete::Discrete( DBus::Connection& connection, std::string p, Element* parent
                  path().c_str() );
 }
 
-DBus::Int32
-Discrete::setValue( const DBus::Int32& value )
+int32_t
+Discrete::setValue( const int32_t& value )
 {
     m_Slave.setValue(value);
     
@@ -541,7 +541,7 @@ Discrete::setValue( const DBus::Int32& value )
     return value;
 }
 
-DBus::Int32
+int32_t
 Discrete::getValue()
 {
     int32_t val = m_Slave.getValue();
@@ -549,8 +549,8 @@ Discrete::getValue()
     return val;
 }
 
-DBus::Int32
-Discrete::setValueIdx( const DBus::Int32& idx, const DBus::Int32& value )
+int32_t
+Discrete::setValueIdx( const int32_t& idx, const int32_t& value )
 {
     m_Slave.setValue(idx, value);
     
@@ -561,8 +561,8 @@ Discrete::setValueIdx( const DBus::Int32& idx, const DBus::Int32& value )
     return value;
 }
 
-DBus::Int32
-Discrete::getValueIdx( const DBus::Int32& idx )
+int32_t
+Discrete::getValueIdx( const int32_t& idx )
 {
     int32_t val = m_Slave.getValue(idx);
     debugOutput( DEBUG_LEVEL_VERBOSE, "getValue(%d) => %d\n", idx, val );
@@ -579,8 +579,8 @@ Text::Text( DBus::Connection& connection, std::string p, Element* parent, Contro
                  path().c_str() );
 }
 
-DBus::String
-Text::setValue( const DBus::String& value )
+std::string
+Text::setValue( const std::string& value )
 {
     m_Slave.setValue(value);
     
@@ -591,7 +591,7 @@ Text::setValue( const DBus::String& value )
     return value;
 }
 
-DBus::String
+std::string
 Text::getValue()
 {
     std::string val = m_Slave.getValue();
@@ -609,8 +609,8 @@ Register::Register( DBus::Connection& connection, std::string p, Element* parent
                  path().c_str() );
 }
 
-DBus::UInt64
-Register::setValue( const DBus::UInt64& addr, const DBus::UInt64& value )
+uint64_t
+Register::setValue( const uint64_t& addr, const uint64_t& value )
 {
     m_Slave.setValue(addr, value);
     
@@ -621,10 +621,10 @@ Register::setValue( const DBus::UInt64& addr, const DBus::UInt64& value )
     return value;
 }
 
-DBus::UInt64
-Register::getValue( const DBus::UInt64& addr )
+uint64_t
+Register::getValue( const uint64_t& addr )
 {
-    DBus::UInt64 val = m_Slave.getValue(addr);
+    uint64_t val = m_Slave.getValue(addr);
     debugOutput( DEBUG_LEVEL_VERBOSE, "getValue(%lld) => %lld\n", addr, val );
     return val;
 }
@@ -639,14 +639,14 @@ Enum::Enum( DBus::Connection& connection, std::string p, Element* parent, Contro
                  path().c_str() );
 }
 
-DBus::Int32
-Enum::select( const DBus::Int32& idx )
+int32_t
+Enum::select( const int32_t& idx )
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "select(%d)\n", idx );
     return  m_Slave.select(idx);
 }
 
-DBus::Int32
+int32_t
 Enum::selected()
 {
     int retval = m_Slave.selected();
@@ -654,7 +654,7 @@ Enum::selected()
     return retval;
 }
 
-DBus::Int32
+int32_t
 Enum::count()
 {
     int retval = m_Slave.count();
@@ -662,8 +662,8 @@ Enum::count()
     return retval;
 }
 
-DBus::String
-Enum::getEnumLabel( const DBus::Int32 & idx )
+std::string
+Enum::getEnumLabel( const int32_t & idx )
 {
     std::string retval = m_Slave.getEnumLabel(idx);
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "getEnumLabel(%d) => %s\n", idx, retval.c_str() );
@@ -679,14 +679,14 @@ AttributeEnum::AttributeEnum( DBus::Connection& connection, std::string p, Eleme
                  path().c_str() );
 }
 
-DBus::Int32
-AttributeEnum::select( const DBus::Int32& idx )
+int32_t
+AttributeEnum::select( const int32_t& idx )
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "select(%d)\n", idx );
     return  m_Slave.select(idx);
 }
 
-DBus::Int32
+int32_t
 AttributeEnum::selected()
 {
     int retval = m_Slave.selected();
@@ -694,7 +694,7 @@ AttributeEnum::selected()
     return retval;
 }
 
-DBus::Int32
+int32_t
 AttributeEnum::count()
 {
     int retval = m_Slave.count();
@@ -702,7 +702,7 @@ AttributeEnum::count()
     return retval;
 }
 
-DBus::Int32
+int32_t
 AttributeEnum::attributeCount()
 {
     int retval = m_Slave.attributeCount();
@@ -710,24 +710,24 @@ AttributeEnum::attributeCount()
     return retval;
 }
 
-DBus::String
-AttributeEnum::getEnumLabel( const DBus::Int32 & idx )
+std::string
+AttributeEnum::getEnumLabel( const int32_t & idx )
 {
     std::string retval = m_Slave.getEnumLabel(idx);
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "getEnumLabel(%d) => %s\n", idx, retval.c_str() );
     return retval;
 }
 
-DBus::String
-AttributeEnum::getAttributeValue( const DBus::Int32 & idx )
+std::string
+AttributeEnum::getAttributeValue( const int32_t & idx )
 {
     std::string retval = m_Slave.getAttributeValue(idx);
     debugOutput( DEBUG_LEVEL_VERBOSE, "getAttributeValue(%d) => %s\n", idx, retval.c_str() );
     return retval;
 }
 
-DBus::String
-AttributeEnum::getAttributeName( const DBus::Int32 & idx )
+std::string
+AttributeEnum::getAttributeName( const int32_t & idx )
 {
     std::string retval = m_Slave.getAttributeName(idx);
     debugOutput( DEBUG_LEVEL_VERBOSE, "getAttributeName(%d) => %s\n", idx, retval.c_str() );
@@ -744,37 +744,37 @@ ConfigRomX::ConfigRomX( DBus::Connection& connection, std::string p, Element* pa
                  path().c_str() );
 }
 
-DBus::String
+std::string
 ConfigRomX::getGUID( )
 {
     return m_Slave.getGuidString();
 }
 
-DBus::String
+std::string
 ConfigRomX::getVendorName( )
 {
     return m_Slave.getVendorName();
 }
 
-DBus::String
+std::string
 ConfigRomX::getModelName( )
 {
     return m_Slave.getModelName();
 }
 
-DBus::Int32
+int32_t
 ConfigRomX::getVendorId( )
 {
     return m_Slave.getNodeVendorId();
 }
 
-DBus::Int32
+int32_t
 ConfigRomX::getModelId( )
 {
     return m_Slave.getModelId();
 }
 
-DBus::Int32
+int32_t
 ConfigRomX::getUnitVersion( )
 {
     return m_Slave.getUnitVersion();
@@ -790,70 +790,70 @@ MatrixMixer::MatrixMixer( DBus::Connection& connection, std::string p, Element* 
                  path().c_str() );
 }
 
-DBus::Int32
+int32_t
 MatrixMixer::getRowCount( ) {
     return m_Slave.getRowCount();
 }
 
-DBus::Int32
+int32_t
 MatrixMixer::getColCount( ) {
     return m_Slave.getColCount();
 }
 
-DBus::Int32
-MatrixMixer::canWrite( const DBus::Int32& row, const DBus::Int32& col) {
+int32_t
+MatrixMixer::canWrite( const int32_t& row, const int32_t& col) {
     return m_Slave.canWrite(row,col);
 }
 
-DBus::Double
-MatrixMixer::setValue( const DBus::Int32& row, const DBus::Int32& col, const DBus::Double& val ) {
+double
+MatrixMixer::setValue( const int32_t& row, const int32_t& col, const double& val ) {
     return m_Slave.setValue(row,col,val);
 }
 
-DBus::Double
-MatrixMixer::getValue( const DBus::Int32& row, const DBus::Int32& col) {
+double
+MatrixMixer::getValue( const int32_t& row, const int32_t& col) {
     return m_Slave.getValue(row,col);
 }
 
-DBus::Bool
+bool
 MatrixMixer::hasNames() {
     return m_Slave.hasNames();
 }
-DBus::String
-MatrixMixer::getRowName( const DBus::Int32& row) {
+std::string
+MatrixMixer::getRowName( const int32_t& row) {
     return m_Slave.getRowName(row);
 }
-DBus::String
-MatrixMixer::getColName( const DBus::Int32& col) {
+std::string
+MatrixMixer::getColName( const int32_t& col) {
     return m_Slave.getColName(col);
 }
-DBus::Bool
-MatrixMixer::setRowName( const DBus::Int32& row, const DBus::String& name) {
+bool
+MatrixMixer::setRowName( const int32_t& row, const std::string& name) {
     return m_Slave.setRowName(row, name);
 }
-DBus::Bool
-MatrixMixer::setColName( const DBus::Int32& col, const DBus::String& name) {
+bool
+MatrixMixer::setColName( const int32_t& col, const std::string& name) {
     return m_Slave.setColName(col, name);
 }
 
-DBus::Bool
+bool
 MatrixMixer::canConnect() {
     return m_Slave.canConnect();
 }
-std::vector<DBus::String>
-MatrixMixer::availableConnectionsForRow( const DBus::Int32& row) {
+std::vector<std::string>
+MatrixMixer::availableConnectionsForRow( const int32_t& row) {
     return m_Slave.availableConnectionsForRow(row);
 }
-std::vector<DBus::String>
-MatrixMixer::availableConnectionsForCol( const DBus::Int32& col) {
+std::vector<std::string>
+MatrixMixer::availableConnectionsForCol( const int32_t& col) {
     return m_Slave.availableConnectionsForCol(col);
 }
-DBus::Bool
-MatrixMixer::connectRowTo( const DBus::Int32& row, const DBus::String& target) {
+bool
+MatrixMixer::connectRowTo( const int32_t& row, const std::string& target) {
     return m_Slave.connectRowTo(row, target);
 }
-DBus::Bool
-MatrixMixer::connectColTo( const DBus::Int32& col, const DBus::String& target) {
+bool
+MatrixMixer::connectColTo( const int32_t& col, const std::string& target) {
     return m_Slave.connectColTo(col, target);
 }
 
@@ -867,84 +867,84 @@ CrossbarRouter::CrossbarRouter( DBus::Connection& connection, std::string p, Ele
                  path().c_str() );
 }
 
-/*DBus::Int32
-CrossbarRouter::getSourceIndex(const DBus::String &name)
+/*int32_t
+CrossbarRouter::getSourceIndex(const std::string &name)
 {
     return m_Slave.getSourceIndex(name);
 }
 
-DBus::Int32
-CrossbarRouter::getDestinationIndex(const DBus::String &name)
+int32_t
+CrossbarRouter::getDestinationIndex(const std::string &name)
 {
     return m_Slave.getDestinationIndex(name);
 }*/
 
-std::vector< DBus::String >
+std::vector< std::string >
 CrossbarRouter::getSourceNames()
 {
     return m_Slave.getSourceNames();
 }
 
-std::vector< DBus::String >
+std::vector< std::string >
 CrossbarRouter::getDestinationNames()
 {
     return m_Slave.getDestinationNames();
 }
 
-std::vector< DBus::String >
-CrossbarRouter::getDestinationsForSource(const DBus::String &idx)
+std::vector< std::string >
+CrossbarRouter::getDestinationsForSource(const std::string &idx)
 {
     return m_Slave.getDestinationsForSource(idx);
 }
 
-DBus::String
-CrossbarRouter::getSourceForDestination(const DBus::String &idx)
+std::string
+CrossbarRouter::getSourceForDestination(const std::string &idx)
 {
     return m_Slave.getSourceForDestination(idx);
 }
 
-DBus::Bool
-CrossbarRouter::canConnect(const DBus::String &source, const DBus::String &dest)
+bool
+CrossbarRouter::canConnect(const std::string &source, const std::string &dest)
 {
     return m_Slave.canConnect(source, dest);
 }
 
-DBus::Bool
-CrossbarRouter::setConnectionState(const DBus::String &source, const DBus::String &dest, const DBus::Bool &enable)
+bool
+CrossbarRouter::setConnectionState(const std::string &source, const std::string &dest, const bool &enable)
 {
     return m_Slave.setConnectionState(source, dest, enable);
 }
 
-DBus::Bool
-CrossbarRouter::getConnectionState(const DBus::String &source, const DBus::String &dest)
+bool
+CrossbarRouter::getConnectionState(const std::string &source, const std::string &dest)
 {
     return m_Slave.getConnectionState(source, dest);
 }
 
-DBus::Bool
+bool
 CrossbarRouter::clearAllConnections()
 {
     return m_Slave.clearAllConnections();
 }
 
-DBus::Bool
+bool
 CrossbarRouter::hasPeakMetering()
 {
     return m_Slave.hasPeakMetering();
 }
 
-DBus::Double
-CrossbarRouter::getPeakValue(const DBus::String &dest)
+double
+CrossbarRouter::getPeakValue(const std::string &dest)
 {
     return m_Slave.getPeakValue(dest);
 }
-std::vector< DBus::Struct<DBus::String, double> >
+std::vector< DBus::Struct<std::string, double> >
 CrossbarRouter::getPeakValues()
 {
     std::map<std::string, double> peakvalues = m_Slave.getPeakValues();
-    std::vector< DBus::Struct<DBus::String, double> > ret;
+    std::vector< DBus::Struct<std::string, double> > ret;
     for (std::map<std::string, double>::iterator it=peakvalues.begin(); it!=peakvalues.end(); ++it) {
-        DBus::Struct<DBus::String, double> tmp;
+        DBus::Struct<std::string, double> tmp;
         tmp._1 = it->first;
         tmp._2 = it->second;
         ret.push_back(tmp);
@@ -971,14 +971,14 @@ Boolean::Boolean( DBus::Connection& connection, std::string p, Element* parent, 
                  path().c_str() );
 }
 
-DBus::Bool
-Boolean::select( const DBus::Bool& value )
+bool
+Boolean::select( const bool& value )
 {
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "select(%d)\n", value );
     return  m_Slave.select(value);
 }
 
-DBus::Bool
+bool
 Boolean::selected()
 {
     bool retval = m_Slave.selected();
@@ -986,8 +986,8 @@ Boolean::selected()
     return retval;
 }
 
-DBus::String
-Boolean::getBooleanLabel( const DBus::Bool& value )
+std::string
+Boolean::getBooleanLabel( const bool& value )
 {
     std::string retval = m_Slave.getBooleanLabel(value);
     debugOutput( DEBUG_LEVEL_VERY_VERBOSE, "getBooleanLabel(%d) => %s\n", value, retval.c_str() );

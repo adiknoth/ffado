@@ -25,7 +25,7 @@
 #define _FFADO_UTIL_CONFIGURATION_
 
 #include "debugmodule/debugmodule.h"
-#include "external/libconfig/libconfigpp.h"
+#include "libconfig.h++"
 
 #include <vector>
 

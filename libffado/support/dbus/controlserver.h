@@ -98,7 +98,7 @@ private:
 };
 
 class Element
-: public org::ffado::Control::Element::Element
+: public org::ffado::Control::Element::Element_adaptor
 , public DBus::IntrospectableAdaptor
 , public DBus::ObjectAdaptor
 {
@@ -109,15 +109,15 @@ public:
              std::string p, Element *,
              Control::Element &slave );
 
-    DBus::UInt64 getId( );
-    DBus::String getName( );
-    DBus::String getLabel( );
-    DBus::String getDescription( );
+    uint64_t getId( );
+    std::string getName( );
+    std::string getLabel( );
+    std::string getDescription( );
 
-    DBus::Bool canChangeValue( );
+    bool canChangeValue( );
 
-    void setVerboseLevel( const DBus::Int32 &);
-    DBus::Int32 getVerboseLevel();
+    void setVerboseLevel( const int32_t &);
+    int32_t getVerboseLevel();
 
 protected:
     void Lock();
@@ -137,7 +137,7 @@ typedef std::vector<Element *>::iterator ElementVectorIterator;
 typedef std::vector<Element *>::const_iterator ConstElementVectorIterator;
 
 class Container
-: public org::ffado::Control::Element::Container
+: public org::ffado::Control::Element::Container_adaptor
 , public DBusControl::Element
 {
 public:
@@ -146,13 +146,13 @@ public:
                   Control::Container &slave );
     virtual ~Container();
 
-    DBus::Int32 getNbElements( );
-    DBus::String getElementName( const DBus::Int32& );
+    int32_t getNbElements( );
+    std::string getElementName( const int32_t& );
 
     void updated(int new_nb_elements);
     void destroyed();
 
-    void setVerboseLevel( const DBus::Int32 &);
+    void setVerboseLevel( const int32_t &);
 private:
     Element *createHandler(Element *, Control::Element& e);
     void updateTree();
@@ -165,7 +165,7 @@ private:
 };
 
 class Continuous
-: public org::ffado::Control::Element::Continuous
+: public org::ffado::Control::Element::Continuous_adaptor
 , public Element
 {
 public:
@@ -173,20 +173,20 @@ public:
                   std::string p, Element *,
                   Control::Continuous &slave );
     
-    DBus::Double setValue( const DBus::Double & value );
-    DBus::Double getValue( );
-    DBus::Double getMinimum( );
-    DBus::Double getMaximum( );
-    DBus::Double setValueIdx( const DBus::Int32 & idx,
-                              const DBus::Double & value );
-    DBus::Double getValueIdx( const DBus::Int32 & idx );
+    double setValue( const double & value );
+    double getValue( );
+    double getMinimum( );
+    double getMaximum( );
+    double setValueIdx( const int32_t & idx,
+                              const double & value );
+    double getValueIdx( const int32_t & idx );
 
 private:
     Control::Continuous &m_Slave;
 };
 
 class Discrete
-: public org::ffado::Control::Element::Discrete
+: public org::ffado::Control::Element::Discrete_adaptor
 , public Element
 {
 public:
@@ -194,18 +194,18 @@ public:
               std::string p, Element *,
               Control::Discrete &slave );
     
-    DBus::Int32 setValue( const DBus::Int32 & value );
-    DBus::Int32 getValue( );
-    DBus::Int32 setValueIdx( const DBus::Int32 & idx,
-                             const DBus::Int32 & value );
-    DBus::Int32 getValueIdx( const DBus::Int32 & idx );
+    int32_t setValue( const int32_t & value );
+    int32_t getValue( );
+    int32_t setValueIdx( const int32_t & idx,
+                             const int32_t & value );
+    int32_t getValueIdx( const int32_t & idx );
 
 private:
     Control::Discrete &m_Slave;
 };
 
 class Text
-: public org::ffado::Control::Element::Text
+: public org::ffado::Control::Element::Text_adaptor
 , public Element
 {
 public:
@@ -213,15 +213,15 @@ public:
           std::string p, Element *,
           Control::Text &slave );
 
-    DBus::String setValue( const DBus::String & value );
-    DBus::String getValue( );
+    std::string setValue( const std::string & value );
+    std::string getValue( );
 
 private:
     Control::Text &m_Slave;
 };
 
 class Register
-: public org::ffado::Control::Element::Register
+: public org::ffado::Control::Element::Register_adaptor
 , public Element
 {
 public:
@@ -229,15 +229,15 @@ public:
               std::string p, Element *,
               Control::Register &slave );
     
-    DBus::UInt64 setValue( const DBus::UInt64 & addr, const DBus::UInt64 & value );
-    DBus::UInt64 getValue( const DBus::UInt64 & addr );
+    uint64_t setValue( const uint64_t & addr, const uint64_t & value );
+    uint64_t getValue( const uint64_t & addr );
 
 private:
     Control::Register &m_Slave;
 };
 
 class Enum
-: public org::ffado::Control::Element::Enum
+: public org::ffado::Control::Element::Enum_adaptor
 , public Element
 {
 public:
@@ -245,17 +245,17 @@ public:
           std::string p, Element *,
           Control::Enum &slave );
     
-    DBus::Int32 select( const DBus::Int32 & idx );
-    DBus::Int32 selected( );
-    DBus::Int32 count( );
-    DBus::String getEnumLabel( const DBus::Int32 & idx );
+    int32_t select( const int32_t & idx );
+    int32_t selected( );
+    int32_t count( );
+    std::string getEnumLabel( const int32_t & idx );
 
 private:
     Control::Enum &m_Slave;
 };
 
 class AttributeEnum
-: public org::ffado::Control::Element::AttributeEnum
+: public org::ffado::Control::Element::AttributeEnum_adaptor
 , public Element
 {
 public:
@@ -263,13 +263,13 @@ public:
                    std::string p, Element *,
                    Control::AttributeEnum &slave );
     
-    DBus::Int32 select( const DBus::Int32 & idx );
-    DBus::Int32 selected( );
-    DBus::Int32 count( );
-    DBus::Int32 attributeCount();
-    DBus::String getEnumLabel( const DBus::Int32 & idx );
-    DBus::String getAttributeValue( const DBus::Int32 & idx );
-    DBus::String getAttributeName( const DBus::Int32 & idx );
+    int32_t select( const int32_t & idx );
+    int32_t selected( );
+    int32_t count( );
+    int32_t attributeCount();
+    std::string getEnumLabel( const int32_t & idx );
+    std::string getAttributeValue( const int32_t & idx );
+    std::string getAttributeName( const int32_t & idx );
 
 private:
     Control::AttributeEnum &m_Slave;
@@ -278,7 +278,7 @@ private:
 // FIXME: to change this to a normal ConfigRom class name we have to
 // put the 1394 config rom class into a separate namespace.
 class ConfigRomX
-: public org::ffado::Control::Element::ConfigRomX
+: public org::ffado::Control::Element::ConfigRomX_adaptor
 , public Element
 {
 public:
@@ -286,19 +286,19 @@ public:
                   std::string p, Element *,
                   ConfigRom &slave );
 
-    DBus::String getGUID( );
-    DBus::String getVendorName( );
-    DBus::String getModelName( );
-    DBus::Int32 getVendorId( );
-    DBus::Int32 getModelId( );
-    DBus::Int32 getUnitVersion( );
+    std::string getGUID( );
+    std::string getVendorName( );
+    std::string getModelName( );
+    int32_t getVendorId( );
+    int32_t getModelId( );
+    int32_t getUnitVersion( );
 
 private:
     ConfigRom &m_Slave;
 };
 
 class MatrixMixer
-: public org::ffado::Control::Element::MatrixMixer
+: public org::ffado::Control::Element::MatrixMixer_adaptor
 , public Element
 {
 public:
@@ -306,31 +306,31 @@ public:
                   std::string p, Element *,
                   Control::MatrixMixer &slave );
 
-    DBus::Int32 getRowCount( );
-    DBus::Int32 getColCount( );
+    int32_t getRowCount( );
+    int32_t getColCount( );
 
-    DBus::Int32 canWrite( const DBus::Int32&, const DBus::Int32& );
-    DBus::Double setValue( const DBus::Int32&, const DBus::Int32&, const DBus::Double& );
-    DBus::Double getValue( const DBus::Int32&, const DBus::Int32& );
+    int32_t canWrite( const int32_t&, const int32_t& );
+    double setValue( const int32_t&, const int32_t&, const double& );
+    double getValue( const int32_t&, const int32_t& );
 
-    DBus::Bool hasNames();
-    DBus::String getRowName( const DBus::Int32& );
-    DBus::String getColName( const DBus::Int32& );
-    DBus::Bool setRowName( const DBus::Int32&, const DBus::String& );
-    DBus::Bool setColName( const DBus::Int32&, const DBus::String& );
+    bool hasNames();
+    std::string getRowName( const int32_t& );
+    std::string getColName( const int32_t& );
+    bool setRowName( const int32_t&, const std::string& );
+    bool setColName( const int32_t&, const std::string& );
 
-    DBus::Bool canConnect();
-    std::vector<DBus::String> availableConnectionsForRow( const DBus::Int32& );
-    std::vector<DBus::String> availableConnectionsForCol( const DBus::Int32& );
-    DBus::Bool connectRowTo( const DBus::Int32&, const DBus::String& );
-    DBus::Bool connectColTo( const DBus::Int32&, const DBus::String& );
+    bool canConnect();
+    std::vector<std::string> availableConnectionsForRow( const int32_t& );
+    std::vector<std::string> availableConnectionsForCol( const int32_t& );
+    bool connectRowTo( const int32_t&, const std::string& );
+    bool connectColTo( const int32_t&, const std::string& );
 
 private:
     Control::MatrixMixer &m_Slave;
 };
 
 class CrossbarRouter
-: public org::ffado::Control::Element::CrossbarRouter
+: public org::ffado::Control::Element::CrossbarRouter_adaptor
 , public Element
 {
 public:
@@ -338,28 +338,28 @@ public:
                   std::string p, Element *,
                   Control::CrossbarRouter &slave );
 
-    std::vector< DBus::String > getSourceNames();
-    std::vector< DBus::String > getDestinationNames();
+    std::vector< std::string > getSourceNames();
+    std::vector< std::string > getDestinationNames();
 
-    std::vector< DBus::String > getDestinationsForSource(const DBus::String &);
-    DBus::String getSourceForDestination(const DBus::String &);
+    std::vector< std::string > getDestinationsForSource(const std::string &);
+    std::string getSourceForDestination(const std::string &);
 
-    DBus::Bool  canConnect(const DBus::String &source, const DBus::String &dest);
-    DBus::Bool  setConnectionState(const DBus::String &source, const DBus::String &dest, const DBus::Bool &enable);
-    DBus::Bool  getConnectionState(const DBus::String &source, const DBus::String &dest);
+    bool  canConnect(const std::string &source, const std::string &dest);
+    bool  setConnectionState(const std::string &source, const std::string &dest, const bool &enable);
+    bool  getConnectionState(const std::string &source, const std::string &dest);
 
-    DBus::Bool  clearAllConnections();
+    bool  clearAllConnections();
 
-    DBus::Bool  hasPeakMetering();
-    DBus::Double getPeakValue(const DBus::String &dest);
-    std::vector< DBus::Struct<DBus::String, double> > getPeakValues();
+    bool  hasPeakMetering();
+    double getPeakValue(const std::string &dest);
+    std::vector< DBus::Struct<std::string, double> > getPeakValues();
 
 private:
     Control::CrossbarRouter &m_Slave;
 };
 
 class Boolean
-: public org::ffado::Control::Element::Boolean
+: public org::ffado::Control::Element::Boolean_adaptor
 , public Element
 {
 public:
@@ -367,9 +367,9 @@ public:
           std::string p, Element *,
           Control::Boolean &slave );
     
-    DBus::Bool select( const DBus::Bool& value );
-    DBus::Bool selected();
-    DBus::String getBooleanLabel( const DBus::Bool& value );
+    bool select( const bool& value );
+    bool selected();
+    std::string getBooleanLabel( const bool& value );
 
 private:
     Control::Boolean &m_Slave;

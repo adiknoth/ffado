@@ -34,7 +34,7 @@ namespace DBusControl {
 
 // simple fader element
 class ContinuousClient
-: public org::ffado::Control::Element::Continuous,
+: public org::ffado::Control::Element::Continuous_proxy,
   public DBus::IntrospectableProxy,
   public DBus::ObjectProxy
 {
