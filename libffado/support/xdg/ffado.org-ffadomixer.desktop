@@ -1,9 +1,8 @@
 [Desktop Entry]
-Comment=
+Name=FFADO Mixer
+Comment=Audio mixer for Firewire devices
 Exec=ffado-mixer
-GenericName=
+GenericName=Firewire audio mixer
 Icon=ffado
-Name=ffado-mixer
-Path=
 Type=Application
-Categories=Mixer;Audio;AudioVideo;HardwareSettings;Qt
+Categories=Mixer;Audio;AudioVideo;HardwareSettings;Qt;
