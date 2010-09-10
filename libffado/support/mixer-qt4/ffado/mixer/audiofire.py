@@ -23,7 +23,7 @@
 from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
 from PyQt4.QtGui import QWidget, QHBoxLayout, QVBoxLayout, \
                         QGroupBox, QTabWidget, QLabel, \
-                        QPushButton, QSpacerItem, QSizePolicy
+                        QPushButton, QToolButton, QSpacerItem, QSizePolicy
 from ffado.config import *
 import logging
 log = logging.getLogger('audiofire')
@@ -181,7 +181,7 @@ class AudioFire(QWidget):
                 strip = AfMonitorWidget( grpMonitor )
                 grpMonitorLayout.addWidget( strip, 1 )
                 input_id = inpair*2
-                strip.lblName.setText("IN %d/%d" % (input_id+1, input_id+2))
+                strip.lblName.setText("In %d/%d" % (input_id+1, input_id+2))
 
                 # add the elements to the control structure
 
@@ -233,7 +233,7 @@ class AudioFire(QWidget):
             strip.rotPan1.hide()
 
             # add the tab
-            outputtabs.addTab( tab, "OUT %d/%d" % (output_id+1, output_id+2))
+            outputtabs.addTab( tab, "Out %d/%d" % (output_id+1, output_id+2))
 
         # add an input config tab
         tab = QWidget( outputtabs )
@@ -244,7 +244,7 @@ class AudioFire(QWidget):
             log.debug("strip")
             grpInput = QGroupBox(tab)
             tablayout.addWidget(grpInput)
-            grpInput.setTitle("IN %d" % (inpair+1))
+            grpInput.setTitle("In %d" % (inpair+1))
 
             grpInputLayout = QVBoxLayout()
             grpInput.setLayout(grpInputLayout);
@@ -263,12 +263,12 @@ class AudioFire(QWidget):
             spacer = QSpacerItem(1,1,QSizePolicy.Minimum,QSizePolicy.Expanding)
             grpInputLayout.addItem(spacer)
 
-        outputtabs.addTab( tab, "INPUT")
+        outputtabs.addTab( tab, "Input")
 
         # add an settings tab
         tab = QWidget( outputtabs )
         tablayout = QHBoxLayout( tab )
-        outputtabs.addTab( tab, "SETTINGS")
+        outputtabs.addTab( tab, "Settings")
         settings = AfSettingsWidget( tab )
 
         has_sw_phantom = self.hw.getDiscrete("/HwInfo/PhantomPower")
