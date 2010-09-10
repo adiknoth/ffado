@@ -300,6 +300,14 @@ struct PortEntry {
     unsigned int port_offset;
 };
 
+struct PortGroupEntry {
+    const char *group_name_format;
+    signed int n_channels;
+    unsigned int flags;
+    signed int port_order;
+    signed int group_pkt_offset;
+};
+
 // Structures used for pre-Mark3 device mixer definitions
 struct MixerCtrl {
     const char *name, *label, *desc;
@@ -329,6 +337,8 @@ struct MotuMark3Mixer {
 };
 
 struct DevicePropertyEntry {
+    PortGroupEntry *portgroup_entry;
+    unsigned int n_portgroup_entries;
     const PortEntry* port_entry;
     unsigned int n_port_entries;
     signed int MaxSampleRate;
@@ -413,6 +423,9 @@ private:
         enum Streaming::Port::E_Direction direction,
         int position, int size);
     bool addDirPorts(
+        enum Streaming::Port::E_Direction direction, unsigned int sample_rate, 
+        unsigned int optical_a_mode, unsigned int optical_b_mode);
+    bool addDirPortGroups(
         enum Streaming::Port::E_Direction direction, unsigned int sample_rate, 
         unsigned int optical_a_mode, unsigned int optical_b_mode);
 

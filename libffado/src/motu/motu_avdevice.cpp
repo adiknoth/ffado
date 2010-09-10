@@ -537,22 +537,86 @@ const PortEntry Ports_TRAVELERmk3[] =
 #endif
 };
 
+// FIXME: The following two tables illustrate how the new PortGroupEntry
+// mechanism is used to convey the same information as the old PortEntry
+// tables but in a more compact and maintainable form.  These aren't
+// actually used yet since the functionality of addDirPortGroups() still
+// needs to be tested.  Once this is done, new tables for all other devices
+// will be constructed and all calls to addDirPorts() will be replaced with
+// calls to addDirPortGroups().  After this is working the old PortEntry
+// tables can be removed.
+
+PortGroupEntry PortGroups_TRAVELER[] = 
+{
+    {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, -1, },
+    {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, },
+    {"Analog%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, },
+    {"AES/EBU%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, },
+    {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_OFF|MOTU_PA_OPTICAL_ADAT, },
+    {"Toslink%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, },
+    {"ADAT%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, },
+    {"ADAT%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, },
+};
+
+PortGroupEntry PortGroups_828mk3[] = 
+{
+    {"Mic-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, -1, },
+    {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"Unknown-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_4x|MOTU_PA_MK3_OPT_ANY, },
+    {"Analog%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, },
+    {"Return-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, },
+    {"MainOut-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"Unknown-%d", 2, MOTU_PA_OUT | MOTU_PA_RATE_4x|MOTU_PA_MK3_OPT_ANY, },
+    {"Reverb-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    //
+    // For input at 1x rates there are an additional 2 channel slots which
+    // are yet to be identified.
+    //
+    {"UnknownA-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, },
+    //
+    // Optical ports.  Note: UnknownB is flagged as being always present at
+    // 2x rates in the input stream.  This is yet to be verified.  In the
+    // case of the old PortEntry definition UnknownB's equivalent was only
+    // flagged as present if optical B was set to ADAT; this seems wrong on
+    // reflection.
+    //
+    {"Toslink-A%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, },
+    {"ADAT-A%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, }, 
+    {"ADAT-A%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, }, 
+    {"Toslink-B%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_TOSLINK, },
+    {"ADAT-B%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
+    {"ADAT-B%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
+    {"UnknownB-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ANY, },
+};
+
 
 /* The order of DevicesProperty entries must match the numeric order of the
  * MOTU model enumeration (EMotuModel).
  */
 const DevicePropertyEntry DevicesProperty[] = {
-//  { Ports_map,          N_ELEMENTS( Ports_map ),        MaxSR, MixerDescrPtr, Mark3MixerDescrPtr },
-    { Ports_828MKII,      N_ELEMENTS( Ports_828MKII ),       96000, &Mixer_828Mk2, NULL, },
-    { Ports_TRAVELER,     N_ELEMENTS( Ports_TRAVELER ),     192000, &Mixer_Traveler, NULL, },
-    { Ports_ULTRALITE,    N_ELEMENTS( Ports_ULTRALITE ),     96000, &Mixer_Ultralite, NULL, },
-    { Ports_8PRE,         N_ELEMENTS( Ports_8PRE ),          96000, &Mixer_8pre, NULL, },
-    { Ports_828MKI,       N_ELEMENTS( Ports_828MKI ),        48000 },
-    { Ports_896HD,        N_ELEMENTS( Ports_896HD ),        192000, &Mixer_896HD, NULL, },
-    { Ports_828mk3,       N_ELEMENTS( Ports_828mk3 ),       192000 },
-    { Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 }, // Ultralite mk3
-    { Ports_ULTRALITEmk3_hybrid, N_ELEMENTS( Ports_ULTRALITEmk3_hybrid ), 192000 }, // Ultralite mk3 hybrid
-    { Ports_TRAVELERmk3,  N_ELEMENTS( Ports_TRAVELERmk3 ),  192000 },
+//  { PortGroups_map,     N_ELEMENTS( PortGroups_map ),
+//    Ports_map,          N_ELEMENTS( Ports_map ),      MaxSR, MixerDescrPtr, Mark3MixerDescrPtr },
+    { NULL, 0,
+      Ports_828MKII,      N_ELEMENTS( Ports_828MKII ),       96000, &Mixer_828Mk2, NULL, },
+    { PortGroups_TRAVELER, N_ELEMENTS( PortGroups_TRAVELER ),
+      Ports_TRAVELER,     N_ELEMENTS( Ports_TRAVELER ),     192000, &Mixer_Traveler, NULL, },
+    { NULL, 0,
+      Ports_ULTRALITE,    N_ELEMENTS( Ports_ULTRALITE ),     96000, &Mixer_Ultralite, NULL, },
+    { NULL, 0, 
+      Ports_8PRE,         N_ELEMENTS( Ports_8PRE ),          96000, &Mixer_8pre, NULL, },
+    { NULL, 0,
+      Ports_828MKI,       N_ELEMENTS( Ports_828MKI ),        48000 },
+    { NULL, 0,
+      Ports_896HD,        N_ELEMENTS( Ports_896HD ),        192000, &Mixer_896HD, NULL, },
+    { PortGroups_828mk3,  N_ELEMENTS( PortGroups_828mk3 ),
+      Ports_828mk3,       N_ELEMENTS( Ports_828mk3 ),       192000 },
+    { NULL, 0, 
+      Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 }, // Ultralite mk3
+    { NULL, 0, 
+      Ports_ULTRALITEmk3_hybrid, N_ELEMENTS( Ports_ULTRALITEmk3_hybrid ), 192000 }, // Ultralite mk3 hybrid
+    { NULL, 0, 
+      Ports_TRAVELERmk3,  N_ELEMENTS( Ports_TRAVELERmk3 ),  192000 },
 };
 
 MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
@@ -1931,6 +1995,140 @@ unsigned int port_flags;
         }
     }
     
+    return true;
+}
+/* ======================================================================= */
+
+bool MotuDevice::addDirPortGroups(
+  enum Streaming::Port::E_Direction direction, unsigned int sample_rate, 
+  unsigned int optical_a_mode, unsigned int optical_b_mode) {
+/*
+ * Internal helper method.  Using a PortGroupEntry array the locations
+ * of channels within a packet is deduced based on the given sample rate
+ * and optical port modes.  Locations within the packet start at 10
+ * and are incremented by 3 for each subsequent channel.  Channel are assumed
+ * to be ordered in the packet as they are in the port group array.
+ *
+ * The port_order field of a port group entry allows the order of port
+ * creation to be varied.  This is helpful if it's more convenient to have a
+ * particular port show up first in jackd even through it's located in the
+ * middle of the packet.  If the port_order field of the first port group is
+ * -1 it is assumed that the port creation is to happen in the order
+ * specified in the port group list.
+ *
+ * Notes: currently ports are not created if they are disabled due to sample
+ * rate or optical mode.  However, it might be better to unconditionally
+ * create all ports and just disable those which are not active.
+ */
+const char *mode_str = direction==Streaming::Port::E_Capture?"cap":"pbk";
+Streaming::StreamProcessor *s_processor;
+signed int i;
+char *buff;
+unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
+unsigned int flags = 0;
+unsigned int portgroup_flags;
+signed int pkt_ofs = 10;       /* Port data starts at offset 10 */
+const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
+signed int n_groups = devprop->n_port_entries;
+signed int creation_indices[n_groups];
+signed int create_in_order;
+
+    if (n_groups <= 0)
+        return true;
+
+    if ( sample_rate > 96000 )
+        flags |= MOTU_PA_RATE_4x;
+    else if ( sample_rate > 48000 )
+        flags |= MOTU_PA_RATE_2x;
+    else
+        flags |= MOTU_PA_RATE_1x;
+
+    switch (optical_a_mode) {
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_OPTICAL_ANY; break;
+        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_OPTICAL_OFF; break;
+        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_OPTICAL_ADAT; break;
+        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_OPTICAL_TOSLINK; break;
+    }
+    switch (optical_b_mode) {
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_MK3_OPT_B_ANY; break;
+        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_MK3_OPT_B_OFF; break;
+        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_MK3_OPT_B_ADAT; break;
+        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_MK3_OPT_B_TOSLINK; break;
+    }
+
+    // retrieve the ID
+    std::string id=std::string("dev?");
+    if(!getOption("id", id)) {
+        debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
+    }
+
+    if (direction == Streaming::Port::E_Capture) {
+        s_processor = m_receiveProcessor;
+    } else {
+        s_processor = m_transmitProcessor;
+    }
+
+    for (i=0; i<n_groups; i++) {
+      creation_indices[i] = -1;
+    }
+    create_in_order = devprop->portgroup_entry[0].port_order<0;
+
+    /* First scan through the port groups, allocating packet offsets for all
+     * port groups which are found to be active in the device's current state.
+     */
+    for (i=0; i<n_groups; i++) {
+        portgroup_flags = devprop->portgroup_entry[i].flags;
+        /* For devices without one or more optical ports, ensure the tests
+         * on the optical ports always returns "true".
+         */
+        if (optical_a_mode == MOTU_OPTICAL_MODE_NONE)
+            portgroup_flags |= MOTU_PA_OPTICAL_ANY;
+        if (optical_b_mode == MOTU_OPTICAL_MODE_NONE)
+            portgroup_flags |= MOTU_PA_MK3_OPT_B_ANY;
+
+        devprop->portgroup_entry[i].group_pkt_offset = -1;
+        if (( portgroup_flags & dir ) &&
+	    ( portgroup_flags & MOTU_PA_RATE_MASK & flags ) &&
+	    ( portgroup_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
+	    ( portgroup_flags & MOTU_PA_MK3_OPT_B_MASK & flags )) {
+            if ((portgroup_flags & MOTU_PA_PADDING) == 0) {
+                devprop->portgroup_entry[i].group_pkt_offset = pkt_ofs;
+                if (create_in_order)
+                    creation_indices[i] = i;
+                else
+                    creation_indices[devprop->portgroup_entry[i].port_order] = i;
+            }
+            pkt_ofs += 3*devprop->portgroup_entry[i].n_channels;
+        }
+    }
+
+    /* Now run through the portgroup list again, this time in creation order,
+     * to make the ports.
+     */
+    for (i=0; i<n_groups; i++) {
+        char namestr[64];
+        signed int ch;
+        signed int entry;
+        if (creation_indices[i] < 0)
+            continue;
+        entry = creation_indices[i];
+        for (ch=0; ch<devprop->portgroup_entry[entry].n_channels; ch++) {
+            /* Deduce the full channel name */
+            if (strstr(devprop->portgroup_entry[entry].group_name_format, "%d") != NULL)
+                snprintf(namestr, sizeof(namestr), devprop->portgroup_entry[entry].group_name_format, ch+1);
+            else
+            if (strstr(devprop->portgroup_entry[entry].group_name_format, "%s") != NULL)
+                snprintf(namestr, sizeof(namestr), devprop->portgroup_entry[entry].group_name_format,
+                         (ch & 0x1)?"R":"L");
+            else
+                snprintf(namestr, sizeof(namestr), "%s", devprop->portgroup_entry[entry].group_name_format);
+            asprintf(&buff,"%s_%s_%s" , id.c_str(), mode_str, namestr);
+            if (!addPort(s_processor, buff, direction, 
+                   devprop->portgroup_entry[entry].group_pkt_offset+3*ch, 0))
+                return false;
+        }
+    }
+
     return true;
 }
 /* ======================================================================== */
