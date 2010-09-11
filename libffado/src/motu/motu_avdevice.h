@@ -305,6 +305,7 @@ struct PortGroupEntry {
     signed int n_channels;
     unsigned int flags;
     signed int port_order;
+    signed int port_num_offset;
     signed int group_pkt_offset;
 };
 

@@ -537,14 +537,45 @@ const PortEntry Ports_TRAVELERmk3[] =
 #endif
 };
 
-// FIXME: The following two tables illustrate how the new PortGroupEntry
-// mechanism is used to convey the same information as the old PortEntry
-// tables but in a more compact and maintainable form.  These aren't
-// actually used yet since the functionality of addDirPortGroups() still
-// needs to be tested.  Once this is done, new tables for all other devices
-// will be constructed and all calls to addDirPorts() will be replaced with
-// calls to addDirPortGroups().  After this is working the old PortEntry
-// tables can be removed.
+// FIXME: The following tables relate to the new PortGroupEntry mechanism,
+// used to convey the same information as the old PortEntry tables but in a
+// more compact and maintainable form.  These aren't actually used yet since
+// the functionality of addDirPortGroups() still needs to be tested.  Once
+// this is done, all calls to addDirPorts() will be replaced with calls to
+// addDirPortGroups().  After this is working the old PortEntry tables can
+// be removed.
+
+PortGroupEntry PortGroups_828MKI[] =
+{
+    {"Analog%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, -1, },
+    {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, },
+    {"ADAT%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, },
+    {"ADAT%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, },
+};
+
+PortGroupEntry PortGroups_896HD[] =
+{
+    {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, -1, },
+    {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, },
+    {"Analog%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, },
+    {"MainOut-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, },
+    {"unknown-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, },
+    {"ADAT%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, },
+    {"ADAT%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, },
+    {"AES/EBU%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, },
+};
+
+PortGroupEntry PortGroups_828MKII[] =
+{
+    {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, -1},
+    {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, },
+    {"Analog%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, },
+    {"Mic%d", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, },
+    {"Main-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, },
+    {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, },
+    {"ADAT%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, },
+    {"ADAT%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, },
+};
 
 PortGroupEntry PortGroups_TRAVELER[] = 
 {
@@ -556,6 +587,29 @@ PortGroupEntry PortGroups_TRAVELER[] =
     {"Toslink%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_TOSLINK, },
     {"ADAT%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, },
     {"ADAT%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, },
+};
+
+PortGroupEntry PortGroups_ULTRALITE[] =
+{
+    {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 1, },
+    {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 2, },
+    {"Mic%d", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 3, },
+    {"Analog%d", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 4, },
+    {"Analog%d", 6, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 5, 2},
+    {"Main-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 0, },
+    {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 6, },
+    {"Padding%d", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 7, },
+};
+
+PortGroupEntry PortGroups_8PRE[] =
+{
+    {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 2, },
+    {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 3, },
+    {"Analog%d", 8, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 0, },
+    {"Main-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 1, },
+    {"Padding%d", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_OFF|MOTU_PA_PADDING, 4, },
+    {"ADAT%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 5, },
+    {"ADAT%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, 6, },
 };
 
 PortGroupEntry PortGroups_828mk3[] = 
@@ -588,6 +642,46 @@ PortGroupEntry PortGroups_828mk3[] =
     {"ADAT-B%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
     {"ADAT-B%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
     {"UnknownB-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ANY, },
+};
+
+PortGroupEntry PortGroups_ULTRALITEmk3[] =
+{
+    {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 1, },
+    {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 2, },
+    {"Mic%d", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 3, },
+    {"Analog%d", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 4, },
+    {"Analog%d", 6, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 5, 2},
+    {"Main-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 0, },
+    {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 6, },
+    {"Padding%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 7, },
+};
+
+PortGroupEntry PortGroups_ULTRALITEmk3_hybrid[] =
+{
+    {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 1, },
+    {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 2, },
+    {"Mic%d", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 3, },
+    {"Analog%d", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 4, },
+    {"Analog%d", 6, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 5, 2, },
+    {"Main-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 0, },
+    {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 6, },
+    {"Reverb%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 7, },
+    {"Unknown%d", 4, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 8, },
+};
+
+/* FIXME: as of 5 Aug 2010 this is still under development */
+PortGroupEntry PortGroups_TRAVELERmk3[] = 
+{
+    {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, -1, },
+    {"Phones-%s",2,  MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, },
+    {"Analog%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, },
+    {"AES/EBU%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"Reverb%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, },
+    {"Unknown%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, },
+    //
+    // FIXME: optical port details to be filled in later.
+    //
 };
 
 
@@ -2127,7 +2221,8 @@ signed int create_in_order;
         for (ch=0; ch<devprop->portgroup_entry[entry].n_channels; ch++) {
             /* Deduce the full channel name */
             if (strstr(devprop->portgroup_entry[entry].group_name_format, "%d") != NULL)
-                snprintf(namestr, sizeof(namestr), devprop->portgroup_entry[entry].group_name_format, ch+1);
+                snprintf(namestr, sizeof(namestr), devprop->portgroup_entry[entry].group_name_format, 
+                ch+1+devprop->portgroup_entry[entry].port_num_offset);
             else
             if (strstr(devprop->portgroup_entry[entry].group_name_format, "%s") != NULL)
                 snprintf(namestr, sizeof(namestr), devprop->portgroup_entry[entry].group_name_format,
