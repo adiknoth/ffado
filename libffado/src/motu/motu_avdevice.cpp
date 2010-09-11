@@ -1388,10 +1388,16 @@ MotuDevice::prepare() {
     }
 
     // Add audio capture ports
+#define USEOLD
+#ifdef USEOLD
     if (!addDirPorts(Streaming::Port::E_Capture, samp_freq, optical_in_mode_a, optical_in_mode_b)) {
         return false;
     }
-
+#else
+    if (!addDirPortGroups(Streaming::Port::E_Capture, samp_freq, optical_in_mode_a, optical_in_mode_b)) {
+        return false;
+    }
+#endif
     // Add MIDI port.  The MOTU only has one MIDI input port, with each
     // MIDI byte sent using a 3 byte sequence starting at byte 4 of the
     // event data.
@@ -1446,9 +1452,15 @@ MotuDevice::prepare() {
     debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
 
     // Add audio playback ports
+#ifdef USEOLD
     if (!addDirPorts(Streaming::Port::E_Playback, samp_freq, optical_out_mode_a, optical_out_mode_b)) {
         return false;
     }
+#else
+    if (!addDirPortGroups(Streaming::Port::E_Playback, samp_freq, optical_out_mode_a, optical_out_mode_b)) {
+        return false;
+    }
+#endif
 
     // Add MIDI port.  The MOTU only has one output MIDI port, with each
     // MIDI byte transmitted using a 3 byte sequence starting at byte 4
@@ -2029,7 +2041,7 @@ unsigned int flags = 0;
 unsigned int portgroup_flags;
 signed int pkt_ofs = 10;       /* Port data starts at offset 10 */
 const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
-signed int n_groups = devprop->n_port_entries;
+signed int n_groups = devprop->n_portgroup_entries;
 signed int creation_indices[n_groups];
 signed int create_in_order;
 
