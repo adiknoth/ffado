@@ -685,31 +685,33 @@ PortGroupEntry PortGroups_TRAVELERmk3[] =
 };
 
 
+#define PORTGROUPS(__model) PortGroups_ ## __model, N_ELEMENTS(PortGroups_ ## __model)
+
 /* The order of DevicesProperty entries must match the numeric order of the
  * MOTU model enumeration (EMotuModel).
  */
 const DevicePropertyEntry DevicesProperty[] = {
 //  { PortGroups_map,     N_ELEMENTS( PortGroups_map ),
 //    Ports_map,          N_ELEMENTS( Ports_map ),      MaxSR, MixerDescrPtr, Mark3MixerDescrPtr },
-    { NULL, 0,
+    { PORTGROUPS(828MKII),
       Ports_828MKII,      N_ELEMENTS( Ports_828MKII ),       96000, &Mixer_828Mk2, NULL, },
-    { PortGroups_TRAVELER, N_ELEMENTS( PortGroups_TRAVELER ),
+    { PORTGROUPS(TRAVELER), 
       Ports_TRAVELER,     N_ELEMENTS( Ports_TRAVELER ),     192000, &Mixer_Traveler, NULL, },
-    { NULL, 0,
+    { PORTGROUPS(ULTRALITE),
       Ports_ULTRALITE,    N_ELEMENTS( Ports_ULTRALITE ),     96000, &Mixer_Ultralite, NULL, },
-    { NULL, 0, 
+    { PORTGROUPS(8PRE),
       Ports_8PRE,         N_ELEMENTS( Ports_8PRE ),          96000, &Mixer_8pre, NULL, },
-    { NULL, 0,
+    { PORTGROUPS(828MKI),
       Ports_828MKI,       N_ELEMENTS( Ports_828MKI ),        48000 },
-    { NULL, 0,
+    { PORTGROUPS(896HD),
       Ports_896HD,        N_ELEMENTS( Ports_896HD ),        192000, &Mixer_896HD, NULL, },
-    { PortGroups_828mk3,  N_ELEMENTS( PortGroups_828mk3 ),
+    { PORTGROUPS(828mk3),
       Ports_828mk3,       N_ELEMENTS( Ports_828mk3 ),       192000 },
-    { NULL, 0, 
+    { PORTGROUPS(ULTRALITEmk3),
       Ports_ULTRALITEmk3, N_ELEMENTS( Ports_ULTRALITEmk3 ), 192000 }, // Ultralite mk3
-    { NULL, 0, 
+    { PORTGROUPS(ULTRALITEmk3_hybrid),
       Ports_ULTRALITEmk3_hybrid, N_ELEMENTS( Ports_ULTRALITEmk3_hybrid ), 192000 }, // Ultralite mk3 hybrid
-    { NULL, 0, 
+    { PORTGROUPS(TRAVELERmk3), 
       Ports_TRAVELERmk3,  N_ELEMENTS( Ports_TRAVELERmk3 ),  192000 },
 };
 
