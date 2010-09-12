@@ -26,6 +26,8 @@
 # and heavily modified
 #
 
+import subprocess
+
 #
 # Checks for pkg-config
 #
@@ -77,8 +79,8 @@ def GetPKGFlags( context, name, version="" ):
 		context.Result( ret )
 		return ret
 
-	out = os.popen2( "pkg-config --cflags --libs %s" % name )[1]
-	ret = out.read()
+	out = subprocess.Popen(['pkg-config', '--cflags', '--libs', name], stdout=subprocess.PIPE)
+	ret = out.stdout.read()
 
 	context.Result( True )
 	return ret
@@ -96,8 +98,8 @@ def GetPKGVariable( context, name, variable ):
 		context.Result( ret )
 		return ret
 
-	out = os.popen2( "pkg-config --variable=%s %s" % (variable,name) )[1]
-	ret = out.read()
+	out = subprocess.Popen(['pkg-config', '--variable=%s' % variable, name], stdout=subprocess.PIPE)
+	ret = out.stdout.read()
 
 	context.Result( True )
 	return ret
