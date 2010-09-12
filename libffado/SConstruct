@@ -295,27 +295,13 @@ for pkg in pkgs:
     name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
     env['%s_FLAGS' % name2] = conf.GetPKGFlags( pkg, pkgs[pkg] )
 
-dbus_checkfail = False
-
-if not env['DBUS1_FLAGS']:
-    dbus_checkfail = True
-    print """
-The dbus headers were not found.""" 
-
-if not env['DBUSC1_FLAGS']:
-    dbus_checkfail = True
-    print """
-The dbus-c++ headers were not found.""" 
-
-if not conf.CheckForApp( 'which dbusxx-xml2cpp' ):
-    dbus_checkfail = True
-    print """
-The program dbusxx-xml2cpp could not be found."""
-
-if dbus_checkfail:
+if not env['DBUS1_FLAGS'] or not env['DBUSC1_FLAGS'] or not conf.CheckForApp('which dbusxx-xml2cpp'):
     env['DBUS1_FLAGS'] = ""
     env['DBUSC1_FLAGS'] = ""
-    print """The dbus-server for ffado will therefore not be built.
+    print """
+One of the dbus-headers, the dbus-c++-headers and/or the application
+'dbusxx-xml2cpp' where not found. The dbus-server for ffado will therefore not
+be built.
 """
 else:
     # Get the directory where dbus stores the service-files
@@ -324,7 +310,7 @@ else:
     # for platform dependent threading init functions
     # this is true for DBUS >= 0.96 or so. Since we require >= 1.0 it is
     # always true
-    env.MergeFlags( "-DDBUS_HAS_THREADS_INIT_DEFAULT" )
+    env['DBUS1_FLAGS'] += " -DDBUS_HAS_THREADS_INIT_DEFAULT"
 
 
 config_guess = conf.ConfigGuess()
