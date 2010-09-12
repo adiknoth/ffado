@@ -173,6 +173,14 @@ device_definitions = (
 },
 {
     vendorid    = 0x000d6c;
+    modelid     = 0x00000010;
+    vendorname  = "M-Audio";
+    modelname   = "ProFire 2626";
+    driver      = 20;
+    mixer       = "Generic_Dice_EAP";
+},
+{
+    vendorid    = 0x000d6c;
     modelid     = 0x00000011;
     vendorname  = "M-Audio";
     modelname   = "ProFire 610";
