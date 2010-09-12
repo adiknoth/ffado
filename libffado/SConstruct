@@ -36,44 +36,44 @@ import distutils.sysconfig
 if not os.path.isdir( "cache" ):
 	os.makedirs( "cache" )
 
-opts = Options( "cache/options.cache" )
+opts = Variables( "cache/options.cache" )
 
-opts.AddOptions(
-    BoolOption( "DEBUG", """\
+opts.AddVariables(
+    BoolVariable( "DEBUG", """\
 Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
   \"-O2\" to optimize.""", True ),
-    BoolOption( "PROFILE", "Build with symbols and other profiling info", False ),
-    PathOption( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local", PathOption.PathAccept ),
-    PathOption( "BINDIR", "Overwrite the directory where apps are installed to.", "$PREFIX/bin", PathOption.PathAccept ),
-    PathOption( "LIBDIR", "Overwrite the directory where libs are installed to.", "$PREFIX/lib", PathOption.PathAccept ),
-    PathOption( "INCLUDEDIR", "Overwrite the directory where headers are installed to.", "$PREFIX/include", PathOption.PathAccept ),
-    PathOption( "SHAREDIR", "Overwrite the directory where misc shared files are installed to.", "$PREFIX/share/libffado", PathOption.PathAccept ),
-    PathOption( "PYPKGDIR", "The directory where the python modules get installed.",
-        distutils.sysconfig.get_python_lib( prefix="$PREFIX" ), PathOption.PathAccept ),
-    BoolOption( "ENABLE_BEBOB", "Enable/Disable support for the BeBoB platform.", True ),
-    BoolOption( "ENABLE_FIREWORKS", "Enable/Disable support for the ECHO Audio FireWorks platform.", True ),
-    BoolOption( "ENABLE_OXFORD", "Enable/Disable support for the Oxford Semiconductor FW platform.", True ),
-    BoolOption( "ENABLE_MOTU", "Enable/Disable support for the MOTU platform.", True ),
-    BoolOption( "ENABLE_DICE", "Enable/Disable support for the TCAT DICE platform.", True ),
-    BoolOption( "ENABLE_METRIC_HALO", "Enable/Disable support for the Metric Halo platform.", False ),
-    BoolOption( "ENABLE_RME", "Enable/Disable support for the RME platform.", False ),
-    BoolOption( "ENABLE_MAUDIO", "Enable/Disable support for the M-Audio custom BeBoB devices.", False ),
-    BoolOption( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE device.", False ),
-    BoolOption( "ENABLE_GENERICAVC", """\
+    BoolVariable( "PROFILE", "Build with symbols and other profiling info", False ),
+    PathVariable( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local", PathVariable.PathAccept ),
+    PathVariable( "BINDIR", "Overwrite the directory where apps are installed to.", "$PREFIX/bin", PathVariable.PathAccept ),
+    PathVariable( "LIBDIR", "Overwrite the directory where libs are installed to.", "$PREFIX/lib", PathVariable.PathAccept ),
+    PathVariable( "INCLUDEDIR", "Overwrite the directory where headers are installed to.", "$PREFIX/include", PathVariable.PathAccept ),
+    PathVariable( "SHAREDIR", "Overwrite the directory where misc shared files are installed to.", "$PREFIX/share/libffado", PathVariable.PathAccept ),
+    PathVariable( "PYPKGDIR", "The directory where the python modules get installed.",
+        distutils.sysconfig.get_python_lib( prefix="$PREFIX" ), PathVariable.PathAccept ),
+    BoolVariable( "ENABLE_BEBOB", "Enable/Disable support for the BeBoB platform.", True ),
+    BoolVariable( "ENABLE_FIREWORKS", "Enable/Disable support for the ECHO Audio FireWorks platform.", True ),
+    BoolVariable( "ENABLE_OXFORD", "Enable/Disable support for the Oxford Semiconductor FW platform.", True ),
+    BoolVariable( "ENABLE_MOTU", "Enable/Disable support for the MOTU platform.", True ),
+    BoolVariable( "ENABLE_DICE", "Enable/Disable support for the TCAT DICE platform.", True ),
+    BoolVariable( "ENABLE_METRIC_HALO", "Enable/Disable support for the Metric Halo platform.", False ),
+    BoolVariable( "ENABLE_RME", "Enable/Disable support for the RME platform.", False ),
+    BoolVariable( "ENABLE_MAUDIO", "Enable/Disable support for the M-Audio custom BeBoB devices.", False ),
+    BoolVariable( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE device.", False ),
+    BoolVariable( "ENABLE_GENERICAVC", """\
 Enable/Disable the the generic avc part (mainly used by apple).
   Note that disabling this option might be overwritten by other devices needing
   this code.""", False ),
-    BoolOption( "ENABLE_ALL", "Enable/Disable support for all devices.", False ),
-    BoolOption( "SERIALIZE_USE_EXPAT", "Use libexpat for XML serialization.", False ),
-    BoolOption( "BUILD_TESTS", """\
+    BoolVariable( "ENABLE_ALL", "Enable/Disable support for all devices.", False ),
+    BoolVariable( "SERIALIZE_USE_EXPAT", "Use libexpat for XML serialization.", False ),
+    BoolVariable( "BUILD_TESTS", """\
 Build the tests in their directory. As some contain quite some functionality,
   this is on by default.
   If you just want to use ffado with jack without the tools, you can disable this.\
 """, True ),
-    BoolOption( "BUILD_STATIC_TOOLS", "Build a statically linked version of the FFADO tools.", False ),
-    EnumOption('DIST_TARGET', 'Build target for cross compiling packagers', 'auto', allowed_values=('auto', 'i386', 'i686', 'x86_64', 'powerpc', 'powerpc64', 'none' ), ignorecase=2),
-    BoolOption( "ENABLE_OPTIMIZATIONS", "Enable optimizations and the use of processor specific extentions (MMX/SSE/...).", False ),
-    BoolOption( "PEDANTIC", "Enable -Werror and more pedantic options during compile.", False ),
+    BoolVariable( "BUILD_STATIC_TOOLS", "Build a statically linked version of the FFADO tools.", False ),
+    EnumVariable('DIST_TARGET', 'Build target for cross compiling packagers', 'auto', allowed_values=('auto', 'i386', 'i686', 'x86_64', 'powerpc', 'powerpc64', 'none' ), ignorecase=2),
+    BoolVariable( "ENABLE_OPTIMIZATIONS", "Enable optimizations and the use of processor specific extentions (MMX/SSE/...).", False ),
+    BoolVariable( "PEDANTIC", "Enable -Werror and more pedantic options during compile.", False ),
     ( "COMPILE_FLAGS", "Add additional flags to the environment.\nOnly meant for distributors and gentoo-users who want to over-optimize their built.\n Using this is not supported by the ffado-devs!" ),
 
     )
