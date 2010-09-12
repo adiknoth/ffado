@@ -51,6 +51,7 @@
 #include <string.h> // for memset
 #include <errno.h>
 #include <assert.h>
+#include <sys/prctl.h>
 
 namespace Util
 {
@@ -74,6 +75,9 @@ void* PosixThread::ThreadHandler(void* arg)
         debugError("Thread init fails: thread quits\n");
         return 0;
     }
+
+    std::string threadname = std::string("FW_") + obj->m_id;
+    prctl(PR_SET_NAME, threadname.c_str());
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) ThreadHandler: start %p\n", obj->m_id.c_str(), obj);
 
