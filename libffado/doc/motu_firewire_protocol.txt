@@ -2,7 +2,7 @@ Notes on the firewire protocol used by MOTU audio devices
 =========================================================
 
 Author: Jonathan Woithe
-Document version: 20090621-1
+Document version: 20100914-1
 
 
 Audio/MIDI data
@@ -207,6 +207,121 @@ wire.  However, other MOTU devices (the 828Mk2 for example) do transmit more
 than one MIDI byte in a single packet.  On these devices MIDI messages must
 be buffered in the device and sent in a burst once a complete message has
 been received.
+
+
+Audio channel locations in a frame
+----------------------------------
+
+Not surprisingly the different MOTU interfaces place channels at different
+offsets within a frame.  This section attempts to document what we know
+about the channel locations for various devices.
+
+828 Mk 1:
+  Analog 1-8: 10, 13, 16, 19, 22, 25, 28, 31
+  SPDIF 1-2: 34, 37
+  ADAT 1-4: 40, 43, 46, 49
+  ADAT 5-8 (1x rates only): 52, 55, 58, 61
+
+896HD:
+  Mix L-R (in, not at 4x): 10, 13
+  Phones L-R (out, not at 4x): 10, 13
+  Analog 1-8 (1x/2x rate): 16, 19, 22, 25, 28, 31, 34, 37
+  Analog 1-8 (4x rate): 10, 13, 16, 19, 22, 25, 28, 31
+  MainOut L-R (out, 1x/2x only): 40, 43
+  Unknown 1-2 (in, 1x/2x only): 40, 43
+  ADAT 1-4 (1x/2x only): 46, 49, 52, 55
+  ADAT 5-8 (1x only): 58, 61, 64, 67
+  AES/EBU 1-2 (1x with ADAT active): 70, 73
+  AES/EBU 1-2 (2x with ADAT active): 58, 61
+  AES/EBU 1-2 (1x/2x with ADAT off): 46, 49
+
+828 Mk 2:
+  Mix L-R (in): 10, 13
+  Phones L-R (out): 10, 13
+  Analog 1-8: 16, 19, 22, 25, 28, 31, 34, 37
+  Mic 1-2 (in): 40, 43
+  Main L-R (out): 40, 43
+  SPDIF 1-2: 46, 49
+  ADAT 1-4: 52, 55, 58, 61
+  ADAT 5-8 (1x rates only): 64, 67, 70, 73
+
+Traveler:
+  Mix L-R (in, 1x/2x rates only): 10, 13
+  Phones L-R (out, 1x/2x rates only): 10, 13
+  Analog 1-8 (1x/2x rate): 16, 19, 22, 25, 28, 31, 34, 37
+  Analog 1-8 (4x rate): 10, 13, 16, 19, 22, 25, 28, 31
+  AES/EBU 1-2 (1x/2x rate): 40, 43
+  SPDIF/Toslink 1-2 (1x/2x rate): 46, 49
+  ADAT 1-4 (1x/2x rate): 52, 55, 58, 61
+  ADAT 5-8 (1x rate): 64, 67, 70, 73
+
+Ultralite:
+  Mix L-R (in): 10, 13
+  Phones L-R (out): 10, 13
+  Mic 1-2 (in): 16, 19
+  Analog 1-2 (out): 16, 19
+  Analog 3-8: 22, 25, 28, 31, 34, 37
+  SPDIF 1-2 (in): 40, 43
+  Main L-R (out): 40, 43
+  Padding (in): 46, 49
+  SPDIF 1-2 (out): 46, 49
+
+8Pre:
+  Mix L-R (in): 10, 13
+  Phones L-R (out): 10, 13
+  Analog 1-8 (in): 16, 19, 22, 25, 28, 31, 34, 37
+  Main L-R (out): 16, 19
+  Padding (out): 22, 25
+  ADAT 1-8 (in): 40, 43, 46, 49, 52, 55, 58, 61
+  ADAT 1-8 (out): 22, 25, 28, 31, 34, 37, 40, 43
+
+828 Mk 3:
+  Mic 1-2 (in, 1x/2x rates): 10, 13
+  Phones L-R (out, 1x/2x rates): 10, 13
+  Unknown 1-2 (out, 4x rates): 10, 13
+  Analog 1-8: 16, 19, 22, 25, 28, 31, 34, 37
+  Return 1-2 (in): 40, 43
+  Main L-R (out): 40, 43
+  SPDIF 1-2 (1x/2x rates): 46, 49
+  Unknown (out, 4x rates): 46, 49
+  Reverb 1-2 (in, 1x/2x rates): 52, 55
+  [ Optical ports follow according to optical mode: first Optical-A
+  channels, then optical-B channels.  Out channels start at 52, in channels
+  start at 58.  At 1x rates 58/61 are "unknown" ahead of the optical
+  channels, with inputs at 76/79 being unknown at 2x rates. ]
+
+Ultralite Mk 3:
+  Mix L-R (in): 10, 13
+  Phones L-R (out): 10, 13
+  Mic 1-2 (in): 16, 19
+  Analog 1-2 (out): 16, 19
+  Analog 3-8: 22, 25, 28, 31, 34, 37
+  SPDIF 1-2 (in, 1x/2x rates): 40, 43
+  Padding (out, 1x/2x rates): 40, 43
+  SPDIF 1-2 (out, 1x/2x rates): 46, 49
+
+Ultralite Mk 3 hybrid:
+  Mix L-R (in): 10, 13
+  Phones L-R (out): 10, 13
+  Mic 1-2 (in): 16, 19
+  Analog 1-2 (out): 16, 19
+  Analog 3-8: 22, 25, 28, 31, 34, 37
+  SPDIF 1-2 (in, 1x/2x rates): 40, 43
+  Main L-R (out): 40, 43
+  Reverb 1-2 (in, 1x/2x rates): 46, 49
+  SPDIF 1-2 (out, 1x/2x rates): 46, 49
+  Unknown 1-4 (in, 1x/2x rates): 52, 55, 58, 61
+
+Traveler Mk 3:
+  Mix L-R (in): 10, 13
+  Phones L-R (out): 10, 13
+  Analog 1-8: 16, 19, 22, 25, 28, 31, 34, 37
+  AES/EBU 1-2 (1x/2x rates): 40, 43
+  SPDIF 1-2 (1x/2x rates): 46, 49
+  Reverb 1-2 (in, 1x rates): 52, 55
+  Unknown 1-2 (in, 1x rates): 58, 61
+  [ Optical port channels follow in a similar was as for the 828 Mk 3.
+  The precise locations are yet to be confirmed as of 14 Sept 2010. ]
 
 
 SMPTE timecode
@@ -470,6 +585,9 @@ hardware are as follows:
   0x0000000d = Ultralite
   0x0000000f = 8pre
   0x00000015 = 828 Mk 3
+  0x00000019 = Ultralite Mk 3
+  0x0000001b = Traveler Mk 3
+  0x00000030 = Ultralite Mk 3 hybrid
 
 Alternatively one could probe for registers known to exist on only one of
 the interfaces.  The trim gain / 20 dB pad status register (0x0c1c) for
