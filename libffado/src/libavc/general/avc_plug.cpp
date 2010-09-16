@@ -127,7 +127,7 @@ Plug::Plug( const Plug& rhs )
     , m_name( rhs.m_name )
     , m_clusterInfos( rhs.m_clusterInfos )
     , m_formatInfos( rhs.m_formatInfos )
-// FIXME: how about the global id?
+    , m_globalId( rhs.m_globalId )
 {
     if ( getDebugLevel() ) {
         setDebugLevel( DEBUG_LEVEL_VERBOSE );
@@ -383,7 +383,7 @@ Plug::discoverClusterInfo()
             ci.m_name = "Unknown";
             c.m_channelInfos.push_back(ci);
         }
-        c.m_streamFormat = 0; // filled in later
+        c.m_streamFormat = -1; // filled in later
         
         m_clusterInfos.push_back(c);
     }
@@ -834,7 +834,7 @@ Plug::propagateFromPlug( Plug *p ) {
                  "Propagating info from plug '%s' to plug '%s'\n",
                  p->getName(), getName() );
 
-    if (m_clusterInfos.size()==0) {
+    if (m_clusterInfos.size()==0 || m_clusterInfos[0].m_streamFormat == -1) {
         m_clusterInfos=p->m_clusterInfos;
     }
 
