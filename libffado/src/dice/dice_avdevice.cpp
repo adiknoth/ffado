@@ -1149,7 +1149,7 @@ Device::lock() {
             return false;
         }
     
-        if (result != DICE_OWNER_NO_OWNER) {
+        if (result != DICE_OWNER_NO_OWNER && result != swap_value) {
             debugWarning("Could not register ourselves as device owner, unexpected register value: 0x%016"PRIX64"\n", result);
             return false;
         }
@@ -1303,10 +1303,27 @@ Device::startStreamByIndex(int i) {
                 return false;
             }
             if(reg_isoch != 0xFFFFFFFFUL) {
-                debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for ATX %d\n", reg_isoch, n);
-                p->setChannel(-1);
+                debugWarning("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for ATX %d\n", reg_isoch, n);
+                /* The ISO channel has already been registered, probably
+                 * because the device was running before and jackd just
+                 * crashed. Let's simply reuse the previously selected
+                 * ISO channel.
+                 *
+                 * FIXME: try to reset the channel register and
+                 * return to a clean state
+                 */
                 deallocateIsoChannel(isochannel);
-                return false;
+                p->setChannel(reg_isoch);
+#if 0
+                /* FIXME: Looks like it's not necessary to ask the IRM.
+                 * Just use the already registered ISO channel.
+                 */
+                // ask the IRM to use this channel
+                if (get1394Service().allocateFixedIsoChannelGeneric(reg_isoch,p->getMaxPacketSize()) < 0) {
+                    debugError("Cannot allocate iso channel (0x%08"PRIX32") for ATX %d\n", reg_isoch, n); 
+                }
+#endif
+                isochannel=reg_isoch;
             }
     
             // write value of ISO_CHANNEL register
@@ -1354,10 +1371,27 @@ Device::startStreamByIndex(int i) {
                 return false;
             }
             if(reg_isoch != 0xFFFFFFFFUL) {
-                debugError("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for ARX %d\n", reg_isoch, n);
-                p->setChannel(-1);
+                debugWarning("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for ARX %d\n", reg_isoch, n);
+                /* The ISO channel has already been registered, probably
+                 * because the device was running before and jackd just
+                 * crashed. Let's simply reuse the previously selected
+                 * ISO channel.
+                 *
+                 * FIXME: try to reset the channel register and
+                 * return to a clean state
+                 */
                 deallocateIsoChannel(isochannel);
-                return false;
+                p->setChannel(reg_isoch);
+#if 0
+                /* FIXME: Looks like it's not necessary to ask the IRM.
+                 * Just use the already registered ISO channel.
+                 */
+                // ask the IRM to use this channel
+                if (get1394Service().allocateFixedIsoChannelGeneric(reg_isoch,p->getMaxPacketSize()) < 0) {
+                    debugError("Cannot allocate iso channel (0x%08"PRIX32") for ARX %d\n", reg_isoch, n); 
+                }
+#endif
+                isochannel=reg_isoch;
             }
     
             // write value of ISO_CHANNEL register
@@ -1688,6 +1722,18 @@ Device::initIoFunctions() {
                 m_nb_rx = 1;
                 break;
         }
+    }
+
+    // FIXME: after a crash, the device might still be streaming. We
+    // simply force a stop now (unless in snoopMode) to return to a
+    // clean state.
+    bool snoopMode = false;
+    if(!getOption("snoopMode", snoopMode)) {
+        //debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+    }
+
+    if (!snoopMode) {
+        disableIsoStreaming();
     }
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"DICE Parameter Space info:\n");
