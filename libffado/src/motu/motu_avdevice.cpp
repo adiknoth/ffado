@@ -55,6 +55,14 @@
 
 #include <libraw1394/csr.h>
 
+// FIXME: this allows for easy switching between the old PortEntry and
+// new PortEntryGroup methods of identifying audio streams in the iso
+// packets sent to/from the MOTU interfaces.  Leave undefined to use
+// the old method.
+//
+// #define USE_PORTGROUPS
+
+
 namespace Motu {
 
 // Define the supported devices.  Device ordering is arbitary here.
@@ -1484,8 +1492,7 @@ MotuDevice::prepare() {
     }
 
     // Add audio capture ports
-#define USEOLD
-#ifdef USEOLD
+#ifndef USE_PORTGROUPS
     if (!addDirPorts(Streaming::Port::E_Capture, samp_freq, optical_in_mode_a, optical_in_mode_b)) {
         return false;
     }
@@ -1548,7 +1555,7 @@ MotuDevice::prepare() {
     debugOutput(DEBUG_LEVEL_VERBOSE,"Adding ports to transmit processor\n");
 
     // Add audio playback ports
-#ifdef USEOLD
+#ifndef USE_PORTGROUPS
     if (!addDirPorts(Streaming::Port::E_Playback, samp_freq, optical_out_mode_a, optical_out_mode_b)) {
         return false;
     }
@@ -1959,6 +1966,7 @@ unsigned int i;
 unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
 unsigned int flags = 0;
 unsigned int port_flags;
+const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
 
     getOpticalMode(direction, &optical_mode_a, &optical_mode_b);
 
@@ -1984,8 +1992,9 @@ unsigned int port_flags;
 
     // Don't test for padding port flag here since we need to include such
     // pseudo-ports when calculating the event size.
-    for (i=0; i < DevicesProperty[m_motu_model-1].n_port_entries; i++) {
-        port_flags = DevicesProperty[m_motu_model-1].port_entry[i].port_flags;
+#ifndef USE_PORTGROUPS
+    for (i=0; i < devprop->n_port_entries; i++) {
+        port_flags = devprop->port_entry[i].port_flags;
         /* Make sure the optical port tests return true for devices without
          * one or both optical ports.
          */
@@ -2002,6 +2011,26 @@ unsigned int port_flags;
             size += 3;
         }
     }
+#else
+    for (i=0; i<devprop->n_portgroup_entries; i++) {
+        unsigned int portgroup_flags = devprop->portgroup_entry[i].flags;
+        /* For devices without one or more optical ports, ensure the tests
+         * on the optical ports always returns "true".
+         */
+        if (optical_a_mode == MOTU_OPTICAL_MODE_NONE) {
+            portgroup_flags |= MOTU_PA_OPTICAL_ANY;
+        }
+        if (optical_b_mode == MOTU_OPTICAL_MODE_NONE) {
+            portgroup_flags |= MOTU_PA_MK3_OPT_B_ANY;
+        }
+        if (( portgroup_flags & dir ) &&
+	    ( portgroup_flags & MOTU_PA_RATE_MASK & flags ) &&
+	    ( portgroup_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
+	    ( portgroup_flags & MOTU_PA_MK3_OPT_B_MASK & flags )) {
+            size += 3*devprop->portgroup_entry[i].n_channels;
+        }
+    }
+#endif
 
     // Finally round size up to the next quadlet boundary
     return ((size+3)/4)*4;
