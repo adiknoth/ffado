@@ -413,6 +413,8 @@ protected:
     signed int m_iso_recv_channel, m_iso_send_channel;
     signed int m_rx_bandwidth, m_tx_bandwidth;
 
+    signed int m_rx_event_size, m_tx_event_size;
+
     Streaming::MotuReceiveStreamProcessor *m_receiveProcessor;
     Streaming::MotuTransmitStreamProcessor *m_transmitProcessor;
 
@@ -424,6 +426,9 @@ private:
         enum Streaming::Port::E_Direction direction,
         int position, int size);
     bool addDirPorts(
+        enum Streaming::Port::E_Direction direction, unsigned int sample_rate, 
+        unsigned int optical_a_mode, unsigned int optical_b_mode);
+    bool initDirPortGroups(
         enum Streaming::Port::E_Direction direction, unsigned int sample_rate, 
         unsigned int optical_a_mode, unsigned int optical_b_mode);
     bool addDirPortGroups(

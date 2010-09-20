@@ -730,6 +730,8 @@ MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     , m_iso_send_channel ( -1 )
     , m_rx_bandwidth ( -1 )
     , m_tx_bandwidth ( -1 )
+    , m_rx_event_size ( 0 )
+    , m_tx_event_size ( 0 )
     , m_receiveProcessor ( 0 )
     , m_transmitProcessor ( 0 )
     , m_MixerContainer ( NULL )
@@ -2132,6 +2134,93 @@ unsigned int port_flags;
         }
     }
     
+    return true;
+}
+/* ======================================================================= */
+
+bool MotuDevice::initDirPortGroups(
+  enum Streaming::Port::E_Direction direction, unsigned int sample_rate, 
+  unsigned int optical_a_mode, unsigned int optical_b_mode) {
+/*
+ * Internal helper method.  Using a PortGroupEntry array the locations of
+ * channels within a packet is deduced based on the given sample rate and
+ * optical port modes, and stored back into the PortGroupEntry.  Locations
+ * within the packet start at 10 and are incremented by 3 for each
+ * subsequent channel.  Channels are assumed to be ordered in the packet as
+ * they are in the port group array.  Port groups which are not to be 
+ * created have their packet offset set to -1.
+ *
+ * Notes:
+ *  - When the ports are created by addDirPortGroups() the port_order field
+ *    is used to order the additions.  This way the first ports created do
+ *    not necessarily have to be those which appear in the packets first.
+ *
+ *  - Currently ports are not flagged for creation if they are disabled due
+ *    to sample rate or optical mode.  However, it might be better to
+ *    unconditionally create all ports and just disable those which are not
+ *    active.
+ */
+signed int i;
+unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
+unsigned int flags = 0;
+unsigned int portgroup_flags;
+signed int pkt_ofs = 10;       /* Port data starts at offset 10 */
+const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
+signed int n_groups = devprop->n_portgroup_entries;
+
+    if (n_groups <= 0)
+        return true;
+
+    if ( sample_rate > 96000 )
+        flags |= MOTU_PA_RATE_4x;
+    else if ( sample_rate > 48000 )
+        flags |= MOTU_PA_RATE_2x;
+    else
+        flags |= MOTU_PA_RATE_1x;
+
+    switch (optical_a_mode) {
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_OPTICAL_ANY; break;
+        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_OPTICAL_OFF; break;
+        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_OPTICAL_ADAT; break;
+        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_OPTICAL_TOSLINK; break;
+    }
+    switch (optical_b_mode) {
+        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_MK3_OPT_B_ANY; break;
+        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_MK3_OPT_B_OFF; break;
+        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_MK3_OPT_B_ADAT; break;
+        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_MK3_OPT_B_TOSLINK; break;
+    }
+
+    /* Scan through the port groups, allocating packet offsets for all
+     * port groups which are found to be active in the device's current state.
+     */
+    for (i=0; i<n_groups; i++) {
+        portgroup_flags = devprop->portgroup_entry[i].flags;
+        /* For devices without one or more optical ports, ensure the tests
+         * on the optical ports always returns "true".
+         */
+        if (optical_a_mode == MOTU_OPTICAL_MODE_NONE)
+            portgroup_flags |= MOTU_PA_OPTICAL_ANY;
+        if (optical_b_mode == MOTU_OPTICAL_MODE_NONE)
+            portgroup_flags |= MOTU_PA_MK3_OPT_B_ANY;
+
+        devprop->portgroup_entry[i].group_pkt_offset = -1;
+        if (( portgroup_flags & dir ) &&
+	    ( portgroup_flags & MOTU_PA_RATE_MASK & flags ) &&
+	    ( portgroup_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
+	    ( portgroup_flags & MOTU_PA_MK3_OPT_B_MASK & flags )) {
+            if ((portgroup_flags & MOTU_PA_PADDING) == 0) {
+                devprop->portgroup_entry[i].group_pkt_offset = pkt_ofs;
+            }
+            pkt_ofs += 3*devprop->portgroup_entry[i].n_channels;
+        }
+    }
+
+    if (direction == Streaming::Port::E_Capture)
+        m_rx_event_size = pkt_ofs;
+    else
+        m_tx_event_size = pkt_ofs;
+
     return true;
 }
 /* ======================================================================= */
