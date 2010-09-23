@@ -1386,13 +1386,21 @@ MotuDevice::prepare() {
     int samp_freq = getSamplingFrequency();
     unsigned int optical_in_mode_a, optical_out_mode_a;
     unsigned int optical_in_mode_b, optical_out_mode_b;
-    unsigned int event_size_in = getEventSize(MOTU_DIR_IN);
-    unsigned int event_size_out= getEventSize(MOTU_DIR_OUT);
+    unsigned int event_size_in;
+    unsigned int event_size_out;
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
 
     getOpticalMode(MOTU_DIR_IN, &optical_in_mode_a, &optical_in_mode_b);
     getOpticalMode(MOTU_DIR_OUT, &optical_out_mode_a, &optical_out_mode_b);
+
+    // Initialise port groups and determine the event sizes based on the
+    // current device mode and sample rate.
+    initDirPortGroups(Streaming::Port::E_Capture, samp_freq, optical_in_mode_a, optical_in_mode_b);
+    initDirPortGroups(Streaming::Port::E_Playback, samp_freq, optical_out_mode_a, optical_out_mode_b);
+
+    event_size_in = getEventSize(MOTU_DIR_IN);
+    event_size_out= getEventSize(MOTU_DIR_OUT);
 
     // Explicitly set the optical mode, primarily to ensure that the
     // MOTU_REG_OPTICAL_CTRL register is initialised.  We need to do this to
@@ -1957,19 +1965,22 @@ signed int MotuDevice::getEventSize(unsigned int direction) {
 // as it stands this will not adapt to dynamic changes in sample rate - we'd
 // need a setFrameRate() for that.
 //
-// At the very least an event consists of the SPH (4 bytes) and the control/MIDI
-// bytes (6 bytes).
 // Note that all audio channels are sent using 3 bytes.
+signed int size = 0;
+
+#ifndef USE_PORTGROUPS
+const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
 signed int sample_rate = getSamplingFrequency();
 unsigned int optical_mode_a, optical_mode_b;
-signed int size = 4+6;
 
 unsigned int i;
 unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
 unsigned int flags = 0;
 unsigned int port_flags;
-const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
 
+    // At the very least an event consists of the SPH (4 bytes) and the control/MIDI
+    // bytes (6 bytes).
+    size = 4+6;
     getOpticalMode(direction, &optical_mode_a, &optical_mode_b);
 
     if ( sample_rate > 96000 )
@@ -1994,7 +2005,6 @@ const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
 
     // Don't test for padding port flag here since we need to include such
     // pseudo-ports when calculating the event size.
-#ifndef USE_PORTGROUPS
     for (i=0; i < devprop->n_port_entries; i++) {
         port_flags = devprop->port_entry[i].port_flags;
         /* Make sure the optical port tests return true for devices without
@@ -2014,24 +2024,10 @@ const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
         }
     }
 #else
-    for (i=0; i<devprop->n_portgroup_entries; i++) {
-        unsigned int portgroup_flags = devprop->portgroup_entry[i].flags;
-        /* For devices without one or more optical ports, ensure the tests
-         * on the optical ports always returns "true".
-         */
-        if (optical_a_mode == MOTU_OPTICAL_MODE_NONE) {
-            portgroup_flags |= MOTU_PA_OPTICAL_ANY;
-        }
-        if (optical_b_mode == MOTU_OPTICAL_MODE_NONE) {
-            portgroup_flags |= MOTU_PA_MK3_OPT_B_ANY;
-        }
-        if (( portgroup_flags & dir ) &&
-	    ( portgroup_flags & MOTU_PA_RATE_MASK & flags ) &&
-	    ( portgroup_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
-	    ( portgroup_flags & MOTU_PA_MK3_OPT_B_MASK & flags )) {
-            size += 3*devprop->portgroup_entry[i].n_channels;
-        }
-    }
+    if (direction==Streaming::Port::E_Capture)
+        size = m_rx_event_size;
+    else
+        size = m_tx_event_size;
 #endif
 
     // Finally round size up to the next quadlet boundary
@@ -2229,31 +2225,25 @@ bool MotuDevice::addDirPortGroups(
   enum Streaming::Port::E_Direction direction, unsigned int sample_rate, 
   unsigned int optical_a_mode, unsigned int optical_b_mode) {
 /*
- * Internal helper method.  Using a PortGroupEntry array the locations
- * of channels within a packet is deduced based on the given sample rate
- * and optical port modes.  Locations within the packet start at 10
- * and are incremented by 3 for each subsequent channel.  Channel are assumed
- * to be ordered in the packet as they are in the port group array.
+ * Internal helper method.  Using a PortGroupEntry array previously
+ * initialised with a call to initPortGroups(), ports are created for each
+ * active channel of the interface.  The locations of channels within a
+ * packet are obtained from the group_pkt_offset field which was set by
+ * initPortGroups() and the order they should be created in is specifed by
+ * the port_order field of a port group.
  *
- * The port_order field of a port group entry allows the order of port
- * creation to be varied.  This is helpful if it's more convenient to have a
+ * The port_order functionality is helpful if it's more convenient to have a
  * particular port show up first in jackd even through it's located in the
  * middle of the packet.  If the port_order field of the first port group is
  * -1 it is assumed that the port creation is to happen in the order
  * specified in the port group list.
  *
- * Notes: currently ports are not created if they are disabled due to sample
- * rate or optical mode.  However, it might be better to unconditionally
- * create all ports and just disable those which are not active.
+ * A port group is taken to be inactive if its group_pkt_offset is set to -1.
  */
 const char *mode_str = direction==Streaming::Port::E_Capture?"cap":"pbk";
 Streaming::StreamProcessor *s_processor;
 signed int i;
 char *buff;
-unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
-unsigned int flags = 0;
-unsigned int portgroup_flags;
-signed int pkt_ofs = 10;       /* Port data starts at offset 10 */
 const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
 signed int n_groups = devprop->n_portgroup_entries;
 signed int creation_indices[n_groups];
@@ -2261,26 +2251,6 @@ signed int create_in_order;
 
     if (n_groups <= 0)
         return true;
-
-    if ( sample_rate > 96000 )
-        flags |= MOTU_PA_RATE_4x;
-    else if ( sample_rate > 48000 )
-        flags |= MOTU_PA_RATE_2x;
-    else
-        flags |= MOTU_PA_RATE_1x;
-
-    switch (optical_a_mode) {
-        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_OPTICAL_ANY; break;
-        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_OPTICAL_OFF; break;
-        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_OPTICAL_ADAT; break;
-        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_OPTICAL_TOSLINK; break;
-    }
-    switch (optical_b_mode) {
-        case MOTU_OPTICAL_MODE_NONE: flags |= MOTU_PA_MK3_OPT_B_ANY; break;
-        case MOTU_OPTICAL_MODE_OFF: flags |= MOTU_PA_MK3_OPT_B_OFF; break;
-        case MOTU_OPTICAL_MODE_ADAT: flags |= MOTU_PA_MK3_OPT_B_ADAT; break;
-        case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_MK3_OPT_B_TOSLINK; break;
-    }
 
     // retrieve the ID
     std::string id=std::string("dev?");
@@ -2299,32 +2269,13 @@ signed int create_in_order;
     }
     create_in_order = devprop->portgroup_entry[0].port_order<0;
 
-    /* First scan through the port groups, allocating packet offsets for all
-     * port groups which are found to be active in the device's current state.
-     */
+    /* First scan through the port groups to determine the creation order */
     for (i=0; i<n_groups; i++) {
-        portgroup_flags = devprop->portgroup_entry[i].flags;
-        /* For devices without one or more optical ports, ensure the tests
-         * on the optical ports always returns "true".
-         */
-        if (optical_a_mode == MOTU_OPTICAL_MODE_NONE)
-            portgroup_flags |= MOTU_PA_OPTICAL_ANY;
-        if (optical_b_mode == MOTU_OPTICAL_MODE_NONE)
-            portgroup_flags |= MOTU_PA_MK3_OPT_B_ANY;
-
-        devprop->portgroup_entry[i].group_pkt_offset = -1;
-        if (( portgroup_flags & dir ) &&
-	    ( portgroup_flags & MOTU_PA_RATE_MASK & flags ) &&
-	    ( portgroup_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
-	    ( portgroup_flags & MOTU_PA_MK3_OPT_B_MASK & flags )) {
-            if ((portgroup_flags & MOTU_PA_PADDING) == 0) {
-                devprop->portgroup_entry[i].group_pkt_offset = pkt_ofs;
-                if (create_in_order)
-                    creation_indices[i] = i;
-                else
-                    creation_indices[devprop->portgroup_entry[i].port_order] = i;
-            }
-            pkt_ofs += 3*devprop->portgroup_entry[i].n_channels;
+        if (devprop->portgroup_entry[i].group_pkt_offset >= 0) {
+            if (create_in_order)
+                creation_indices[i] = i;
+            else
+                creation_indices[devprop->portgroup_entry[i].port_order] = i;
         }
     }
 
