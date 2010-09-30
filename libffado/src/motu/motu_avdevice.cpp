@@ -60,7 +60,7 @@
 // packets sent to/from the MOTU interfaces.  Leave undefined to use
 // the old method.
 //
-// #define USE_PORTGROUPS
+#define USE_PORTGROUPS
 
 
 namespace Motu {
