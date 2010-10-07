@@ -281,7 +281,7 @@ enum EMotuModel {
     MOTU_MODEL_ULTRALITEmk3     = 0x0008,
     MOTU_MODEL_ULTRALITEmk3_HYB = 0x0009,
     MOTU_MODEL_TRAVELERmk3      = 0x000a, // Placeholder only at present
-    MOTU_MODEL_896HDmk3         = 0x000b, // Placeholder only at present
+    MOTU_MODEL_896mk3           = 0x000b, // Placeholder only at present
 };
 
 struct VendorModelEntry {

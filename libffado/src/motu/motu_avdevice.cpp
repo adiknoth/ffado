@@ -76,6 +76,7 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_MOTU, 0, 0x00000001, 0x000001f2, MOTU_MODEL_828MkI, "MOTU", "828MkI"},
     {FW_VENDORID_MOTU, 0, 0x00000005, 0x000001f2, MOTU_MODEL_896HD, "MOTU", "896HD"},
     {FW_VENDORID_MOTU, 0, 0x00000015, 0x000001f2, MOTU_MODEL_828mk3, "MOTU", "828Mk3"},
+    {FW_VENDORID_MOTU, 0, 0x00000017, 0x000001f2, MOTU_MODEL_896mk3, "MOTU", "896Mk3"},
     {FW_VENDORID_MOTU, 0, 0x00000019, 0x000001f2, MOTU_MODEL_ULTRALITEmk3, "MOTU", "UltraLiteMk3"},
     {FW_VENDORID_MOTU, 0, 0x0000001b, 0x000001f2, MOTU_MODEL_TRAVELERmk3, "MOTU", "TravelerMk3"},
     {FW_VENDORID_MOTU, 0, 0x00000030, 0x000001f2, MOTU_MODEL_ULTRALITEmk3_HYB, "MOTU", "UltraLiteMk3-hybrid"},
@@ -721,6 +722,8 @@ const DevicePropertyEntry DevicesProperty[] = {
       Ports_ULTRALITEmk3_hybrid, N_ELEMENTS( Ports_ULTRALITEmk3_hybrid ), 192000 }, // Ultralite mk3 hybrid
     { PORTGROUPS(TRAVELERmk3), 
       Ports_TRAVELERmk3,  N_ELEMENTS( Ports_TRAVELERmk3 ),  192000 },
+    { NULL, 0, 
+      NULL, 0,  192000 },  // 896 Mk 3
 };
 
 MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
@@ -1325,14 +1328,14 @@ MotuDevice::getSupportedClockSources() {
     }
     /* AES/EBU is present on the G2/G3 Travelers and 896HDs */
     if (m_motu_model==MOTU_MODEL_TRAVELER || m_motu_model==MOTU_MODEL_TRAVELERmk3 ||
-        m_motu_model==MOTU_MODEL_896HD || m_motu_model==MOTU_MODEL_896HDmk3) {
+        m_motu_model==MOTU_MODEL_896HD || m_motu_model==MOTU_MODEL_896mk3) {
         s = clockIdToClockSource(MOTU_CLKSRC_AES_EBU);
         r.push_back(s);
     }
 
     /* Dual-port ADAT is a feature of the G3 devices, and then only some */
     if (m_motu_model==MOTU_MODEL_828mk3 || m_motu_model==MOTU_MODEL_TRAVELERmk3 ||
-        m_motu_model==MOTU_MODEL_896HDmk3) {
+        m_motu_model==MOTU_MODEL_896mk3) {
         s = clockIdToClockSource(MOTU_CLKSRC_OPTICAL_A);
         r.push_back(s);
         s = clockIdToClockSource(MOTU_CLKSRC_OPTICAL_B);
@@ -1739,7 +1742,7 @@ signed int MotuDevice::getDeviceGeneration(void) {
         m_motu_model==MOTU_MODEL_ULTRALITEmk3 ||
         m_motu_model==MOTU_MODEL_ULTRALITEmk3_HYB ||
         m_motu_model==MOTU_MODEL_TRAVELERmk3 ||
-        m_motu_model==MOTU_MODEL_896HDmk3)
+        m_motu_model==MOTU_MODEL_896mk3)
         return MOTU_DEVICE_G3;
     return MOTU_DEVICE_G2;
 }
