@@ -571,7 +571,7 @@ PortGroupEntry PortGroups_896HD[] =
     {"unknown-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, },
     {"ADAT%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, },
     {"ADAT%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_OPTICAL_ADAT, },
-    {"AES/EBU%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ADAT, },
+    {"AES/EBU%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, },
 };
 
 PortGroupEntry PortGroups_828MKII[] =
@@ -693,6 +693,26 @@ PortGroupEntry PortGroups_TRAVELERmk3[] =
     //
 };
 
+/* FIXME: as of 8 Oct 2010 this is still under development.  Presently this
+ * layout is nothing more than an educated guess.
+ */
+PortGroupEntry PortGroups_896mk3[] =
+{
+    {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, -1, },
+    {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"Analog%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, },
+    {"MainOut-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"unknown-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"AES/EBU%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"Toslink-A%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, },
+    {"ADAT-A%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, }, 
+    {"ADAT-A%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, }, 
+    {"Toslink-B%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_TOSLINK, },
+    {"ADAT-B%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
+    {"ADAT-B%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
+};
+
 
 #define PORTGROUPS(__model) PortGroups_ ## __model, N_ELEMENTS(PortGroups_ ## __model)
 
@@ -722,7 +742,7 @@ const DevicePropertyEntry DevicesProperty[] = {
       Ports_ULTRALITEmk3_hybrid, N_ELEMENTS( Ports_ULTRALITEmk3_hybrid ), 192000 }, // Ultralite mk3 hybrid
     { PORTGROUPS(TRAVELERmk3), 
       Ports_TRAVELERmk3,  N_ELEMENTS( Ports_TRAVELERmk3 ),  192000 },
-    { NULL, 0, 
+    { PORTGROUPS(896mk3), 
       NULL, 0,  192000 },  // 896 Mk 3
 };
 
