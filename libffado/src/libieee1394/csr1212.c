@@ -1601,7 +1601,6 @@ int _csr1212_read_keyval(struct csr1212_csr *csr, struct csr1212_keyval *kv)
 
 int csr1212_parse_csr(struct csr1212_csr *csr)
 {
-	static const int mr_map[] = { 4, 64, 1024, 0 };
 	struct csr1212_dentry *dentry;
 	int ret;
 
@@ -1612,15 +1611,18 @@ int csr1212_parse_csr(struct csr1212_csr *csr)
 	if (ret != CSR1212_SUCCESS)
 		return ret;
 
-	if (!csr->ops->get_max_rom)
-		csr->max_rom = mr_map[0];	/* default value */
-	else {
-		int i = csr->ops->get_max_rom(csr->bus_info_data,
-					      csr->private_data);
-		if (i & ~0x3)
-			return CSR1212_EINVAL;
-		csr->max_rom = mr_map[i];
-	}
+        /* 
+ 	 * There has been a buggy firmware with bus_info_block.max_rom > 0 
+ 	 * spotted which actually only supported quadlet read requests to the 
+ 	 * config ROM.  Therefore read everything quadlet by quadlet regardless 
+ 	 * of what the bus info block says.  This mirrors a similar change
+	 * made in the Linux kernel around 4 Jan 2009.  See
+         *   http://git.kernel.org/linus/0bed1819687b50a7
+	 * The other hunks in that diff are cleanups - removal of things
+	 * which aren't needed now that max_rom is fixed at 4.  In time it
+	 * may be worthwhile merging them too.
+ 	 */ 
+        csr->max_rom = 4; 
 
 	csr->cache_head->layout_head = csr->root_kv;
 	csr->cache_head->layout_tail = csr->root_kv;
