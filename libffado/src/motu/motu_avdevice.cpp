@@ -2181,6 +2181,7 @@ bool MotuDevice::initDirPortGroups(
  */
 signed int i;
 unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
+const signed int mode_idx = direction==Streaming::Port::E_Capture?1:0;
 unsigned int flags = 0;
 unsigned int portgroup_flags;
 signed int pkt_ofs = 10;       /* Port data starts at offset 10 */
@@ -2223,13 +2224,13 @@ signed int n_groups = devprop->n_portgroup_entries;
         if (optical_b_mode == MOTU_OPTICAL_MODE_NONE)
             portgroup_flags |= MOTU_PA_MK3_OPT_B_ANY;
 
-        devprop->portgroup_entry[i].group_pkt_offset = -1;
+        devprop->portgroup_entry[i].group_pkt_offset[mode_idx] = -1;
         if (( portgroup_flags & dir ) &&
 	    ( portgroup_flags & MOTU_PA_RATE_MASK & flags ) &&
 	    ( portgroup_flags & MOTU_PA_OPTICAL_MASK & flags ) &&
 	    ( portgroup_flags & MOTU_PA_MK3_OPT_B_MASK & flags )) {
             if ((portgroup_flags & MOTU_PA_PADDING) == 0) {
-                devprop->portgroup_entry[i].group_pkt_offset = pkt_ofs;
+                devprop->portgroup_entry[i].group_pkt_offset[mode_idx] = pkt_ofs;
             }
             pkt_ofs += 3*devprop->portgroup_entry[i].n_channels;
         }
@@ -2264,6 +2265,7 @@ bool MotuDevice::addDirPortGroups(
  * A port group is taken to be inactive if its group_pkt_offset is set to -1.
  */
 const char *mode_str = direction==Streaming::Port::E_Capture?"cap":"pbk";
+const signed int mode_idx = direction==Streaming::Port::E_Capture?1:0;
 Streaming::StreamProcessor *s_processor;
 signed int i;
 char *buff;
@@ -2294,7 +2296,7 @@ signed int create_in_order;
 
     /* First scan through the port groups to determine the creation order */
     for (i=0; i<n_groups; i++) {
-        if (devprop->portgroup_entry[i].group_pkt_offset >= 0) {
+        if (devprop->portgroup_entry[i].group_pkt_offset[mode_idx] >= 0) {
             if (create_in_order)
                 creation_indices[i] = i;
             else
@@ -2325,7 +2327,7 @@ signed int create_in_order;
                 snprintf(namestr, sizeof(namestr), "%s", devprop->portgroup_entry[entry].group_name_format);
             asprintf(&buff,"%s_%s_%s" , id.c_str(), mode_str, namestr);
             if (!addPort(s_processor, buff, direction, 
-                   devprop->portgroup_entry[entry].group_pkt_offset+3*ch, 0))
+                   devprop->portgroup_entry[entry].group_pkt_offset[mode_idx]+3*ch, 0))
                 return false;
         }
     }
