@@ -702,7 +702,7 @@ PortGroupEntry PortGroups_896mk3[] =
     {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
     {"Analog%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_MK3_OPT_ANY, },
     {"MainOut-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
-    {"unknown-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
+    {"unknown-%d", 4, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
     {"AES/EBU%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
     {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_ANY, },
     {"Toslink-A%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, },
