@@ -889,4 +889,35 @@ Device::getSessionBase()
     return cmd.m_address;
 }
 
+int
+Device::getSamplingFrequency( ) {
+    EfcGetClockCmd gccmd;
+    if (!doEfcOverAVC(gccmd)) {
+        debugError("Could not get clock info\n");
+        return false;
+    }
+    return gccmd.m_samplerate;
+}
+bool
+Device::setSamplingFrequency( int s )
+{
+    EfcGetClockCmd gccmd;
+    if (!doEfcOverAVC(gccmd)) {
+        debugError("Could not get clock info\n");
+        return false;
+    }
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Set samplerate: %d\n", s);
+
+    EfcSetClockCmd sccmd;
+    sccmd.m_clock=gccmd.m_clock;
+    sccmd.m_samplerate=s;
+    sccmd.m_index=0;
+    if (!doEfcOverAVC(sccmd)) {
+        debugError("Could not set sample rate\n");
+        return false;
+    }
+    return true;
+}
+
+
 } // FireWorks

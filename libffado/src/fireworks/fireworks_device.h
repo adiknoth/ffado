@@ -65,6 +65,8 @@ public:
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);
     virtual ClockSource getActiveClockSource();
+    virtual int getSamplingFrequency();
+    virtual bool setSamplingFrequency( int );
 
     const EfcHardwareInfoCmd getHwInfo()
         {return m_HwInfo;};
@@ -155,6 +157,7 @@ private:
     Control::Container *m_HwInfoContainer;
 
 };
+
 
 } // namespace FireWorks
 
