@@ -999,6 +999,7 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
                     break;
                 case 48000:
                     reg |= MOTU_G1_RATE_48000;
+                    break;
                 default:
                     // Unsupported rate
                     return false;
