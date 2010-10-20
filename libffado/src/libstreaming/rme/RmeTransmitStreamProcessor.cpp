@@ -375,6 +375,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%08x\n", rxsp->n_hw_tx_buffer_sampl
 #endif
 //if (rxsp->n_hw_tx_buffer_samples < 0x38)
 has_dryrun = 1;
+#if 0
 if (rxsp->n_hw_tx_buffer_samples == -1) {
   // Effectively delay a bit before starting to send packets
   if (cx > 255) {
@@ -388,6 +389,16 @@ if (rxsp->n_hw_tx_buffer_samples == -1) {
   } else
     cx=0;
 }
+#else
+if (cx > 255) {
+  signed n_events = getNominalFramesPerPacket();
+  if (cx < 255+64+10) {
+    cx += n_events;
+    *length = n_events * m_event_size;
+  }
+} else
+  cx++;
+#endif
 //debugOutput(DEBUG_LEVEL_VERBOSE, "  txsize=%d\n", *length);
     }
 

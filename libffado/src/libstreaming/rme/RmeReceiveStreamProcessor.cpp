@@ -110,8 +110,11 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
                                                 uint32_t pkt_ctr)
 {
 // For testing
+static signed int rep = 0;
 quadlet_t *adata = (quadlet_t *)data;
-debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
+if (rep == 0) {
+  debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
+}
 //fprintf(stderr, "recv len=%d\n", length);
 
     if (length > 0) {
@@ -136,16 +139,20 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
         // fixed offset that we'll have to include eventually.
 //        m_last_timestamp = CYCLE_TIMER_TO_TICKS(ctm_Parent.get1394Service().getCycleTimer());
         m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
-debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,
-  CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
-debugOutput(DEBUG_LEVEL_VERBOSE, "  %02x %02x %02x %02x %02x %02x %02x %02x\n",
-  adata[0] & 0xff, adata[1] & 0xff, adata[2] & 0xff, adata[3] & 0xff,
-  adata[4] & 0xff, adata[5] & 0xff, adata[6] & 0xff, adata[7] & 0xff);
-debugOutput(DEBUG_LEVEL_VERBOSE, "  tx size=%d, rxcount=%d\n",
-  ((adata[5] & 0xff) << 8) | (adata[0] & 0xff),
-  ((adata[4] & 0xff) << 8) | (adata[1] & 0xff));
-n_hw_tx_buffer_samples = adata[7] & 0xff;
-debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%02x\n", n_hw_tx_buffer_samples);
+
+if (rep == 0) {
+  debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,
+    CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
+  debugOutput(DEBUG_LEVEL_VERBOSE, "  %02x %02x %02x %02x %02x %02x %02x %02x\n",
+    adata[0] & 0xff, adata[1] & 0xff, adata[2] & 0xff, adata[3] & 0xff,
+    adata[4] & 0xff, adata[5] & 0xff, adata[6] & 0xff, adata[7] & 0xff);
+  debugOutput(DEBUG_LEVEL_VERBOSE, "  tx size=%d, rxcount=%d\n",
+    ((adata[5] & 0xff) << 8) | (adata[0] & 0xff),
+    ((adata[4] & 0xff) << 8) | (adata[1] & 0xff));
+  n_hw_tx_buffer_samples = adata[7] & 0xff;
+  debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%02x\n", n_hw_tx_buffer_samples);
+}
+rep=1;
         return eCRV_OK;
     } else {
         return eCRV_Invalid;
@@ -168,6 +175,9 @@ RmeReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int l
     // m_event_size should never be zero
     unsigned int n_events = length / m_event_size;
 
+// for testing
+static signed int rep = 0;
+
     // we have to keep in mind that there are also
     // some packets buffered by the ISO layer,
     // at most x=m_handler->getWakeupInterval()
@@ -183,8 +193,10 @@ RmeReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int l
     #endif
 
 // For testing
-debugOutput(DEBUG_LEVEL_VERBOSE, "data packet data, length=%d, ev_size=%d, n_events=%d\n", length, m_event_size, n_events);
-
+if (rep == 0) {
+  debugOutput(DEBUG_LEVEL_VERBOSE, "data packet data, length=%d, ev_size=%d, n_events=%d\n", length, m_event_size, n_events);
+  rep = 1;
+}
     if(m_data_buffer->writeFrames(n_events, (char *)data, m_last_timestamp)) {
         return eCRV_OK;
     } else {
