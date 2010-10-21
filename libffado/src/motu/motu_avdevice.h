@@ -202,6 +202,7 @@
 #define MOTU_PA_RATE_2x          0x0002    /* 88k2 or 96k */
 #define MOTU_PA_RATE_4x          0x0004    /* 176k4 or 192k */
 #define MOTU_PA_RATE_1x2x        (MOTU_PA_RATE_1x|MOTU_PA_RATE_2x)
+#define MOTU_PA_RATE_2x4x        (MOTU_PA_RATE_2x|MOTU_PA_RATE_4x)
 #define MOTU_PA_RATE_ANY         (MOTU_PA_RATE_1x|MOTU_PA_RATE_2x|MOTU_PA_RATE_4x)
 #define MOTU_PA_RATE_MASK        MOTU_PA_RATE_ANY
 #define MOTU_PA_OPTICAL_OFF      0x0010    /* Optical port off */
