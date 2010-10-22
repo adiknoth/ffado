@@ -113,7 +113,8 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
 static signed int rep = 0;
 quadlet_t *adata = (quadlet_t *)data;
 if (rep == 0) {
-  debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
+//  debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
+  fprintf(stderr, "first data packet header, len=%d\n", length);
 }
 //fprintf(stderr, "recv len=%d\n", length);
 
