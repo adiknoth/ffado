@@ -415,7 +415,7 @@ RmeTransmitStreamProcessor::generateEmptyPacketData (
 {
     /* If dry-running data is being sent, zero the data */
     if (*length > 0) {
-        memset(data, *length, 0);
+        memset(data, 0, *length);
     }
     return eCRV_OK; // no need to do anything
 }
