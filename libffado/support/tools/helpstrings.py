@@ -34,7 +34,8 @@ configuration is bogus.
 """
         strings['MODULES_NEW_STACK_LOADED']="""
 The new FireWire kernel stack is loaded. 
-This stack is not supported by FFADO. Please use the old stack.
+This is still kind of experimental. If you encounter problems, please also check
+with the old stack.
 """
         strings['MODULES_OLD_STACK_NOT_LOADED']="""
 FireWire kernel module(s) not found. 

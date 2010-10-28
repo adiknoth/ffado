@@ -3,6 +3,7 @@
 
 #
 # Copyright (C) 2008 Pieter Palmers
+#               2009-2010 Arnold Krille
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +39,7 @@ welcome_msg = """
 FFADO diagnostic utility """ + FFADODIAG_VERSION + """
 ============================
 (C) 2008 Pieter Palmers
+    2009-2010 Arnold Krille
 
 """
 
@@ -71,8 +73,9 @@ if __name__== '__main__':
     # check kernel
     kernel_version = get_kernel_version()
     print "  kernel version............ " + str(kernel_version)
-    kernel_is_rt_patched = get_kernel_rt_patched()
-    print "   RT patched............... " + str(kernel_is_rt_patched)
+    # Hint: The main parts of the rt patches are in mainline-kernels nowadays. Performance with stock kernels is sufficient...
+    #kernel_is_rt_patched = get_kernel_rt_patched()
+    #print "   RT patched............... " + str(kernel_is_rt_patched)
     
     # check modules
     oldstack_present = check_1394oldstack_present()
@@ -134,7 +137,10 @@ if __name__== '__main__':
     print "   Host controllers:"
     list_host_controllers()
     print "   CPU info:"
-    print run_command("cat /proc/cpuinfo")
+    if len(run_command("which lscpu")) > 0:
+        print run_command("lscpu")
+    else:
+        print run_command("cat /proc/cpuinfo")
 
     print " Configuration..."
     # check RT settings
