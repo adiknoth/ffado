@@ -1776,7 +1776,7 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
     // devices other than the Mark 3 devices.
     //
     // If a mode parameter pointer is NULL it will not be returned.
-    unsigned int reg;
+    unsigned int reg, reg2;
     unsigned int mask, shift;
 
     if (port_b_mode != NULL)
@@ -1786,16 +1786,26 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         // The early devices used a different register layout.  
+        unsigned int mask2;
         reg = ReadRegister(MOTU_G1_REG_CONFIG);
-        mask = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_MASK:MOTU_G1_OPT_OUT_MODE_MASK;
-        shift = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_BIT0:MOTU_G1_OPT_OUT_MODE_BIT0;
-        switch ((reg & mask) >> shift) {
-            case MOTU_G1_OPTICAL_OFF: *port_a_mode = MOTU_OPTICAL_MODE_OFF; break;
-            case MOTU_G1_OPTICAL_TOSLINK: *port_a_mode = MOTU_OPTICAL_MODE_TOSLINK; break;
-            // MOTU_G1_OPTICAL_OFF and MOTU_G1_OPTICAL_ADAT seem to be
-            // identical, so currently we don't know how to differentiate
-            // these two modes.
-            // case MOTU_G1_OPTICAL_ADAT: return MOTU_OPTICAL_MODE_ADAT;
+        reg2 = ReadRegister(MOTU_G1_REG_CONFIG_2);
+
+        mask = (dir==MOTU_DIR_IN)?MOTU_G1_C1_OPT_TOSLINK_IN:MOTU_G1_C1_OPT_TOSLINK_OUT;
+        mask2 = (dir==MOTU_DIR_IN)?MOTU_G1_C2_OPT_nADAT_IN:MOTU_G1_C2_OPT_nADAT_OUT;
+
+        if ((reg & mask) && (reg2 & mask2)) {
+          /* Toslink bit set, nADAT bit set -> Toslink mode */
+          *port_a_mode = MOTU_OPTICAL_MODE_TOSLINK;
+        } else
+        if ((reg & mask)==0 && (reg2 & mask2)==0) {
+          /* Toslink bit clear, nADAT bit clear -> ADAT mode */
+          *port_a_mode = MOTU_OPTICAL_MODE_ADAT;
+        } else {
+          /* All other combinations are unexpected except toslink clear/
+           * nADAT set, so just assume the optical port is off if we get
+           * here.
+           */
+          *port_a_mode = MOTU_OPTICAL_MODE_OFF;
         }
         return 0;
     }
@@ -1868,18 +1878,30 @@ signed int MotuDevice::setOpticalMode(unsigned int dir,
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         // The earlier MOTUs handle this differently.
-        unsigned int mask, shift, g1mode = 0;
-        reg = ReadRegister(MOTU_G1_REG_CONFIG);
-        mask = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_MASK:MOTU_G1_OPT_OUT_MODE_MASK;
-        shift = (dir==MOTU_DIR_IN)?MOTU_G1_OPT_IN_MODE_BIT0:MOTU_G1_OPT_OUT_MODE_BIT0;
-        switch (port_a_mode) {
-            case MOTU_OPTICAL_MODE_OFF: g1mode = MOTU_G1_OPTICAL_OFF; break;
-            case MOTU_OPTICAL_MODE_ADAT: g1mode = MOTU_G1_OPTICAL_ADAT; break;
-            // See comment in getOpticalMode() about mode ambiguity
-            // case MOTU_OPTICAL_MODE_TOSLINK: g1mode = MOTU_G1_OPTICAL_TOSLINK; break;
+        unsigned int g1_conf1, g1_conf2;
+        unsigned int toslink, n_adat;
+        g1_conf1 = ReadRegister(MOTU_G1_REG_CONFIG);
+        g1_conf2 = ReadRegister(MOTU_G1_REG_CONFIG_2);
+        toslink = (dir==MOTU_DIR_IN)?MOTU_G1_C1_OPT_TOSLINK_IN:MOTU_G1_C1_OPT_TOSLINK_OUT;
+        n_adat = (dir==MOTU_DIR_IN)?MOTU_G1_C2_OPT_nADAT_IN:MOTU_G1_C2_OPT_nADAT_OUT;
+
+        /* Set registers as needed by the requested mode */
+        g1_conf1 &= ~toslink;
+        g1_conf2 |= n_adat;
+        if (port_a_mode == MOTU_OPTICAL_MODE_TOSLINK) {
+          g1_conf1 |= toslink;
+        } else {
+          g1_conf1 &= ~toslink;
         }
-        reg = (reg & ~mask) | (g1mode << shift);
-        return WriteRegister(MOTU_G1_REG_CONFIG, reg);
+        if (port_a_mode == MOTU_OPTICAL_MODE_ADAT) {
+          g1_conf2 &= ~n_adat;
+        } else {
+          g1_conf2 |= n_adat;
+        }
+        if (WriteRegister(MOTU_G1_REG_CONFIG, g1_conf1)!=0 ||
+            WriteRegister(MOTU_G1_REG_CONFIG_2, g1_conf2)!=0)
+            return -1;
+        return 0;
     }
 
     /* The G3 devices are also quite a bit different to the G2 units */
