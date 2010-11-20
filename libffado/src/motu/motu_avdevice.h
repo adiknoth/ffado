@@ -110,10 +110,20 @@
  * ADAT mode is controlled by "disable" bits (that is, the mode is active if
  * the bits are clear.
  */
-#define MOTU_G1_C1_OPT_TOSLINK_IN  0x8000
-#define MOTU_G1_C1_OPT_TOSLINK_OUT 0x4000
-#define MOTU_G1_C2_OPT_nADAT_IN    0x0080
-#define MOTU_G1_C2_OPT_nADAT_OUT   0x0040
+#define MOTU_G1_C1_ISO_ENABLE      0x00000080
+#define MOTU_G1_C1_OPT_TOSLINK_IN  0x00008000
+#define MOTU_G1_C1_OPT_TOSLINK_OUT 0x00004000
+#define MOTU_G1_C1_ISO_TX_CH_MASK  0x000f0000
+#define MOTU_G1_C1_ISO_TX_CH_BIT0  16
+#define MOTU_G1_C1_ISO_TX_ACTIVE   0x00400000
+#define MOTU_G1_C1_ISO_TX_WREN     0x00800000 // Enable iso tx conf changes
+#define MOTU_G1_C1_ISO_RX_CH_MASK  0x0f000000
+#define MOTU_G1_C1_ISO_RX_CH_BIT0  24
+#define MOTU_G1_C1_ISO_RX_ACTIVE   0x40000000
+#define MOTU_G1_C1_ISO_RX_WREN     0x80000000 // Enable iso rx conf changes
+#define MOTU_G1_C1_ISO_INFO_MASK   0xffff0000
+#define MOTU_G1_C2_OPT_nADAT_IN    0x00000080
+#define MOTU_G1_C2_OPT_nADAT_OUT   0x00000040
 
 #define MOTU_G1_RATE_MASK          0x0004
 #define MOTU_G1_RATE_44100         0x0000

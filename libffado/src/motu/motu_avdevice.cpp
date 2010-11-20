@@ -1660,9 +1660,37 @@ MotuDevice::startStreamByIndex(int i) {
 quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
-        // The 828MkI device does this differently.
-        // To be implemented
-        return false;
+        // The 828MkI device does this differently.  In particular it does
+        // not appear possible to enable tx and rx separately since they
+        // share a global enable (MOTU_G1_C1_ISO_ENABLE).  Therefore we
+        // enable both when the 0th index is requested and ignore any
+        // request for index 1.  Also note that on the G1 devices,
+        // MOTU_REG_ISOCTRL and MOTU_G1_REG_CONFIG are one and the same.
+        if (i == 1)
+            return true;
+        m_receiveProcessor->setChannel(m_iso_recv_channel);
+        m_transmitProcessor->setChannel(m_iso_send_channel);
+
+        /* First send the iso channels to the control register.  Note that
+         * as for other MOTU devices bit 24 enables changes to the MOTU's
+         * iso tx settings while bit 31 enables iso rx changes.
+         */
+        isoctrl &= ~MOTU_G1_C1_ISO_INFO_MASK;
+        isoctrl |= (MOTU_G1_C1_ISO_TX_ACTIVE | MOTU_G1_C1_ISO_TX_WREN |
+                    MOTU_G1_C1_ISO_RX_ACTIVE | MOTU_G1_C1_ISO_RX_WREN);
+        isoctrl |= (m_iso_recv_channel << MOTU_G1_C1_ISO_TX_CH_BIT0);
+        isoctrl |= (m_iso_send_channel << MOTU_G1_C1_ISO_RX_CH_BIT0);
+        WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
+
+        /* With the channel details configured streaming is started.  This
+         * could conceivably be done in a single write along with the channel
+         * details.  However, other systems split the writes so we will too.
+         */
+        isoctrl &= ~MOTU_G1_C1_ISO_INFO_MASK;
+        isoctrl |= MOTU_G1_C1_ISO_ENABLE;
+        WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
+
+        return true;
     }
 
     // NOTE: this assumes that you have two streams
@@ -1675,10 +1703,11 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
         // the connection management
         m_receiveProcessor->setChannel(m_iso_recv_channel);
 
-        // Mask out current transmit settings of the MOTU and replace
-        // with new ones.  Turn bit 24 on to enable changes to the
-        // MOTU's iso transmit settings when the iso control register
-        // is written.  Bit 23 enables iso transmit from the MOTU.
+        // Mask out current transmit settings of the MOTU and replace with
+        // new ones (which correspond to our receive channel).  Turn bit 24
+        // on to enable changes to the MOTU's iso transmit settings when the
+        // iso control register is written.  Bit 23 enables iso transmit
+        // from the MOTU.
         isoctrl &= 0xff00ffff;
         isoctrl |= (m_iso_recv_channel << 16);
         isoctrl |= 0x00c00000;
@@ -1692,10 +1721,11 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
         // the connection management
         m_transmitProcessor->setChannel(m_iso_send_channel);
 
-        // Mask out current receive settings of the MOTU and replace
-        // with new ones.  Turn bit 31 on to enable changes to the
-        // MOTU's iso receive settings when the iso control register
-        // is written.  Bit 30 enables iso receive by the MOTU.
+        // Mask out current receive settings of the MOTU and replace with
+        // new ones (which correspond to our transmit channel).  Turn bit 31
+        // on to enable changes to the MOTU's iso receive settings when the
+        // iso control register is written.  Bit 30 enables iso receive by
+        // the MOTU.
         isoctrl &= 0x00ffffff;
         isoctrl |= (m_iso_send_channel << 24);
         isoctrl |= 0xc0000000;
@@ -1714,13 +1744,32 @@ MotuDevice::stopStreamByIndex(int i) {
 
 quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
 
-    // TODO: connection management: break connection
-    // cfr the start function
+    // Shut down streaming.  Essentially the opposite of the start function.
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
-        // The 828MkI device does this differently.
-        // To be implemented
-        return false;
+        quadlet_t reg = isoctrl;
+        // The 828MkI device does this differently.  In particular it does
+        // not appear possible to disable tx and rx separately since they
+        // share a global enable (MOTU_G1_C1_ISO_ENABLE).  Therefore we
+        // disable both when the 0th index is requested and ignore any
+        // request for index 1.
+        if (i == 1)
+            return true;
+
+        /* First disable the streaming */
+        reg &= ~MOTU_G1_C1_ISO_INFO_MASK;
+        reg &= ~MOTU_G1_C1_ISO_ENABLE;
+        WriteRegister(MOTU_REG_ISOCTRL, reg);
+        
+        /* Next, turn off individual stream enable flags.  As for the stream
+         * start case, this is separated from the first write because that's
+         * what other systems do.
+         */
+        reg |= (isoctrl & MOTU_G1_C1_ISO_INFO_MASK);
+        reg &= ~(MOTU_G1_C1_ISO_TX_ACTIVE | MOTU_G1_C1_ISO_RX_ACTIVE);
+        WriteRegister(MOTU_REG_ISOCTRL, reg);
+
+        return true;
     }
 
     // NOTE: this assumes that you have two streams
