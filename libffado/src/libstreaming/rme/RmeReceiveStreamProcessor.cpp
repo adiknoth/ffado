@@ -65,6 +65,8 @@ RmeReceiveStreamProcessor::RmeReceiveStreamProcessor(FFADODevice &parent,
     , n_hw_tx_buffer_samples ( -1 )
     , m_rme_model( model )
     , m_event_size( event_size )
+    , rxdll_t1( 0 )
+    , rxdll_e2( 0 )
     , mb_head ( 0 )
     , mb_tail ( 0 )
 {
@@ -88,17 +90,29 @@ RmeReceiveStreamProcessor::getNominalFramesPerPacket() {
     return framerate<=48000?7:(framerate<=96000?15:25);
 }
 
+#define RXDLL_BANDWIDTH (0.003)
+
 bool
 RmeReceiveStreamProcessor::prepareChild() {
+    double w;
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this);
 
     // prepare the framerate estimate
     // FIXME: not needed anymore?
     //m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
 
+    // Initialise the "smoothing" DLL.  rxdll_e2 is set to the expected
+    // period (in ticks) which is then used to set suitable coefficients
+    // based on a normalised bandwidth.
+    rxdll_t1 = -1.0;
+    rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
+//    w = (2*M_PI*RXDLL_BANDWIDTH*rxdll_e2);
+w = (2*M_PI*0.00225);
+    rxdll_B = (sqrt(2.0)*w);
+    rxdll_C = (w*w);
+
     return true;
 }
-
 
 /*
  * Processes packet header to extract timestamps and check if the packet is 
@@ -140,6 +154,26 @@ if (rep == 0) {
         // fixed offset that we'll have to include eventually.
 //        m_last_timestamp = CYCLE_TIMER_TO_TICKS(ctm_Parent.get1394Service().getCycleTimer());
         m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
+
+debugOutput(DEBUG_LEVEL_VERBOSE, "ts read: %lld\n", m_last_timestamp);
+debugOutput(DEBUG_LEVEL_VERBOSE, "  rxdll_t1=%g\n", rxdll_t1);
+
+if (rxdll_t1 < 0.0) {
+  rxdll_e2 *= length / m_event_size;
+  rxdll_t1 = m_last_timestamp + rxdll_e2;
+debugOutput(DEBUG_LEVEL_VERBOSE, "  returned read: %lld T=%g\n", 
+  m_last_timestamp, rxdll_e2);
+} else {
+  double e = m_last_timestamp - rxdll_t1;
+  m_last_timestamp = rxdll_t1;
+  rxdll_t1 += rxdll_B*e + rxdll_e2;
+  rxdll_e2 += rxdll_C*e;
+  if (rxdll_t1 > 128*TICKS_PER_SECOND)
+    rxdll_t1 -= 128*TICKS_PER_SECOND;
+debugOutput(DEBUG_LEVEL_VERBOSE, "  returned: %lld (e=%g) T=%g\n", 
+  m_last_timestamp, e, rxdll_e2);
+}
+
 
 if (rep == 0) {
   debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,

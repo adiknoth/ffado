@@ -544,6 +544,7 @@ Device::prepare() {
         debugOutput(DEBUG_LEVEL_ERROR, "Can't continue: sampling frequency not set\n");
         return false;
     }
+    mult = freq<68100?1:(freq<136200?2:4);
 
     frames_per_packet = getFramesPerPacket();
 
