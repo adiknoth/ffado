@@ -255,7 +255,7 @@ int PosixThread::DropRealTime()
     rtparam.sched_priority = 0;
 
     if ((res = pthread_setschedparam(fThread, SCHED_OTHER, &rtparam)) != 0) {
-        debugError("Cannot switch to normal scheduling priority(%s)\n", strerror(errno));
+        debugError("Cannot switch to normal scheduling priority(%s)\n", strerror(res));
         return -1;
     }
     return 0;
