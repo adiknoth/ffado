@@ -66,18 +66,33 @@ ffado_get_api_version();
  *     continue;
  *   }
  *
- *   ffado_streaming_transfer_buffers(dev);
+ *   ffado_streaming_transfer_capture_buffers(dev);
  *
  *   for(all channels) {
+ *     // For both audio and MIDI channels, captured data is available
+ *     // in the buffer previously set with a call to
+ *     //   ffado_streaming_set_capture_stream_buffer(dev, channel, buffer)
  *     switch (channel_type) {
  *     case audio:
- *       bytesread=ffado_streaming_read(audioinbuffer[channel]);
- *       byteswritten=ffado_streaming_write(audiooutbuffer[channel]);
+ *       // Process incoming audio as needed
  *     case midi:
- *       bytesread=ffado_streaming_read(midiinbuffer[channel]);
- *       byteswritten=ffado_streaming_write(midioutbuffer[channel]);
+ *       // Process incoming MIDI data as needed
  *     }
  *   }
+ *
+ *   for(all channels) {
+ *     // For both audio and MIDI channels, data is written to buffers
+ *     // previously associated with the playback channel streams using
+ *     //   ffado_streaming_set_playback_stream_buffer(dev, channel, buffer)
+ *     switch (channel_type) {
+ *     case audio:
+ *       // Set audio playback buffer contents
+ *     case midi:
+ *       // Set MIDI playback buffer contents
+ *     }
+ *   }
+ *   ffado_streaming_transfer_playback_buffers(dev);
+ *
  * }
  * ffado_streaming_stop();
  * ffado_streaming_finish();
