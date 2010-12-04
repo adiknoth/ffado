@@ -482,51 +482,6 @@ int main(int argc, char *argv[])
         nb_periods++;
         frame_counter += arguments.period;
 
-//         if((nb_periods % 32)==0) {
-// //             debugOutput(DEBUG_LEVEL_NORMAL, "\r%05d periods",nb_periods);
-//         }
-
-//         for(i=0;i<nb_in_channels;i++) {
-//             
-//             
-//             switch (ffado_streaming_get_capture_stream_type(dev,i)) {
-//             case ffado_stream_type_audio:
-//                 // no need to get the buffers manually, we have set the API internal buffers to the audiobuffer[i]'s
-// //                 //samplesread=freebob_streaming_read(dev, i, audiobuffer[i], arguments.period);
-//                 samplesread=arguments.period;
-//                 break;
-//             case ffado_stream_type_midi:
-//                 //samplesread=ffado_streaming_read(dev, i, audiobuffers_out[i], arguments.period);
-//                 break;
-//                         default: break;
-//             }
-//     
-// //               fprintf(fid_in[i], "---- Period read  (%d samples) ----\n",samplesread);
-// //               hexDumpToFile(fid_in[i],(unsigned char*)audiobuffers_in[i],samplesread*sizeof(float)+1);
-//         }
-
-//         for(i=0;i<nb_out_channels;i++) {
-//             float *buff;
-//             int sampleswritten=0;
-//             if (i<nb_in_channels) {
-//                 buff=audiobuffers_out[i];
-//             } else {
-//                 buff=nullbuffer;
-//             }
-//             
-//             switch (ffado_streaming_get_playback_stream_type(dev,i)) {
-//             case ffado_stream_type_audio:
-// //                  sampleswritten=freebob_streaming_write(dev, i, buff, arguments.period);
-//                 sampleswritten=arguments.period;
-//                 break;
-//             case ffado_stream_type_midi:
-// //                 sampleswritten=freebob_streaming_write(dev, i, buff, arguments.period);
-//                 break;
-//                         default: break;
-//             }
-// //               fprintf(fid_out[i], "---- Period write (%d samples) ----\n",sampleswritten);
-// //               hexDumpToFile(fid_out[i],(unsigned char*)buff,sampleswritten*sizeof(ffado_sample_t));
-//         }
     }
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Exiting receive loop\n");
