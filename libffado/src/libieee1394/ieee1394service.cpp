@@ -958,8 +958,10 @@ int
 Ieee1394Service::getSplitTimeoutUsecs(fb_nodeid_t nodeId)
 {
     Util::MutexLockHelper lock(*m_handle_lock);
-    quadlet_t split_timeout_hi;
-    quadlet_t split_timeout_low;
+
+    // Keep Valgrind quiet by including explicit assignment
+    quadlet_t split_timeout_hi = 0;
+    quadlet_t split_timeout_low = 0;
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "reading SPLIT_TIMEOUT on node 0x%X...\n", nodeId);
 
