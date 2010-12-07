@@ -748,27 +748,34 @@ Device::showDevice()
     flushDebugOutput();
 }
 
-// NOTE on bandwidth calculation
-// FIXME: The bandwidth allocation calculation can probably be
-// refined somewhat since this is currently based on a rudimentary
-// understanding of the iso protocol.
-// Currently we assume the following.
-//   * Ack/iso gap = 0.05 us
-//   * DATA_PREFIX = 0.16 us1
-//   * DATA_END    = 0.26 us
-// These numbers are the worst-case figures given in the ieee1394
-// standard.  This gives approximately 0.5 us of overheads per
-// packet - around 25 bandwidth allocation units (from the ieee1394
-// standard 1 bandwidth allocation unit is 125/6144 us).  We further
-// assume the device is running at S400 (which it should be) so one
-// allocation unit is equivalent to 1 transmitted byte; thus the
-// bandwidth allocation required for the packets themselves is just
-// the size of the packet.
+
+void
+Device::setRXTXfuncs (const Streaming::Port::E_Direction direction) {
+    if (direction == Streaming::Port::E_Capture) {
+        // we are a receive processor
+        audio_base_register = DICE_REGISTER_TX_NB_AUDIO_BASE;
+        midi_base_register = DICE_REGISTER_TX_MIDI_BASE;
+        writeFunc = &Device::writeTxReg;
+        readFunc  = &Device::readTxReg;
+        strcpy(dir, "TX");
+    } else {
+        // we are a transmit processor
+        audio_base_register = DICE_REGISTER_RX_NB_AUDIO_BASE;
+        midi_base_register  = DICE_REGISTER_RX_MIDI_BASE;
+        writeFunc = &Device::writeRxReg;
+        readFunc  = &Device::readRxReg;
+        strcpy(dir, "RX");
+    }
+};
+
+// Really prepare a stream processor. This function gets called by prepare() for each stream
+// processor to create.
 bool
-Device::prepare() {
+Device::prepareSP(unsigned int i, const Streaming::Port::E_Direction direction_requested) {
     fb_quadlet_t nb_audio;
     fb_quadlet_t nb_midi;
     unsigned int nb_channels = 0;
+    Streaming::Port::E_Direction direction = direction_requested;
 
     bool snoopMode = false;
     if(!getOption("snoopMode", snoopMode)) {
@@ -803,217 +810,170 @@ Device::prepare() {
 
     stringlist names_audio;
     stringlist names_midi;
-    // prepare receive SP's
-//     for (unsigned int i=0;i<1;i++) {
-    for (unsigned int i=0; i<m_nb_tx; i++) {
 
-        if(!readTxReg(i, DICE_REGISTER_TX_NB_AUDIO_BASE, &nb_audio)) {
-            debugError("Could not read DICE_REGISTER_TX_NB_AUDIO_BASE register for ATX%u\n",i);
-            continue;
-        }
-        if(!readTxReg(i, DICE_REGISTER_TX_MIDI_BASE, &nb_midi)) {
-            debugError("Could not read DICE_REGISTER_TX_MIDI_BASE register for ATX%u\n",i);
-            continue;
-        }
+    Streaming::StreamProcessor *p;
+    float dll_bw;
 
-        // request the channel names
+    // set function pointers and base IO for upcoming code
+    setRXTXfuncs (direction_requested);
+
+    if (direction == Streaming::Port::E_Capture) {
+        // we are a receive processor
         names_audio = getTxNameString(i);
-        if (names_audio.size() != nb_audio) {
-            debugWarning("The audio channel name vector is incorrect, using default names\n");
-            names_audio.clear();
+    } else {
+        names_audio = getRxNameString(i);
+    }
+    
 
-            for (unsigned int j=0;j<nb_audio;j++) {
-                std::ostringstream newname;
-                newname << "input_" << j;
-                names_audio.push_back(newname.str());
-            }
-        }
-
-        nb_channels = nb_audio;
-        if(nb_midi) nb_channels += 1; // midi-muxed counts as one
-
-        // construct the MIDI names
-        for (unsigned int j=0;j<nb_midi;j++) {
-            std::ostringstream newname;
-            newname << "midi " << j;
-            names_midi.push_back(newname.str());
-        }
-
-        // construct the streamprocessor
-        Streaming::AmdtpReceiveStreamProcessor *p;
-        p = new Streaming::AmdtpReceiveStreamProcessor(*this,
-                             nb_channels);
-
-        if(!p->init()) {
-            debugFatal("Could not initialize receive processor!\n");
-            delete p;
-            continue;
-        }
-
-        // add audio ports to the processor
-        for (unsigned int j=0;j<nb_audio;j++) {
-            diceChannelInfo channelInfo;
-            channelInfo.name=names_audio.at(j);
-            channelInfo.portType=ePT_Analog;
-            channelInfo.streamPosition=j;
-            channelInfo.streamLocation=0;
-
-            if (!addChannelToProcessor(&channelInfo, p, Streaming::Port::E_Capture)) {
-                debugError("Could not add channel %s to StreamProcessor\n",
-                    channelInfo.name.c_str());
-                continue;
-            }
-        }
-
-        // add midi ports to the processor
-        for (unsigned int j=0;j<nb_midi;j++) {
-            diceChannelInfo channelInfo;
-            channelInfo.name=names_midi.at(j);
-            channelInfo.portType=ePT_MIDI;
-            channelInfo.streamPosition=nb_audio;
-            channelInfo.streamLocation=j;
-
-            if (!addChannelToProcessor(&channelInfo, p, Streaming::Port::E_Capture)) {
-                debugError("Could not add channel %s to StreamProcessor\n",
-                    channelInfo.name.c_str());
-                continue;
-            }
-        }
-
-        if(!p->setDllBandwidth(recv_sp_dll_bw)) {
-            debugFatal("Could not set DLL bandwidth\n");
-            delete p;
-            return false;
-        }
-
-        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Receive SP on channel [%d audio, %d midi]\n", this, nb_audio, nb_midi);
-        // add the SP to the vector
-        m_receiveProcessors.push_back(p);
+    if(!(*this.*readFunc)(i, audio_base_register, &nb_audio)) {
+        debugError("Could not read DICE_REGISTER_%s_NB_AUDIO_BASE register for A%s%u\n",
+                dir, dir, i);
+        // non-fatal error, simply returning true. Only false is important for prepare();
+        return true;
     }
 
-    // prepare transmit SP's
-    names_audio.clear();
-    names_midi.clear();
-//     for (unsigned int i=0;i<1;i++) {
-    for (unsigned int i=0; i<m_nb_rx; i++) {
+    if(!(*this.*readFunc)(i, midi_base_register, &nb_midi)) {
+        debugError("Could not read DICE_REGISTER_%s_MIDI_BASE register for A%s%u\n",
+                dir, dir, i);
+        // non-fatal error, simply returning true. Only false is important for prepare();
+        return true;
+    }
 
-        // construct the streamprocessor
-        Streaming::StreamProcessor *p;
-        if(!readRxReg(i, DICE_REGISTER_RX_NB_AUDIO_BASE, &nb_audio)) {
-            debugError("Could not read DICE_REGISTER_RX_NB_AUDIO_BASE register for ARX%u\n", i);
-            continue;
-        }
-        if(!readRxReg(i, DICE_REGISTER_RX_MIDI_BASE, &nb_midi)) {
-            debugError("Could not read DICE_REGISTER_RX_MIDI_BASE register for ARX%u\n", i);
-            continue;
-        }
+    // request the channel names
+    if (names_audio.size() != nb_audio) {
+        debugWarning("The audio channel name vector is incorrect, using default names\n");
+        names_audio.clear();
 
-        // request the channel names
-        names_audio = getRxNameString(i);
-
-        nb_channels = nb_audio;
-        if(nb_midi) nb_channels += 1; // midi-muxed counts as one
-
-        if (names_audio.size() != nb_audio) {
-            debugWarning("The audio channel name vector is incorrect, using default names\n");
-            names_audio.clear();
-
-            for (unsigned int j=0; j < nb_audio; j++) {
-                std::ostringstream newname;
-                newname << "output_" << j;
-                names_audio.push_back(newname.str());
-            }
-        }
-
-        // construct the MIDI names
-        for (unsigned int j=0; j < nb_midi; j++) {
+        for (unsigned int j=0;j<nb_audio;j++) {
             std::ostringstream newname;
-            newname << "midi " << j;
-            names_midi.push_back(newname.str());
+            newname << "input_" << j;
+            names_audio.push_back(newname.str());
         }
+    }
 
-        enum Streaming::Port::E_Direction port_type;
-        float dll_bw;
-        if (snoopMode) {
-            // we are snooping, so this is receive too.
-            p = new Streaming::AmdtpReceiveStreamProcessor(*this, nb_channels);
-            port_type = Streaming::Port::E_Capture;
-            dll_bw = recv_sp_dll_bw;
-        } else {
-            // this is a normal situation
-            Streaming::AmdtpTransmitStreamProcessor *t;
-            t = new Streaming::AmdtpTransmitStreamProcessor(*this, nb_channels);
-            #if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
-            // the DICE-II cannot handle payload in the NO-DATA packets.
-            // the other DICE chips don't need payload. Therefore
-            // we disable it.
-            t->sendPayloadForNoDataPackets(false);
-            #endif
-    
-            // transmit control parameters
-            t->setMaxCyclesToTransmitEarly(xmit_max_cycles_early_transmit);
-            t->setTransferDelay(xmit_transfer_delay);
-            t->setMinCyclesBeforePresentation(xmit_min_cycles_before_presentation);
+    nb_channels = nb_audio;
+    if(nb_midi) nb_channels += 1; // midi-muxed counts as one
 
-            p = t;
-            port_type = Streaming::Port::E_Playback;
-            dll_bw = xmit_sp_dll_bw;
-        }
+    // construct the MIDI names
+    for (unsigned int j=0;j<nb_midi;j++) {
+        std::ostringstream newname;
+        newname << "midi " << j;
+        names_midi.push_back(newname.str());
+    }
 
-        if(!p->init()) {
-            debugFatal("Could not initialize transmit processor %s!\n",
-                (snoopMode?" in snoop mode":""));
-            delete p;
+    // construct the streamprocessor
+    if (direction == Streaming::Port::E_Capture || snoopMode) {
+        p = new Streaming::AmdtpReceiveStreamProcessor(*this, nb_channels);
+        dll_bw = recv_sp_dll_bw;
+        direction = Streaming::Port::E_Capture;
+    } else {
+        p = new Streaming::AmdtpTransmitStreamProcessor(*this, nb_channels);
+        dll_bw = xmit_sp_dll_bw;
+
+#if AMDTP_ALLOW_PAYLOAD_IN_NODATA_XMIT
+        // the DICE-II cannot handle payload in the NO-DATA packets.
+        // the other DICE chips don't need payload. Therefore
+        // we disable it.
+        ((Streaming::AmdtpTransmitStreamProcessor*)p)->sendPayloadForNoDataPackets(false);
+#endif
+
+        // transmit control parameters
+        ((Streaming::AmdtpTransmitStreamProcessor*)p)->setMaxCyclesToTransmitEarly(xmit_max_cycles_early_transmit);
+        ((Streaming::AmdtpTransmitStreamProcessor*)p)->setTransferDelay(xmit_transfer_delay);
+        ((Streaming::AmdtpTransmitStreamProcessor*)p)->setMinCyclesBeforePresentation(xmit_min_cycles_before_presentation);
+    }
+
+
+    if(!p->init()) {
+        debugFatal("Could not initialize %s processor!\n", dir);
+        delete p;
+        // non-fatal error, simply returning true. Only false is important for prepare();
+        return true;
+    }
+
+    // add audio ports to the processor
+    for (unsigned int j=0;j<nb_audio;j++) {
+        diceChannelInfo channelInfo;
+        channelInfo.name=names_audio.at(j);
+        channelInfo.portType=ePT_Analog;
+        channelInfo.streamPosition=j;
+        channelInfo.streamLocation=0;
+
+        if (!addChannelToProcessor(&channelInfo, p, direction)) {
+            debugError("Could not add channel %s to StreamProcessor\n",
+                    channelInfo.name.c_str());
             continue;
         }
+    }
 
-        // add audio ports to the processor
-        for (unsigned int j=0; j < nb_audio; j++) {
-            diceChannelInfo channelInfo;
-            channelInfo.name = names_audio.at(j);
-            channelInfo.portType = ePT_Analog;
-            channelInfo.streamPosition = j;
-            channelInfo.streamLocation = 0;
+    // add midi ports to the processor
+    for (unsigned int j=0;j<nb_midi;j++) {
+        diceChannelInfo channelInfo;
+        channelInfo.name=names_midi.at(j);
+        channelInfo.portType=ePT_MIDI;
+        channelInfo.streamPosition=nb_audio;
+        channelInfo.streamLocation=j;
 
-            if (!addChannelToProcessor(&channelInfo, p, port_type)) {
-                debugError("Could not add channel %s to StreamProcessor\n",
+        if (!addChannelToProcessor(&channelInfo, p, direction)) {
+            debugError("Could not add channel %s to StreamProcessor\n",
                     channelInfo.name.c_str());
-                continue;
-            }
+            continue;
         }
+    }
 
-        // add midi ports to the processor
-        for (unsigned int j=0; j < nb_midi; j++) {
-            diceChannelInfo channelInfo;
-            channelInfo.name = names_midi.at(j);
-            channelInfo.portType = ePT_MIDI;
-            channelInfo.streamPosition = nb_audio;
-            channelInfo.streamLocation = j;
+    if(!p->setDllBandwidth(dll_bw)) {
+        debugFatal("Could not set DLL bandwidth\n");
+        delete p;
+        return false;
+    }
 
-            if (!addChannelToProcessor(&channelInfo, p, port_type)) {
-                debugError("Could not add channel %s to StreamProcessor\n",
-                    channelInfo.name.c_str());
-                continue;
-            }
-        }
-
-        // set DLL bandwidth
-        if(!p->setDllBandwidth(recv_sp_dll_bw)) {
-            debugFatal("Could not set DLL bandwidth\n");
-            delete p;
-            return false;
-        }
-        
-        debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Transmit SP on channel [%d audio, %d midi]%s\n", 
-                                         this, nb_audio, nb_midi, (snoopMode?" snoop mode":""));
-
+    debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) %s SP on channel [%d audio, %d midi]\n",
+            this, dir, nb_audio, nb_midi);
+    // add the SP to the vector
+    if (direction_requested == Streaming::Port::E_Capture) {
+        m_receiveProcessors.push_back(p);
+    } else {
         // we put this SP into the transmit SP vector,
         // no matter if we are in snoop mode or not
         // this allows us to find out what direction
         // a certain stream should have.
         m_transmitProcessors.push_back(p);
     }
+
     return true;
+}
+
+// NOTE on bandwidth calculation
+// FIXME: The bandwidth allocation calculation can probably be
+// refined somewhat since this is currently based on a rudimentary
+// understanding of the iso protocol.
+// Currently we assume the following.
+//   * Ack/iso gap = 0.05 us
+//   * DATA_PREFIX = 0.16 us1
+//   * DATA_END    = 0.26 us
+// These numbers are the worst-case figures given in the ieee1394
+// standard.  This gives approximately 0.5 us of overheads per
+// packet - around 25 bandwidth allocation units (from the ieee1394
+// standard 1 bandwidth allocation unit is 125/6144 us).  We further
+// assume the device is running at S400 (which it should be) so one
+// allocation unit is equivalent to 1 transmitted byte; thus the
+// bandwidth allocation required for the packets themselves is just
+// the size of the packet.
+bool
+Device::prepare() {
+
+    bool exit_code = true;
+
+    // prepare receive SP's
+    for (unsigned int i=0; i<m_nb_tx; i++) {
+        exit_code &= prepareSP (i, Streaming::Port::E_Capture);
+    }
+
+    for (unsigned int i=0; i<m_nb_rx; i++) {
+        exit_code &= prepareSP (i, Streaming::Port::E_Playback);
+    }
+
+    return exit_code;
 }
 
 bool
@@ -1238,10 +1198,6 @@ Device::getStreamProcessorByIndex(int i) {
 bool
 Device::startStreamByIndex(int i) {
     bool snoopMode = false;
-    char direction[3] = "TX";
-    // Function pointers to call readTxReg/readRxReg or writeTxReg/writeRxReg respectively
-    bool (Device::*writeFunc) (unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) = NULL;
-    bool (Device::*readFunc) (unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) = NULL;
     fb_nodeaddr_t base_address;   // holds DICE_REGISTER_TX_ISOC_BASE or DICE_REGISTER_RX_ISOC_BASE
     int n;                       // number of streaming processor
 
@@ -1259,17 +1215,13 @@ Device::startStreamByIndex(int i) {
     if (i<(int)m_receiveProcessors.size()) {
         n=i;
         p = m_receiveProcessors.at(n);
-        strcpy(direction, "TX");
         base_address = DICE_REGISTER_TX_ISOC_BASE;
-        writeFunc = &Device::writeTxReg;
-        readFunc  = &Device::readTxReg;
+        setRXTXfuncs (Streaming::Port::E_Capture);
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
         n=i-m_receiveProcessors.size();
         p=m_transmitProcessors.at(n);
-        strcpy(direction, "RX");
         base_address = DICE_REGISTER_RX_ISOC_BASE;
-        writeFunc = &Device::writeRxReg;
-        readFunc  = &Device::readRxReg;
+        setRXTXfuncs (Streaming::Port::E_Playback);
     } else {
         debugError("SP index %d out of range!\n",i);
         return false;
@@ -1279,37 +1231,37 @@ Device::startStreamByIndex(int i) {
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!(*this.*readFunc)(n, base_address, &reg_isoch)) {
-            debugError("Could not read ISO_CHANNEL register for A%s %d\n", direction, n);
+            debugError("Could not read ISO_CHANNEL register for A%s %d\n", dir, n);
             p->setChannel(-1);
             return false;
         }
         int isochannel = reg_isoch;
         debugOutput(DEBUG_LEVEL_VERBOSE,
                 "(%p) Snooping %s from channel %d\n",
-                this, direction, isochannel);
+                this, dir, isochannel);
         p->setChannel(isochannel);
     } else {
         // allocate ISO channel
         int isochannel = allocateIsoChannel(p->getMaxPacketSize());
         if(isochannel<0) {
-            debugError("Could not allocate iso channel for SP %d (A%s %d)\n", i, direction, n);
+            debugError("Could not allocate iso channel for SP %d (A%s %d)\n", i, dir, n);
             return false;
         }
         debugOutput(DEBUG_LEVEL_VERBOSE,
                 "(%p) Allocated channel %u for %s\n",
-                this, isochannel, direction);
+                this, isochannel, dir);
         p->setChannel(isochannel);
 
         fb_quadlet_t reg_isoch;
         // check value of ISO_CHANNEL register
         if(!(*this.*readFunc)(n, base_address, &reg_isoch)) {
-            debugError("Could not read ISO_CHANNEL register for A%s %d\n", direction, n);
+            debugError("Could not read ISO_CHANNEL register for A%s %d\n", dir, n);
             p->setChannel(-1);
             deallocateIsoChannel(isochannel);
             return false;
         }
         if(reg_isoch != 0xFFFFFFFFUL) {
-            debugWarning("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for A%s %d\n", reg_isoch, direction, n);
+            debugWarning("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for A%s %d\n", reg_isoch, dir, n);
             /* The ISO channel has already been registered, probably
              * because the device was running before and jackd just
              * crashed. Let's simply reuse the previously selected
@@ -1335,7 +1287,7 @@ Device::startStreamByIndex(int i) {
         // write value of ISO_CHANNEL register
         reg_isoch = isochannel;
         if(!(*this.*writeFunc)(n, base_address, reg_isoch)) {
-            debugError("Could not write ISO_CHANNEL register for A%s %d\n", direction, n);
+            debugError("Could not write ISO_CHANNEL register for A%s %d\n", dir, n);
             p->setChannel(-1);
             deallocateIsoChannel(isochannel);
             return false;

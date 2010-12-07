@@ -167,6 +167,9 @@ public:
 
 private: // register I/O routines
     bool initIoFunctions();
+    // functions used for RX/TX abstraction
+    bool prepareSP (unsigned int, const Streaming::Port::E_Direction direction_requested);
+    void setRXTXfuncs (const Streaming::Port::E_Direction direction);
     // quadlet read/write routines
     bool readReg(fb_nodeaddr_t, fb_quadlet_t *);
     bool writeReg(fb_nodeaddr_t, fb_quadlet_t);
@@ -206,6 +209,14 @@ private: // register I/O routines
     fb_quadlet_t m_tx_size;
     fb_quadlet_t m_nb_rx;
     fb_quadlet_t m_rx_size;
+
+    fb_quadlet_t audio_base_register;
+    fb_quadlet_t midi_base_register;
+    char dir[3];
+
+    // Function pointers to call readTxReg/readRxReg or writeTxReg/writeRxReg respectively
+    bool (Device::*writeFunc) (unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data);
+    bool (Device::*readFunc) (unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result);
 
 // private:
 public:
