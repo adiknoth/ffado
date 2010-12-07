@@ -1238,6 +1238,15 @@ Device::getStreamProcessorByIndex(int i) {
 bool
 Device::startStreamByIndex(int i) {
     bool snoopMode = false;
+    char direction[3] = "TX";
+    // Function pointers to call readTxReg/readRxReg or writeTxReg/writeRxReg respectively
+    bool (Device::*writeFunc) (unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t data) = NULL;
+    bool (Device::*readFunc) (unsigned int i, fb_nodeaddr_t offset, fb_quadlet_t *result) = NULL;
+    fb_nodeaddr_t base_address;   // holds DICE_REGISTER_TX_ISOC_BASE or DICE_REGISTER_RX_ISOC_BASE
+    int n;                       // number of streaming processor
+
+    Streaming::StreamProcessor *p;
+
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
@@ -1248,148 +1257,91 @@ Device::startStreamByIndex(int i) {
     }
 
     if (i<(int)m_receiveProcessors.size()) {
-        int n=i;
-        Streaming::StreamProcessor *p = m_receiveProcessors.at(n);
-
-        if(snoopMode) { // a stream from the device to another host
-            fb_quadlet_t reg_isoch;
-            // check value of ISO_CHANNEL register
-            if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
-                debugError("Could not read ISO_CHANNEL register for ATX %d\n", n);
-                p->setChannel(-1);
-                return false;
-            }
-            int isochannel = reg_isoch;
-            debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "(%p) Snooping RX from channel %d\n",
-                        this, isochannel);
-            p->setChannel(isochannel);
-        } else {
-            // allocate ISO channel
-            int isochannel = allocateIsoChannel(p->getMaxPacketSize());
-            if(isochannel<0) {
-                debugError("Could not allocate iso channel for SP %d (ATX %d)\n", i, n);
-                return false;
-            }
-            debugOutput(DEBUG_LEVEL_VERBOSE,
-                        "(%p) Allocated channel %u for RX\n",
-                        this, isochannel);
-            p->setChannel(isochannel);
-    
-            fb_quadlet_t reg_isoch;
-            // check value of ISO_CHANNEL register
-            if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
-                debugError("Could not read ISO_CHANNEL register for ATX %d\n", n);
-                p->setChannel(-1);
-                deallocateIsoChannel(isochannel);
-                return false;
-            }
-            if(reg_isoch != 0xFFFFFFFFUL) {
-                debugWarning("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for ATX %d\n", reg_isoch, n);
-                /* The ISO channel has already been registered, probably
-                 * because the device was running before and jackd just
-                 * crashed. Let's simply reuse the previously selected
-                 * ISO channel.
-                 *
-                 * FIXME: try to reset the channel register and
-                 * return to a clean state
-                 */
-                deallocateIsoChannel(isochannel);
-                p->setChannel(reg_isoch);
-#if 0
-                /* FIXME: Looks like it's not necessary to ask the IRM.
-                 * Just use the already registered ISO channel.
-                 */
-                // ask the IRM to use this channel
-                if (get1394Service().allocateFixedIsoChannelGeneric(reg_isoch,p->getMaxPacketSize()) < 0) {
-                    debugError("Cannot allocate iso channel (0x%08"PRIX32") for ATX %d\n", reg_isoch, n); 
-                }
-#endif
-                isochannel=reg_isoch;
-            }
-    
-            // write value of ISO_CHANNEL register
-            reg_isoch = isochannel;
-            if(!writeTxReg(n, DICE_REGISTER_TX_ISOC_BASE, reg_isoch)) {
-                debugError("Could not write ISO_CHANNEL register for ATX %d\n", n);
-                p->setChannel(-1);
-                deallocateIsoChannel(isochannel);
-                return false;
-            }
-        }
-        return true;
-
+        n=i;
+        p = m_receiveProcessors.at(n);
+        strcpy(direction, "TX");
+        base_address = DICE_REGISTER_TX_ISOC_BASE;
+        writeFunc = &Device::writeTxReg;
+        readFunc  = &Device::readTxReg;
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
-        int n=i-m_receiveProcessors.size();
-        Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
-
-        if(snoopMode) { // a stream from the device to another host
-            fb_quadlet_t reg_isoch;
-            // check value of ISO_CHANNEL register
-            if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
-                debugError("Could not read ISO_CHANNEL register for ARX %d\n", n);
-                p->setChannel(-1);
-                return false;
-            }
-            int isochannel = reg_isoch;
-            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Snooping TX from channel %d\n", this, isochannel);
-            p->setChannel(isochannel);
-        } else {
-            // allocate ISO channel
-            int isochannel = allocateIsoChannel(p->getMaxPacketSize());
-            if(isochannel<0) {
-                debugError("Could not allocate iso channel for SP %d (ARX %d)\n",i,n);
-                return false;
-            }
-            debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) Allocated channel %u for TX\n", this, isochannel);
-            p->setChannel(isochannel);
-    
-            fb_quadlet_t reg_isoch;
-            // check value of ISO_CHANNEL register
-            if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
-                debugError("Could not read ISO_CHANNEL register for ARX %d\n", n);
-                p->setChannel(-1);
-                deallocateIsoChannel(isochannel);
-                return false;
-            }
-            if(reg_isoch != 0xFFFFFFFFUL) {
-                debugWarning("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for ARX %d\n", reg_isoch, n);
-                /* The ISO channel has already been registered, probably
-                 * because the device was running before and jackd just
-                 * crashed. Let's simply reuse the previously selected
-                 * ISO channel.
-                 *
-                 * FIXME: try to reset the channel register and
-                 * return to a clean state
-                 */
-                deallocateIsoChannel(isochannel);
-                p->setChannel(reg_isoch);
-#if 0
-                /* FIXME: Looks like it's not necessary to ask the IRM.
-                 * Just use the already registered ISO channel.
-                 */
-                // ask the IRM to use this channel
-                if (get1394Service().allocateFixedIsoChannelGeneric(reg_isoch,p->getMaxPacketSize()) < 0) {
-                    debugError("Cannot allocate iso channel (0x%08"PRIX32") for ARX %d\n", reg_isoch, n); 
-                }
-#endif
-                isochannel=reg_isoch;
-            }
-    
-            // write value of ISO_CHANNEL register
-            reg_isoch=isochannel;
-            if(!writeRxReg(n, DICE_REGISTER_RX_ISOC_BASE, reg_isoch)) {
-                debugError("Could not write ISO_CHANNEL register for ARX %d\n", n);
-                p->setChannel(-1);
-                deallocateIsoChannel(isochannel);
-                return false;
-            }
-        }
-        return true;
+        n=i-m_receiveProcessors.size();
+        p=m_transmitProcessors.at(n);
+        strcpy(direction, "RX");
+        base_address = DICE_REGISTER_RX_ISOC_BASE;
+        writeFunc = &Device::writeRxReg;
+        readFunc  = &Device::readRxReg;
+    } else {
+        debugError("SP index %d out of range!\n",i);
+        return false;
     }
 
-    debugError("SP index %d out of range!\n",i);
-    return false;
+    if(snoopMode) { // a stream from the device to another host
+        fb_quadlet_t reg_isoch;
+        // check value of ISO_CHANNEL register
+        if(!(*this.*readFunc)(n, base_address, &reg_isoch)) {
+            debugError("Could not read ISO_CHANNEL register for A%s %d\n", direction, n);
+            p->setChannel(-1);
+            return false;
+        }
+        int isochannel = reg_isoch;
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                "(%p) Snooping %s from channel %d\n",
+                this, direction, isochannel);
+        p->setChannel(isochannel);
+    } else {
+        // allocate ISO channel
+        int isochannel = allocateIsoChannel(p->getMaxPacketSize());
+        if(isochannel<0) {
+            debugError("Could not allocate iso channel for SP %d (A%s %d)\n", i, direction, n);
+            return false;
+        }
+        debugOutput(DEBUG_LEVEL_VERBOSE,
+                "(%p) Allocated channel %u for %s\n",
+                this, isochannel, direction);
+        p->setChannel(isochannel);
+
+        fb_quadlet_t reg_isoch;
+        // check value of ISO_CHANNEL register
+        if(!(*this.*readFunc)(n, base_address, &reg_isoch)) {
+            debugError("Could not read ISO_CHANNEL register for A%s %d\n", direction, n);
+            p->setChannel(-1);
+            deallocateIsoChannel(isochannel);
+            return false;
+        }
+        if(reg_isoch != 0xFFFFFFFFUL) {
+            debugWarning("ISO_CHANNEL register != 0xFFFFFFFF (=0x%08"PRIX32") for A%s %d\n", reg_isoch, direction, n);
+            /* The ISO channel has already been registered, probably
+             * because the device was running before and jackd just
+             * crashed. Let's simply reuse the previously selected
+             * ISO channel.
+             *
+             * FIXME: try to reset the channel register and
+             * return to a clean state
+             */
+            deallocateIsoChannel(isochannel);
+            p->setChannel(reg_isoch);
+#if 0
+            /* FIXME: Looks like it's not necessary to ask the IRM.
+             * Just use the already registered ISO channel.
+             */
+            // ask the IRM to use this channel
+            if (get1394Service().allocateFixedIsoChannelGeneric(reg_isoch,p->getMaxPacketSize()) < 0) {
+                debugError("Cannot allocate iso channel (0x%08"PRIX32") for ATX %d\n", reg_isoch, n); 
+            }
+#endif
+            isochannel=reg_isoch;
+        }
+
+        // write value of ISO_CHANNEL register
+        reg_isoch = isochannel;
+        if(!(*this.*writeFunc)(n, base_address, reg_isoch)) {
+            debugError("Could not write ISO_CHANNEL register for A%s %d\n", direction, n);
+            p->setChannel(-1);
+            deallocateIsoChannel(isochannel);
+            return false;
+        }
+    }
+    return true;
 }
 
 bool
