@@ -1,0 +1,185 @@
+#!/usr/bin/python
+#
+
+#
+# Copyright (C) 2008 Pieter Palmers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+#
+# Test for common FFADO problems
+#
+
+import sys
+
+# Add the path of the installed dependent files
+sys.path.append( "$PYTHONDIR" )
+
+from listirqinfo import IRQ,SoftIRQ,IRQInfo
+from helpstrings import HelpStrings
+from ffado_diag_helpers import *
+
+## message strings
+FFADODIAG_VERSION = "$VERSION-$REVISION"
+
+welcome_msg = """
+
+FFADO diagnostic utility """ + FFADODIAG_VERSION + """
+============================
+(C) 2008 Pieter Palmers
+
+"""
+
+help_msg = """
+Usage: ffado-diag [verboselevel]
+
+  verboselevel : verbosity level. (optional)
+
+"""
+
+## main program
+if __name__== '__main__':
+
+    print welcome_msg
+
+    num_args = len(sys.argv)
+    if num_args not in [1,2]:
+        print help
+        sys.exit(0)
+
+    if num_args == 2:
+        loglevel = eval(sys.argv[1])
+        if loglevel == 1:
+            logging.getLogger('diag').setLevel(logging.INFO)
+        elif loglevel == 2:
+            logging.getLogger('diag').setLevel(logging.DEBUG)
+
+    print "=== CHECK ==="
+    print " Base system..."
+    
+    # check kernel
+    kernel_version = get_kernel_version()
+    print "  kernel version............ " + str(kernel_version)
+    kernel_is_rt_patched = get_kernel_rt_patched()
+    print "   RT patched............... " + str(kernel_is_rt_patched)
+    
+    # check modules
+    oldstack_present = check_1394oldstack_present()
+    oldstack_loaded = check_1394oldstack_loaded()
+    oldstack_active = check_1394oldstack_active()
+    oldstack_statically_linked = not check_1394oldstack_loaded() and check_1394oldstack_linked()
+    newstack_present = check_1394newstack_present()
+    newstack_loaded = check_1394newstack_loaded()
+    newstack_active = check_1394newstack_active()
+    newstack_statically_linked = not check_1394newstack_loaded() and check_1394newstack_linked()
+    
+    print "  old 1394 stack present.... " + str(oldstack_present)
+    print "  old 1394 stack loaded..... " + str(oldstack_loaded)
+    print "  old 1394 stack active..... " + str(oldstack_active)
+    print "  new 1394 stack present.... " + str(newstack_present)
+    print "  new 1394 stack loaded..... " + str(newstack_loaded)
+    print "  new 1394 stack active..... " + str(newstack_active)
+    
+    # check /dev/raw1394 node presence
+    devnode_present = check_1394oldstack_devnode_present()
+    print "  /dev/raw1394 node present. " + str(devnode_present)
+    if devnode_present:
+        # check /dev/raw1394 access permissions
+        devnode_permissions = check_1394oldstack_devnode_permissions()
+        print "  /dev/raw1394 permissions.. " + str(devnode_permissions)
+    else:
+        devnode_permissions = None
+
+    # check libraries
+    print " Prerequisites (dynamic at run-time)..."
+    print "   gcc................ %s" % get_version_first_line('gcc --version')
+    print "   g++................ %s" % get_version_first_line('g++ --version')
+    print "   PyQt............... %s" % get_version_first_line('pyuic -version')
+    print "   jackd.............. %s" % get_version_first_line('jackd --version')
+    print "     path............. %s" % get_command_path('jackd')
+    print "     flags............ %s" % get_package_flags("jack")
+    print "   libraw1394......... %s" % get_package_version("libraw1394")
+    print "     flags............ %s" % get_package_flags("libraw1394")
+    print "   libavc1394......... %s" % get_package_version("libavc1394")
+    print "     flags............ %s" % get_package_flags("libavc1394")
+    print "   libiec61883........ %s" % get_package_version("libiec61883")
+    print "     flags............ %s" % get_package_flags("libiec61883")
+    print "   libxml++-2.6....... %s" % get_package_version("libxml++-2.6")
+    print "     flags............ %s" % get_package_flags("libxml++-2.6")
+    print "   dbus-1............. %s" % get_package_version("dbus-1")
+    print "     flags............ %s" % get_package_flags("dbus-1")
+    print " Prerequisites (static at compile-time)..."
+    f = open( "$PYTHONDIR/static_info.txt", "r" )
+    for line in f:
+        line = line[:-1]
+        if line is not "\n" and line.startswith("  "):
+            print line
+    f.close()
+
+    # libraw
+    
+    print " Hardware..."
+    # check host controller
+    print "   Host controllers:"
+    list_host_controllers()
+    print "   CPU info:"
+    print run_command("cat /proc/cpuinfo")
+
+    print " Configuration..."
+    # check RT settings
+    
+    # check IRQ settings 
+    print "  IRQ information"
+    info = IRQInfo()
+
+    info.load()
+    print str(info)
+
+    print ""
+    print "=== REPORT ==="
+    
+    help = HelpStrings()
+    
+    # do the interpretation of the tests
+    print "FireWire kernel drivers:"
+    if (oldstack_loaded or oldstack_statically_linked) and \
+       (newstack_loaded or newstack_statically_linked):
+        help.show('MODULES_BOTH_STACKS_LOADED')
+        sys.exit(-1)
+    elif newstack_loaded or newstack_statically_linked:
+        help.show('MODULES_NEW_STACK_LOADED')
+        sys.exit(-1)
+    elif oldstack_statically_linked:
+        print "[PASS] Kernel drivers statically linked into the kernel."
+    elif not oldstack_present:
+        help.show('MODULES_OLD_STACK_NOT_INSTALLED')
+        sys.exit(-1)
+    elif not oldstack_loaded:
+        help.show('MODULES_OLD_STACK_NOT_LOADED')
+        sys.exit(-1)
+    else:
+        print "[PASS] Kernel modules present and correctly loaded."
+
+    if not devnode_present:
+        help.show('DEVNODE_OLD_STACK_NOT_PRESENT')
+        sys.exit(-1)
+    else:
+        if not devnode_permissions:
+            help.show('DEVNODE_OLD_STACK_NO_PERMISSION')
+            sys.exit(-1)
+        else:
+            print "[PASS] /dev/raw1394 node present and accessible."
+    
+    
+    

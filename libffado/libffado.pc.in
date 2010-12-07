@@ -1,0 +1,5 @@
+Name: libffado
+Description: FFADO
+Version: $VERSION
+Libs: -L$LIBDIR -lffado
+Cflags: -I$INCLUDEDIR

@@ -1,0 +1,83 @@
+#!/bin/env python
+#
+# Copyright (C) 2007-2008 Arnold Krille
+# Copyright (C) 2007-2008 Pieter Palmers
+#
+# This file is part of FFADO
+# FFADO = Free Firewire (pro-)audio drivers for linux
+#
+# FFADO is based upon FreeBoB.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+import os
+
+Import( 'env' )
+
+env = env.Clone()
+
+#
+# For the debugging apps
+#
+
+env.AppendUnique( CPPPATH=["#/", "#/src", "#/external/dbus/include"] )
+env.PrependUnique( LIBPATH=[env['build_base']+"src", env['build_base']+"external/dbus"] )
+env.PrependUnique( LIBS=["ffado", "dbus-c++"] )
+
+if not env.GetOption( "clean" ):
+    env.MergeFlags( env["DBUS1_FLAGS"] )
+    env.MergeFlags( env['LIBRAW1394_FLAGS'] )
+    if not env['SERIALIZE_USE_EXPAT']:
+        env.MergeFlags( env['LIBXML26_FLAGS'] )
+    else:
+        env.PrependUnique( LIBS=["expat"] )
+
+env.Xml2Cpp_Proxy('controlclient-glue.h', 'control-interface.xml')
+env.Xml2Cpp_Adaptor('controlserver-glue.h', 'control-interface.xml')
+
+static_env = env.Clone()
+
+apps = {
+}
+
+installapps = []
+
+apps = {
+    "ffado-dbus-server":"ffado-dbus-server.cpp controlserver.cpp",
+    "test-dbus" : "test-dbus.cpp controlclient.cpp",
+    "test-dbus-server" : "test-dbus-server.cpp controlserver.cpp",
+}
+
+installapps += [ "ffado-dbus-server" ]
+
+for app in apps.keys():
+    env.Program( target=app, source = env.Split( apps[app] ) )
+    if app.find( "test" ) == -1:
+        env.Install( "$bindir", app )
+
+servicefile = env.ScanReplace('org.ffado.Control.service.in')
+if env['dbus_service_dir'] and ( env.destdir or os.access( env['dbus_service_dir'], os.W_OK ) ):
+    print "Will install the service-file"
+    targetdir = env.destdir + env['dbus_service_dir']
+    env.Alias( "install", env.Install( env.destdir + env['dbus_service_dir'], servicefile ) )
+
+# static versions
+if static_env['BUILD_STATIC_TOOLS']:
+    static_env.Append(LIBS=File('#/src/libffado.a'))
+    for app in apps.keys():
+        static_app = app + "-static"
+        static_env.Program( target=static_app, source = static_env.Split( apps[app] ) )
+
+# vim: et

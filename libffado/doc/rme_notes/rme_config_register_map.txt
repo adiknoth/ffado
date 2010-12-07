@@ -1,0 +1,811 @@
+RME Fireface-400 / Fireface-800 register map
+============================================
+
+Version: 0.18
+Author: Jonathan Woithe
+Date: 17 October 2009
+
+
+Definitions
+-----------
+
+CBA = Command Buffer Address
+FF800 = Fireface-800
+FF400 = Fireface-400
+
+Multi-byte values sent to/from the Fireface in async packets are generally
+little endian - that is, the device interprets quadlets in asynchronous
+packets as little endian even though the bus definition is big-endian.  If
+writing a driver for use on a little endian machine, this means that a lack
+of byte swapping (to account for the bus endianness standard) will cause bit
+0 on the host to be bit 0 on the device.
+
+By default, FFADO however adheres to the bus standards and byteswaps on
+little endian machines.  Under this regime, bit 0 on the host will in fact
+be read by the device as the least significant bit in the most significant
+byte.
+
+In order to retain consistency with device documentation, the FFADO RME
+driver currently sends async packet data in the little endian format which
+the RME device expects.  Although this is technically wrong (in so far as
+the Firewire standard is concerned), at this stage it is considered that
+introducing an endianness difference between the FFADO driver and the
+documentation is likely to result in maintenance issues down the track.
+
+The bit maps in this document regarding the configuration registers are
+written from the device's point of view.  That is, the values quoted should
+be sent to the device in little endian format unless otherwise stated.
+
+Curiously enough, preliminary investigations suggest that audio data appears
+to be sent on the bus in big endian format (although this is to be
+confirmed).
+
+The FF800 includes a number of instrument options for input 1 which are
+described using several different terms interchangeably:
+ - "Drive" (also referred to as "fuzz") activates 25 dB extra gain
+ - "Speaker emulation" (also referred to as "filter") removes LF noise and
+   some HF
+ - "Limiter" activates a soft-limiter with a threshold of -10 dBFS.  This
+   can only be switched off if the Front input is used for channel 1.
+
+
+Device address space location
+-----------------------------
+
+While some register addresses are common between the two interfaces, the
+absolute addresses of the settings and control differ.  These are defined
+relative to the device "command buffer" address:
+
+  FF800: command buffer address (CBA) = 0xfc88f000
+  FF400: command buffer address (CBA) = 0x80100500
+
+The location of the configuration (settings) registers relative to the
+command buffer is consistent across devices:
+
+  conf reg 1 address = command buffer address + 5*4
+
+For a FF800 this equates to 0xfc88f014.
+
+
+Controlling sample rate (DDS)
+-----------------------------
+
+Sample rate is controlled by writing the desired sample rate in Hz to the
+sample rate control register located at offset 0 from the command buffer
+address (0xfc88f000 on a FF800).  The hardware DDS allows a wide range of
+frequencies to be requested (possibly anything from 30 kHz up to 210 kHz).
+The more common rates are of course 32k, 44.1k, 48k, the pull-up/down rates
+(44.056k, 44.144k, 45.937k, 46.080k, 47.952k, 48.048k) and the corresponding
+2x and 4x rates.
+
+Software connecting to the Fireface device is restricted to the normal rates
+of 32k, 44.1k, 48k and the related 2x and 4x rates.
+
+If the device is in master clock mode and the user has not made an explicit
+DDS setting, the hardware DDS will be determined by the sampling rate
+requested by the application opening the device.  If a DDS frequency has
+been requested by the user the actual rate used by the device will be that
+DDS frequency regardless of what the application has asked for.  In this
+case a device open will only succeed if the software has requested a speed
+whose multiplier matches the DDS configuration.
+
+If the device is locked to an external clock, a device open will succeed
+only if the multiplier of the requested sampling rate matches that of the
+external rate.
+
+The device status registers allow the PC to determine the sampling rate when
+an external clock is in use.  However, there is no way to read the sampling
+rate when in master clock mode.  It is therefore necessary to cache this in
+the driver so it can be provided when requested.
+
+In terms of multipliers the RME treats sample rates greater than 112000 Hz
+as 4x rates, with rates greater than 56000 Hz as 2x rates.  Rates less than
+30000 Hz and greater than 210000 Hz are invalid.
+
+
+Configuration registers 1, 2 and 3
+----------------------------------
+
+Most RME device configuration is done using configuration registers 1, 2
+and 3.  For the ff800 these are:
+
+  config1 = configuration register 1 (FF800: 0xfc88f014, FF400: 0x80100514)
+  config2 = configuration register 2 (FF800: 0xfc88f018, FF400: 0x80100518)
+  config3 = configuration register 3 (FF800: 0xfc88f01c, FF400: 0x8010051c)
+
+In essence the configuration registers start at CBA+5*4 for both interfaces.
+
+When making a configuration change these registers are always written in a
+block of 12 bytes starting at 0xfc88f014 with a block write operation.
+
+Configuration register 1 (FF800: 0xfc88f014, FF400: 0x80100514):
+
+  bits 31-18: unknown, set to 0
+  bits 17-16: Phones level:
+    00 = +4 dBu
+    01 = -10 dBV
+    10 = hi-gain
+  bits 15-13: unknown, set to 0
+  bits 12-10: Output level control (part 1 of 2: FPGA LED drive):
+    001 = hi-gain
+    010 = +4dBU
+    100 = -10dBV
+  bit 9: FF800: Instr option: Drive (part 1 of 2: FPGA LED drive) (active = 1)
+         FF400: Channel 3 "instrument" switch
+  bit 8: FF800: Phantom power, mic 10 (active = 1)
+         FF400: Channel 3 "pad" switch
+  bit 7: Phantom power, mic 8 (active = 1)
+  bit 6: unknown, set to 0
+  bits 5-3: Input level control (part 1 of 2: FPGA LED drive):
+    001 = lo-gain
+    010 = +4dBU
+    100 = -10dbV
+  bit 2: FF800: Instrument option: speaker emulation (aka "filter") (part 1 
+           of 2: FPGA LED drive) (active = 1)
+         FF400: Channel 4 "instrument" switch
+  bit 1: FF800: Phantom power, mic 9 (active = 1)
+         FF400: Channel 4 "pad" switch
+  bit 0: Phantom power, mic 7 (active = 1)
+
+Configuration register 2 (FF800: 0xfc88f018, FF400: 0x80100518):
+
+  bits 31-12: unknown, set to 0
+  bit 11: Input #1 front switch (active = 1)
+  bit 10: unknown, set to 0
+  bit 9: Instrument option: Drive (part 2 of 2: CPLD function) (active = 0)
+  bit 8: Input #8 rear switch (active = 1)
+  bit 7: Input #8 front switch (active = 1)
+  bit 6: Input #7 rear switch (active = 1)
+  bit 5: Input #7 front switch (active = 1)
+  bits 4-3: Output level control (part 2 of 2: CPLD function):
+    00 = undefined
+    01 = -10dBV
+    10 = hi-gain
+    11 = +4dBU
+  bit 2: Input #1 rear switch (active = 1)
+  bits 1-0: Input level control (part 2 of 2: CPLD function):
+    00 = lo-gain
+    01 = undefined
+    10 = +4dBU
+    11 = -10dbV
+
+Configuration register 3 (FF800: 0xfc88f01c, FF400: 0x8010051c):
+  bit 31: "Drop and stop": always set to 1
+  bit 30: Unit option: TMS (active = 1)
+  bits 29-27: set to 0
+  bit 26: set to 1 for FF400, 0 for FF800
+  bits 25-17: set to 0
+  bit 16: P12DB_AN0 (normally set to 0)
+  bit 15: set to 0
+  bit 14: Toggle TCO (normally set to 0)
+  bit 13: Word clock single speed: 0 = off, 1 = on
+  bits 12-10: Sync reference source:
+    000 = ADAT1
+    001 = ADAT2
+    011 = SPDIF
+    100 = Word clock
+    101 = TCO
+  bit 9: SPDIF input source: 0 = coax, 1 = ADAT2 port
+  bit 8: SPDIF output option: ADAT2
+  bit 7: SPDIF output option: non-audio
+  bit 6: SPDIF output option: emphasis
+  bit 5: SPDIF output option: professional
+  bit 4: QS control (set to 1)
+  bit 3: DS control (set to 1)
+  bit 2: Freq1 control (set to 1)
+  bit 1: Freq0 control (set to 1)
+  bit 0: Clock mode: 0 = Master, 1 = Autosync
+
+On the FF400, writing to these registers with valid values for the first
+time after power up has the side effect of extingishing the "Host" LED.
+
+
+Device status registers
+-----------------------
+
+There are up to 4 read-only device status registers available, starting at
+address 0x801c0000.  There seems to be a slight difference in the mapping of
+status register 0 depending on the size of the read.  If only 2 registers
+(quadlets) are read the "general" layout is assumed.  If on the other hand 4
+registers are used (used when determining the status of the device's
+streaming system) the layout of register 0 is slightly different.
+
+Status register 0:
+  bits 9-0: on a 2-quadlet read these bits are all zero
+  bits 9-0: on a 4-quadlet read when in autosync mode, these bits contain
+            SR/250, where SR is the sample rate to be passed to the
+            streaming subsystem when starting streaming.
+  bit 10: ADAT1 lock achieved
+  bit 11: ADAT2 lock achieved
+  bit 12: Device is synced to ADAT1
+  bit 13: Device is synced to ADAT2
+  bits 17-14: SPDIF frequency:
+    0000 = undefined    0101 = 88.2k
+    0001 = 32k          0110 = 96k
+    0010 = 44.1k        0111 = 128k
+    0011 = 48k          1000 = 176.4k
+    0100 = 64k          1001 = 192k
+  bit 18: Device is synced to SPDIF
+  bit 19: Over detected
+  bit 20: SPDIF lock achieved
+  bit 21: undefined (read as zero)
+  bits 24-22: Primary sync source:
+    000 = ADAT1         100 = Word clock
+    001 = ADAT2         101 = TCO
+    011 = SPDIF
+  bits 28-25: autosync (external) frequency (defined as for SPDIF frequency)
+  bit 29: Device is synced to word clock
+  bit 30: Word clock lock achieved
+  bit 31: undefined (read as zero)
+
+Status register 1:
+  bit 0: master clock mode active
+  bits 21-1: undefined
+  bit 22: Device is synced to TCO
+  bit 23: TCO lock achieved
+  bits 31-24: undefined
+
+Status register 2:
+  bits 31-0: (FF800 only) firewire iso channel used for data from FF800 to PC
+
+Status register 3:
+  bits 31-0: unused
+
+
+Interfacing to device flash
+---------------------------
+
+To preserve the device's settings across power cycles the settings are
+stored in a flash memory on the device.  This is read during driver
+initialisation to ensure the driver's status agrees with that of the device.
+
+There are several classes of things stored in flash: operational settings,
+volumes (ie: the mixer status) and configuration/firmware.  Device settings
+start at address 0x3000f0000 on the FF800 and 0x00060000 on the FF400.
+
+Mixer (volume) data starts at 0x3000e0000 on the FF800 and 0x00060000 on the
+FF400.  Mixer volumes are written in 64-quadlet (256-byte) blocks, one per
+hardware channel.  There are 28 hardware channels for the FF800 and 18 for
+the FF400.
+
+There are several control groups in the mixer:
+  0xe0000 (FF800): "mixer shadow", FF800 only, meaning unclear
+  0xe2000 (FF800) / 0x70000 (FF400), 0x0800 bytes: 16-bit volume array
+  0xe2800 (FF800) / 0x70800 (FF400), 0x0800 bytes: 16-bit pan array
+  0xe3000 (FF800) / 0x71000 (FF400), 0x0040 bytes: 16-bit "vol3" array + 
+    "enable MIDI" + "submix" + zero padding to 64 bytes
+The third row are the "hardware output volumes".
+
+The meaning of the "mixer shadow" section of the mixer flash is not
+understood at present.
+
+
+Reading blocks from the flash (flash command 0x2)
+
+For the FF800 the entire buffer is read directly from flash as a single block.
+Polling for "device not busy" should commence after a wait of 5 ms.
+
+For the FF400, the buffer is read in 32-quadlet sub-blocks.  A partial block
+is read at the end if the total buffer size is not a multiple of
+32-quadlets.  To read a sub-block, the address is placed in register
+0x80100288 and the sub-block size (in bytes) in 0x8010028c.  A 0x02 is
+then written to CBA+(8*4) to initiate the read.  Polling for "device not
+busy" should commence after a wait of 2 ms.  Once not busy the data is
+available for reading from 0x80100290.
+
+
+Writing blocks to the flash (flash command 1)
+
+For the FF800, the entire buffer is written to flash as a single block.
+Polling for "device not busy" should commence after a wait of 5 ms.
+
+For the FF400, the buffer is written in 32-quadlet (128-byte) sub-blocks via
+a bounce buffer.  If the final sub-block is not 32-quadlets the write is
+only as big as the sub-block (that is, no padding takes place).  The
+sub-block data to be written is sent to the block starting at 0x80100290. 
+The 2-quadlet register at 0x80100288 is set with the flash address to write
+the block to and the size (in bytes) of the data block.  Finally, a 0x1 is
+written to CBA+(8*4) to initiate the write.  Polling for "device not busy"
+should commence after a wait of 2 ms.
+
+
+Getting other data from flash
+
+There are a few other commands issued to the flash memory system for
+obtaining data about the connected interface:
+
+ * Device revision
+
+   On the FF800 this is read directly from register 0x200000100.
+
+   On the FF400, 0xf is written to CBA+(8*4).  Poll for "not busy" after a
+   wait of 2ms.  Once not busy the revision is read from register
+   0x80100290.
+
+
+Erasing the flash
+
+The flash is divided into sections and it is possible to erase each section
+separately.  Therefore one only has to erase section of interest when
+changing something.
+
+On the FF400, erasure is controlled by writing a special magic number to
+the the flash control register (CBA+8*4):
+  Erase volume: write 0xe
+  Erase settings: write 0xd
+  Erase configuration (firmware): write 0xc
+
+On the FF800, erasing is controlled by writing 0 to the applicable register:
+  Erase volume: register is 0x3fffffff4
+  Erase settings: register is 0x3fffffff0
+  Erase firmware: register is 0x3fffffff8
+  Erase configuration: register is 0x3fffffffc
+
+It's not clear what the distinction between "configuration" and "firmware"
+is.  The FF400 appears to only support "configuration" but treats this as
+"firmware".  The FF800 supports both as distinct options.
+
+After issuing the erase command one should wait for 500 ms before polling
+the device for the "not busy" status.
+
+
+Waiting for flash
+
+When interacting with the device's flash memory one must wait for the
+completion of an operation before attempting another.  The location of the
+"device busy" flag differs between the FF400 and FF800.
+
+On the FF800 is part of the quadlet register at 0x801c0004 (part of the
+read-only status register block beginning at 0x801c0000).  The device is
+ready to accept another command when bit 30 is set.
+
+On the FF400 the wait state is found by reading a quadlet from CBA+8*4.
+If this quadlet is zero the FF400 is ready to accept another command.
+
+Most device flash operations have a minimum time to complete.  There's no
+point in polling the device busy flag until at least this much time has
+elapsed.
+
+
+Device settings format
+----------------------
+
+The device settings are stored in flash as an array of 59 32-bit unsigned
+integers.  These are:
+  0 - Device ID (FF400=0x77e1f4ea)
+  1 - Device revision (FF400=0x004af3d8)
+  2 - ASIO latency (FF400=0x00000001)
+  3 - Samples per frame (FF400 default is 0x30)
+  4 SPDIF input mode (2=coax?, 1=optical?)
+  5 SPDIF output emphasis active
+  6 SPDIF output is "professional" (ie: AES/EBU)
+  7 Clock mode (2=master?, 1=autosync?)
+  8 SPDIF output is non-audio (eg: AC3 passthrough)
+  9 Sync reference
+ 10 SPDIF output mode (0=coax?, 1=optical?)
+ 11 - Check input
+ 12 - Status (FF400 idle=0x77e691d0)
+ 13 - Register[4] (FF400 = 0x004adbc8,0x001377c0,0x000301ee,0x00000001)
+ 17 - Iso receive channel (FF400=0x7ffde000)
+ 18 - Iso transmit channel (FF400=0x77f43664) 
+ 19 - Timecode (FF400 example: 0x004b35c8)
+ 20 - Device type (FF400=0x00000001)
+ 21 - Number of devices (FF400=0x77f43664)
+ 22 TMS (FF400=0x00000000)
+ 23 - Speed (FF400=0x00000000)
+ 24 - Channels available (high) (FF400=0x0012f2e4)
+ 25 - Channels available (low) (FF400=0x00000000)
+ 26 Limit bandwidth setting (0=full bandwidth)
+ 27 - Bandwidth allocated (FF400=0x00000000)
+ 28 Stop on dropout (FF400=0x00000000)
+ 29 Input level (0=default, 1=lo-gain, 2=+4dBU, 3=-10dBV ???)
+ 30 Output level (0=default, 1=hi-gain, 2=+4dBU, 3=-10dBV ???)
+ 31 Mic level [0] - FF400: Phoneslevel-1 
+                    FF800: Channel 7 front/rear select (0=rear, 1=front [TBC])
+ 32 Mic level [1] - FF400: unused
+                    FF800: Channel 8 front/rear select (0=rear, 1=front [TBC])
+ 33 Mic phantom power [4]
+ 37 Instrument - FF400: unused
+                 FF800: Channel 1 front/rear selector (0=rear, 1=font [TBC])
+ 38 Filter (aka speaker emulation)
+ 39 Fuzz (aka drive)
+ 40 - Sync align
+ 41 - Device index (FF400=0x77e24d0d)
+ 42 - Advanced dialog (FF400=0x000201f8) [but might be related to TCO control)
+ 43 Sample rate (eg: 0x0000ac44) [set to 0x00000000 unless DDS enabled]
+ 44 - Interleaved (FF400=0x00000000)
+ 45 - Sn (FF400=0x77e14925)
+ 46 Word clock single speed (1=single speed)
+ 47 - Number of channels (FF400=0x000000f0)
+ 48 - Dropped samples
+ 49 p12db_an[0] - Disable limiter, settable only if channel 1 front jack active
+ 50 - p12db_an[1-9]
+
+"-" = elements not used (under MacOSX at least)
+
+Total size: 59 quadlets
+
+The default state of these quadlets is 0xffffffff, which is taken to
+indicate that the respective setting has not been written to flash. This in
+turn causes the driver to assume its own default value.  While these
+settings can be changed in real time by writing to the relevant control
+registers, these are not persistent across device power cycles.  To make
+them persistent it is necessary to store them into the flash.
+
+
+TCO (TimeCode Option)
+---------------------
+
+The TCO is an optional card for the FF800 which adds video timecode
+generation and clock locking capabilities to the FF800.  It is controlled by
+writing a block of 4 quadlets to register 0x810f0020 while its status can be
+retrieved by reading a block of 4 quadlets from register 0x801f0000.
+
+The configuration space is as follows.
+
+Quadlet 0 (written to register 0x810f0020):
+  bit 31: MTC active if set to 1
+  bits 30-0: reserved (equal zero)
+
+Quadlet 1 (written to register 0x810f0024):
+  bits 31-12: reserved (equal to zero)
+  bits 11-10: LTC format (00=24fps, 01=25fps, 10=29.97fps, 11=30fps)
+  bit 9: dropframe active
+  bit 8: set timecode request
+  bit 7: reserved (set to 0)
+  bit 6: PAL format video input
+  bit 5: NTSC format video input
+  bit 4-3: reserved (set to 0)
+  bits 2-1: word clock input rate (00=1x, 01=2x, 10=4x)
+  bit 0: reserved (set to 0)
+
+Quadlet 2 (written to register 0x810f0028):
+  bit 31: set sampling frequency from application
+  bits 30-29: input select (00=wordclock, 01=video, 10=LTC)
+  bit 28: input termination active
+  bit 27: Base frequency (0=44.1 kHz, 1=48 kHz)
+  bit 26: Pull up flag
+  bit 25: Pull down flag
+  bit 24: Pull up/down amount (0=0.1%, 1=4.0%)
+  bit 23: reserved (set to 0)
+  bit 22: Flywheel select
+  bit 21: Jam sync select
+  bits 20-19: dropframes select (unused, set to 0)
+  bits 18-17: word clock conversion (00=1:1, 01=44.1->48, 10=48->44.1)
+  bit 16: set TC run
+  bits 15-0: reserved, set to 0.
+
+Quadlet 3:
+  bits 31-0: reserved, set to 0
+
+The 4 quadlets returned by a TCO status query are mapped as follows.
+
+Quadlet 0:
+  bit 31: set to 1
+  bits 30-24: LTC, hours field in BCD(*)
+  bit 23: set to 1
+  bits 22-16: LTC, minutes field in BCD
+  bit 15: set to 1
+  bits 14-8: LTC, seconds field in BCD
+  bit 7: set to 1
+  bits 6-0: LTC, frames field in BCD
+
+Quadlet 1:
+  bit 31: set to 1
+  bits 30-24: reserved (equal to zero)
+  bit 23: set to 1
+  bits 22-16: reserved (equal to zero)
+  bit 15: set to 1
+  bits 14-12: reserved (equal to zero)
+  bits 11-10: LTC format (00=24fps, 01=25fps, 10=29.97fps, 11=30fps)
+  bit 9: dropframe active
+  bit 8: reserved (read as zeros)
+  bit 7: set to 1
+  bit 6: PAL format video input
+  bit 5: NTSC format video input
+  bit 4: Word clock input valid (0=invalid, 1=valid)
+  bit 3: LTC input valid (0=invalid, 1=valid)
+  bits 2-1: reserved (read as zeros)
+  bit 0: TCO lock flag (0=no lock, 1=locked)
+
+Quadlet 2
+  bit 31: set to 1
+  bits 30-24: reserved (equal to zero)
+  bit 23: set to 1
+  bits 22-16: reserved (equal to zero)
+  bit 15: set to 1
+  bits 14-8: upper 7 bits of PLL phase
+  bit 7: set to 1
+  bits 6-0: the lower 7 bits of the PLL phase
+
+Quadlet 3:
+  bit 31: set to 1
+  bits 30-16: reserved
+  bit 15: set to 1
+  bits 14-0: set to 0
+
+Notes:
+ (*) BCD is Binary Coded Decimal.  The high nibble (which is only 3 bits in
+     these cases) contains the "tens" digit while the lower nibble contains
+     the "units" digit.
+
+The calculation of the PLL phase from quadlet 2 (q2) is as follows:
+
+  phase = (q2 & 0x7f) + ((q2 & 0x7f00) >> 1)
+
+which then allows the incoming frequency to be calculated using
+
+  freq = (25000000 * 16) / phase
+
+To detect the presence of a TCO in a FF800, read the 4 TCO status quadlets. 
+If a TCO is present:
+  - bits 31, 23, 15 and 7 in quadlets 0, 1 and 2 will be 1, AND
+  - bits 31 and 15 in quadlet 3 will be 1, AND
+  - bits 14 to 0 in quadlet 3 will be 0
+
+
+Streaming control registers
+---------------------------
+
+There appears to be a number of registers involved in the setup of device
+streaming.
+
+Device (streaming) initialisation register (FF800: 0x20000001c, FF400: CBA)
+
+This register comprises the 3 quadlets starting at address 0x20000001c on
+the FF800 and the 5 quadlets starting at the CBA on the FF400.  The first 
+quadlet contains the sample rate in Hz.  The second quadlet is mapped as 
+follows:
+  bits 31-11 = number of audio channels
+  bits 10-0  = iso tx channel (PC to interface)
+In all local tests with a FF800 the value of this quadlet was always equal
+to 0x0000e000 (28 channels, PC transmits on iso channel 0).
+
+The third quadlet is mapped as follows.
+  bits 10-0 = number of audio channels
+  bit 11    = speed flag; set to 1 if firewire bus is at 800 Mbps
+In local tests with a FF800 the value of this register was always 0x0000001c
+(28 channels, 400 Mbps firewire bus).
+
+The forth and fifth quadlets (used only by the FF400) are zero.
+
+After this register is configured, 4 quadlets are read starting from
+0x801c0000.  When read, these are the device status registers.
+
+Device (streaming) start register (FF800: 0x200000028, FF400: CBA+0x0c):
+
+The start of streaming differs between the FF400 and FF800 in more than just
+the address of the relevant register.  On the FF800 this register is mapped
+as follows:
+  bits 10-0 = number of audio channels
+  bit 11    = bus speed flag; set to 1 if firewire bus is at 800 Mbps
+On a FF400 the register is as follows:
+  bits 4-0  = number of audio channels
+  bits 9-5  = iso tx channel (PC to interface)
+During initial testing with a FF800 the value of this register was always 
+0x0000001c (28 audio channels, PC tx on iso channel 0).
+
+Channel mute setup register (write to 0x801c0000):
+
+After writing to the streaming start register, 0x70 bytes (28 quadlets) are
+written starting at 0x801c0000.  Each quadlet represents one channel on the
+Fireface800.  A value of 1 mutes the respective channel - indeed on closing
+down streaming each quadlet is set to 1.  During startup some values are set
+to zero - the ones set to zero may be determined by the channels which have
+active software data sources although this is yet to be confirmed with more
+testing.  Irrespective of the setting of these registers it appears that
+data for all channels is always sent to/from the Fireface-800.
+
+Note that when register 0x801c0000 is read it functions as the device status
+register.  It is read during streaming setup, but obviously it bears no
+relationship to the channel mute status.
+
+Streaming end register (FF800: 0x200000034, FF400: CBA+0x4):
+
+On the FF800, streaming is stopped by writing 3 zeroed quadlets to
+consecutive registers starting at address 0x200000034.  For the FF400 one
+writes 3 zeroed quadlets to consecutive registers from CBA+0x4, followed
+by a 0x00000001 to CBA+0x10 (making a 4-quadlet write in total).
+
+
+Iso data
+--------
+
+Audio/midi data is sent and received on isochronous channels previously
+configured by the driver.  On a dedicated bus with nothing else present, the
+stream to the fireface is sent on iso channel 0 while data from the fireface
+is sent on iso channel 1.
+
+No CIP header is included in the iso data packet.  Fireface data follows
+immediately after the standard 2-quadlet firewire iso packet header.
+
+Each iso packet contains a number of samples across all 28 device channels.
+For 1x rates, 7 samples per channel seem to be sent.  Thus the size of 
+the data portion of a 1x iso packet is 28*4*7 = 784, with a total packet
+size being 784 + 8 = 792.
+
+The data is sent with one audio channel per quadlet.  The audio data is a 24
+bit integer stored in the most-significant 3 bytes of a quadlet.  The LSB
+(low byte) of certain channels in the stream sent by the Fireface is used to
+send synchronising information:
+
+  Low byte of channel 6 = current frame
+  Low byte of channel 7 = phase
+  Low byte of channel 1 = rx sample counter, low byte
+  Low byte of channel 4 = rx sample counter, high byte
+  Low byte of channel 0 = tx buffer size, low byte
+  Low byte of channel 5 = tx buffer size, high byte
+  Low byte of channel 2 & 3 = unknown (midi?)
+
+The low byte data from channels 0-7 is repeated in channels 8-15 and 16-23
+respectively, with channels 24-27 containing the low byte data from channels
+0-3.  This repetition holds for the low bytes of channels 2-3 in all data
+seen so far, it might not necessarily be the case in general - it depends
+what the low byte data from channels 2 and 3 are used for.
+
+The rx sample counter appears to be used to detect missed samples.  The
+current frame and phase from a received packet is used in conjunction with
+the stored values of these from the previous frame to track the phase of
+the audio clock.
+
+A "frame" consists of a fixed number of samples across all channels of the
+device.  At 1x rates this appears to be 7, but it might not be fixed.  Even
+though this is the same as the number of samples per channel per packet, a
+given packet can experience a change in the "current frame" part way
+through.  In other words, the "current frame" is not necessarily constant
+for all samples in a packet.
+
+
+Input preamp / output amp gain control
+--------------------------------------
+
+On the Fireface-400 the gain of the mic/instrument preamps and output
+amplifiers can be set.  Mic channel gain is in steps of 1 dB from 10 dB up to
+65 dB, with 0dB also available.  Instrument input gain ranges from 0 dB to
+18 dB in 0.5 dB steps.  Output gains range from +6 dB down to -53 dB (a 58
+dB range) in steps of 1 dB, with compete "mute" also available.
+
+The gains are set using the register at 0x801c0180.
+
+  bits 31-24: unknown (set to 0)
+  bits 23-16: channel being set (see below)
+  bits 15-8: unknown (set to 0)
+  bits 7-0: the gain value
+
+For mic channels the gain value is the dB value.  For instrument channels, a
+value of 2G is written for a gain value of G (thereby allowing a stepsize of
+0.5 dB).  For output gain, 0 = +6 dB, 0x3b = -53 dB, 0x3f = mute.
+
+The definition of the "channel being set" is as follows.
+  0 = mic input 1 gain
+  1 = mic input 2 gain
+  2 = instrument input 3 gain
+  3 = instrument input 4 gain
+  4-9 = analog outputs 1-6 level
+  10-11 = phones output level
+  12-13 = SPDIF output level
+  14-21 = ADAT outputs 1-8 level
+
+
+Firefice-400 mixer controls
+---------------------------
+
+The Fireface-400 matrix mixer is controlled using a block of registers
+starting at 0x80080000.  An 18x18 matrix mixer is implemented allowing any
+hardware input to be sent to any device output.  Pan control is effected by
+manipulating the "left/right" controls within an output pair.
+
+For each input channel block the order of channels is Analog 1-8, SPDIF 1-2,
+ADAT 1-8.
+
+0x80080000 - 0x80080044: input channel sends to Analog 1 output.
+0x80080048 - 0x8008008c: playback channel sends to Analog 1 output.
+0x80080090 - 0x800800d4: input channel sends to Analog 2 output.
+0x800800d8 - 0x8008011c: playback channel sends to Analog 2 output.
+:
+0x80080990 - 0x800809d4: input channel sends to ADAT 8 output.
+0x800809d8 - 0x80080a1c: playback channel sends to ADAT 8 output.
+
+0x80080f80: matrix mixer analog 1 output fader
+0x80080f84: matrix mixer analog 2 output fader 
+:
+0x80080fc4: matrix mixer ADAT 8 output fader
+
+Each fader control ranges from 0x00000000 (-inf) through 0x00008000 (0.0 dB)
+up to a maximum of 0x00010000 (+6.0 dB).  -52.7 dB appears to correspond to
+a value of 0x0000004c, -46.6 dB is 0x00000099.  From this we can see that if
+v is the value being written, the dB gain applied can be found using
+
+  dB = 20.log10(v/32768)
+
+Alternatively, to set the gain to G dB, one calculates the value to send to
+the device (v) using
+
+  v = 32768 * exp10(G/20)
+
+When setting the output fader controls, the associated output amplifier 
+gain control (see previous section) are generally kept in sync.  That is, if
+register 0x80080f80 (analog 1 output fader) is set to 0 dB, so is the analog
+output 1 level via register 0x801c0180.
+
+
+Fireface-800 mixer controls
+---------------------------
+
+The matrix mixer on the Fireface-800 is controlled using a block of
+registers starting at 0x80080000.  A 28x28 matrix mixer is implemented
+allowing any device input to be sent to any device output.  The pan controls
+are synthesised by manipulating the "left/right" controls.
+
+In each sub-block, the order of channels is in fireface numeric order.  That
+is, Analog 1-10, SPDIF, ADAT1 1-8, ADAT2 1-8.
+
+0x80080000 - 0x8008006c: input channel sends to Analog 1 output.
+0x80080080 - 0x800800ec: playback channel sends to Analog 1 output.
+0x80080100 - 0x8008016c: input channel sends to Analog 2 output.
+0x80080180 - 0x800801ec: playback channel sends to Analog 2 output.
+:
+0x80081b00 - 0x80081b6c: input channel sends to ADAT2-8 output.
+0x80081b80 - 0x80081bec: playback channel sends to ADAT2-8 output.
+
+0x80081f80: matrix mixer analog 1 output fader
+0x80081f84: matrix mixer analog 2 output fader
+:
+0x80081fec: maxtrix mixer ADAT2-8 output fader
+
+Each fader control ranges from 0x00000000 (-inf) through 0x00008000 (0.0 dB)
+and up to a maximum setting of 0x00010000 (+6.0 dB).  As for the
+Fireface-400, if v is the value being written, the dB gain applied can be
+found using
+
+  dB = 20.log(v/32768)
+
+Mute is synthesised by setting the respective send value to -inf (0). 
+Conversely, solo is synthesised by muting all sends to the selected bus
+except the send being soloed.
+
+Note that a different scale is used when writing mixer settings into flash.
+Fader values are stored as 16 bit numbers, with 803 (0x0323) seemingly
+representing 0 dB.  Other details of the scale used are still to be deduced.
+
+
+Metering values
+---------------
+
+The Fireface-800 appears to provide hardware support for metering.  The RME
+mixer application periodically sends block read requests for register
+0x80100000 with a size of 0x3f8.  What is returned is a set of two
+datablocks with data in little-endian (least significant bit/word first)
+format.  The first block contains arrays of 64-bit floating point numbers
+representing channel amplitude with decay, presumedly useful for metering
+display.  Arrays are:
+
+  28-element array for input channel amplitude with decay
+  28-element array for playback amplitudes with decay (educated guess)
+  28-element array for output amplitudes with decay
+
+The second data block contains signed 32 bit integers representing the input
+amplitudes without decay.  Valid range is 0 - 0x7ffffff.  Again there are 3
+arrays:
+
+  28-element array for input channel ampltude
+  28-element array for playback amplitudes (educated guess)
+  28-element array for output amplitudes
+
+At the end of this second block are two zero quadlets.  Their purpose is
+unknown at this stage.
+
+In each 28-element array the channel data appears in standard fireface
+order.
+
+
+Host LED
+--------
+
+The "host" LED of the FF800 is controlled by a dedicated register at
+0x200000324.  Note that this register address goes beyond the 32-bit
+boundary.
+
+On the FF400 the host LED is controlled internally.  On power up it is
+turned on.  Once the host PC programs the configuration registers with
+valid values the host LED will automatically turn off.

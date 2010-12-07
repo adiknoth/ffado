@@ -1,0 +1,11 @@
+FreeBob ALSA Plugin
+===================
+
+http://freebob.sf.net
+
+This project aims to provide a free driver implemenation for the BeBoB
+platform.  The BeBob is used in many available IEEE 1394 based break-out 
+boxes.
+
+
+This is the ALSA userspace plugin.

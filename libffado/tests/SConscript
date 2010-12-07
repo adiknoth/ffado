@@ -1,0 +1,91 @@
+#
+# Copyright (C) 2007-2008 Arnold Krille
+# Copyright (C) 2007-2008 Pieter Palmers
+#
+# This file is part of FFADO
+# FFADO = Free Firewire (pro-)audio drivers for linux
+#
+# FFADO is based upon FreeBoB.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+Import( 'env' )
+
+env = env.Clone()
+
+env.MergeFlags( "-I#/ -I#/src -L%ssrc -lffado" % env['build_base'] )
+
+if not env.GetOption( "clean" ):
+	env.MergeFlags( env['LIBRAW1394_FLAGS'] )
+	if not env['SERIALIZE_USE_EXPAT']:
+		env.MergeFlags( env['LIBXML26_FLAGS'] )
+	else:
+		env.PrependUnique( LIBS=["expat"] )
+
+static_env = env.Clone()
+
+#
+# deactivate as they don't seem ported to the new api: test-extplugcmd,
+# test-mixer, test-volume
+#
+apps = {
+	#"ffado-test" : "test-ffado.cpp",
+	#"test-fw410" : "test-fw410.cpp",
+	##"test-extplugcmd" : "test-extplugcmd.cpp",
+	##"test-mixer" : "test-mixer.cpp",
+	#"test-timestampedbuffer" : "test-timestampedbuffer.cpp",
+	#"test-ieee1394service" : "test-ieee1394service.cpp",
+	#"test-streamdump" : "test-streamdump.cpp",
+	##"test-bufferops" : "test-bufferops.cpp",
+	#"test-watchdog" : "test-watchdog.cpp",
+	#"test-messagequeue" : "test-messagequeue.cpp",
+	#"test-shm" : "test-shm.cpp",
+	#"test-ipcringbuffer" : "test-ipcringbuffer.cpp",
+	#"test-devicestringparser" : "test-devicestringparser.cpp",
+	#"dumpiso_mod" : "dumpiso_mod.cpp",
+	#"scan-devreg" : "scan-devreg.cpp"
+}
+
+#if env['ENABLE_BEBOB']:
+	#apps.update( { "test-focusrite" : "test-focusrite.cpp" } )
+#if env['ENABLE_GENERICAVC']:
+	#if env.has_key("ALSA_FLAGS") and env["ALSA_FLAGS"]:
+		#env.MergeFlags( env["ALSA_FLAGS"] )
+		#apps.update( { "test-scs" : "test-scs.cpp" } )
+	#apps.update( { "test-avccmd" : "test-avccmd.cpp",
+                       #"test-volume" : "test-volume.cpp",
+                       #"test-enhanced-mixer" : "test-enhanced-mixer.cpp",
+                     #} )
+#if env['ENABLE_FIREWORKS']:
+	#apps.update( { "test-echomixer" : "test-echomixer.cpp" } )
+#if env['ENABLE_DICE']:
+	#apps.update( { "test-dice-eap" : "test-dice-eap.cpp" } )
+
+for app in apps.keys():
+	env.Program( target=app, source = env.Split( apps[app] ) )
+	env.Install( "$bindir", app )
+
+env.SConscript( dirs=[
+                        #"streaming",
+                        #"systemtests",
+                        "newstack"
+                     ], exports="env" )
+
+# static versions
+if static_env['BUILD_STATIC_TOOLS']:
+    static_env.Append(LIBS=File('#/src/libffado.a'))
+    for app in apps.keys():
+        static_app = app + "-static"
+        static_env.Program( target=static_app, source = static_env.Split( apps[app] ) )

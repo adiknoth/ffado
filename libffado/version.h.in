@@ -1,0 +1,29 @@
+/* version.h.in. */
+#ifndef VERSION_H
+#define VERSION_H
+
+/* Name of package */
+#define PACKAGE $PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#define PACKAGE_BUGREPORT "<ffado-devel@lists.sf.net>"
+
+/* Define to the full name of this package. */
+#define PACKAGE_NAME "$PACKAGE"
+
+/* Define to the full name and version of this package. */
+#define PACKAGE_STRING "$PACKAGE $VERSION-$REVISION"
+
+/* Define to the one symbol short name of this package. */
+#define PACKAGE_TARNAME "$PACKAGE"
+
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "$VERSION-$REVISION"
+
+/* Define to the version of the cace. */
+#define CACHE_VERSION "$VERSION-$REVISION"
+
+/* Define to the api version */
+#define FFADO_API_VERSION $FFADO_API_VERSION
+
+#endif /* VERSION_H */

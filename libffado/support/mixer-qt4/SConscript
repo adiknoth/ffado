@@ -1,0 +1,59 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2007-2009 Arnold Krille
+# Copyright (C) 2007-2008 Pieter Palmers
+#
+# This file is part of FFADO
+# FFADO = Free Firewire (pro-)audio drivers for linux
+#
+# FFADO is based upon FreeBoB.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) version 3 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+import os
+from string import Template
+
+Import( 'env' )
+
+if env.has_key('PYUIC4'):
+    e = env.Clone()
+
+    def findfiles( arg, dirname, names ):
+        for name in names:
+            if name.startswith("."):
+                names.remove(name)
+        for name in names:
+            if '.pyc' not in name and '.in' not in name:
+                arg.append( os.path.join( dirname, name ) )
+
+    pythonfiles = [ 'ffado/config.py' ]
+    os.path.walk( "ffado", findfiles, pythonfiles )
+
+    e.ScanReplace( "ffado/config.py.in" )
+    e.Depends( "ffado/config.py", "#/SConstruct" )
+    for file in pythonfiles:
+        e.InstallAs( os.path.join(e['pypkgdir'], file), file )
+
+    e.ScanReplace( "ffado-mixer.in" )
+    e.Depends( "ffado-mixer", "SConscript" )
+    e.Depends( "ffado-mixer", "#/SConstruct" )
+    e.Install( "$bindir", "ffado-mixer" )
+
+    e.ScanReplace( "ffado-mixer-profiler.in" )
+    e.Depends( "ffado-mixer-profiler", "SConscript" )
+    e.Depends( "ffado-mixer-profiler", "#/SConstruct" )
+
+    e.Install( "$sharedir/icons", "../xdg/hi64-apps-ffado.png" )
+
+# vim: et

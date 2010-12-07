@@ -1,0 +1,54 @@
+/*
+ * Copyright (C) 2005-2008 by Pieter Palmers
+ *
+ * This file is part of FFADO
+ * FFADO = Free Firewire (pro-)audio drivers for linux
+ *
+ * FFADO is based upon FreeBoB
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) version 3 of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#include "MatrixMixer.h"
+
+namespace Control {
+
+    std::string MatrixMixer::getRowName(const int) {
+        return "";
+    }
+    std::string MatrixMixer::getColName(const int) {
+        return "";
+    }
+    bool MatrixMixer::setRowName(const int, const std::string&) {
+        return false;
+    }
+    bool MatrixMixer::setColName(const int, const std::string&) {
+        return false;
+    }
+
+    std::vector<std::string> MatrixMixer::availableConnectionsForRow(const int) {
+        return std::vector<std::string>();
+    }
+    std::vector<std::string> MatrixMixer::availableConnectionsForCol(const int) {
+        return std::vector<std::string>();
+    }
+    bool MatrixMixer::connectRowTo(const int, const std::string&) {
+        return false;
+    }
+    bool MatrixMixer::connectColTo(const int, const std::string&) {
+        return false;
+    }
+
+} // namespace Control
