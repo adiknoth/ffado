@@ -911,24 +911,6 @@ Device::prepare() {
         // request the channel names
         names_audio = getRxNameString(i);
 
-        /* Vendor-specific hacks */
-        // PP: I think this was a workaround for a bug that is not required anymore
-        #if 0
-        if (FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) {
-            /* Alesis io14 RX0 claims to have six audio channels. Ignore
-            * it, just use 8 for Bus1-L+R .. Bus4-L+R.
-            */
-            if (0x00000001 == getConfigRom().getModelId()) {
-                nb_audio = 8;
-            }
-
-            /* Alesis Multimix16 RX0 only has two channels, Main-Out L+R */
-            if (0x00000000 == getConfigRom().getModelId()) {
-                nb_audio = 2;
-            }
-        }
-        #endif
-
         nb_channels = nb_audio;
         if(nb_midi) nb_channels += 1; // midi-muxed counts as one
 
