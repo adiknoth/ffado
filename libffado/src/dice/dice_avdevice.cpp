@@ -1299,6 +1299,11 @@ Device::startStreamByIndex(int i) {
 bool
 Device::stopStreamByIndex(int i) {
     bool snoopMode = false;
+    fb_nodeaddr_t base_address;   // holds DICE_REGISTER_TX_ISOC_BASE or DICE_REGISTER_RX_ISOC_BASE
+    int n;                       // number of streaming processor
+
+    Streaming::StreamProcessor *p;
+
     if(!getOption("snoopMode", snoopMode)) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
@@ -1309,81 +1314,49 @@ Device::stopStreamByIndex(int i) {
     }
 
     if (i<(int)m_receiveProcessors.size()) {
-        int n=i;
-        Streaming::StreamProcessor *p=m_receiveProcessors.at(n);
-        if(snoopMode) { // a stream from the device to another host
-            // nothing to do
-        } else {
-            unsigned int isochannel = p->getChannel();
-    
-            fb_quadlet_t reg_isoch;
-            // check value of ISO_CHANNEL register
-            if(!readTxReg(n, DICE_REGISTER_TX_ISOC_BASE, &reg_isoch)) {
-                debugError("Could not read ISO_CHANNEL register for ATX %d\n", n);
-                return false;
-            }
-            if(reg_isoch != isochannel) {
-                debugError("ISO_CHANNEL register != 0x%08"PRIX32" (=0x%08"PRIX32") for ATX %d\n", isochannel, reg_isoch, n);
-                return false;
-            }
-    
-            // write value of ISO_CHANNEL register
-            reg_isoch=0xFFFFFFFFUL;
-            if(!writeTxReg(n, DICE_REGISTER_TX_ISOC_BASE, reg_isoch)) {
-                debugError("Could not write ISO_CHANNEL register for ATX %d\n", n);
-                return false;
-            }
-    
-            // deallocate ISO channel
-            if(!deallocateIsoChannel(isochannel)) {
-                debugError("Could not deallocate iso channel for SP %d (ATX %d)\n",i,n);
-                return false;
-            }
-        }
-        p->setChannel(-1);
-        return true;
-
+        n=i;
+        p = m_receiveProcessors.at(n);
+        base_address = DICE_REGISTER_TX_ISOC_BASE;
+        setRXTXfuncs (Streaming::Port::E_Capture);
     } else if (i<(int)m_receiveProcessors.size() + (int)m_transmitProcessors.size()) {
-        int n=i-m_receiveProcessors.size();
-        Streaming::StreamProcessor *p=m_transmitProcessors.at(n);
-
-        if(snoopMode) { // a stream from the device to another host
-            // nothing to do
-        } else {
-            unsigned int isochannel = p->getChannel();
-    
-            fb_quadlet_t reg_isoch;
-            // check value of ISO_CHANNEL register
-            if(!readRxReg(n, DICE_REGISTER_RX_ISOC_BASE, &reg_isoch)) {
-                debugError("Could not read ISO_CHANNEL register for ARX %d\n", n);
-                return false;
-            }
-            if(reg_isoch != isochannel) {
-                debugError("ISO_CHANNEL register != 0x%08"PRIX32" (=0x%08"PRIX32") for ARX %d\n", isochannel, reg_isoch, n);
-                return false;
-            }
-    
-            // write value of ISO_CHANNEL register
-            reg_isoch=0xFFFFFFFFUL;
-            if(!writeRxReg(n, DICE_REGISTER_RX_ISOC_BASE, reg_isoch)) {
-                debugError("Could not write ISO_CHANNEL register for ARX %d\n", n);
-                return false;
-            }
-    
-            // deallocate ISO channel
-            if(!deallocateIsoChannel(isochannel)) {
-                debugError("Could not deallocate iso channel for SP %d (ARX %d)\n",i,n);
-                return false;
-            }
-        }
-
-        p->setChannel(-1);
-        return true;
+        n=i-m_receiveProcessors.size();
+        p=m_transmitProcessors.at(n);
+        base_address = DICE_REGISTER_RX_ISOC_BASE;
+        setRXTXfuncs (Streaming::Port::E_Playback);
+    } else {
+        debugError("SP index %d out of range!\n",i);
+        return false;
     }
 
-    debugError("SP index %d out of range!\n",i);
+    if(!snoopMode) {
+        unsigned int isochannel = p->getChannel();
+    
+        fb_quadlet_t reg_isoch;
+        // check value of ISO_CHANNEL register
+        if(!(*this.*readFunc)(n, base_address, &reg_isoch)) {
+            debugError("Could not read ISO_CHANNEL register for A%s %d\n", dir, n);
+            return false;
+        }
+        if(reg_isoch != isochannel) {
+            debugError("ISO_CHANNEL register != 0x%08"PRIX32" (=0x%08"PRIX32") for A%s %d\n", isochannel, reg_isoch, dir, n);
+            return false;
+        }
 
-    return false;
+        // write value of ISO_CHANNEL register
+        reg_isoch=0xFFFFFFFFUL;
+        if(!writeTxReg(n, base_address, reg_isoch)) {
+            debugError("Could not write ISO_CHANNEL register for A%s %d\n", dir, n);
+            return false;
+        }
+
+        // deallocate ISO channel
+        if(!deallocateIsoChannel(isochannel)) {
+            debugError("Could not deallocate iso channel for SP %d (A%s %d)\n",i, dir, n);
+            return false;
+        }
+    }
+    p->setChannel(-1);
+    return true;
 }
 
 // helper routines
