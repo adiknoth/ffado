@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding=utf8
 #
 # Copyright (C) 2009 by Arnold Krille

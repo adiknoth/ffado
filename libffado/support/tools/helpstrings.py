@@ -1,6 +1,3 @@
-#!/usr/bin/python
-#
-
 #
 # Copyright (C) 2008 Pieter Palmers
 #

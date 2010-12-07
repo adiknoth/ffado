@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright (C) 2008 by Arnold Krille
 #
