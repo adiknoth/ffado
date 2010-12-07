@@ -168,6 +168,7 @@ public:
 private: // register I/O routines
     bool initIoFunctions();
     // functions used for RX/TX abstraction
+    bool startstopStreamByIndex(int i, const bool start);
     bool prepareSP (unsigned int, const Streaming::Port::E_Direction direction_requested);
     void setRXTXfuncs (const Streaming::Port::E_Direction direction);
     // quadlet read/write routines
