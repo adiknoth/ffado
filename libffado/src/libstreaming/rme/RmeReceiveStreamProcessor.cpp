@@ -108,8 +108,12 @@ RmeReceiveStreamProcessor::prepareChild() {
     rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
 //    w = (2*M_PI*RXDLL_BANDWIDTH*rxdll_e2);
 w = (2*M_PI*0.00225);
+//w = (2*M_PI*0.004);
     rxdll_B = (sqrt(2.0)*w);
     rxdll_C = (w*w);
+
+debugOutput( DEBUG_LEVEL_VERBOSE, "init: e2=%g, w=%g, B=%g, C=%g\n",
+  rxdll_e2, w, rxdll_B, rxdll_C);
 
     return true;
 }
@@ -125,6 +129,7 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
 {
 // For testing
 static signed int rep = 0;
+static unsigned long long int prevts = 0;
 quadlet_t *adata = (quadlet_t *)data;
 if (rep == 0) {
 //  debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
@@ -155,11 +160,16 @@ if (rep == 0) {
 //        m_last_timestamp = CYCLE_TIMER_TO_TICKS(ctm_Parent.get1394Service().getCycleTimer());
         m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
 
-debugOutput(DEBUG_LEVEL_VERBOSE, "ts read: %lld\n", m_last_timestamp);
+debugOutput(DEBUG_LEVEL_VERBOSE, "ts read: %lld, prev=%lld, diff=%lld\n", 
+  m_last_timestamp,prevts, m_last_timestamp-prevts);
+prevts = m_last_timestamp;
 debugOutput(DEBUG_LEVEL_VERBOSE, "  rxdll_t1=%g\n", rxdll_t1);
 
 if (rxdll_t1 < 0.0) {
-  rxdll_e2 *= length / m_event_size;
+  signed int n_frames = length / m_event_size;
+  rxdll_e2 *= n_frames;
+//  rxdll_B *= n_frames;
+//  rxdll_C *= (n_frames*n_frames);
   rxdll_t1 = m_last_timestamp + rxdll_e2;
 debugOutput(DEBUG_LEVEL_VERBOSE, "  returned read: %lld T=%g\n", 
   m_last_timestamp, rxdll_e2);
