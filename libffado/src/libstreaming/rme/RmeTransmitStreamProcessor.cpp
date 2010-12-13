@@ -350,6 +350,7 @@ static signed int has_run = 0;
     // no audio data.
     *sy = 0x00;
     *length = 0;
+    *tag = 0;
 
     // During the dryRunning state used during startup FFADO will request
     // "empty" packets.  However, the fireface will only "start" (ie:
@@ -368,6 +369,15 @@ static signed int has_run = 0;
 //        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 RmeReceiveStreamProcessor *rxsp = static_cast<Rme::Device *>
   (&m_Parent)->getRxSP();
+{
+static signed int r=0;
+if (r==0) {
+debugOutput(DEBUG_LEVEL_VERBOSE, "tx timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n",
+  m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
+debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%08x\n", rxsp->n_hw_tx_buffer_samples);
+  r=1;
+}
+}
 #if 0
 debugOutput(DEBUG_LEVEL_VERBOSE, "tx timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n",
   m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
@@ -392,9 +402,14 @@ if (rxsp->n_hw_tx_buffer_samples == -1) {
 #else
 if (cx > 255) {
   signed n_events = getNominalFramesPerPacket();
-  if (cx < 255+64+10) {
+//  if (cx < 255+64+10) {
+  if (cx < 255+(128+12)*n_events) {
     cx += n_events;
     *length = n_events * m_event_size;
+m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
+debugOutput(DEBUG_LEVEL_VERBOSE, "empty tx: %lld, ct=%08x (%03ld,%04ld,%04ld) len=%d\n",
+  m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr),
+  *length);
   }
 } else
   cx++;

@@ -107,8 +107,9 @@ RmeReceiveStreamProcessor::prepareChild() {
     rxdll_t1 = -1.0;
     rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
 //    w = (2*M_PI*RXDLL_BANDWIDTH*rxdll_e2);
-w = (2*M_PI*0.00225);
 //w = (2*M_PI*0.004);
+//w = (2*M_PI*0.00225);
+w = (2*M_PI*0.001);
     rxdll_B = (sqrt(2.0)*w);
     rxdll_C = (w*w);
 
@@ -155,35 +156,40 @@ if (rep == 0) {
         // Timestamps are not transmitted explicitly by the RME interfaces
         // so we'll have to fake it somehow in order to fit in with the rest
         // of the FFADO infrastructure.  For now just take the packet
-        // arrival time as the "last timestamp".  In practice there is a
+        // arrival time as the "last timestamp" and feed it into a local
+        // DLL to "smooth over" the abrupt jumps which would otherwise be
+        // associated with a skipped iso cycle.  In practice there is a
         // fixed offset that we'll have to include eventually.
-//        m_last_timestamp = CYCLE_TIMER_TO_TICKS(ctm_Parent.get1394Service().getCycleTimer());
-        m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
+        uint64_t pkt_ctr_ticks = CYCLE_TIMER_TO_TICKS(pkt_ctr);
+        double e = pkt_ctr_ticks - rxdll_t1;
 
+#if 0
+double p = m_last_timestamp;
 debugOutput(DEBUG_LEVEL_VERBOSE, "ts read: %lld, prev=%lld, diff=%lld\n", 
-  m_last_timestamp,prevts, m_last_timestamp-prevts);
-prevts = m_last_timestamp;
+  pkt_ctr_ticks, prevts, pkt_ctr_ticks-prevts);
 debugOutput(DEBUG_LEVEL_VERBOSE, "  rxdll_t1=%g\n", rxdll_t1);
+#endif
+prevts = pkt_ctr_ticks;
 
-if (rxdll_t1 < 0.0) {
-  signed int n_frames = length / m_event_size;
-  rxdll_e2 *= n_frames;
-//  rxdll_B *= n_frames;
-//  rxdll_C *= (n_frames*n_frames);
-  rxdll_t1 = m_last_timestamp + rxdll_e2;
-debugOutput(DEBUG_LEVEL_VERBOSE, "  returned read: %lld T=%g\n", 
-  m_last_timestamp, rxdll_e2);
-} else {
-  double e = m_last_timestamp - rxdll_t1;
-  m_last_timestamp = rxdll_t1;
-  rxdll_t1 += rxdll_B*e + rxdll_e2;
-  rxdll_e2 += rxdll_C*e;
-  if (rxdll_t1 > 128*TICKS_PER_SECOND)
-    rxdll_t1 -= 128*TICKS_PER_SECOND;
-debugOutput(DEBUG_LEVEL_VERBOSE, "  returned: %lld (e=%g) T=%g\n", 
-  m_last_timestamp, e, rxdll_e2);
-}
-
+        if (rxdll_t1 < 0.0) {
+            signed int n_frames = length / m_event_size;
+            rxdll_e2 *= n_frames;
+            rxdll_t1 = pkt_ctr_ticks + rxdll_e2;
+            m_last_timestamp = pkt_ctr_ticks;
+//debugOutput(DEBUG_LEVEL_VERBOSE, "  INIT\n");
+        } else {
+            m_last_timestamp = rxdll_t1;
+            rxdll_t1 += rxdll_B*e + rxdll_e2;
+            rxdll_e2 += rxdll_C*e;
+        }
+        if (rxdll_t1 > 128*TICKS_PER_SECOND)
+            rxdll_t1 -= 128*TICKS_PER_SECOND;
+#if 0
+debugOutput(DEBUG_LEVEL_VERBOSE, "  returned: %lld (e=%g) T=%g, f=%g\n", 
+  m_last_timestamp, e, rxdll_e2, 7.0/rxdll_e2*24576000);
+debugOutput(DEBUG_LEVEL_VERBOSE, "    diff=%g, f=%g\n",
+  m_last_timestamp-p, 24576000/((m_last_timestamp-p)/7.0));
+#endif
 
 if (rep == 0) {
   debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,
