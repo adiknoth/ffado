@@ -432,6 +432,15 @@ device_definitions = (
     mixer = "Saffire_Dice";
 },
 {
+    vendorid = 0x00130e;
+    modelid = 0x00000009;
+    vendorname = "Focusrite";
+    modelname = "Saffire PRO 14";
+    driver = 20;
+    mixer = "Generic_Dice_EAP";
+    #mixer = "Saffire_Dice";
+},
+{
     vendorid = 0x001C6A;
     modelid = 0x00000001;
     vendorname = "Weiss Engineering Ltd.";
