@@ -116,6 +116,10 @@ w = (2*M_PI*0.001);
 debugOutput( DEBUG_LEVEL_VERBOSE, "init: e2=%g, w=%g, B=%g, C=%g\n",
   rxdll_e2, w, rxdll_B, rxdll_C);
 
+    // Request that the iso streaming be started as soon as possible by the
+    // kernel.
+    m_IsoHandlerManager.setIsoStartCycleForStream(this, -1);
+
     return true;
 }
 
@@ -162,8 +166,10 @@ if (rep == 0) {
         // fixed offset that we'll have to include eventually.
         uint64_t pkt_ctr_ticks = CYCLE_TIMER_TO_TICKS(pkt_ctr);
         double e = pkt_ctr_ticks - rxdll_t1;
+        if (e < -64LL*TICKS_PER_SECOND)
+          e += 128LL*TICKS_PER_SECOND;
 
-#if 0
+#if 1
 double p = m_last_timestamp;
 debugOutput(DEBUG_LEVEL_VERBOSE, "ts read: %lld, prev=%lld, diff=%lld\n", 
   pkt_ctr_ticks, prevts, pkt_ctr_ticks-prevts);
@@ -182,9 +188,9 @@ prevts = pkt_ctr_ticks;
             rxdll_t1 += rxdll_B*e + rxdll_e2;
             rxdll_e2 += rxdll_C*e;
         }
-        if (rxdll_t1 > 128*TICKS_PER_SECOND)
-            rxdll_t1 -= 128*TICKS_PER_SECOND;
-#if 0
+        if (rxdll_t1 > 128LL*TICKS_PER_SECOND)
+            rxdll_t1 -= 128LL*TICKS_PER_SECOND;
+#if 1
 debugOutput(DEBUG_LEVEL_VERBOSE, "  returned: %lld (e=%g) T=%g, f=%g\n", 
   m_last_timestamp, e, rxdll_e2, 7.0/rxdll_e2*24576000);
 debugOutput(DEBUG_LEVEL_VERBOSE, "    diff=%g, f=%g\n",

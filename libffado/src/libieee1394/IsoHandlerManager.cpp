@@ -1008,6 +1008,19 @@ IsoHandlerManager::dumpInfoForStream(Streaming::StreamProcessor *stream)
     }
 }
 
+void IsoHandlerManager::setIsoStartCycleForStream(Streaming::StreamProcessor *stream, signed int cycle) {
+    // Permit the direct manipulation of the m_switch_on_cycle field from
+    // the stream's handler.  This is usually used to set it to -1 so the
+    // kernel (at least with the ieee1394 stack) starts the streaming as
+    // soon as possible, something that is required for some interfaces (eg:
+    // RME).  Note that as of 20 Dec 2010 it seems that ordinarily
+    // m_switch_on_cycle remains fixed at 0 (its initialised value) because
+    // requestEnable() doesn't set it.  This allows the override configured
+    // by this function to take effect.
+    IsoHandler *h = getHandlerForStream(stream);
+    h->setIsoStartCycle(cycle);
+}
+
 bool
 IsoHandlerManager::startHandlerForStream(Streaming::StreamProcessor *stream) {
     return startHandlerForStream(stream, -1);
@@ -1859,6 +1872,14 @@ IsoHandlerManager::IsoHandler::requestDisable()
     }
     m_NextState = eHS_Stopped;
     return true;
+}
+
+// Explicitly preset m_switch_on_cycle since requestEnable doesn't do this
+// and thus all enables requested via that route always occur on cycle 0.
+void
+IsoHandlerManager::IsoHandler::setIsoStartCycle(signed int cycle)
+{
+  m_switch_on_cycle = cycle;
 }
 
 void

@@ -116,7 +116,7 @@ RmeTransmitStreamProcessor::generatePacketHeader (
     // Do housekeeping expected for all packets, irrespective of whether
     // they will contain data.
     *sy = 0x00;
-    *length = n_events*m_event_size;
+    *length = 0;
 
     signed int fc;
     uint64_t presentation_time;
@@ -223,6 +223,7 @@ RmeTransmitStreamProcessor::generatePacketHeader (
             {
                 // we are not that late and can still try to transmit the
                 // packet
+                *length = n_events*m_event_size;
                 m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, presentation_time);
                 m_last_timestamp = presentation_time;
                 if (m_tx_dbc > 0xff)
@@ -237,6 +238,7 @@ RmeTransmitStreamProcessor::generatePacketHeader (
         else if(cycles_until_transmit <= RME_MAX_CYCLES_TO_TRANSMIT_EARLY)
         {
             // it's time send the packet
+            *length = n_events*m_event_size;
             m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, presentation_time);
             m_last_timestamp = presentation_time;
             if (m_tx_dbc > 0xff)
@@ -400,19 +402,22 @@ if (rxsp->n_hw_tx_buffer_samples == -1) {
     cx=0;
 }
 #else
-if (cx > 255) {
+//if (cx > 255) {
+{
   signed n_events = getNominalFramesPerPacket();
 //  if (cx < 255+64+10) {
-  if (cx < 255+(128+12)*n_events) {
+//  if (cx < 255+(128+12)*n_events) {
+  if (cx < (128+12)*n_events) {
     cx += n_events;
     *length = n_events * m_event_size;
 m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
-debugOutput(DEBUG_LEVEL_VERBOSE, "empty tx: %lld, ct=%08x (%03ld,%04ld,%04ld) len=%d\n",
-  m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr),
-  *length);
+//debugOutput(DEBUG_LEVEL_VERBOSE, "empty tx: %lld, ct=%08x (%03ld,%04ld,%04ld) len=%d\n",
+//  m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr),
+//  *length);
   }
-} else
-  cx++;
+}
+//} else
+//  cx++;
 #endif
 //debugOutput(DEBUG_LEVEL_VERBOSE, "  txsize=%d\n", *length);
     }

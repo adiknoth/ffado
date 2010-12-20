@@ -137,6 +137,9 @@ class IsoHandlerManager
             bool requestEnable(int cycle = -1);
             bool requestDisable();
 
+            // Manually set the start cycle for the iso handler
+            void setIsoStartCycle(signed int cycle = -1);
+
     /**
              * updates the internal state if required
      */
@@ -349,6 +352,11 @@ class IsoHandlerManager
         bool startHandlerForStream(Streaming::StreamProcessor *);
         ///> starts the handler attached to the specific stream on a specific cycle
         bool startHandlerForStream(Streaming::StreamProcessor *, int cycle); 
+
+        ///> Directly tells the handler attached to the stream to start on
+        ///> the given cycle regardless of what is passed to
+        ///> startHandlerForStream().
+        void setIsoStartCycleForStream(Streaming::StreamProcessor *stream, signed int cycle);
 
         /**
          * returns the latency of a wake-up for this stream.
