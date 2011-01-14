@@ -236,7 +236,11 @@ Plug::discover()
 //         return false;
     }
 
-    if ( !discoverSupportedStreamFormats() ) {
+    // adi@2011-1-14: short-circuit left-to-right evaluation, so only try to
+    // discover the supported stream formats when not on a sync channel.
+    // According to Holger Dehnhardt, this is required to make his Mackie
+    // Onyx work.
+    if ( (m_infoPlugType != AVC::Plug::eAPT_Sync) && !discoverSupportedStreamFormats() ) {
         debugOutput(DEBUG_LEVEL_NORMAL, 
                     "Could not discover supported stream formats "
                     "(%d,%d,%d,%d,%d)\n",
