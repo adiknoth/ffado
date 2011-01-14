@@ -223,7 +223,7 @@ protected: // the helper receive/transmit functions
         eCRV_XRun,
         eCRV_Again,
         eCRV_Defer,
-	eCR_Error,
+	eCRV_Error,
     };
     // to be implemented by the children
     // the following methods are to be implemented by receive SP subclasses
