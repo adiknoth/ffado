@@ -16,6 +16,13 @@ device_definitions = (
     mixer       = "MackieOnyx";
     xmit_max_cycles_early_transmit = 4;
 },
+{ # entries provided by Holger Dehnhardt
+    vendorid    = 0x000ff2;
+    modelid     = 0x081216;
+    vendorname  = "Loud Technologies Inc.";
+    modelname   = "Onyx-i";
+    driver      = 4; # Oxford
+},
 {
     vendorid    = 0x0003db;
     modelid     = 0x00010048;

@@ -85,9 +85,12 @@ AmdtpOxfordReceiveStreamProcessor::prepareChild()
     // allocate space for four packets payload. The issue is that it can be
     // that we receive a bit too much payload such that the total is more
     // than one packet
+    //
+    // adi@2011-1-14: Holger Dehnhardt says that using 4*4*2 instead of 4*4
+    // makes his Mackie Onyx work
     FFADO_ASSERT( m_temp_buffer == NULL );
     if( !(m_temp_buffer = ffado_ringbuffer_create(
-            packet_payload_size_events * 4 * 4))) {
+            packet_payload_size_events * 4 * 4 * 2))) {
         debugFatal("Could not allocate memory event ringbuffer\n");
         return false;
     }
@@ -207,7 +210,7 @@ AmdtpOxfordReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsi
         if ((written = ffado_ringbuffer_write(m_temp_buffer, (char *)payload_start, write_size)) < write_size)
         {
             debugFatal("Temporary ringbuffer full (wrote %u bytes of %u)\n", written, write_size);
-//             return eCRV_Error;
+             return eCRV_Error;
         }
 
         // now figure out if we have sufficient frames in the tempbuffer to construct a packet
