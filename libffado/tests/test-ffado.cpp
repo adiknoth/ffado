@@ -208,14 +208,12 @@ printDeviceList(unsigned int port)
     printf("  Node id  GUID                  VendorId     ModelId   Vendor - Model\n");
     for (int i = 0; i < service.getNodeCount(); i++) {
         ConfigRom crom(service, i);
-        if (!crom.initialize())
-            break;
-
-        printf("  %2d       0x%s  0x%08X  0x%08X   %s - %s\n",
-               i, crom.getGuidString().c_str(),
-               crom.getNodeVendorId(), crom.getModelId(),
-               crom.getVendorName().c_str(),
-               crom.getModelName().c_str());
+        if (crom.initialize())
+            printf("  %2d       0x%s  0x%08X  0x%08X   %s - %s\n",
+                   i, crom.getGuidString().c_str(),
+                   crom.getNodeVendorId(), crom.getModelId(),
+                   crom.getVendorName().c_str(),
+                   crom.getModelName().c_str());
     }
 }
 
