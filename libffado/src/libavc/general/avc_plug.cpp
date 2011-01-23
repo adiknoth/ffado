@@ -378,6 +378,7 @@ Plug::discoverClusterInfo()
         c.m_index = 1;
         c.m_portType = 0;
         c.m_name = "Unknown";
+        c.m_buildSource = -1; // Flag this as a temp build
 
         c.m_nrOfChannels = m_nrOfChannels;
         for(int i=0; i<m_nrOfChannels; i++) {
@@ -838,8 +839,12 @@ Plug::propagateFromPlug( Plug *p ) {
                  "Propagating info from plug '%s' to plug '%s'\n",
                  p->getName(), getName() );
 
-    if (m_clusterInfos.size()==0 || m_clusterInfos[0].m_streamFormat == -1) {
+    if (m_clusterInfos.size()==0 || m_clusterInfos[0].m_buildSource == -1) {
         m_clusterInfos=p->m_clusterInfos;
+
+    	if (m_clusterInfos.size() > 0) {
+            m_clusterInfos[0].m_buildSource = 0; // No longer a temp instance
+	}
     }
 
     m_nrOfChannels=p->m_nrOfChannels;

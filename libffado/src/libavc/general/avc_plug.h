@@ -188,6 +188,7 @@ public:
         nr_of_channels_t    m_nrOfChannels;
         ChannelInfoVector   m_channelInfos;
         stream_format_t     m_streamFormat;
+        int                 m_buildSource; // To track how we are instantiated
     };
     typedef std::vector<ClusterInfo> ClusterInfoVector;
 
