@@ -153,9 +153,10 @@
 // -- AMDTP options -- //
 
 // in ticks
-// as per AMDTP2.1:
-// 354.17us + 125us @ 24.576ticks/usec = 11776.08192 ticks
-#define AMDTP_TRANSMIT_TRANSFER_DELAY   (11776U)
+// as per AMDTP2.1: 354.17us + 125us, but FFADO measures from the
+// packet transmission time, so subtract 125 us:
+// 354.17us @ 24.576ticks/usec = 8704 ticks
+#define AMDTP_TRANSMIT_TRANSFER_DELAY   (8704U)
 
 // the absolute minimum number of cycles we want to transmit
 // a packet ahead of the presentation time. The nominal time
