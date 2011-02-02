@@ -1,6 +1,6 @@
 #!/bin/env python
 #
-# Copyright (C) 2007-2008 Arnold Krille
+# Copyright (C) 2007,2008,2011 Arnold Krille
 # Copyright (C) 2007-2008 Pieter Palmers
 #
 # This file is part of FFADO
@@ -73,6 +73,13 @@ if env['dbus_service_dir'] and ( env.destdir or os.access( env['dbus_service_dir
     print "Will install the service-file"
     targetdir = env.destdir + env['dbus_service_dir']
     env.Alias( "install", env.Install( env.destdir + env['dbus_service_dir'], servicefile ) )
+else:
+    if not env['dbus_service_dir']:
+        print 'Can\'t install the system-wide dbus service file as the concerned variable is not defined.'
+    else:
+        if not os.access( env['dbus_service_dir'], os.W_OK ):
+            print 'Insufficient rights to install the system-wide dbus service file.'
+            print 'Please run the "scons install" command with higher authority.'
 
 # static versions
 if static_env['BUILD_STATIC_TOOLS']:
