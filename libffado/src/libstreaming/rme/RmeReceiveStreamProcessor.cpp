@@ -168,34 +168,60 @@ if (rep == 0) {
         double e = pkt_ctr_ticks - rxdll_t1;
         if (e < -64LL*TICKS_PER_SECOND)
           e += 128LL*TICKS_PER_SECOND;
+//        if (e < 0)
+//          e += 128LL*TICKS_PER_SECOND;
 
-#if 1
+// Very large e values indicate a discontinuity in processing, possibly due
+// to an xrun.  In this case, reset the DLL to avoid long delays as it
+// resynchronises.
+if (e > 10000) {
+  rxdll_t1 = -1.0;
+  rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
+}
+
+int64_t newts=0;
+#if 0
 double p = m_last_timestamp;
 debugOutput(DEBUG_LEVEL_VERBOSE, "ts read: %lld, prev=%lld, diff=%lld\n", 
   pkt_ctr_ticks, prevts, pkt_ctr_ticks-prevts);
 debugOutput(DEBUG_LEVEL_VERBOSE, "  rxdll_t1=%g\n", rxdll_t1);
 #endif
-prevts = pkt_ctr_ticks;
 
         if (rxdll_t1 < 0.0) {
             signed int n_frames = length / m_event_size;
             rxdll_e2 *= n_frames;
             rxdll_t1 = pkt_ctr_ticks + rxdll_e2;
-            m_last_timestamp = pkt_ctr_ticks;
+            newts = pkt_ctr_ticks;
 //debugOutput(DEBUG_LEVEL_VERBOSE, "  INIT\n");
         } else {
-            m_last_timestamp = rxdll_t1;
+            newts = rxdll_t1;
             rxdll_t1 += rxdll_B*e + rxdll_e2;
             rxdll_e2 += rxdll_C*e;
         }
-        if (rxdll_t1 > 128LL*TICKS_PER_SECOND)
+        if (rxdll_t1 >= 128LL*TICKS_PER_SECOND)
             rxdll_t1 -= 128LL*TICKS_PER_SECOND;
-#if 1
+
+//newts += (6.0/7.00)*rxdll_e2;
+newts -= (2*3072);  // Make there be some sort of latency
+if (newts < 0)
+  newts += 128LL*TICKS_PER_SECOND;
+else
+if (newts >= 128LL*TICKS_PER_SECOND)
+  newts -= 128LL*TICKS_PER_SECOND;
+#if 0
+// 3584
+if (newts-m_last_timestamp > 4000) {
+  debugOutput(DEBUG_LEVEL_VERBOSE, " **** \n");
+}
 debugOutput(DEBUG_LEVEL_VERBOSE, "  returned: %lld (e=%g) T=%g, f=%g\n", 
-  m_last_timestamp, e, rxdll_e2, 7.0/rxdll_e2*24576000);
-debugOutput(DEBUG_LEVEL_VERBOSE, "    diff=%g, f=%g\n",
-  m_last_timestamp-p, 24576000/((m_last_timestamp-p)/7.0));
+  newts, e, rxdll_e2, 7.0/rxdll_e2*24576000);
+debugOutput(DEBUG_LEVEL_VERBOSE, "    diff=%lld, f=%g\n",
+  newts-m_last_timestamp, 24576000/((newts-m_last_timestamp)/7.0));
+debugOutput(DEBUG_LEVEL_VERBOSE, "    ts read: %lld, prev=%lld, diff=%lld\n",
+  pkt_ctr_ticks, prevts, pkt_ctr_ticks-prevts);
 #endif
+m_last_timestamp = newts;
+prevts = pkt_ctr_ticks;
 
 if (rep == 0) {
   debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,
