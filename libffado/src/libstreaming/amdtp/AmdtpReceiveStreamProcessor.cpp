@@ -133,7 +133,68 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     struct iec61883_packet *packet = (struct iec61883_packet *) data;
     assert(packet);
 
-    unsigned int nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
+    /*
+    Euan de Kock <euan@dekock.net> 8th February 2011
+
+    See Ticket #310
+
+    This is a fix to force the Echo Devices to work at
+    sample rates above 48000 where the ADAT digital channels
+    get multiplexed to handle higher frequencies.
+    At 88200 and 96000 the ADAT channels are reduced to 4,
+    and at 192000 they should be reduced to 2. (I don't have a
+    device capable of 192K to verify this)
+
+    With the Echo devices (5.5 firmware at least), the device does
+    not reduce its channel count when it multiplexes the ADAT data,
+    but the actual packet does contain a reduced set of channels.
+
+    The channels are referred to as Dimensions in the firewire parlance.
+    With an Audiofire Pre8, we typically receive 17 channels of data at
+    44100 and 48000, being 8 Analog, 8 Digital and 1 MIDI. When we switch
+    to 88200 or 96000 the ADAT (Digital) channel count is reduced to four,
+    giving a total channel count (dimension) of 13. However Echo still
+    reports the DBS parameter as being 17.
+
+    To get around this, I don't bother using the DBS value at all. We know
+    that the FDF is a reliable value for AM824 packets (type 0  to 7), so
+    we can just use the FDF field to directly infer the size of each channel
+    or dimension - 8, 16 or 32 Quadwords respectively for 41/48K, 88/96K and 192K.
+
+    We set nevents directly to this for all AM824 packets directly, and do
+    the standard calculation for any non-standard types.
+
+    This is actually slightly less work than doing the calculation directly
+    and should be portable across all devices that send AM824 data.
+    */
+    unsigned int nevents;
+
+    switch(packet->fdf)
+        {
+        case 0x00:
+        case 0x01:
+        case 0x02:
+	    // 8Q = 32B
+            nevents=8;
+	    break;
+        case 0x03:
+        case 0x04:
+	    // 16Q = 64B
+            nevents=16;
+	    break;
+        case 0x05:
+        case 0x06:
+	    // 32Q = 128B
+            nevents=32;
+	    break;
+        default:
+            nevents=((length / sizeof (quadlet_t)) - 2)/packet->dbs;
+	    break;
+        }
+
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
+                "packet->dbs %d calculated dbs %d packet->fdf %02X nevents %d\n",
+                packet->dbs, (length - 8)/nevents, packet->fdf, nevents);
 
     // we have to keep in mind that there are also
     // some packets buffered by the ISO layer,
