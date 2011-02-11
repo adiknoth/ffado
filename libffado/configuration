@@ -379,6 +379,13 @@ device_definitions = (
     modelname = "Konnekt 8";
     driver = 20;
 },
+{ # Details provided by "Juanramon" in a comment post on the website
+    vendorid = 0x000166;
+    modelid = 0x00000022;
+    vendorname = "TC Electronic";
+    modelname = "Studio Konnekt 48";
+    driver = 20;
+},
 {
     vendorid = 0x000166;
     modelid = 0x00000023;
