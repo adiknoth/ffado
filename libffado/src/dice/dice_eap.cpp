@@ -110,7 +110,7 @@ EAP::~EAP()
 bool
 EAP::init() {
     if(!supportsEAP(m_device)) {
-        debugError("Device does not support EAP\n");
+        debugWarning("no EAP mixer (device does not support EAP)\n");
         return false;
     }
 
