@@ -22,7 +22,7 @@ device_definitions = (
     vendorname  = "Loud Technologies Inc.";
     modelname   = "Onyx-i";
     driver      = 4; # Oxford
-    xmit_transfer_delay = 11776U;
+    xmit_transfer_delay = 11776;
 },
 {
     vendorid    = 0x0003db;
