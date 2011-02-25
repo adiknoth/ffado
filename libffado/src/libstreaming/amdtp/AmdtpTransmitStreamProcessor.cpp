@@ -73,6 +73,7 @@ AmdtpTransmitStreamProcessor::generatePacketHeader (
     * our node ID for each packet. */
     packet->sid = m_local_node_id;
 
+    packet->eoh0 = 0;
     packet->dbs = m_dimension;
     packet->fn = 0;
     packet->qpc = 0;
@@ -307,6 +308,7 @@ AmdtpTransmitStreamProcessor::generateSilentPacketHeader (
 
     packet->sid = m_local_node_id;
 
+    packet->eoh0 = 0;
     packet->dbs = m_dimension;
     packet->fn = 0;
     packet->qpc = 0;
@@ -343,6 +345,7 @@ AmdtpTransmitStreamProcessor::generateEmptyPacketHeader (
                        (unsigned int)TICKS_TO_CYCLES(m_last_timestamp) );
     packet->sid = m_local_node_id;
 
+    packet->eoh0 = 0;
     packet->dbs = m_dimension;
     packet->fn = 0;
     packet->qpc = 0;
