@@ -41,13 +41,13 @@ class Generic_Dice_EAP(QtGui.QWidget):
         scrollarea = QtGui.QScrollArea(self.tabs)
         scrollarea.setWidgetResizable(True)
         scrollarea.setWidget(self.matrix)
-        self.tabs.addTab(scrollarea, "Matrix")
+        self.tabs.addTab(scrollarea, "Matrix Mixer")
 
         self.router = CrossbarRouter(self.hw.servername, self.hw.basepath+"/EAP/Router", self)
         scrollarea = QtGui.QScrollArea(self.tabs)
         scrollarea.setWidgetResizable(True)
         scrollarea.setWidget(self.router)
-        self.tabs.addTab(scrollarea, "Routing")
+        self.tabs.addTab(scrollarea, "Crossbar Router")
 
 
     #def getDisplayTitle(self):
