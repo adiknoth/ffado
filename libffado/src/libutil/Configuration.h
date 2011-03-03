@@ -53,6 +53,7 @@ public:
         eD_MetricHalo  = 30,
         eD_RME         = 40,
         eD_Bounce      = 50,
+        eD_Digidesign  = 60,
     };
 
     // the modes a config file can have
