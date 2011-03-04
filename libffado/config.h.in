@@ -238,6 +238,36 @@
 // ensure that the RME tx SP clips all float values to [-1.0..1.0]
 #define RME_CLIP_FLOATS                                   1
 
+// -- Digidesign options -- //
+//
+// Currently these are just verbatim copies of the values which
+// seem to work for MOTU devices.  Some tweaks may well be 
+// necessary once testing begins with real devices.
+
+// the transfer delay is substracted from the ideal presentation
+// time to obtain a corrected presentation time. This values is
+// then used to stamp the packet and determine the transmission
+// time instant.
+#define DIGIDESIGN_TRANSMIT_TRANSFER_DELAY    (0U)
+
+// the absolute minimum number of cycles we want to transmit
+// a packet ahead of the presentation time. The nominal time
+// the packet is transmitted ahead of the presentation time is
+// given by DIGIDESIGN_TRANSMIT_TRANSFER_DELAY (in ticks), but 
+// in case we are too late for that, this constant defines how 
+// late we can be.
+#define DIGIDESIGN_MIN_CYCLES_BEFORE_PRESENTATION                0
+
+// the absolute maximum number of cycles we want to transmit
+// a packet ahead of the ideal transmit time. The nominal time
+// the packet is transmitted ahead of the presentation time is
+// given by DIGIDESIGN_TRANSMIT_TRANSFER_DELAY (in ticks), but 
+// we can send packets early if we want to.
+#define DIGIDESIGN_MAX_CYCLES_TO_TRANSMIT_EARLY                  2
+
+// ensure that the DIGIDESIGN tx SP clips all float values to [-1.0..1.0]
+#define DIGIDESIGN_CLIP_FLOATS                                   1
+
 /// The unavoidable device specific hacks
 
 // Use the information in the music plug instead of that in the
