@@ -96,7 +96,7 @@ public:
     signed int writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads);
 
     /* General information functions */
-    signed int getDigidesignModel(void) { return m_digdesign_model; }
+    signed int getDigidesignModel(void) { return m_digidesign_model; }
 
 protected:
     enum EDigidesignModel m_digidesign_model;

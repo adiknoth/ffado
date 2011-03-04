@@ -83,8 +83,6 @@ Device::~Device()
 
 bool
 Device::buildMixer() {
-    signed int i;
-    bool result = true;
 
     destroyMixer();
     debugOutput(DEBUG_LEVEL_VERBOSE, "Building a Digidesign mixer...\n");
@@ -100,7 +98,6 @@ Device::buildMixer() {
 
 bool
 Device::destroyMixer() {
-    bool ret = true;
     debugOutput(DEBUG_LEVEL_VERBOSE, "destroy mixer...\n");
 
     // If buildMixer() doesn't do anything then there's nothing for
@@ -135,9 +132,8 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 bool
 Device::discover()
 {
-    signed int i;
     unsigned int vendorId = getConfigRom().getNodeVendorId();
-    unsigned int modelId = configRom.getModelId();
+    unsigned int modelId = getConfigRom().getModelId();
     
     Util::Configuration &c = getDeviceManager().getConfiguration();
     Util::Configuration::VendorModelEntry vme = c.findDeviceVME( vendorId, modelId );
@@ -273,10 +269,8 @@ Device::showDevice()
 bool
 Device::prepare() {
 
-    signed int mult, bandwidth;
-    signed int freq, init_samplerate;
+    signed int bandwidth;
     signed int err = 0;
-    unsigned int stat[4];
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
 
@@ -353,7 +347,7 @@ Device::prepare() {
 
     // Set up receive stream processor, initialise it and set DLL bw
     m_receiveProcessor = new Streaming::DigidesignReceiveStreamProcessor(*this, 
-      m_digidesign_model, event_size);
+      event_size);
     m_receiveProcessor->setVerboseLevel(getDebugLevel());
     if (!m_receiveProcessor->init()) {
         debugFatal("Could not initialize receive processor!\n");
@@ -377,7 +371,7 @@ Device::prepare() {
 
     /* Now set up the transmit stream processor */
     m_transmitProcessor = new Streaming::DigidesignTransmitStreamProcessor(*this,
-      m_digidesign_model, event_size);
+      event_size);
     m_transmitProcessor->setVerboseLevel(getDebugLevel());
     if (!m_transmitProcessor->init()) {
         debugFatal("Could not initialise receive processor!\n");
@@ -446,7 +440,9 @@ Device::getFramesPerPacket(void) {
     // Return the number of frames transmitted in a single firewire packet.
     // For some devices this is fixed, while for others it depends on the
     // current sampling rate.
-    signed int freq = getSamplingFrequency();
+    //
+    // Getting the current sample rate is as simple as:
+    //   signed int freq = getSamplingFrequency();
 
     // This needs to be set as required.
     return 0;

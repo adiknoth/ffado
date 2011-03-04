@@ -40,11 +40,15 @@
 #include <cstring>
 #include <assert.h>
 
+/* Provide more intuitive access to GCC's branch predition built-ins */
+#define likely(x)   __builtin_expect((x),1)
+#define unlikely(x) __builtin_expect((x),0)
+
 namespace Streaming
 {
 
 /* transmit */
-DigidesignTransmitStreamProcessor::DigidesigTransmitStreamProcessor(FFADODevice &parent, unsigned int event_size )
+DigidesignTransmitStreamProcessor::DigidesignTransmitStreamProcessor(FFADODevice &parent, unsigned int event_size )
         : StreamProcessor(parent, ePT_Transmit )
         , m_event_size( event_size )
 {
@@ -278,7 +282,7 @@ DigidesignTransmitStreamProcessor::generatePacketData (
     quadlet += 2;
 
     signed n_events = getNominalFramesPerPacket();
-    unsigned dbs = m_event_size / 4;
+    // unsigned dbs = m_event_size / 4;
 
     // Encode data into packet.  If a CIP header is to be placed at the
     // start of "data", the pointer passed to readFrames() should be
@@ -439,16 +443,21 @@ DigidesignTransmitStreamProcessor::generateSilentPacketData (
 
     quadlet_t *quadlet = (quadlet_t *)data;
     quadlet += 2; // skip the header - remove if no CIP header is used
+
     // Size of a single data frame in quadlets
-    unsigned dbs = m_event_size / 4;
+    // unsigned dbs = m_event_size / 4;
 
     signed n_events = getNominalFramesPerPacket();
 
     memset(quadlet, 0, n_events*m_event_size);
-    float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
 
-    // If there are per-frame timestamps to set up (or other things), it's done here.  "quadlet" starts out
-    // pointing to the start of the first frame, and it can be advanced to the next frame by adding dbs to it.
+    // If there are per-frame timestamps to set up (or other things), it's
+    // done here.  "quadlet" starts out pointing to the start of the first
+    // frame, and it can be advanced to the next frame by adding dbs to it.
+    //
+    // Obtaining the "ticks per frame" is sometimes useful when constructing
+    // timestamps:
+    //   float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
 
     return eCRV_OK;
 }
@@ -497,16 +506,16 @@ unsigned int DigidesignTransmitStreamProcessor::fillNoDataPacketHeader (
     // transmitted in the packet, which is 0 by definition.
 
     quadlet_t *quadlet = (quadlet_t *)data;
-    // Size of a single data frame in quadlets.  See comment in
-    // fillDataPacketHeader() regarding the Ultralite.
-    unsigned dbs = m_event_size / 4;
+
     // construct the packet CIP-like header.  Even if this is a data-less
     // packet the dbs field is still set as if there were data blocks
-    // present.  For data-less packets the dbc is the same as the previously
+    // present.  For data-less packets the tx_dbc is the same as the previously
     // transmitted block.
 
-    // Depending on the device this might have to be set to something sensible.
     unsigned dbs = m_event_size / 4;
+
+    // Depending on the device this might have to be set to something sensible.
+    unsigned int tx_dbc = m_event_size / 4;
 
     *quadlet = CondSwapToBus32(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | tx_dbc | (dbs<<16));
     quadlet++;
@@ -533,7 +542,6 @@ bool DigidesignTransmitStreamProcessor::prepareChild()
 bool DigidesignTransmitStreamProcessor::processWriteBlock(char *data,
                        unsigned int nevents, unsigned int offset) {
     bool no_problem=true;
-    unsigned int i;
 
     // This function is the transmit equivalent of
     // DigidesignReceiveStreamProcessor::processReadBlock().  It iterates

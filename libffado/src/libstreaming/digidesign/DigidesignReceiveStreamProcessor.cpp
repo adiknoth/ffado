@@ -52,7 +52,9 @@ DigidesignReceiveStreamProcessor::DigidesignReceiveStreamProcessor(FFADODevice &
 
 unsigned int
 DigidesignReceiveStreamProcessor::getMaxPacketSize() {
-    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
+
+    // Frame rate is accessible with something like this:
+    //   int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
 
     // What's returned here is the maximum packet size seen at the current
     // frame rate.  This depends both on the device and its configuration,
