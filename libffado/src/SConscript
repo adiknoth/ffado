@@ -188,6 +188,14 @@ rme_source = env.Split( '\
 	libstreaming/rme/RmeTransmitStreamProcessor.cpp \
 ' )
 
+digidesign_source = env.Split( '\
+	digidesign/digidesign_avdevice.cpp \
+	libstreaming/digidesign/DigidesignPort.cpp \
+	libstreaming/digidesign/DigidesignPortInfo.cpp \
+	libstreaming/digidesign/DigidesignReceiveStreamProcessor.cpp \
+	libstreaming/digidesign/DigidesignTransmitStreamProcessor.cpp \
+' )
+
 amdtp_source = env.Split( '\
 	libstreaming/amdtp/AmdtpPort.cpp \
 	libstreaming/amdtp/AmdtpPortInfo.cpp \
@@ -256,6 +264,9 @@ if env['ENABLE_METRIC_HALO']:
 if env['ENABLE_RME']:
 	libenv.MergeFlags( "-DENABLE_RME" )
 	source += rme_source
+if env['ENABLE_DIGIDESIGN']:
+	libenv.MergeFlags( "-DENABLE_DIGIDESIGN" )
+	source += digidesign_source
 if env['ENABLE_BOUNCE']:
 	env['ENABLE_GENERICAVC'] = True
 	libenv.MergeFlags( "-DENABLE_BOUNCE" )
