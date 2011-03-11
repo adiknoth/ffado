@@ -1485,6 +1485,9 @@ StreamProcessor::doDryRunning()
         case ePS_WaitingForStreamDisable:
             result &= m_data_buffer->clearBuffer();
             m_data_buffer->setTransparent(true);
+            // If the stream has been running, clear the previous timestamps
+            // as they won't be relevant after a restart
+            m_last_timestamp = m_last_timestamp2 = 0;
             break;
         default:
             debugError("Entry from invalid state: %s\n", ePSToString(m_state));

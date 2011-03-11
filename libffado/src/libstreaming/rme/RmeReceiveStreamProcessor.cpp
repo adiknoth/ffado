@@ -191,6 +191,10 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "  rxdll_t1=%g\n", rxdll_t1);
             signed int n_frames = length / m_event_size;
             rxdll_e2 *= n_frames;
             rxdll_t1 = pkt_ctr_ticks + rxdll_e2;
+newts = pkt_ctr_ticks - rxdll_e2 - (0*3072);
+if (newts < 0)
+  newts += 128LL*TICKS_PER_SECOND;
+m_data_buffer->setBufferTailTimestamp(newts);
             newts = pkt_ctr_ticks;
 //debugOutput(DEBUG_LEVEL_VERBOSE, "  INIT\n");
         } else {
@@ -202,13 +206,13 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "  rxdll_t1=%g\n", rxdll_t1);
             rxdll_t1 -= 128LL*TICKS_PER_SECOND;
 
 //newts += (6.0/7.00)*rxdll_e2;
-newts -= (2*3072);  // Make there be some sort of latency
+newts -= (0*3072);  // Make there be some sort of latency
 if (newts < 0)
   newts += 128LL*TICKS_PER_SECOND;
 else
 if (newts >= 128LL*TICKS_PER_SECOND)
   newts -= 128LL*TICKS_PER_SECOND;
-#if 0
+#if 1
 // 3584
 if (newts-m_last_timestamp > 4000) {
   debugOutput(DEBUG_LEVEL_VERBOSE, " **** \n");

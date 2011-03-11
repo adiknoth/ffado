@@ -407,19 +407,21 @@ if (rxsp->n_hw_tx_buffer_samples == -1) {
   signed n_events = getNominalFramesPerPacket();
 //  if (cx < 255+64+10) {
 //  if (cx < 255+(128+12)*n_events) {
-  if (cx < (128+12)*n_events) {
+  if (cx < (1)*n_events) {
     cx += n_events;
     *length = n_events * m_event_size;
-m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
+//m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
 //debugOutput(DEBUG_LEVEL_VERBOSE, "empty tx: %lld, ct=%08x (%03ld,%04ld,%04ld) len=%d\n",
 //  m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr),
 //  *length);
   }
+//m_last_timestamp = -1;
 }
 //} else
 //  cx++;
 #endif
 //debugOutput(DEBUG_LEVEL_VERBOSE, "  txsize=%d\n", *length);
+//m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
     }
 
 if (!isDryRunning() && has_dryrun==1)
