@@ -562,6 +562,8 @@ unsigned int RmeTransmitStreamProcessor::fillNoDataPacketHeader (
 bool RmeTransmitStreamProcessor::prepareChild()
 {
     debugOutput ( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this );
+// Unsure whether this helps yet.  Testing continues.
+m_dll_bandwidth_hz = 1.0; // 0.1;
     return true;
 }
 

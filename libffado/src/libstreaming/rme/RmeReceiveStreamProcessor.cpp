@@ -101,15 +101,26 @@ RmeReceiveStreamProcessor::prepareChild() {
     // FIXME: not needed anymore?
     //m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
 
-    // Initialise the "smoothing" DLL.  rxdll_e2 is set to the expected
-    // period (in ticks) which is then used to set suitable coefficients
-    // based on a normalised bandwidth.
+    // Initialise the "smoothing" DLL.  This is used to "smooth" the
+    // timestamp estimations derived from the arrival time of the packets. 
+    // The packet arrival time is the only possible source of sample
+    // timestamps for the RME devices and to fit in with the rest of FFADO
+    // it is necessary to synthesise something which looks remotely like a
+    // timestamp.  Unfortunately, because the RME (like most other
+    // interfaces) periodically skips a packet to permit the audio clock to
+    // stay roughly in sync with the cycle timer, the amount of jitter in
+    // the resulting timestamp estimate is very high.  Other FFADO objects
+    // which use the timestamp don't cope well with a high degree of jitter,
+    // so the "smoothing" DLL is used to eliminate most of this.
+    //
+    // rxdll_e2 is set to the expected period (in ticks).  The coefficients
+    // are set based on a specified bandwidth in Hz which has been
+    // determined experimentally.
     rxdll_t1 = -1.0;
     rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
-//    w = (2*M_PI*RXDLL_BANDWIDTH*rxdll_e2);
 //w = (2*M_PI*0.004);
 //w = (2*M_PI*0.00225);
-w = (2*M_PI*0.001);
+w = (2*M_PI*0.002);
     rxdll_B = (sqrt(2.0)*w);
     rxdll_C = (w*w);
 
@@ -119,7 +130,11 @@ debugOutput( DEBUG_LEVEL_VERBOSE, "init: e2=%g, w=%g, B=%g, C=%g\n",
     // Request that the iso streaming be started as soon as possible by the
     // kernel.
     m_IsoHandlerManager.setIsoStartCycleForStream(this, -1);
-
+// Because we drive the main DLL with another DLL, the bandwidth of the
+// main DLL must be fairly large so it can react quickly to changes and
+// therefore avoid drifting too far away from the "smoothing" DLL.  Again,
+// this value has been determined experimentally.
+m_dll_bandwidth_hz = 10.0;
     return true;
 }
 
@@ -174,7 +189,7 @@ if (rep == 0) {
 // Very large e values indicate a discontinuity in processing, possibly due
 // to an xrun.  In this case, reset the DLL to avoid long delays as it
 // resynchronises.
-if (e > 10000) {
+if (abs(e) > 10000) {
   rxdll_t1 = -1.0;
   rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
 }
@@ -200,13 +215,18 @@ m_data_buffer->setBufferTailTimestamp(newts);
         } else {
             newts = rxdll_t1;
             rxdll_t1 += rxdll_B*e + rxdll_e2;
+//rxdll_t1 += rxdll_e2;
             rxdll_e2 += rxdll_C*e;
+//newts = pkt_ctr_ticks;
         }
         if (rxdll_t1 >= 128LL*TICKS_PER_SECOND)
             rxdll_t1 -= 128LL*TICKS_PER_SECOND;
+        if (rxdll_t1 < 0)
+            rxdll_t1 += 128LL*TICKS_PER_SECOND;
 
 //newts += (6.0/7.00)*rxdll_e2;
-newts -= (0*3072);  // Make there be some sort of latency
+//newts -= (0*3072);  // Make there be some sort of latency
+//newts = m_last_timestamp + rxdll_e2;
 if (newts < 0)
   newts += 128LL*TICKS_PER_SECOND;
 else
@@ -217,8 +237,8 @@ if (newts >= 128LL*TICKS_PER_SECOND)
 if (newts-m_last_timestamp > 4000) {
   debugOutput(DEBUG_LEVEL_VERBOSE, " **** \n");
 }
-debugOutput(DEBUG_LEVEL_VERBOSE, "  returned: %lld (e=%g) T=%g, f=%g\n", 
-  newts, e, rxdll_e2, 7.0/rxdll_e2*24576000);
+debugOutput(DEBUG_LEVEL_VERBOSE, "  returned: %lld (e=%g) T=%g, f=%g rd=%lld\n", 
+  newts, e, rxdll_e2, 7.0/rxdll_e2*24576000, newts-pkt_ctr_ticks);
 debugOutput(DEBUG_LEVEL_VERBOSE, "    diff=%lld, f=%g\n",
   newts-m_last_timestamp, 24576000/((newts-m_last_timestamp)/7.0));
 debugOutput(DEBUG_LEVEL_VERBOSE, "    ts read: %lld, prev=%lld, diff=%lld\n",
