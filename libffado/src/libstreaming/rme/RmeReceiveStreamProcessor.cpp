@@ -119,8 +119,8 @@ RmeReceiveStreamProcessor::prepareChild() {
     rxdll_t1 = -1.0;
     rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
 //w = (2*M_PI*0.004);
-//w = (2*M_PI*0.00225);
-w = (2*M_PI*0.002);
+w = (2*M_PI*0.0025);
+
     rxdll_B = (sqrt(2.0)*w);
     rxdll_C = (w*w);
 
@@ -134,7 +134,8 @@ debugOutput( DEBUG_LEVEL_VERBOSE, "init: e2=%g, w=%g, B=%g, C=%g\n",
 // main DLL must be fairly large so it can react quickly to changes and
 // therefore avoid drifting too far away from the "smoothing" DLL.  Again,
 // this value has been determined experimentally.
-m_dll_bandwidth_hz = 10.0;
+//m_dll_bandwidth_hz = 10.0;
+m_dll_bandwidth_hz = 3.0;
     return true;
 }
 
@@ -183,8 +184,6 @@ if (rep == 0) {
         double e = pkt_ctr_ticks - rxdll_t1;
         if (e < -64LL*TICKS_PER_SECOND)
           e += 128LL*TICKS_PER_SECOND;
-//        if (e < 0)
-//          e += 128LL*TICKS_PER_SECOND;
 
 // Very large e values indicate a discontinuity in processing, possibly due
 // to an xrun.  In this case, reset the DLL to avoid long delays as it

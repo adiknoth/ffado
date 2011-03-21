@@ -233,7 +233,7 @@
 // the packet is transmitted ahead of the presentation time is
 // given by RME_TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
 // packets early if we want to.
-#define RME_MAX_CYCLES_TO_TRANSMIT_EARLY                  2
+#define RME_MAX_CYCLES_TO_TRANSMIT_EARLY                  1
 
 // ensure that the RME tx SP clips all float values to [-1.0..1.0]
 #define RME_CLIP_FLOATS                                   1
