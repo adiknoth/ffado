@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2009 by Jonathan Woithe
+ * Copyright (C) 2005-2011 by Jonathan Woithe
  * Copyright (C) 2005-2008 by Pieter Palmers
  *
  * This file is part of FFADO
@@ -787,11 +787,51 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
     Streaming::StreamProcessor *s_processor;
     std::string id;
     char name[128];
+    signed int i;
+    signed int n_analog, n_phones, n_adat, n_spdif;
+    signed int sample_rate = getSamplingFrequency();
+
+    /* Work out the number of analog, spdif and ADAT channels as determined
+     * by the current sample rate and the device model.
+     */
+    n_analog = (m_rme_model==RME_MODEL_FIREFACE800)?10:8;
+    n_phones = 0;
+    n_spdif = 2;
+    if (sample_rate < MIN_DOUBLE_SPEED) {
+      n_adat = 8;
+    } else
+    if (sample_rate < MIN_QUAD_SPEED) {
+      n_adat = 4;
+    } else {
+      n_adat = 0;
+    }
+    if (m_rme_model == RME_MODEL_FIREFACE800)
+      n_adat *= 2;
 
     if (direction == Streaming::Port::E_Capture) {
         s_processor = m_receiveProcessor;
     } else {
         s_processor = m_transmitProcessor;
+        /* Phones count as two of the analog outputs */
+        n_analog -= 2;
+        n_phones = 2;
+    }
+
+    /* Apply bandwidth limit if selected */
+    switch (dev_config->settings.limit_bandwidth) {
+      case FF_SWPARAM_BWLIMIT_ANALOG_ONLY:
+        n_adat = n_spdif = 0;
+        break;
+      case FF_SWPARAM_BWLIMIT_ANALOG_SPDIF_ONLY:
+        n_adat = 0;
+        break;
+      case FF_SWPARAM_BWLIMIT_NO_ADAT2:
+        /* FF800 only */
+        n_adat = 8;
+        break;
+      default:
+        /* Send all channels */
+        n_adat = (m_rme_model==RME_MODEL_FIREFACE800)?16:8;
     }
 
     id = std::string("dev?");
@@ -799,6 +839,28 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
         debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
     }
 
+    for (i=0; i<n_analog; i++) {
+      snprintf(name, sizeof(name), "%s_%s_analog-%d", id.c_str(), mode_str, i+1);
+      addPort(s_processor, name, direction, i*4, 0);
+    }
+    for (i=0; i<n_phones; i++) {
+      snprintf(name, sizeof(name), "%s_%s_phones-%c", id.c_str(), mode_str, 
+        i==0?'L':'R');
+      /* The headphone channels start at offset 24 */
+      addPort(s_processor, name, direction, 24+i*4, 0);
+    }
+    for (i=0; i<n_spdif; i++) {
+      snprintf(name, sizeof(name), "%s_%s_SPDIF-%d", id.c_str(), mode_str, i+1);
+      /* The SPDIF channels start at offset 32 */
+      addPort(s_processor, name, direction, 32+i*4, 0);
+    }
+    for (i=0; i<n_adat; i++) {
+      snprintf(name, sizeof(name), "%s_%s_adat-%d", id.c_str(), mode_str, i+1);
+      /* ADAT ports start at offset 40 */
+      addPort(s_processor, name, direction, 40+i*4, 0);
+    }
+
+#if 0
     // Just add a few ports for initial testing
     snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_0");
     addPort(s_processor, name, direction, 0, 0);
@@ -808,6 +870,7 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
     addPort(s_processor, name, direction, 24, 0);
     snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_7");
     addPort(s_processor, name, direction, 28, 0);
+#endif
 
     return true;
 }
