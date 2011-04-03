@@ -1158,10 +1158,6 @@ SaffireProDeviceStandaloneEnum::count()
 std::string
 SaffireProDeviceStandaloneEnum::getEnumLabel(int idx)
 {
-    if(idx>1) {
-        debugError("Index (%d) out of range\n", idx);
-        return false;
-    }
     switch(idx) {
         case 0: return "Mixing";
         case 1: return "Tracking";
