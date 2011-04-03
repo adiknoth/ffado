@@ -751,7 +751,8 @@ bool IsoHandlerManager::registerStream(StreamProcessor *stream)
         unsigned int max_packet_size = stream->getMaxPacketSize() + 8;
         unsigned int page_size = getpagesize();
 
-        enum raw1394_iso_dma_recv_mode receive_mode;
+        enum raw1394_iso_dma_recv_mode receive_mode =
+		RAW1394_DMA_PACKET_PER_BUFFER;
         switch(receive_mode_setting) {
             case 0:
                 if(packets_per_period < (unsigned)bufferfill_mode_threshold) {
