@@ -196,7 +196,7 @@ int PosixThread::Stop()
         fRunning = false; // Request for the thread to stop
         m_lock.Lock();
         pthread_join(fThread, &status);
-        fThread = NULL;
+        fThread = 0;
         m_lock.Unlock();
         debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Stopped %p (thread: %p)\n", m_id.c_str(), this, (void *)fThread);
         return 0;
