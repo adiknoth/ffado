@@ -99,6 +99,8 @@ public:
     unsigned int getNbBuffers() 
             {return m_nb_buffers;};
 
+    void setMaxDiffTicks(signed int n) { m_max_diff_ticks = n; };
+
     // this is the amount of usecs we wait before an activity
     // timeout occurs.
     void setActivityWaitTimeoutUsec(int usec)
@@ -198,6 +200,8 @@ protected: // FIXME: private?
     unsigned int m_nbperiods;
 
     Util::Mutex *m_WaitLock;
+
+    signed int m_max_diff_ticks;
 
     DECLARE_DEBUG_MODULE;
 

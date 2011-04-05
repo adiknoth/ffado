@@ -562,6 +562,9 @@ unsigned int RmeTransmitStreamProcessor::fillNoDataPacketHeader (
 bool RmeTransmitStreamProcessor::prepareChild()
 {
     debugOutput ( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this );
+    m_max_fs_diff_norm = 10.0;
+    m_max_diff_ticks = 30720;
+
 // Unsure whether this helps yet.  Testing continues.
 m_dll_bandwidth_hz = 1.0; // 0.1;
     return true;

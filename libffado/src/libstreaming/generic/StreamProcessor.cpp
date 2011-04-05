@@ -75,6 +75,8 @@ StreamProcessor::StreamProcessor(FFADODevice &parent, enum eProcessorType type)
     , m_ticks_per_frame( 0 )
     , m_dll_bandwidth_hz ( STREAMPROCESSOR_DLL_BW_HZ )
     , m_extra_buffer_frames( 0 )
+    , m_max_fs_diff_norm ( 0.01 )
+    , m_max_diff_ticks ( 50 )
     , m_in_xrun( false )
 {
     // create the timestamped buffer and register ourselves as its client
@@ -384,8 +386,9 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
             double fs_diff_norm = fs_diff/fs_nom;
             debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)\n",
                         fs_nom, fs_syt, fs_diff, fs_diff_norm);
-            if (fs_diff_norm > 0.01 || fs_diff_norm < -0.01) {
-                debugWarning( "Instantanous samplerate more than 1%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
+            if (fs_diff_norm > m_max_fs_diff_norm || fs_diff_norm < -m_max_fs_diff_norm) {
+                debugWarning( "Instantanous samplerate more than %0.0f%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
+                        m_max_fs_diff_norm*100,
                         fs_nom, fs_syt, fs_diff, fs_diff_norm);
             }
 
@@ -394,7 +397,7 @@ StreamProcessor::putPacket(unsigned char *data, unsigned int length,
                 // display message if the difference between two successive tick
                 // values is more than 50 ticks. 1 sample at 48k is 512 ticks
                 // so 50 ticks = 10%, which is a rather large jitter value.
-                if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
+                if(diff-ticks_per_packet > m_max_diff_ticks || diff-ticks_per_packet < -m_max_diff_ticks) {
                     debugOutput(DEBUG_LEVEL_VERBOSE,
                                 "cy %04d rather large TSP difference TS=%011"PRIu64" => TS=%011"PRIu64" (%d, nom %d)\n",
                                 (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,
@@ -702,8 +705,9 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                            fs_nom, fs_syt, fs_diff, fs_diff_norm);
 //                 debugOutput(DEBUG_LEVEL_VERBOSE, "Diff fs: %12f, m_last_timestamp: %011"PRIu64", m_last_timestamp2: %011"PRIu64"\n",
 //                            fs_diff, m_last_timestamp, m_last_timestamp2);
-                if (fs_diff_norm > 0.01 || fs_diff_norm < -0.01) {
-                    debugWarning( "Instantanous samplerate more than 1%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
+                if (fs_diff_norm > m_max_fs_diff_norm || fs_diff_norm < -m_max_fs_diff_norm) {
+                    debugWarning( "Instantanous samplerate more than %0.0f%% off nominal. [Nom fs: %12f, Instantanous fs: %12f, diff: %12f (%12f)]\n",
+                           m_max_fs_diff_norm*100,
                            fs_nom, fs_syt, fs_diff, fs_diff_norm);
                 }
                 int ticks_per_packet = (int)(getTicksPerFrame() * getNominalFramesPerPacket());
@@ -711,7 +715,7 @@ StreamProcessor::getPacket(unsigned char *data, unsigned int *length,
                 // display message if the difference between two successive tick
                 // values is more than 50 ticks. 1 sample at 48k is 512 ticks
                 // so 50 ticks = 10%, which is a rather large jitter value.
-                if(diff-ticks_per_packet > 50 || diff-ticks_per_packet < -50) {
+                if(diff-ticks_per_packet > m_max_diff_ticks || diff-ticks_per_packet < -m_max_diff_ticks) {
                     debugOutput(DEBUG_LEVEL_VERBOSE,
                                 "cy %04d, rather large TSP difference TS=%011"PRIu64" => TS=%011"PRIu64" (%d, nom %d)\n",
                                 (int)CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp2,

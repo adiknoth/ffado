@@ -135,7 +135,14 @@ debugOutput( DEBUG_LEVEL_VERBOSE, "init: e2=%g, w=%g, B=%g, C=%g\n",
 // therefore avoid drifting too far away from the "smoothing" DLL.  Again,
 // this value has been determined experimentally.
 //m_dll_bandwidth_hz = 10.0;
-m_dll_bandwidth_hz = 3.0;
+//m_dll_bandwidth_hz = 3.0;
+////m_dll_bandwidth_hz = 1.0;
+m_dll_bandwidth_hz = 0.25;
+m_max_fs_diff_norm = 100.0;
+m_max_diff_ticks = 30720;
+m_data_buffer->setMaxAbsDiff(10000);
+m_Parent.getDeviceManager().getStreamProcessorManager().setMaxDiffTicks(30720);
+
     return true;
 }
 
@@ -231,7 +238,7 @@ if (newts < 0)
 else
 if (newts >= 128LL*TICKS_PER_SECOND)
   newts -= 128LL*TICKS_PER_SECOND;
-#if 1
+#if 0
 // 3584
 if (newts-m_last_timestamp > 4000) {
   debugOutput(DEBUG_LEVEL_VERBOSE, " **** \n");
@@ -243,7 +250,8 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "    diff=%lld, f=%g\n",
 debugOutput(DEBUG_LEVEL_VERBOSE, "    ts read: %lld, prev=%lld, diff=%lld\n",
   pkt_ctr_ticks, prevts, pkt_ctr_ticks-prevts);
 #endif
-m_last_timestamp = newts;
+//m_last_timestamp = newts;
+m_last_timestamp = pkt_ctr_ticks;
 prevts = pkt_ctr_ticks;
 
 if (rep == 0) {

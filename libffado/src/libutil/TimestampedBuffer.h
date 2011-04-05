@@ -92,6 +92,8 @@ class TimestampedBuffer
         TimestampedBuffer ( TimestampedBufferClient * );
         virtual ~TimestampedBuffer();
 
+        void setMaxAbsDiff ( unsigned int n ) { m_max_abs_diff = n; };
+
         bool writeDummyFrame();
         bool dropFrames ( unsigned int nbframes );
 
@@ -204,6 +206,8 @@ class TimestampedBuffer
         float calculateRate();
         float m_current_rate;
         unsigned int m_update_period;
+
+        unsigned int m_max_abs_diff;
 };
 
 /**

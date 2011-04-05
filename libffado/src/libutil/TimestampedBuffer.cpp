@@ -74,7 +74,9 @@ TimestampedBuffer::TimestampedBuffer(TimestampedBufferClient *c)
       m_buffer_tail_timestamp(TIMESTAMP_MAX + 1.0),
       m_buffer_next_tail_timestamp(TIMESTAMP_MAX + 1.0),
       m_dll_e2(0.0), m_dll_b(DLL_COEFF_B), m_dll_c(DLL_COEFF_C),
-      m_nominal_rate(0.0), m_current_rate(0.0), m_update_period(0)
+      m_nominal_rate(0.0), m_current_rate(0.0), m_update_period(0),
+      // half a cycle is what we consider 'normal'
+      m_max_abs_diff(3072/2)
 {
     pthread_mutex_init(&m_framecounter_lock, NULL);
 }
@@ -1035,7 +1037,7 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
 #ifdef DEBUG
 
     // check whether the update is within the allowed bounds
-    ffado_timestamp_t max_abs_diff = 3072/2; // half a cycle is what we consider 'normal'
+    ffado_timestamp_t max_abs_diff = m_max_abs_diff;
 
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE,
                        " nbframes: %d, m_update_period: %d \n",

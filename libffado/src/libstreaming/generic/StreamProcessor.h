@@ -425,6 +425,8 @@ protected:
         float m_ticks_per_frame;
         float m_dll_bandwidth_hz;
         unsigned int m_extra_buffer_frames;
+        float m_max_fs_diff_norm;
+        signed int m_max_diff_ticks;
     private:
         bool m_in_xrun;
 

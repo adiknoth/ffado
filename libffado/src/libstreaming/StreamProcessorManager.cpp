@@ -59,6 +59,7 @@ StreamProcessorManager::StreamProcessorManager(DeviceManager &p)
     , m_shutdown_needed(false)
     , m_nbperiods(0)
     , m_WaitLock( new Util::PosixMutex("SPMWAIT") )
+    , m_max_diff_ticks( 50 ) 
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     sem_init(&m_activity_semaphore, 0, 0);
@@ -84,6 +85,7 @@ StreamProcessorManager::StreamProcessorManager(DeviceManager &p, unsigned int pe
     , m_shutdown_needed(false)
     , m_nbperiods(0)
     , m_WaitLock( new Util::PosixMutex("SPMWAIT") )
+    , m_max_diff_ticks( 50 )
 {
     addOption(Util::OptionContainer::Option("slaveMode",false));
     sem_init(&m_activity_semaphore, 0, 0);
@@ -1269,7 +1271,7 @@ bool StreamProcessorManager::waitForPeriod() {
     // display message if the difference between two successive tick
     // values is more than 50 ticks. 1 sample at 48k is 512 ticks
     // so 50 ticks = 10%, which is a rather large jitter value.
-    if(diff-ticks_per_period > 50 || diff-ticks_per_period < -50) {
+    if(diff-ticks_per_period > m_max_diff_ticks || diff-ticks_per_period < -m_max_diff_ticks) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "rather large TSP difference TS=%011"PRIu64" => TS=%011"PRIu64" (%d, nom %d)\n",
                                             m_time_of_transfer2, m_time_of_transfer, diff, ticks_per_period);
     }
