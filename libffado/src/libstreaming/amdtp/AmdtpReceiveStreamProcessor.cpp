@@ -434,44 +434,44 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
             uint32_t *buffer = (quadlet_t *)(p.buffer);
             buffer += offset;
 
-	    /* clear output (to jackd) buffer for MIDI data */
-	    memset (buffer, 0, nevents*sizeof(*buffer));
+            /* clear output (to jackd) buffer for MIDI data */
+            memset (buffer, 0, nevents*sizeof(*buffer));
 
-            for (j = 0;j < nevents; j += 1) {
+            for (j = 0; j < nevents; j += 1) {
                 target_event = (quadlet_t *) (data + ((j * m_dimension) + p.position));
                 sample_int = CondSwapFromBus32(*target_event);
 
                 // FIXME: this assumes that 2X and 3X speed isn't used,
                 // because only the 1X slot is put into the ringbuffer
                 if(unlikely(IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_1X))) {
-			printf ("found 1x midi\n");
+                    printf ("found 1x midi\n");
                     sample_int=(sample_int >> 16) & 0x000000FF;
                     sample_int |= 0x01000000; // flag that there is a midi event present
                     midibuffer[mb_head++] = sample_int;
-		    mb_head &= RX_MIDIBUFFER_SIZE-1;
-		    if (unlikely(mb_head == mb_tail)) {
-			    debugWarning("MOTU rx MIDI buffer overflow\n");
-			    /* Dump oldest byte.  This overflow can only happen if the
-			     * rate coming in from the hardware MIDI port grossly
-			     * exceeds the official MIDI baud rate of 31250 bps, so it
-			     * should never occur in practice.
-			     */
-			    mb_tail = (mb_tail + 1) & (RX_MIDIBUFFER_SIZE-1);
-		    }
+                    mb_head &= RX_MIDIBUFFER_SIZE-1;
+                    if (unlikely(mb_head == mb_tail)) {
+                        debugWarning("MOTU rx MIDI buffer overflow\n");
+                        /* Dump oldest byte.  This overflow can only happen if the
+                         * rate coming in from the hardware MIDI port grossly
+                         * exceeds the official MIDI baud rate of 31250 bps, so it
+                         * should never occur in practice.
+                         */
+                        mb_tail = (mb_tail + 1) & (RX_MIDIBUFFER_SIZE-1);
+                    }
 
                     printf ( "(%p) MIDI [%d]: %08X\n", this, i, sample_int);
                 } else if(IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_2X)
-                       || IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_3X) ) {
-			printf ("found 2x midi\n");
-                    debugOutput(DEBUG_LEVEL_VERBOSE, "Midi mode %X not supported.\n", IEC61883_AM824_GET_LABEL(sample_int));
+                        || IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_3X) ) {
+                    debugOutput(DEBUG_LEVEL_VERBOSE, "Midi mode %X not supported.\n",
+                            IEC61883_AM824_GET_LABEL(sample_int));
                 }
-		if (unlikely(!(j & 0x07))) {
-			if (mb_head != mb_tail) {
-				*buffer = midibuffer[mb_tail++];
-				mb_tail &= RX_MIDIBUFFER_SIZE-1;
-			}
-			buffer += 8;
-		}
+                if (unlikely(!(j & 0x07))) {
+                    if (mb_head != mb_tail) {
+                        *buffer = midibuffer[mb_tail++];
+                        mb_tail &= RX_MIDIBUFFER_SIZE-1;
+                    }
+                    buffer += 8;
+                }
             }
         }
     }
