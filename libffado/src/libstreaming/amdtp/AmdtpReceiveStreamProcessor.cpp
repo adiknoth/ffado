@@ -444,7 +444,6 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
                 // FIXME: this assumes that 2X and 3X speed isn't used,
                 // because only the 1X slot is put into the ringbuffer
                 if(unlikely(IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_1X))) {
-                    printf ("found 1x midi\n");
                     sample_int=(sample_int >> 16) & 0x000000FF;
                     sample_int |= 0x01000000; // flag that there is a midi event present
                     midibuffer[mb_head++] = sample_int;
