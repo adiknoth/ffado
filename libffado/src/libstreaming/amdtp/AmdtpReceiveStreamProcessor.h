@@ -73,23 +73,6 @@ public:
     virtual unsigned int getNominalFramesPerPacket() 
                     {return getSytInterval();};
 
-    /* A small MIDI buffer to cover for the case where we need to span a
-     * period - that is, if more than one MIDI byte is sent per packet. 
-     * Since the long-term average data rate must be close to the MIDI spec
-     * (as it's coming from a physical MIDI port_ this buffer doesn't have
-     * to be particularly large.  The size is a power of 2 for optimisation
-     * reasons.
-     *
-     * FIXME: it is yet to be determined whether this is required for RME
-     * devices.
-     *
-     * FIXME: copied from RmeReceiveStreamProcessor.h. Needs refactoring
-     */
-#define RX_MIDIBUFFER_SIZE_EXP 6
-#define RX_MIDIBUFFER_SIZE     (1<<RX_MIDIBUFFER_SIZE_EXP)
-    unsigned int midibuffer[RX_MIDIBUFFER_SIZE];
-    unsigned mb_head, mb_tail;
-
 
 protected:
     bool processReadBlock(char *data, unsigned int nevents, unsigned int offset);
@@ -128,6 +111,24 @@ private: // local port caching for performance
     };
     std::vector<struct _MIDI_port_cache> m_midi_ports;
     unsigned int m_nb_midi_ports;
+
+    /* A small MIDI buffer to cover for the case where we need to span a
+     * period - that is, if more than one MIDI byte is sent per packet. 
+     * Since the long-term average data rate must be close to the MIDI spec
+     * (as it's coming from a physical MIDI port_ this buffer doesn't have
+     * to be particularly large.  The size is a power of 2 for optimisation
+     * reasons.
+     *
+     * FIXME: it is yet to be determined whether this is required for RME
+     * devices.
+     *
+     * FIXME: copied from RmeReceiveStreamProcessor.h. Needs refactoring
+     */
+#define RX_MIDIBUFFER_SIZE_EXP 6
+#define RX_MIDIBUFFER_SIZE     (1<<RX_MIDIBUFFER_SIZE_EXP)
+
+    unsigned int midibuffer[RX_MIDIBUFFER_SIZE];
+    unsigned mb_head, mb_tail;
 
     bool initPortCache();
     void updatePortCache();
