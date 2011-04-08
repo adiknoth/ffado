@@ -460,8 +460,8 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
 
                     debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "(%p) MIDI [%d]: %08X\n", this,
                             i, sample_int);
-                } else if(IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_2X)
-                        || IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_3X) ) {
+                } else if(unlikely((IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_2X)
+                        || IEC61883_AM824_HAS_LABEL(sample_int, IEC61883_AM824_LABEL_MIDI_3X) ))) {
                     debugOutput(DEBUG_LEVEL_VERBOSE, "Midi mode %X not supported.\n",
                             IEC61883_AM824_GET_LABEL(sample_int));
                 }
