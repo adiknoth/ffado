@@ -465,7 +465,8 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
                     debugOutput(DEBUG_LEVEL_VERBOSE, "Midi mode %X not supported.\n",
                             IEC61883_AM824_GET_LABEL(sample_int));
                 }
-                if (unlikely(!(j & 0x07))) {
+                /* Write to the buffer if we're at an 8-sample boundary */
+                if (unlikely(0 == j % 8)) {
                     if (mb_head != mb_tail) {
                         *buffer = midibuffer[mb_tail++];
                         mb_tail &= RX_MIDIBUFFER_SIZE-1;
