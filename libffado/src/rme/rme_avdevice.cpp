@@ -791,33 +791,10 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
     signed int n_analog, n_phones, n_adat, n_spdif;
     signed int sample_rate = getSamplingFrequency();
 
-    /* Work out the number of analog, spdif and ADAT channels as determined
-     * by the current sample rate and the device model.
+    /* Apply bandwidth limit if selected.  This effectively sets up the
+     * number of adat and spdif channels assuming single-rate speed.
      */
-    n_analog = (m_rme_model==RME_MODEL_FIREFACE800)?10:8;
-    n_phones = 0;
     n_spdif = 2;
-    if (sample_rate < MIN_DOUBLE_SPEED) {
-      n_adat = 8;
-    } else
-    if (sample_rate < MIN_QUAD_SPEED) {
-      n_adat = 4;
-    } else {
-      n_adat = 0;
-    }
-    if (m_rme_model == RME_MODEL_FIREFACE800)
-      n_adat *= 2;
-
-    if (direction == Streaming::Port::E_Capture) {
-        s_processor = m_receiveProcessor;
-    } else {
-        s_processor = m_transmitProcessor;
-        /* Phones count as two of the analog outputs */
-        n_analog -= 2;
-        n_phones = 2;
-    }
-
-    /* Apply bandwidth limit if selected */
     switch (dev_config->settings.limit_bandwidth) {
       case FF_SWPARAM_BWLIMIT_ANALOG_ONLY:
         n_adat = n_spdif = 0;
@@ -832,6 +809,29 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
       default:
         /* Send all channels */
         n_adat = (m_rme_model==RME_MODEL_FIREFACE800)?16:8;
+    }
+
+    /* Work out the number of analog channels based on the device model and
+     * adjust the spdif and ADAT channels according to the current sample
+     * rate.
+     */
+    n_analog = (m_rme_model==RME_MODEL_FIREFACE800)?10:8;
+    n_phones = 0;
+    if (sample_rate>=MIN_DOUBLE_SPEED && sample_rate<MIN_QUAD_SPEED) {
+      n_adat /= 2;
+    } else
+    if (sample_rate >= MIN_QUAD_SPEED) {
+      n_adat = 0;
+      n_spdif = 0;
+    }
+
+    if (direction == Streaming::Port::E_Capture) {
+        s_processor = m_receiveProcessor;
+    } else {
+        s_processor = m_transmitProcessor;
+        /* Phones count as two of the analog outputs */
+        n_analog -= 2;
+        n_phones = 2;
     }
 
     id = std::string("dev?");
