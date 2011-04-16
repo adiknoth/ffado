@@ -1034,6 +1034,13 @@ void TimestampedBuffer::incrementFrameCounter(unsigned int nbframes, ffado_times
     // this is the error for the DLL
     ffado_timestamp_t diff = new_timestamp - m_buffer_next_tail_timestamp;
 
+    // correct for when new_timestamp doesn't wrap at the same time as
+    // m_buffer_next_tail_timestamp
+    if (diff > m_wrap_at/2)
+      diff = m_wrap_at - diff;
+    else
+    if (diff < -m_wrap_at/2)
+      diff = m_wrap_at + diff;
 #ifdef DEBUG
 
     // check whether the update is within the allowed bounds
