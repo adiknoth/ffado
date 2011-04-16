@@ -188,17 +188,17 @@ if (rep == 0) {
         // associated with a skipped iso cycle.  In practice there is a
         // fixed offset that we'll have to include eventually.
         uint64_t pkt_ctr_ticks = CYCLE_TIMER_TO_TICKS(pkt_ctr);
-        double e = pkt_ctr_ticks - rxdll_t1;
-        if (e < -64LL*TICKS_PER_SECOND)
-          e += 128LL*TICKS_PER_SECOND;
+//+        double e = pkt_ctr_ticks - rxdll_t1;
+//+        if (e < -64LL*TICKS_PER_SECOND)
+//+          e += 128LL*TICKS_PER_SECOND;
 
 // Very large e values indicate a discontinuity in processing, possibly due
 // to an xrun.  In this case, reset the DLL to avoid long delays as it
 // resynchronises.
-if (abs(e) > 10000) {
-  rxdll_t1 = -1.0;
-  rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
-}
+//+if (abs(e) > 10000) {
+//+  rxdll_t1 = -1.0;
+//+  rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
+//+}
 
 int64_t newts=0;
 #if 0
@@ -208,6 +208,8 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "ts read: %lld, prev=%lld, diff=%lld\n",
 debugOutput(DEBUG_LEVEL_VERBOSE, "  rxdll_t1=%g\n", rxdll_t1);
 #endif
 
+//+
+#if 0
         if (rxdll_t1 < 0.0) {
             signed int n_frames = length / m_event_size;
             rxdll_e2 *= n_frames;
@@ -233,6 +235,15 @@ m_data_buffer->setBufferTailTimestamp(newts);
 //newts += (6.0/7.00)*rxdll_e2;
 //newts -= (0*3072);  // Make there be some sort of latency
 //newts = m_last_timestamp + rxdll_e2;
+//newts = pkt_ctr_ticks;
+#endif
+
+// Fix the offset in the simulated timestamp to a constant value determined
+// by experimentation for stability.  This is needed because sometimes the
+// RME sends two packets within a few ticks of each other but in different
+// cycles.  Being so close this stuffs up the rx DLL since the resulting
+// instantaneous sample rate is extremely high.
+newts = CYCLE_TIMER_TO_TICKS(CYCLE_TIMER_SET_OFFSET(pkt_ctr, 3050)) + 0*3072;
 if (newts < 0)
   newts += 128LL*TICKS_PER_SECOND;
 else
@@ -251,8 +262,13 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "    ts read: %lld, prev=%lld, diff=%lld\n",
   pkt_ctr_ticks, prevts, pkt_ctr_ticks-prevts);
 #endif
 //m_last_timestamp = newts;
-m_last_timestamp = pkt_ctr_ticks;
-prevts = pkt_ctr_ticks;
+if (newts-m_last_timestamp > 9000) {
+  debugOutput(DEBUG_LEVEL_VERBOSE, "  returned %lld, prev=%lld, diff=%lld\n",
+    newts, m_last_timestamp, newts-m_last_timestamp);
+}
+//m_last_timestamp = CYCLE_TIMER_TO_TICKS(CYCLE_TIMER_SET_OFFSET(pkt_ctr, 3000));
+m_last_timestamp = newts;
+prevts = m_last_timestamp;
 
 if (rep == 0) {
   debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,
