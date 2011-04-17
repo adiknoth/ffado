@@ -65,8 +65,6 @@ RmeReceiveStreamProcessor::RmeReceiveStreamProcessor(FFADODevice &parent,
     , n_hw_tx_buffer_samples ( -1 )
     , m_rme_model( model )
     , m_event_size( event_size )
-    , rxdll_t1( 0 )
-    , rxdll_e2( 0 )
     , mb_head ( 0 )
     , mb_tail ( 0 )
 {
@@ -94,54 +92,26 @@ RmeReceiveStreamProcessor::getNominalFramesPerPacket() {
 
 bool
 RmeReceiveStreamProcessor::prepareChild() {
-    double w;
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this);
 
     // prepare the framerate estimate
     // FIXME: not needed anymore?
     //m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
 
-    // Initialise the "smoothing" DLL.  This is used to "smooth" the
-    // timestamp estimations derived from the arrival time of the packets. 
-    // The packet arrival time is the only possible source of sample
-    // timestamps for the RME devices and to fit in with the rest of FFADO
-    // it is necessary to synthesise something which looks remotely like a
-    // timestamp.  Unfortunately, because the RME (like most other
-    // interfaces) periodically skips a packet to permit the audio clock to
-    // stay roughly in sync with the cycle timer, the amount of jitter in
-    // the resulting timestamp estimate is very high.  Other FFADO objects
-    // which use the timestamp don't cope well with a high degree of jitter,
-    // so the "smoothing" DLL is used to eliminate most of this.
-    //
-    // rxdll_e2 is set to the expected period (in ticks).  The coefficients
-    // are set based on a specified bandwidth in Hz which has been
-    // determined experimentally.
-    rxdll_t1 = -1.0;
-    rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
-//w = (2*M_PI*0.004);
-w = (2*M_PI*0.0025);
-
-    rxdll_B = (sqrt(2.0)*w);
-    rxdll_C = (w*w);
-
-debugOutput( DEBUG_LEVEL_VERBOSE, "init: e2=%g, w=%g, B=%g, C=%g\n",
-  rxdll_e2, w, rxdll_B, rxdll_C);
-
     // Request that the iso streaming be started as soon as possible by the
     // kernel.
     m_IsoHandlerManager.setIsoStartCycleForStream(this, -1);
-// Because we drive the main DLL with another DLL, the bandwidth of the
-// main DLL must be fairly large so it can react quickly to changes and
-// therefore avoid drifting too far away from the "smoothing" DLL.  Again,
-// this value has been determined experimentally.
-//m_dll_bandwidth_hz = 10.0;
-//m_dll_bandwidth_hz = 3.0;
-////m_dll_bandwidth_hz = 1.0;
-m_dll_bandwidth_hz = 0.25;
-m_max_fs_diff_norm = 100.0;
-m_max_diff_ticks = 30720;
-m_data_buffer->setMaxAbsDiff(10000);
-m_Parent.getDeviceManager().getStreamProcessorManager().setMaxDiffTicks(30720);
+
+    // Because the timestamp DLL is driven by a very course and jittery
+    // approximation the default error detection and bandwidth settings are
+    // not appropriate.  Hense they are overridden, with the new values
+    // mostly determined experimentally.
+
+    m_dll_bandwidth_hz = 0.25;
+    m_max_fs_diff_norm = 100.0;
+    m_max_diff_ticks = 30720;
+    m_data_buffer->setMaxAbsDiff(10000);
+    m_Parent.getDeviceManager().getStreamProcessorManager().setMaxDiffTicks(30720);
 
     return true;
 }
@@ -155,15 +125,13 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
                                                 unsigned char tag, unsigned char sy,
                                                 uint32_t pkt_ctr)
 {
+  int64_t pkt_timestamp;
+
 // For testing
 static signed int rep = 0;
-static unsigned long long int prevts = 0;
-quadlet_t *adata = (quadlet_t *)data;
 if (rep == 0) {
-//  debugOutput(DEBUG_LEVEL_VERBOSE, "data packet header, len=%d\n", length);
-  fprintf(stderr, "first data packet header, len=%d\n", length);
+  debugOutput(DEBUG_LEVEL_VERBOSE, "first data packet header, len=%d\n", length);
 }
-//fprintf(stderr, "recv len=%d\n", length);
 
     if (length > 0) {
         // The iso data blocks from the RMEs comprise 24-bit audio
@@ -174,114 +142,53 @@ if (rep == 0) {
         // quadlet_t *quadlet = (quadlet_t *)data;
 
         // Don't even attempt to process a packet if it isn't what we expect
-        // from an RME.  For now the only condition seems to be a tag of 0.
-        // This will be fleshed out in due course.
+        // from an RME.  For now the only condition seems to be a tag of 0
+        // but this is still to be confirmed under all conditions.
 //        if (tag!=1) {
 //            return eCRV_Invalid;
 //        }
 
         // Timestamps are not transmitted explicitly by the RME interfaces
-        // so we'll have to fake it somehow in order to fit in with the rest
-        // of the FFADO infrastructure.  For now just take the packet
-        // arrival time as the "last timestamp" and feed it into a local
-        // DLL to "smooth over" the abrupt jumps which would otherwise be
-        // associated with a skipped iso cycle.  In practice there is a
-        // fixed offset that we'll have to include eventually.
-        uint64_t pkt_ctr_ticks = CYCLE_TIMER_TO_TICKS(pkt_ctr);
-//+        double e = pkt_ctr_ticks - rxdll_t1;
-//+        if (e < -64LL*TICKS_PER_SECOND)
-//+          e += 128LL*TICKS_PER_SECOND;
+        // so we have to fake it in order to fit in with the rest of the
+        // FFADO infrastructure.  The cycle timer at the time of the
+        // packet's arrival is taken as an approximation of the packet's
+        // timestamp.  The jitter in the resulting timestamp is of course
+        // extremely bad, which is why the DLL's default settings for
+        // error detection and bandwidth are overridden by prepareChild().
+        //
+        // The offset in the simulated timestamp is forced to a fixed
+        // constant value determined by experimentation for stability.  This
+        // is needed because sometimes the RME sends two packets within a
+        // few ticks of each other but in different cycles.  Being so close
+        // this stuffs up the rx DLL since the resulting instantaneous
+        // sample rate is extremely high.
+        //
+        // Finally the packet timestamp is "future dated" by a set number
+        // of cycles, determined experimentally to give the most reliable
+        // results.
 
-// Very large e values indicate a discontinuity in processing, possibly due
-// to an xrun.  In this case, reset the DLL to avoid long delays as it
-// resynchronises.
-//+if (abs(e) > 10000) {
-//+  rxdll_t1 = -1.0;
-//+  rxdll_e2 = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
-//+}
+        pkt_timestamp = CYCLE_TIMER_TO_TICKS(CYCLE_TIMER_SET_OFFSET(pkt_ctr, 
+                          0)) + 3*TICKS_PER_CYCLE;
+        if (pkt_timestamp < 0)
+          pkt_timestamp += 128LL*TICKS_PER_SECOND;
+        else
+        if (pkt_timestamp >= 128LL*TICKS_PER_SECOND)
+          pkt_timestamp -= 128LL*TICKS_PER_SECOND;
 
-int64_t newts=0;
-#if 0
-double p = m_last_timestamp;
-debugOutput(DEBUG_LEVEL_VERBOSE, "ts read: %lld, prev=%lld, diff=%lld\n", 
-  pkt_ctr_ticks, prevts, pkt_ctr_ticks-prevts);
-debugOutput(DEBUG_LEVEL_VERBOSE, "  rxdll_t1=%g\n", rxdll_t1);
-#endif
+        m_last_timestamp = pkt_timestamp;
 
-//+
-#if 0
-        if (rxdll_t1 < 0.0) {
-            signed int n_frames = length / m_event_size;
-            rxdll_e2 *= n_frames;
-            rxdll_t1 = pkt_ctr_ticks + rxdll_e2;
-newts = pkt_ctr_ticks - rxdll_e2 - (0*3072);
-if (newts < 0)
-  newts += 128LL*TICKS_PER_SECOND;
-m_data_buffer->setBufferTailTimestamp(newts);
-            newts = pkt_ctr_ticks;
-//debugOutput(DEBUG_LEVEL_VERBOSE, "  INIT\n");
-        } else {
-            newts = rxdll_t1;
-            rxdll_t1 += rxdll_B*e + rxdll_e2;
-//rxdll_t1 += rxdll_e2;
-            rxdll_e2 += rxdll_C*e;
-//newts = pkt_ctr_ticks;
-        }
-        if (rxdll_t1 >= 128LL*TICKS_PER_SECOND)
-            rxdll_t1 -= 128LL*TICKS_PER_SECOND;
-        if (rxdll_t1 < 0)
-            rxdll_t1 += 128LL*TICKS_PER_SECOND;
-
-//newts += (6.0/7.00)*rxdll_e2;
-//newts -= (0*3072);  // Make there be some sort of latency
-//newts = m_last_timestamp + rxdll_e2;
-//newts = pkt_ctr_ticks;
-#endif
-
-// Fix the offset in the simulated timestamp to a constant value determined
-// by experimentation for stability.  This is needed because sometimes the
-// RME sends two packets within a few ticks of each other but in different
-// cycles.  Being so close this stuffs up the rx DLL since the resulting
-// instantaneous sample rate is extremely high.
-newts = CYCLE_TIMER_TO_TICKS(CYCLE_TIMER_SET_OFFSET(pkt_ctr, 3050)) + 0*3072;
-if (newts < 0)
-  newts += 128LL*TICKS_PER_SECOND;
-else
-if (newts >= 128LL*TICKS_PER_SECOND)
-  newts -= 128LL*TICKS_PER_SECOND;
-#if 0
-// 3584
-if (newts-m_last_timestamp > 4000) {
-  debugOutput(DEBUG_LEVEL_VERBOSE, " **** \n");
-}
-debugOutput(DEBUG_LEVEL_VERBOSE, "  returned: %lld (e=%g) T=%g, f=%g rd=%lld\n", 
-  newts, e, rxdll_e2, 7.0/rxdll_e2*24576000, newts-pkt_ctr_ticks);
-debugOutput(DEBUG_LEVEL_VERBOSE, "    diff=%lld, f=%g\n",
-  newts-m_last_timestamp, 24576000/((newts-m_last_timestamp)/7.0));
-debugOutput(DEBUG_LEVEL_VERBOSE, "    ts read: %lld, prev=%lld, diff=%lld\n",
-  pkt_ctr_ticks, prevts, pkt_ctr_ticks-prevts);
-#endif
-//m_last_timestamp = newts;
-if (newts-m_last_timestamp > 9000) {
-  debugOutput(DEBUG_LEVEL_VERBOSE, "  returned %lld, prev=%lld, diff=%lld\n",
-    newts, m_last_timestamp, newts-m_last_timestamp);
-}
-//m_last_timestamp = CYCLE_TIMER_TO_TICKS(CYCLE_TIMER_SET_OFFSET(pkt_ctr, 3000));
-m_last_timestamp = newts;
-prevts = m_last_timestamp;
-
-if (rep == 0) {
-  debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,
-    CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
-  debugOutput(DEBUG_LEVEL_VERBOSE, "  %02x %02x %02x %02x %02x %02x %02x %02x\n",
-    adata[0] & 0xff, adata[1] & 0xff, adata[2] & 0xff, adata[3] & 0xff,
-    adata[4] & 0xff, adata[5] & 0xff, adata[6] & 0xff, adata[7] & 0xff);
-  debugOutput(DEBUG_LEVEL_VERBOSE, "  tx size=%d, rxcount=%d\n",
-    ((adata[5] & 0xff) << 8) | (adata[0] & 0xff),
-    ((adata[4] & 0xff) << 8) | (adata[1] & 0xff));
-  n_hw_tx_buffer_samples = adata[7] & 0xff;
-  debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%02x\n", n_hw_tx_buffer_samples);
-}
+//if (rep == 0) {
+//  debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,
+//    CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
+//  debugOutput(DEBUG_LEVEL_VERBOSE, "  %02x %02x %02x %02x %02x %02x %02x %02x\n",
+//    adata[0] & 0xff, adata[1] & 0xff, adata[2] & 0xff, adata[3] & 0xff,
+//    adata[4] & 0xff, adata[5] & 0xff, adata[6] & 0xff, adata[7] & 0xff);
+//  debugOutput(DEBUG_LEVEL_VERBOSE, "  tx size=%d, rxcount=%d\n",
+//    ((adata[5] & 0xff) << 8) | (adata[0] & 0xff),
+//    ((adata[4] & 0xff) << 8) | (adata[1] & 0xff));
+//  n_hw_tx_buffer_samples = adata[7] & 0xff;
+//  debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%02x\n", n_hw_tx_buffer_samples);
+//}
 rep=1;
         return eCRV_OK;
     } else {

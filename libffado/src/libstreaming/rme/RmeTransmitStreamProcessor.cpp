@@ -344,7 +344,7 @@ static signed int cx = 0;
 static signed int has_dryrun = 0;
 static signed int has_run = 0;
 
-    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04u, TSP=%011llu (%04u)\n",
+    debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04lu, TSP=%011llu (%04u)\n",
                 CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp, 
                 ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
 
@@ -368,66 +368,21 @@ static signed int has_run = 0;
     // presently a quick and dirty hack and will be revisited in due course
     // once a final control method has been established.
     if (has_run==0 && isDryRunning()) {
+        signed n_events = getNominalFramesPerPacket();
 //        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
-RmeReceiveStreamProcessor *rxsp = static_cast<Rme::Device *>
-  (&m_Parent)->getRxSP();
-{
-static signed int r=0;
-if (r==0) {
-debugOutput(DEBUG_LEVEL_VERBOSE, "tx timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n",
-  m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
-debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%08x\n", rxsp->n_hw_tx_buffer_samples);
-  r=1;
-}
-}
-#if 0
-debugOutput(DEBUG_LEVEL_VERBOSE, "tx timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n",
-  m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
-debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%08x\n", rxsp->n_hw_tx_buffer_samples);
-#endif
-//if (rxsp->n_hw_tx_buffer_samples < 0x38)
-has_dryrun = 1;
-#if 0
-if (rxsp->n_hw_tx_buffer_samples == -1) {
-  // Effectively delay a bit before starting to send packets
-  if (cx > 255) {
-    *length = getMaxPacketSize();
-  }
-  cx++;
-} else {
-  if (cx < 7) {
-        *length = getMaxPacketSize();
-    cx++;
-  } else
-    cx=0;
-}
-#else
-//if (cx > 255) {
-{
-  signed n_events = getNominalFramesPerPacket();
-//  if (cx < 255+64+10) {
-//  if (cx < 255+(128+12)*n_events) {
-  if (cx < (1)*n_events) {
-    cx += n_events;
-    *length = n_events * m_event_size;
-//m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
-//debugOutput(DEBUG_LEVEL_VERBOSE, "empty tx: %lld, ct=%08x (%03ld,%04ld,%04ld) len=%d\n",
-//  m_last_timestamp, pkt_ctr, CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr),
-//  *length);
-  }
-//m_last_timestamp = -1;
-}
-//} else
-//  cx++;
-#endif
-//debugOutput(DEBUG_LEVEL_VERBOSE, "  txsize=%d\n", *length);
-//m_last_timestamp = CYCLE_TIMER_TO_TICKS(pkt_ctr);
+
+        has_dryrun = 1;
+        if (cx < (1)*n_events) {
+            cx += n_events;
+            *length = n_events * m_event_size;
+        }
     }
 
-if (!isDryRunning() && has_dryrun==1)
-  has_run=1;
+    if (!isDryRunning() && has_dryrun==1)
+        has_run=1;
 
 //    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
+
     return eCRV_OK;
 }
 

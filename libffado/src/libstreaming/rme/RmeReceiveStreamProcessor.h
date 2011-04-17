@@ -93,13 +93,6 @@ private:
      */
     unsigned int m_event_size;
 
-    /* We implement a local DLL which can tolerate large jumps in its
-     * input in order to smooth the timestamps being passed to the master
-     * ffado DLL.
-     */
-    double rxdll_t1, rxdll_e2;
-    double rxdll_B, rxdll_C;
-
     /* A small MIDI buffer to cover for the case where we need to span a
      * period - that is, if more than one MIDI byte is sent per packet. 
      * Since the long-term average data rate must be close to the MIDI spec
