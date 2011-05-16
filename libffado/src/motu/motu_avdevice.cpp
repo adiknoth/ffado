@@ -1671,6 +1671,14 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
         m_receiveProcessor->setChannel(m_iso_recv_channel);
         m_transmitProcessor->setChannel(m_iso_send_channel);
 
+        /* Prior to setting up the streaming registers, other systems
+         * write seemingly fixed values to two registers of unknown
+         * purpose.  We'll do the same, at least until we know whether
+         * it's important that this be done.
+         */
+        WriteRegister(MOTU_G1_REG_UNKNOWN_1, 0xffc10001);
+        WriteRegister(MOTU_G1_REG_UNKNOWN_2, 0x00000000);
+
         /* First send the iso channels to the control register.  Note that
          * as for other MOTU devices bit 24 enables changes to the MOTU's
          * iso tx settings while bit 31 enables iso rx changes.
@@ -1947,6 +1955,11 @@ signed int MotuDevice::setOpticalMode(unsigned int dir,
         } else {
           g1_conf2 |= n_adat;
         }
+        /* This bit seems to always be set when the ADAT bits are configured.
+         * It may be a write enable bit.
+         */
+        g1_conf2 |= MOTU_G1_C2_OPT_nADAT_WREN;
+
         if (WriteRegister(MOTU_G1_REG_CONFIG, g1_conf1)!=0 ||
             WriteRegister(MOTU_G1_REG_CONFIG_2, g1_conf2)!=0)
             return -1;

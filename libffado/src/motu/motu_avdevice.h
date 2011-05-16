@@ -100,6 +100,8 @@
 
 /* Device register definitions for the earliest generation devices */
 #define MOTU_G1_REG_CONFIG         0x0b00
+#define MOTU_G1_REG_UNKNOWN_1      0x0b04  // Precise function unknown
+#define MOTU_G1_REG_UNKNOWN_2      0x0b08  // Precise function unknown
 #define MOTU_G1_REG_CONFIG_2       0x0b10
 
 /* Values written to registers in G1 devices.
@@ -124,6 +126,7 @@
 #define MOTU_G1_C1_ISO_INFO_MASK   0xffff0000
 #define MOTU_G1_C2_OPT_nADAT_IN    0x00000080
 #define MOTU_G1_C2_OPT_nADAT_OUT   0x00000040
+#define MOTU_G1_C2_OPT_nADAT_WREN  0x00000002 // Purpose to be confirmed
 
 #define MOTU_G1_RATE_MASK          0x0004
 #define MOTU_G1_RATE_44100         0x0000
