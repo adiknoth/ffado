@@ -224,6 +224,8 @@ class IsoHandlerManager
             enum EHandlerStates m_NextState;
             int m_switch_on_cycle;
 
+            pthread_mutex_t m_disable_lock;
+
         public:
             unsigned int    m_packets;
 #ifdef DEBUG

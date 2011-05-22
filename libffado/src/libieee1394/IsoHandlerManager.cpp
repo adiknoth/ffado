@@ -141,6 +141,19 @@ IsoHandlerManager::IsoTask::updateShadowMapHelper()
     max = m_manager.m_IsoHandlers.size();
     m_SyncIsoHandler = NULL;
     for (i = 0, cnt = 0; i < max; i++) {
+
+        // FIXME: This is a very crude guard against some other thread
+        // deleting handlers while this function is running.  While this
+        // didn't tend to happen with the old kernel firewire stack, delays
+        // in shutdown experienced in the new stack mean it can happen that
+        // a handler disappears during the running of this function.  This
+        // test should prevent "out of range" exceptions in most cases. 
+        // However, it is racy: if the deletion happens between this
+        // conditional and the following at() call, an out of range
+        // condition can still happen.
+        if (i>=m_manager.m_IsoHandlers.size())
+            continue;
+
         IsoHandler *h = m_manager.m_IsoHandlers.at(i);
         assert(h);
 
@@ -1237,6 +1250,7 @@ IsoHandlerManager::IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHand
    , m_min_ahead( 7999 )
 #endif
 {
+    pthread_mutex_init(&m_disable_lock, NULL);
 }
 
 IsoHandlerManager::IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, 
@@ -1298,12 +1312,25 @@ IsoHandlerManager::IsoHandler::~IsoHandler() {
 // confirmed present in libraw1394 1.2.1.  In any case,
 // raw1394_destroy_handle() will do any iso system shutdown required.
 //     raw1394_iso_shutdown(m_handle);
+
+// Typically, by the time this function is called the IsoTask thread would
+// have called disable() on the handler (in the FW_ISORCV/FW_ISOXMT
+// threads).  However, the raw1394_destroy_handle() call therein takes
+// upwards of 20 milliseconds to complete under the new kernel firewire
+// stack, and may not have completed by the time ~IsoHandler() is called by
+// the "jackd" thread.  Thus, wait for the lock before testing the state
+// of the handle so any in-progress disable() is complete.
+    if (pthread_mutex_trylock(&m_disable_lock) == EBUSY) {
+        pthread_mutex_lock(&m_disable_lock);
+        pthread_mutex_unlock(&m_disable_lock);
+    }
     if(m_handle) {
         if (m_State == eHS_Running) {
             debugError("BUG: Handler still running!\n");
             disable();
         }
     }
+    pthread_mutex_destroy(&m_disable_lock);
 }
 
 bool
@@ -1793,12 +1820,37 @@ IsoHandlerManager::IsoHandler::enable(int cycle)
 bool
 IsoHandlerManager::IsoHandler::disable()
 {
+    signed int i, have_lock = 0;
+
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) enter...\n", 
                  this, (m_type==eHT_Receive?"Receive":"Transmit"));
+
+    i = pthread_mutex_trylock(&m_disable_lock);
+    if (i == 0)
+        have_lock = 1;
+    else
+    if (i == EBUSY) {
+        // Some other thread is disabling this handler, a process which can
+        // take considerable time when using the new kernel firewire stack. 
+        // Wait until it is finished before returning so the present caller
+        // can act knowing that the disable has occurred and is complete
+        // (which is what normally would be expected).
+        debugOutput( DEBUG_LEVEL_VERBOSE, "waiting for disable lock\n");
+        pthread_mutex_lock(&m_disable_lock);
+        debugOutput( DEBUG_LEVEL_VERBOSE, "now have disable lock\n");
+        if (m_State == eHS_Stopped) {
+            debugOutput( DEBUG_LEVEL_VERBOSE, "another disable() has completed\n");
+            pthread_mutex_unlock(&m_disable_lock);
+            return true;
+        }
+        have_lock = 1;
+    }
 
     // check state
     if(m_State != eHS_Running) {
         debugError("Incorrect state, expected eHS_Running, got %d\n",(int)m_State);
+        if (have_lock)
+            pthread_mutex_unlock(&m_disable_lock);
         return false;
     }
 
@@ -1818,6 +1870,7 @@ IsoHandlerManager::IsoHandler::disable()
     }*/
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) stop...\n", 
                  this, (m_type==eHT_Receive?"Receive":"Transmit"));
+
     // stop iso traffic
     raw1394_iso_stop(m_handle);
     // deallocate resources
@@ -1827,11 +1880,18 @@ IsoHandlerManager::IsoHandler::disable()
     // confirmed present in libraw1394 1.2.1.
     raw1394_iso_shutdown(m_handle);
 
+    // When running on the new kernel firewire stack, this call can take of
+    // the order of 20 milliseconds to return, in which time other threads
+    // may wish to test the state of the handler and call this function
+    // themselves.  The m_disable_lock mutex is used to work around this.
     raw1394_destroy_handle(m_handle);
     m_handle = NULL;
 
     m_State = eHS_Stopped;
     m_NextState = eHS_Stopped;
+
+    if (have_lock)
+        pthread_mutex_unlock(&m_disable_lock);
     return true;
 }
 
