@@ -149,6 +149,15 @@ device_definitions = (
     mixer       = "EdirolFa101Control";
     xmit_max_cycles_early_transmit = 4;
 },
+{ # Added by Mark Brand (orania)
+    vendorid    = 0x000d6c;
+    modelid     = 0x0000000a;
+    vendorname  = "M-Audio";
+    modelname   = "Ozonic";
+    driver      = 1; # BeBoB
+    mixer       = "Ozonic";
+    xmit_max_cycles_early_transmit = 4;
+},
 {
     vendorid    = 0x000d6c;
     modelid     = 0x00010062;
