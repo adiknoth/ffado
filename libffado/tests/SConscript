@@ -68,6 +68,8 @@ if env['ENABLE_GENERICAVC']:
 		apps.update( { "test-scs" : "test-scs.cpp" } )
 	apps.update( { "test-volume" : "test-volume.cpp" } )
 	apps.update( { "test-enhanced-mixer" : "test-enhanced-mixer.cpp" } )
+	# MB: utility to unmute M-Audio Ozonic
+	apps.update( { "unmute-ozonic" : "unmute-ozonic.cpp" } )
 	apps.update( { "test-avccmd" : "test-avccmd.cpp" } )
 if env['ENABLE_FIREWORKS']:
 	apps.update( { "test-echomixer" : "test-echomixer.cpp" } )
