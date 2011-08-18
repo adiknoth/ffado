@@ -746,25 +746,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "*** stream init: %d, %d, %d\n",
         size = RME_FF800_STREAM_INIT_SIZE;
     }
 
-/*
-{signed int i;
-  printf("addr %016llx\n", addr);
-  for (i=0; i<5; i++)
-    printf("0x%08x ", buf[i]);
-  printf("\n");
-}
-
-readRegister(0xfffff000040cLL);
-readRegister(0xfffff000040cLL);
-readRegister(0xfffff000040cLL);
-*/
     return writeBlock(addr, buf, size);
-
-//  i = writeBlock(addr, buf, size);
-//  get_hardware_streaming_status(buf, 4);
-//printf(" - 0x%08x 0x%08x 0x%08x 0x%08x\n",
-//  buf[0], buf[1], buf[2], buf[3]);
-//  return i;
 }
 
 signed int
@@ -787,8 +769,6 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"*** starting: listen=%d, num_ch=%d\n", listen_c
             if (speed800)
                 data |= RME_FF800_STREAMING_SPEED_800; // Flag 800 Mbps speed
         }
-
-//readRegister(0x801c0000LL);
 
 printf("start 0x%016llx data: %08x\n", addr, data);
         ret = writeRegister(addr, data);
