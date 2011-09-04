@@ -62,7 +62,6 @@ Device::init_hardware(void)
     signed int src, dest;
     signed int n_channels = (m_rme_model==RME_MODEL_FIREFACE400)?
                    RME_FF400_MAX_CHANNELS:RME_FF800_MAX_CHANNELS;
-    signed int i;
 
     // Initialises the device's settings structure to a known state and then
     // sets the hardware to reflect this state.
@@ -112,8 +111,6 @@ Device::init_hardware(void)
                 ret = -1;
         }
 
-readRegister(0xfffff0000410LL);
-
         if (ret==0) {
             signed freq = dev_config->software_freq;
             if (dev_config->dds_freq > 0)
@@ -122,10 +119,6 @@ readRegister(0xfffff0000410LL);
                 ret = -1;
         }
 
-for (i=0;i<9;i++)
-  readRegister(0xfffff0000410LL);
-readRegister(0x801c0000LL);
-
         if (m_rme_model == RME_MODEL_FIREFACE400) {
             signed int i;
             for (i=FF400_AMPGAIN_MIC1; i<=FF400_AMPGAIN_INPUT4; i++) {
@@ -133,33 +126,18 @@ readRegister(0x801c0000LL);
             }
         }
 
-for (i=0;i<7;i++) {
-  set_hardware_ampgain(FF400_AMPGAIN_MIC1,0);
-  set_hardware_ampgain(FF400_AMPGAIN_MIC2,0);
-}
-readRegister(0xfffff0000404LL);
-readRegister(0x801c0000LL);
-readRegister(0xfffff0000410LL);
-readRegister(0x801c0000LL);
-readRegister(0xfffff0000410LL);
-readRegister(0xfffff000040cLL);
-readRegister(0xfffff000040cLL);
-
         // Matrix mixer settings
         for (dest=0; dest<n_channels; dest++) {
             for (src=0; src<n_channels; src++) {
                 set_hardware_mixergain(RME_FF_MM_INPUT, src, dest, 0);
-readRegister(0xfffff0000410LL);
             }
             for (src=0; src<n_channels; src++) {
                 set_hardware_mixergain(RME_FF_MM_PLAYBACK, src, dest, 
                   src==dest?0x8000:0);
-readRegister(0xfffff0000410LL);
             }
         }
         for (src=0; src<n_channels; src++) {
             set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, 0x8000);
-readRegister(0xfffff0000410LL);
         }
 
         set_hardware_output_rec(0);
@@ -770,9 +748,9 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"*** starting: listen=%d, num_ch=%d\n", listen_c
                 data |= RME_FF800_STREAMING_SPEED_800; // Flag 800 Mbps speed
         }
 
-printf("start 0x%016llx data: %08x\n", addr, data);
+debugOutput(DEBUG_LEVEL_VERBOSE, "start 0x%016llx data: %08x\n", addr, data);
         ret = writeRegister(addr, data);
-printf("  ret=%d\n", ret);
+debugOutput(DEBUG_LEVEL_VERBOSE, "  ret=%d\n", ret);
         if (ret == 0) {
             dev_config->is_streaming = 1;
         }

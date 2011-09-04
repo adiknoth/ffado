@@ -599,14 +599,11 @@ Device::prepare() {
                 debugFatal("error reading status register\n");
                 break;
             }
-{
-signed int j;
-printf("init stat: ");
-for (j=0;j<4;j++){
-  printf("%08x ", stat[j]);
-}
-printf("\n");
-}
+
+// FIXME: this can probably go once the driver matures.
+debugOutput(DEBUG_LEVEL_NORMAL, "init stat: %08x %08x %08x %08x\n",
+  stat[0], stat[1], stat[2], stat[3]);
+
             if (m_rme_model == RME_MODEL_FIREFACE400) {
                 iso_rx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
                 break;
@@ -859,18 +856,6 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
       /* ADAT ports start at offset 40 */
       addPort(s_processor, name, direction, 40+i*4, 0);
     }
-
-#if 0
-    // Just add a few ports for initial testing
-    snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_0");
-    addPort(s_processor, name, direction, 0, 0);
-    snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_1");
-    addPort(s_processor, name, direction, 4, 0);
-    snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_6");
-    addPort(s_processor, name, direction, 24, 0);
-    snprintf(name, sizeof(name), "%s_%s_%s", id.c_str(), mode_str, "port_7");
-    addPort(s_processor, name, direction, 28, 0);
-#endif
 
     return true;
 }

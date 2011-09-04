@@ -305,10 +305,8 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
 quadlet_t buf[4];
 signed int i;
   i = readBlock(RME_FF_STATUS_REG0, buf, 4);
-  fprintf(stderr, "Status read: %d\n", i);
-  for (i=0; i<4; i++)
-    fprintf(stderr,"0x%08x ", buf[i]);
-  fprintf(stderr,"\n");
+  debugOutput(DEBUG_LEVEL_NORMAL, "Status read: %d: 0x%08x 0x%08x 0x%08x 0x%08x\n", i,
+    buf[0], buf[1], buf[2], buf[3]);
 }
 
 #if 0
