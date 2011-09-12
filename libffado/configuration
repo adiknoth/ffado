@@ -528,5 +528,13 @@ device_definitions = (
    modelname	= "Flex-5000";
    driver	= 20;
    xmit_max_cycles_early_transmit = 4;
+},
+{ # Phonic HelixBoard 24 Universal (PHHB24U), provided by Steffen Klein
+   vendorid    = 0x001496;
+   modelid     = 0x000000;
+   vendorname  = "Phonic";
+   modelname   = "HB 24U";
+   driver      = 1; # BeBoB
+   xmit_max_cycles_early_transmit = 4;
 }
 );
