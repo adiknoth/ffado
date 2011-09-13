@@ -1277,6 +1277,7 @@ IsoHandlerManager::IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHand
    , m_min_ahead( 7999 )
 #endif
 {
+    pthread_mutex_init(&m_disable_lock, NULL);
 }
 
 IsoHandlerManager::IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHandlerType t, unsigned int buf_packets,
@@ -1304,6 +1305,7 @@ IsoHandlerManager::IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHand
    , m_min_ahead( 7999 )
 #endif
 {
+    pthread_mutex_init(&m_disable_lock, NULL);
 }
 
 IsoHandlerManager::IsoHandler::~IsoHandler() {
