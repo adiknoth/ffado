@@ -220,12 +220,12 @@ Unit::rediscoverConnections() {
     }
 
     if ( !discoverSubUnitsPlugConnections() ) {
-        debugError( "Detecting subunit plug connnections failed\n" );
+        debugError( "Detecting subunit plug connections failed\n" );
         return false;
     }
 
     if ( !m_pPlugManager->tidyPlugConnections(m_plugConnections) ) {
-        debugError( "Tidying of plug connnections failed\n" );
+        debugError( "Tidying of plug connections failed\n" );
         return false;
     }
     return true;

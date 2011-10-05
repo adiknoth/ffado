@@ -540,7 +540,7 @@ Plug::discoverConnectionsInput()
                                                    plugAddress,
                                                    m_inputConnections ) )
         {
-            debugWarning( "Could not discover connnections for plug '%s'\n",
+            debugWarning( "Could not discover connections for plug '%s'\n",
                           getName() );
         }
     } else {
@@ -603,7 +603,7 @@ Plug::discoverConnectionsOutput()
                                                        plugAddress,
                                                        m_outputConnections ) )
             {
-                debugWarning( "Could not discover connnections for "
+                debugWarning( "Could not discover connections for "
                               "plug '%s'\n", getName() );
             }
         }
