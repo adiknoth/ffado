@@ -378,7 +378,7 @@ bool StreamProcessorManager::prepare() {
     // if there are no stream processors registered,
     // fail
     if (m_ReceiveProcessors.size() + m_TransmitProcessors.size() == 0) {
-        debugFatal("No stream processors registered, can't do anything usefull\n");
+        debugFatal("No stream processors registered, can't do anything useful\n");
         return false;
     }
 
