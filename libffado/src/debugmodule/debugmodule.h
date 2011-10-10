@@ -282,8 +282,12 @@ void quadlet2char( fb_quadlet_t quadlet, unsigned char* buff );
 void hexDump( unsigned char *data_start, unsigned int length );
 void hexDumpQuadlets( quadlet_t *data_start, unsigned int length );
 
+class DebugModuleManager;
+
 class DebugModule {
 public:
+    friend class DebugModuleManager;
+
     enum {
         eDL_Message      = DEBUG_LEVEL_MESSAGE,
         eDL_Fatal        = DEBUG_LEVEL_FATAL,
@@ -332,6 +336,7 @@ protected:
 private:
     std::string   m_name;
     debug_level_t m_level;
+    DebugModuleManager* m_manager;
 };
 
 

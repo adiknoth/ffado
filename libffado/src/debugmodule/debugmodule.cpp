@@ -83,7 +83,8 @@ DebugModule::~DebugModule()
 //              << " at DebugModuleManager"
 //              << endl;
 //     }
-    if ( !DebugModuleManager::instance()->unregisterModule( *this ) ) {
+
+    if (m_manager && !m_manager->unregisterModule( *this ) ) {
         cerr << "Could not unregister DebugModule at DebugModuleManager"
              << endl;
     }
@@ -262,14 +263,11 @@ DebugModuleManager::DebugModuleManager()
 
 DebugModuleManager::~DebugModuleManager()
 {
-    // cleanin up leftover modules
-    for ( DebugModuleVectorIterator it = m_debugModules.begin();
-          it != m_debugModules.end();
-          ++it )
+    // cleaning up leftover modules
+    while (!m_debugModules.empty())
     {
-        fprintf(stderr,"Cleaning up leftover debug module: %s\n",(*it)->getName().c_str());
-        m_debugModules.erase( it );
-        delete *it;
+        DebugModule *mod = m_debugModules.back();
+        unregisterModule(*mod);
     }
 
     if (!mb_initialized)
@@ -454,6 +452,8 @@ DebugModuleManager::registerModule( DebugModule& debugModule )
             << "DebugModule (" << debugModule.getName() << ")" << endl;
     } else {
         m_debugModules.push_back( &debugModule );
+        if (debugModule.m_manager == NULL)
+                debugModule.m_manager = this;
     }
     return true;
 }
@@ -468,6 +468,8 @@ DebugModuleManager::unregisterModule( DebugModule& debugModule )
     {
         if ( *it == &debugModule ) {
             m_debugModules.erase( it );
+            if (debugModule.m_manager == this)
+                debugModule.m_manager = NULL;
             return true;
         }
     }
