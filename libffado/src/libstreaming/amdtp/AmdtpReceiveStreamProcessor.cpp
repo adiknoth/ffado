@@ -449,7 +449,7 @@ AmdtpReceiveStreamProcessor::decodeMidiPorts(quadlet_t *data,
                     midibuffer[mb_head++] = sample_int;
                     mb_head &= RX_MIDIBUFFER_SIZE-1;
                     if (unlikely(mb_head == mb_tail)) {
-                        debugWarning("MOTU rx MIDI buffer overflow\n");
+                        debugWarning("AMDTP rx MIDI buffer overflow\n");
                         /* Dump oldest byte.  This overflow can only happen if the
                          * rate coming in from the hardware MIDI port grossly
                          * exceeds the official MIDI baud rate of 31250 bps, so it
