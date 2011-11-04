@@ -1689,6 +1689,7 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
         isoctrl |= (m_iso_recv_channel << MOTU_G1_C1_ISO_TX_CH_BIT0);
         isoctrl |= (m_iso_send_channel << MOTU_G1_C1_ISO_RX_CH_BIT0);
         WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: first isoctrl: %x\n", isoctrl);
 
         /* With the channel details configured streaming is started.  This
          * could conceivably be done in a single write along with the channel
@@ -1697,6 +1698,10 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
         isoctrl &= ~MOTU_G1_C1_ISO_INFO_MASK;
         isoctrl |= MOTU_G1_C1_ISO_ENABLE;
         WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
+
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: final isoctrl: %x\n", isoctrl);
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: 0b00 reg: %x\n",
+  ReadRegister(MOTU_G1_REG_CONFIG_2));
 
         return true;
     }
