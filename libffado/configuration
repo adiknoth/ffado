@@ -67,6 +67,13 @@ device_definitions = (
     mixer       = "Presonus_Experimental";
     xmit_max_cycles_early_transmit = 4;
 },
+{ # Entry for Firestudio mobile provided by "Pule" via the forums.
+    vendorid    = 0x000a92;
+    modelid     = 0x00000011;
+    vendorname  = "PreSonus";
+    modelname   = "Firestudio Mobile";
+    driver      = 20;
+},
 {
     vendorid    = 0x000aac;
     modelid     = 0x00000003;
