@@ -174,4 +174,11 @@ Device::setAmpGain(unsigned int index, signed int val) {
     return set_hardware_ampgain(index, val);
 }
 
+signed int
+Device::setMixerGain(unsigned int ctype, 
+    unsigned int src_channel, unsigned int dest_channel, signed int val) {
+
+    return set_hardware_mixergain(ctype, src_channel, dest_channel, val);
+}
+
 }

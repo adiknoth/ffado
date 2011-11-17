@@ -54,6 +54,9 @@ namespace Rme {
 /* Control types for an RmeSettingsMatrixCtrl object */
 #define RME_MATRIXCTRL_NONE            0x0000
 #define RME_MATRIXCTRL_GAINS           0x0001
+#define RME_MATRIXCTRL_INPUT_FADER     0x0002
+#define RME_MATRIXCTRL_PLAYBACK_FADER  0x0003
+#define RME_MATRIXCTRL_OUTPUT_FADER    0x0004
 
 class Device;
 

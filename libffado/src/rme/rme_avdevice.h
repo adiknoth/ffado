@@ -117,6 +117,8 @@ public:
     signed int setInputInstrOpt(unsigned int channel, unsigned int status);
     signed int getAmpGain(unsigned int index);
     signed int setAmpGain(unsigned int index, signed int val);
+    signed int setMixerGain(unsigned int ctype, 
+        unsigned int src_channel, unsigned int dest_channel, signed int val);
 
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }

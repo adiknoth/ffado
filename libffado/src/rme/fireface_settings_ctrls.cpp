@@ -21,6 +21,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+#include <math.h>
+
 #include "rme/rme_avdevice.h"
 #include "rme/fireface_settings_ctrls.h"
 
@@ -223,6 +225,16 @@ int RmeSettingsMatrixCtrl::getRowCount()
             if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400)
                 return 1;
             break;
+        case RME_MATRIXCTRL_INPUT_FADER:
+        case RME_MATRIXCTRL_PLAYBACK_FADER:
+            if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400)
+                return RME_FF400_MAX_CHANNELS;
+            else
+                return RME_FF800_MAX_CHANNELS;
+            break;
+        case RME_MATRIXCTRL_OUTPUT_FADER:
+            return 1;
+            break;
     }
 
     return 0;
@@ -235,9 +247,25 @@ int RmeSettingsMatrixCtrl::getColCount()
             if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400)
                 return 22;
             break;
+        case RME_MATRIXCTRL_INPUT_FADER:
+        case RME_MATRIXCTRL_PLAYBACK_FADER:
+        case RME_MATRIXCTRL_OUTPUT_FADER:
+            if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400)
+                return RME_FF400_MAX_CHANNELS;
+            else
+                return RME_FF800_MAX_CHANNELS;
+            break;
     }
 
     return 0;
+}
+
+static signed int dB_to_mixerval(const double dB) 
+{
+  /* dB values less than -90 are taken as "mute" */
+  if (dB < -90)
+    return 0;
+  return 32768 * exp10(dB/20.0);
 }
 
 double RmeSettingsMatrixCtrl::setValue(const int row, const int col, const double val) 
@@ -253,10 +281,32 @@ double RmeSettingsMatrixCtrl::setValue(const int row, const int col, const doubl
             else
                 ret = -1;
             break;
+        case RME_MATRIXCTRL_INPUT_FADER:
+          return m_parent.setMixerGain(RME_FF_MM_INPUT, col, row, 
+                     dB_to_mixerval(val));
+          break;
+        case RME_MATRIXCTRL_PLAYBACK_FADER:
+          return m_parent.setMixerGain(RME_FF_MM_PLAYBACK, col, row, 
+                     dB_to_mixerval(val));
+          break;
+        case RME_MATRIXCTRL_OUTPUT_FADER:
+          return m_parent.setMixerGain(RME_FF_MM_OUTPUT, col, row, 
+                     dB_to_mixerval(val));
+          break;
     }
 
     return ret;
 }
+
+#if 0
+static double mixerval_to_dB(const signed int val) 
+{
+  /* Map "mute" to -91 dB */
+  if (val == 0) 
+    return -91.0;
+  return 20 * log10(val/32768.0);
+}
+#endif
 
 double RmeSettingsMatrixCtrl::getValue(const int row, const int col) 
 {
@@ -265,6 +315,12 @@ double RmeSettingsMatrixCtrl::getValue(const int row, const int col)
         case RME_MATRIXCTRL_GAINS:
             val = m_parent.getAmpGain(col);
             break;
+        case RME_MATRIXCTRL_INPUT_FADER:
+          break;
+        case RME_MATRIXCTRL_PLAYBACK_FADER:
+          break;
+        case RME_MATRIXCTRL_OUTPUT_FADER:
+          break;
     }
 
     return val;
