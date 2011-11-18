@@ -184,14 +184,29 @@ Device::buildMixer() {
             new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_GAINS, "Gains"));
     }
 
-    if (!result) {
-        debugWarning("One or more device control elements could not be created\n");
+    /* Mixer controls */
+    m_MixerContainer = new Control::Container(this, "Mixer");
+    if (!m_MixerContainer) {
+        debugError("Could not create mixer container\n");
         destroyMixer();
         return false;
     }
 
-    if (!addElement(m_ControlContainer)) {
-        debugWarning("Could not register mixer to device\n");
+    result &= m_MixerContainer->addElement(
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_INPUT_FADER, "Input faders"));
+    result &= m_MixerContainer->addElement(
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_PLAYBACK_FADER, "Playback faders"));
+    result &= m_MixerContainer->addElement(
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_OUTPUT_FADER, "Output faders"));
+
+    if (!result) {
+        debugWarning("One or more device control/mixer elements could not be created\n");
+        destroyMixer();
+        return false;
+    }
+
+    if (!addElement(m_ControlContainer) || !addElement(m_MixerContainer)) {
+        debugWarning("Could not register controls/mixer to device\n");
         // clean up
         destroyMixer();
         return false;

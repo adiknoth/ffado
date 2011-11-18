@@ -129,14 +129,18 @@ Device::init_hardware(void)
         // Matrix mixer settings
         for (dest=0; dest<n_channels; dest++) {
             for (src=0; src<n_channels; src++) {
+                settings->input_faders[getMixerGainIndex(src, dest)] = 0;
                 set_hardware_mixergain(RME_FF_MM_INPUT, src, dest, 0);
             }
             for (src=0; src<n_channels; src++) {
+                settings->playback_faders[getMixerGainIndex(src, dest)] =
+                  src==dest?0x8000:0;
                 set_hardware_mixergain(RME_FF_MM_PLAYBACK, src, dest, 
                   src==dest?0x8000:0);
             }
         }
         for (src=0; src<n_channels; src++) {
+            settings->output_faders[src] = 0x8000;
             set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, 0x8000);
         }
 

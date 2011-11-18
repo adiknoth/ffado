@@ -429,6 +429,8 @@ typedef struct {
 #define FF_DEV_FLASH_PLUG_SELECT_FRONT         0x00000001  // To be confirmed
 #define FF_DEV_FLASH_PLUG_SELECT_REAR          0x00000000  // To be confirmed
 
+#define FF_MATRIXMIXER_SIZE (RME_FF800_MAX_CHANNELS*RME_FF800_MAX_CHANNELS)
+
 // Structure used by FFADO to keep track of the device status.  This is
 // decoupled from any structures used directly by the device, so it can be
 // added to and ordered freely.  When making changes to the device the
@@ -460,6 +462,9 @@ typedef struct {
 
     // Other "settings" fields which are not necessarily stored in device flash
     int32_t amp_gains[22];             // FF400: gains of input/output amps
+    int32_t input_faders[FF_MATRIXMIXER_SIZE];
+    int32_t playback_faders[FF_MATRIXMIXER_SIZE];
+    int32_t output_faders[RME_FF800_MAX_CHANNELS];
 } FF_software_settings_t;
 
 // Defines used to interpret the software settings structure.  For now we

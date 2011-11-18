@@ -298,7 +298,6 @@ double RmeSettingsMatrixCtrl::setValue(const int row, const int col, const doubl
     return ret;
 }
 
-#if 0
 static double mixerval_to_dB(const signed int val) 
 {
   /* Map "mute" to -91 dB */
@@ -306,7 +305,6 @@ static double mixerval_to_dB(const signed int val)
     return -91.0;
   return 20 * log10(val/32768.0);
 }
-#endif
 
 double RmeSettingsMatrixCtrl::getValue(const int row, const int col) 
 {
@@ -316,11 +314,14 @@ double RmeSettingsMatrixCtrl::getValue(const int row, const int col)
             val = m_parent.getAmpGain(col);
             break;
         case RME_MATRIXCTRL_INPUT_FADER:
-          break;
+            val = mixerval_to_dB(m_parent.getMixerGain(RME_FF_MM_INPUT, col, row));
+            break;
         case RME_MATRIXCTRL_PLAYBACK_FADER:
-          break;
+            val = mixerval_to_dB(m_parent.getMixerGain(RME_FF_MM_PLAYBACK, col, row));
+            break;
         case RME_MATRIXCTRL_OUTPUT_FADER:
-          break;
+            val = mixerval_to_dB(m_parent.getMixerGain(RME_FF_MM_OUTPUT, col, row));
+            break;
     }
 
     return val;

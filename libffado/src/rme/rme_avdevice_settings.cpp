@@ -175,9 +175,45 @@ Device::setAmpGain(unsigned int index, signed int val) {
 }
 
 signed int
+Device::getMixerGainIndex(unsigned int src_channel, unsigned int dest_channel) {
+    return dest_channel*RME_FF800_MAX_CHANNELS + src_channel;
+}
+
+signed int
+Device::getMixerGain(unsigned int ctype,
+    unsigned int src_channel, unsigned int dest_channel) {
+
+    signed int idx = getMixerGainIndex(src_channel, dest_channel);
+    switch (ctype) {
+        case RME_FF_MM_INPUT:
+            return settings->input_faders[idx];
+            break;
+        case RME_FF_MM_PLAYBACK:
+            return settings->playback_faders[idx];
+            break;
+        case RME_FF_MM_OUTPUT:
+            return settings->output_faders[src_channel];
+            break;
+    }
+    return 0;
+}
+
+signed int
 Device::setMixerGain(unsigned int ctype, 
     unsigned int src_channel, unsigned int dest_channel, signed int val) {
 
+    signed int idx = getMixerGainIndex(src_channel, dest_channel);
+    switch (ctype) {
+        case RME_FF_MM_INPUT:
+            settings->input_faders[idx] = val;
+            break;
+        case RME_FF_MM_PLAYBACK:
+            settings->playback_faders[idx] = val;
+            break;
+        case RME_FF_MM_OUTPUT:
+            settings->output_faders[src_channel] = val;
+            break;
+    }
     return set_hardware_mixergain(ctype, src_channel, dest_channel, val);
 }
 

@@ -117,6 +117,8 @@ public:
     signed int setInputInstrOpt(unsigned int channel, unsigned int status);
     signed int getAmpGain(unsigned int index);
     signed int setAmpGain(unsigned int index, signed int val);
+    signed int getMixerGain(unsigned int ctype,
+        unsigned int src_channel, unsigned int dest_channel);
     signed int setMixerGain(unsigned int ctype, 
         unsigned int src_channel, unsigned int dest_channel, signed int val);
 
@@ -192,6 +194,8 @@ private:
 
     signed int set_hardware_channel_mute(signed int mute);
     signed int set_hardware_output_rec(signed int rec);
+
+    signed int getMixerGainIndex(unsigned int src_channel, unsigned int dest_channel);
 
     Control::Container *m_MixerContainer;
     Control::Container *m_ControlContainer;
