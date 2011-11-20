@@ -193,11 +193,11 @@ Device::buildMixer() {
     }
 
     result &= m_MixerContainer->addElement(
-        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_INPUT_FADER, "Input faders"));
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_INPUT_FADER, "InputFaders"));
     result &= m_MixerContainer->addElement(
-        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_PLAYBACK_FADER, "Playback faders"));
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_PLAYBACK_FADER, "PlaybackFaders"));
     result &= m_MixerContainer->addElement(
-        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_OUTPUT_FADER, "Output faders"));
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_OUTPUT_FADER, "OutputFaders"));
 
     if (!result) {
         debugWarning("One or more device control/mixer elements could not be created\n");

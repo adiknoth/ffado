@@ -20,9 +20,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from PyQt4 import QtGui
+
 from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
 from PyQt4.QtGui import QWidget, QApplication
 from ffado.config import *
+
+from ffado.widgets.matrixmixer import MatrixMixer
 
 import logging
 log = logging.getLogger('rme')
@@ -118,6 +122,14 @@ class Rme(QWidget):
         widget.setEnabled(False)
 
     def initValues(self):
+
+        # Initial experiments with the MatrixMixer widget
+        # print self.hw.servername
+        # print self.hw.basepath
+        # self.inputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/InputFaders", self)
+        # self.mbox = QtGui.QVBoxLayout(self.mixer)
+        # self.mbox.addWidget(self.inputmatrix)
+
         # Is the device streaming?
         #self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
         self.is_streaming = 0
