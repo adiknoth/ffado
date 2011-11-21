@@ -54,15 +54,17 @@ class ColorForNumber:
                 (1-f)*lc.blue()  + f*hc.blue() )
 
 class MixerNode(QtGui.QAbstractSlider):
-    def __init__(self, input, output, value, parent):
+    def __init__(self, input, output, value, max, parent):
         QtGui.QAbstractSlider.__init__(self, parent)
-        #log.debug("MixerNode.__init__( %i, %i, %i, %s )" % (input, output, value, str(parent)) )
+        #log.debug("MixerNode.__init__( %i, %i, %i, %i, %s )" % (input, output, value, max, str(parent)) )
 
         self.pos = QtCore.QPointF(0, 0)
         self.input = input
         self.output = output
         self.setOrientation(Qt.Qt.Vertical)
-        self.setRange(0, pow(2, 16)-1)
+        if max == -1:
+            max = pow(2, 16)-1
+        self.setRange(0, max)
         self.setValue(value)
         self.connect(self, QtCore.SIGNAL("valueChanged(int)"), self.internalValueChanged)
 
@@ -198,7 +200,7 @@ class MixerChannel(QtGui.QWidget):
 
 
 class MatrixMixer(QtGui.QWidget):
-    def __init__(self, servername, basepath, parent=None):
+    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1):
         QtGui.QWidget.__init__(self, parent)
         self.bus = dbus.SessionBus()
         self.dev = self.bus.get_object(servername, basepath)
@@ -235,7 +237,7 @@ class MatrixMixer(QtGui.QWidget):
         for i in range(rows):
             self.items.append([])
             for j in range(cols):
-                node = MixerNode(j, i, self.interface.getValue(i,j), self)
+                node = MixerNode(j, i, self.interface.getValue(i,j), sliderMaxValue, self)
                 self.connect(node, QtCore.SIGNAL("valueChanged"), self.valueChanged)
                 layout.addWidget(node, i+1, j+1)
                 self.items[i].append(node)
@@ -269,7 +271,6 @@ class MatrixMixer(QtGui.QWidget):
     def valueChanged(self, n):
         #log.debug("MatrixNode.valueChanged( %s )" % str(n))
         self.interface.setValue(n[1], n[0], n[2])
-
 
 #
 # vim: et ts=4 sw=4 fileencoding=utf8

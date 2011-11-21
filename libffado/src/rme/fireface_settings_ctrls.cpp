@@ -207,14 +207,34 @@ void RmeSettingsMatrixCtrl::show()
 std::string RmeSettingsMatrixCtrl::getRowName(const int row)
 {
     char buf[64];
-    snprintf(buf, sizeof(buf), "RmeSettingsMatrixCtrl type %d, row %d", m_type, row);
+    if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400) {
+        if (row >= 10)
+            snprintf(buf, sizeof(buf), "ADAT %d", row-9);
+        else
+        if (row >= 8)
+            snprintf(buf, sizeof(buf), "SPDIF %d", row-7);
+        else
+            snprintf(buf, sizeof(buf), "Ana %d", row+1);
+    } else {
+        snprintf(buf, sizeof(buf), "row %d", row);
+    }
     return buf;
 }
 
 std::string RmeSettingsMatrixCtrl::getColName(const int col)
 {
     char buf[64];
-    snprintf(buf, sizeof(buf), "RmeSettingsMatrixCtrl type %d, column %d", m_type, col);
+    if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400) {
+        if (col >= 10)
+            snprintf(buf, sizeof(buf), "ADAT %d", col-9);
+        else
+        if (col >= 8)
+            snprintf(buf, sizeof(buf), "SPDIF %d", col-7);
+        else
+            snprintf(buf, sizeof(buf), "Ana %d", col+1);
+    } else {
+        snprintf(buf, sizeof(buf), "col %d", col);
+    }
     return buf;
 }
 
@@ -260,14 +280,6 @@ int RmeSettingsMatrixCtrl::getColCount()
     return 0;
 }
 
-static signed int dB_to_mixerval(const double dB) 
-{
-  /* dB values less than -90 are taken as "mute" */
-  if (dB < -90)
-    return 0;
-  return 32768 * exp10(dB/20.0);
-}
-
 double RmeSettingsMatrixCtrl::setValue(const int row, const int col, const double val) 
 {
     signed int ret = true;
@@ -282,28 +294,17 @@ double RmeSettingsMatrixCtrl::setValue(const int row, const int col, const doubl
                 ret = -1;
             break;
         case RME_MATRIXCTRL_INPUT_FADER:
-          return m_parent.setMixerGain(RME_FF_MM_INPUT, col, row, 
-                     dB_to_mixerval(val));
+          return m_parent.setMixerGain(RME_FF_MM_INPUT, col, row, val);
           break;
         case RME_MATRIXCTRL_PLAYBACK_FADER:
-          return m_parent.setMixerGain(RME_FF_MM_PLAYBACK, col, row, 
-                     dB_to_mixerval(val));
+          return m_parent.setMixerGain(RME_FF_MM_PLAYBACK, col, row, val);
           break;
         case RME_MATRIXCTRL_OUTPUT_FADER:
-          return m_parent.setMixerGain(RME_FF_MM_OUTPUT, col, row, 
-                     dB_to_mixerval(val));
+          return m_parent.setMixerGain(RME_FF_MM_OUTPUT, col, row, val);
           break;
     }
 
     return ret;
-}
-
-static double mixerval_to_dB(const signed int val) 
-{
-  /* Map "mute" to -91 dB */
-  if (val == 0) 
-    return -91.0;
-  return 20 * log10(val/32768.0);
 }
 
 double RmeSettingsMatrixCtrl::getValue(const int row, const int col) 
@@ -314,13 +315,13 @@ double RmeSettingsMatrixCtrl::getValue(const int row, const int col)
             val = m_parent.getAmpGain(col);
             break;
         case RME_MATRIXCTRL_INPUT_FADER:
-            val = mixerval_to_dB(m_parent.getMixerGain(RME_FF_MM_INPUT, col, row));
+            val = m_parent.getMixerGain(RME_FF_MM_INPUT, col, row);
             break;
         case RME_MATRIXCTRL_PLAYBACK_FADER:
-            val = mixerval_to_dB(m_parent.getMixerGain(RME_FF_MM_PLAYBACK, col, row));
+            val = m_parent.getMixerGain(RME_FF_MM_PLAYBACK, col, row);
             break;
         case RME_MATRIXCTRL_OUTPUT_FADER:
-            val = mixerval_to_dB(m_parent.getMixerGain(RME_FF_MM_OUTPUT, col, row));
+            val = m_parent.getMixerGain(RME_FF_MM_OUTPUT, col, row);
             break;
     }
 

@@ -1090,7 +1090,7 @@
      </widget>
      <widget class="QWidget" name="mixer" >
       <attribute name="title" >
-       <string>Mixer</string>
+       <string>Input mixer</string>
       </attribute>
      </widget>
     </widget>

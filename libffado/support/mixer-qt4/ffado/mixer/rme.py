@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009 by Jonathan Woithe
+# Copyright (C) 2009, 2011 by Jonathan Woithe
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -123,12 +123,15 @@ class Rme(QWidget):
 
     def initValues(self):
 
-        # Initial experiments with the MatrixMixer widget
         # print self.hw.servername
         # print self.hw.basepath
-        # self.inputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/InputFaders", self)
-        # self.mbox = QtGui.QVBoxLayout(self.mixer)
-        # self.mbox.addWidget(self.inputmatrix)
+        self.inputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/InputFaders", self, 0x8000)
+        layout = QtGui.QVBoxLayout()
+        scrollarea = QtGui.QScrollArea()
+        scrollarea.setWidgetResizable(True)
+        scrollarea.setWidget(self.inputmatrix)
+        layout.addWidget(scrollarea)
+        self.mixer.setLayout(layout)
 
         # Is the device streaming?
         #self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
