@@ -193,7 +193,7 @@ class MixerChannel(QtGui.QWidget):
         if hide:
             self.lbl.setText("%i" % self.number);
         else:
-            self.lbl.setText("Ch. %i%s" % (self.number, self.name))
+            self.lbl.setText("Ch. %i%s" % (self.number+1, self.name))
         self.emit(QtCore.SIGNAL("hide"), self.number, hide)
         self.update()
 
