@@ -121,6 +121,10 @@ public:
         unsigned int src_channel, unsigned int dest_channel);
     signed int setMixerGain(unsigned int ctype, 
         unsigned int src_channel, unsigned int dest_channel, signed int val);
+    signed int getMixerFlags(unsigned int ctype,
+        unsigned int src_channel, unsigned int dest_channel, unsigned int flagmask);
+    signed int setMixerFlags(unsigned int ctype,
+        unsigned int src_channel, unsigned int dest_channel, unsigned int flagmask, signed int val);
 
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }

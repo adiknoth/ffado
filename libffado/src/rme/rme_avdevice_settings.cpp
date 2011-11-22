@@ -202,19 +202,88 @@ signed int
 Device::setMixerGain(unsigned int ctype, 
     unsigned int src_channel, unsigned int dest_channel, signed int val) {
 
+    unsigned char *mixerflags = NULL;
     signed int idx = getMixerGainIndex(src_channel, dest_channel);
     switch (ctype) {
         case RME_FF_MM_INPUT:
             settings->input_faders[idx] = val;
+            mixerflags = settings->input_mixerflags;
             break;
         case RME_FF_MM_PLAYBACK:
             settings->playback_faders[idx] = val;
+            mixerflags = settings->playback_mixerflags;
             break;
         case RME_FF_MM_OUTPUT:
             settings->output_faders[src_channel] = val;
             break;
     }
+
+    // If the matrix channel is muted, override the fader value and 
+    // set it to zero.  Note that this is different to the hardware
+    // mute control dealt with by set_hardware_channel_mute(); the
+    // latter deals with muting the output channels.
+    if (mixerflags!=NULL && (mixerflags[idx] & FF_SWPARAM_MF_MUTED)!=0) {
+        val = 0;
+    }
+
+    // Phase inversion is effected by sending a negative volume to the
+    // hardware.  However, when transitioning from 0 (-inf dB) to -1 (-90
+    // dB), the hardware seems to first send the volume up to a much higher
+    // level before it drops down to the set point after about a tenth of a
+    // second (this also seems to be the case when switching between
+    // inversion modes).  To work around this for the moment (at least until
+    // it's understood, silently map a value of 0 to -1 when phase inversion
+    // is active.
+    if (mixerflags!=NULL && (mixerflags[idx] & FF_SWPARAM_MF_INVERTED)!=0) {
+        if (val == 0)
+            val = 1;
+        val = -val;
+    }
+
     return set_hardware_mixergain(ctype, src_channel, dest_channel, val);
+}
+
+signed int
+Device::getMixerFlags(unsigned int ctype,
+    unsigned int src_channel, unsigned int dest_channel, unsigned int flagmask) {
+
+    unsigned char *mixerflags = NULL;
+    signed int idx = getMixerGainIndex(src_channel, dest_channel);
+    if (ctype == RME_FF_MM_OUTPUT)
+        return 0;
+    if (ctype == RME_FF_MM_INPUT)
+        mixerflags = settings->input_mixerflags;
+    else
+        mixerflags = settings->playback_mixerflags;
+
+    return mixerflags[idx] & flagmask;
+}
+
+signed int
+Device::setMixerFlags(unsigned int ctype,
+    unsigned int src_channel, unsigned int dest_channel, 
+    unsigned int flagmask, signed int val) {
+
+    unsigned char *mixerflags = NULL;
+    signed int idx = getMixerGainIndex(src_channel, dest_channel);
+    if (ctype == RME_FF_MM_OUTPUT)
+        return 0;
+    if (ctype == RME_FF_MM_INPUT)
+        mixerflags = settings->input_mixerflags;
+    else
+        mixerflags = settings->playback_mixerflags;
+
+    if (val == 0)
+        mixerflags[idx] &= ~flagmask;
+    else
+        mixerflags[idx] |= flagmask;
+
+    if (flagmask & (FF_SWPARAM_MF_MUTED|FF_SWPARAM_MF_INVERTED)) {
+        // Mixer channel muting/inversion is handled via the gain control
+        return setMixerGain(ctype, src_channel, dest_channel, 
+            getMixerGain(ctype, src_channel, dest_channel));
+    }
+    return 0;
 }
 
 }

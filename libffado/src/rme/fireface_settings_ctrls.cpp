@@ -209,12 +209,15 @@ std::string RmeSettingsMatrixCtrl::getRowName(const int row)
     char buf[64];
     if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400) {
         if (row >= 10)
-            snprintf(buf, sizeof(buf), "ADAT %d", row-9);
+            snprintf(buf, sizeof(buf), "ADAT out %d", row-9);
         else
         if (row >= 8)
-            snprintf(buf, sizeof(buf), "SPDIF %d", row-7);
+            snprintf(buf, sizeof(buf), "SPDIF out %d", row-7);
         else
-            snprintf(buf, sizeof(buf), "Ana %d", row+1);
+        if (row >= 6)
+            snprintf(buf, sizeof(buf), "Mon out %d", row+1);
+        else
+            snprintf(buf, sizeof(buf), "Line out %d", row+1);
     } else {
         snprintf(buf, sizeof(buf), "row %d", row);
     }
@@ -224,14 +227,22 @@ std::string RmeSettingsMatrixCtrl::getRowName(const int row)
 std::string RmeSettingsMatrixCtrl::getColName(const int col)
 {
     char buf[64];
+    if (m_type == RME_MATRIXCTRL_PLAYBACK_FADER)
+        return "";
     if (m_parent.getRmeModel() == RME_MODEL_FIREFACE400) {
         if (col >= 10)
-            snprintf(buf, sizeof(buf), "ADAT %d", col-9);
+            snprintf(buf, sizeof(buf), "ADAT in %d", col-9);
         else
         if (col >= 8)
-            snprintf(buf, sizeof(buf), "SPDIF %d", col-7);
+            snprintf(buf, sizeof(buf), "SPDIF in %d", col-7);
         else
-            snprintf(buf, sizeof(buf), "Ana %d", col+1);
+        if (col >= 4)
+            snprintf(buf, sizeof(buf), "Line in %d", col+1);
+        else
+        if (col >= 2)
+            snprintf(buf, sizeof(buf), "Inst/line %d", col+1);
+        else
+            snprintf(buf, sizeof(buf), "Mic/line %d", col+1);
     } else {
         snprintf(buf, sizeof(buf), "col %d", col);
     }

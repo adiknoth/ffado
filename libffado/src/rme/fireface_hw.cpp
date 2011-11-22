@@ -879,6 +879,7 @@ Device::set_hardware_mixergain(unsigned int ctype, unsigned int src_channel,
             ram_addr += 0x0f80 + 4*src_channel;
             break;
     }
+
     writeRegister(ram_addr, val);
 
     // If setting the output volume and the device is the FF400, keep
