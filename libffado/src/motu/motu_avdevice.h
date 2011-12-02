@@ -128,33 +128,45 @@
 #define MOTU_G1_C2_OPT_nADAT_OUT   0x00000040
 #define MOTU_G1_C2_OPT_nADAT_WREN  0x00000002 // Purpose to be confirmed
 
+// Rate control bits in MOTU_G1_REG_CONFIG
 #define MOTU_G1_RATE_MASK          0x0004
 #define MOTU_G1_RATE_44100         0x0000
 #define MOTU_G1_RATE_48000         0x0004
 
+// Clock source control bits in MOTU_G1_REG_CONFIG
 #define MOTU_G1_CLKSRC_MASK        0x0003
 #define MOTU_G1_CLKSRC_INTERNAL    0x0000
 #define MOTU_G1_CLKSRC_ADAT_9PIN   0x0001
 #define MOTU_G1_CLKSRC_SPDIF       0x0002
 #define MOTU_G1_CLKSRC_UNCHANGED   MOTU_CLKSRC_UNCHANGED
 
+// Monitor control bits in MOTU_G1_REG_CONFIG
+#define MOTU_G1_MONIN_MUTE         0x0040  // To be confirmed
 #define MOTU_G1_MONIN_MASK         0x3f00
-#define MOTU_G1_MONIN_L_SRC_MASK   0x0600
-#define MOTU_G1_MONIN_R_SRC_MASK   0x3000
-#define MOTU_G1_MONIN_L_MUTE_MASK  0x0100  // Yes, the sense of these 2 bits
-#define MOTU_G1_MONIN_R_EN_MASK    0x0800  //   really are reversed
-#define MOTU_G1_MONIN_L_MUTE       0x0100
-#define MOTU_G1_MONIN_L_ENABLE     0x0000
-#define MOTU_G1_MONIN_R_MUTE       0x0000
-#define MOTU_G1_MONIN_R_ENABLE     0x0800
+#define MOTU_G1_MONIN_L_SRC_MASK   0x0700
+#define MOTU_G1_MONIN_R_SRC_MASK   0x3800
+#define MOTU_G1_MONIN_L_CH_BIT0    8
+#define MOTU_G1_MONIN_R_CH_BIT0    11
 #define MOTU_G1_MONIN_L_CH1        0x0000
-#define MOTU_G1_MONIN_L_CH3        0x0020
-#define MOTU_G1_MONIN_L_CH5        0x0040
-#define MOTU_G1_MONIN_L_CH7        0x0060
-#define MOTU_G1_MONIN_R_CH2        0x0000
-#define MOTU_G1_MONIN_R_CH4        0x1000
-#define MOTU_G1_MONIN_R_CH6        0x2000
-#define MOTU_G1_MONIN_R_CH8        0x3000
+#define MOTU_G1_MONIN_L_CH2        0x0100
+#define MOTU_G1_MONIN_L_CH3        0x0200
+#define MOTU_G1_MONIN_L_CH4        0x0300
+#define MOTU_G1_MONIN_L_CH5        0x0400
+#define MOTU_G1_MONIN_L_CH6        0x0500
+#define MOTU_G1_MONIN_L_CH7        0x0600
+#define MOTU_G1_MONIN_L_CH8        0x0700
+#define MOTU_G1_MONIN_R_CH1        0x0000
+#define MOTU_G1_MONIN_R_CH2        0x0800
+#define MOTU_G1_MONIN_R_CH3        0x1000
+#define MOTU_G1_MONIN_R_CH4        0x1800
+#define MOTU_G1_MONIN_R_CH5        0x2000
+#define MOTU_G1_MONIN_R_CH6        0x2800
+#define MOTU_G1_MONIN_R_CH7        0x3000
+#define MOTU_G1_MONIN_R_CH8        0x3800
+
+// Other control bits in MOTU_G1_REG_CONFIG
+#define MOTU_G1_IO_ENABLE_0        0x0008  // To be confirmed
+#define MOTU_G1_IO_ENABLE_1        0x0020  // To be confirmed
 
 /* Mark3 device registers - these don't always have MOTU_BASE_ADDR as the
  * base address so for now we'll define them as absolute addresses.  The
