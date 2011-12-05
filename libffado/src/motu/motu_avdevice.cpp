@@ -1683,7 +1683,7 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
          * as for other MOTU devices bit 24 enables changes to the MOTU's
          * iso tx settings while bit 31 enables iso rx changes.
          *
-         * At this point also make sure that two additional bits,k which
+         * At this point also make sure that two additional bits, which
          * appear to be I/O enable bits, are set.
          */
         isoctrl &= ~MOTU_G1_C1_ISO_INFO_MASK;

@@ -141,6 +141,14 @@ class Rme(QWidget):
         layout.addWidget(scrollarea)
         self.playbackmixer.setLayout(layout)
 
+        self.outputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/OutputFaders", self, 0x8000)
+        layout = QtGui.QVBoxLayout()
+        scrollarea = QtGui.QScrollArea()
+        scrollarea.setWidgetResizable(True)
+        scrollarea.setWidget(self.outputmatrix)
+        layout.addWidget(scrollarea)
+        self.outputmixer.setLayout(layout)
+
         # Is the device streaming?
         #self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
         self.is_streaming = 0

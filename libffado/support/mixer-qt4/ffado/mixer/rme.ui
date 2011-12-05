@@ -1099,6 +1099,11 @@
        <string>Playback mixer</string>
       </attribute>
      </widget>
+     <widget class="QWidget" name="outputmixer">
+      <attribute name="title">
+       <string>Output levels</string>
+      </attribute>
+     </widget>
     </widget>
    </item>
   </layout>
