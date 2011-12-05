@@ -210,8 +210,8 @@ class MatrixMixer(QtGui.QWidget):
         #palette.setColor(QtGui.QPalette.Window, palette.color(QtGui.QPalette.Window).darker());
         #self.setPalette(palette)
 
-        rows = self.interface.getColCount()
-        cols = self.interface.getRowCount()
+        cols = self.interface.getColCount()
+        rows = self.interface.getRowCount()
         log.debug("Mixer has %i rows and %i columns" % (rows, cols))
 
         layout = QtGui.QGridLayout(self)
