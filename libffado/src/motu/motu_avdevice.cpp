@@ -1463,11 +1463,11 @@ MotuDevice::prepare() {
     m_tx_bandwidth = 25 + (n_events_per_packet*event_size_out);
 
     // Assign iso channels if not already done
-    if (m_iso_recv_channel < 0)
-        m_iso_recv_channel = get1394Service().allocateIsoChannelGeneric(m_rx_bandwidth);
-
     if (m_iso_send_channel < 0)
         m_iso_send_channel = get1394Service().allocateIsoChannelGeneric(m_tx_bandwidth);
+
+    if (m_iso_recv_channel < 0)
+        m_iso_recv_channel = get1394Service().allocateIsoChannelGeneric(m_rx_bandwidth);
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "recv channel = %d, send channel = %d\n",
         m_iso_recv_channel, m_iso_send_channel);
