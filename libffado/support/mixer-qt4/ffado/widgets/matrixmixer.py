@@ -96,10 +96,10 @@ class MixerNode(QtGui.QAbstractSlider):
             self.addAction(action)
 
     def directValues(self,text):
-        #log.debug("MixerNode.directValues( '%s' )" % text)
+        log.debug("MixerNode.directValues( '%s' )" % text)
         text = text.split(" ")[0].replace(",",".")
         n = pow(10, (float(text)/20)) * pow(2,14)
-        #log.debug("%g" % n)
+        log.debug("%g" % n)
         self.setValue(n)
 
     def mousePressEvent(self, ev):

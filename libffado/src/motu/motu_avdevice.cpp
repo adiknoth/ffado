@@ -1686,6 +1686,7 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
          * At this point also make sure that two additional bits, which
          * appear to be I/O enable bits, are set.
          */
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: read isoctl: %x\n", isoctrl);
         isoctrl &= ~MOTU_G1_C1_ISO_INFO_MASK;
         isoctrl |= (MOTU_G1_C1_ISO_TX_ACTIVE | MOTU_G1_C1_ISO_TX_WREN |
                     MOTU_G1_C1_ISO_RX_ACTIVE | MOTU_G1_C1_ISO_RX_WREN);
