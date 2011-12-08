@@ -136,6 +136,7 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
 {
     static int len_shown = 0;
     static int ts_print_cx = 0;
+static int pktcx = 0;
 
     if (length > 8) {
         // The iso data blocks from the MOTUs comprise a CIP-like
@@ -173,7 +174,7 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
 
         // For debugging only - to be removed once Ultralite mk3 issues have been 
         // resolved.  JMW, 31 May 2010.
-        if (!len_shown && getDebugLevel()>0 ) {
+        if ((!len_shown || pktcx==0) && getDebugLevel()>0 ) {
             unsigned int i;
             debugOutput(DEBUG_LEVEL_VERBOSE,"Packet from MOTU: length=%d, eventsize=%d, n_events=%d\n", length, m_event_size, n_events);
             for (i=0; i<length; i++) {
@@ -187,6 +188,10 @@ MotuReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned in
             }
             fprintf(stderr, "\n");
         }
+// For testing 828mk1, dump incoming packet roughly once a second
+if (++pktcx == 8000)
+  pktcx=0;
+
         len_shown = 1;
         if (ts_print_cx<20 && getDebugLevel()>0 ) {
           debugOutput(DEBUG_LEVEL_VERBOSE,"last ts=0x%08x\n", last_sph);
