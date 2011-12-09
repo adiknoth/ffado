@@ -1676,6 +1676,7 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
          * purpose.  We'll do the same, at least until we know whether
          * it's important that this be done.
          */
+#if 1
         WriteRegister(MOTU_G1_REG_UNKNOWN_1, 0xffc10001);
         WriteRegister(MOTU_G1_REG_UNKNOWN_2, 0x00000000);
 
@@ -1707,6 +1708,15 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: first isoctrl: %x\n", isoctrl);
 debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: final isoctrl: %x\n", isoctrl);
 debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: 0b10 reg: %x\n",
   ReadRegister(MOTU_G1_REG_CONFIG_2));
+
+#else
+  WriteRegister(0xb04, 0xffc10001);
+  WriteRegister(0xb08, 0x00000000);
+  WriteRegister(0xb00, 0x80810828);
+  WriteRegister(0xb10, 0x000000c2);
+  WriteRegister(0xb00, 0xc0c10828);
+  WriteRegister(0xb00, 0x000008a8);
+#endif
 
         return true;
     }
