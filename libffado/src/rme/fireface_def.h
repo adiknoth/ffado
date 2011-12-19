@@ -467,6 +467,7 @@ typedef struct {
     int32_t output_faders[RME_FF800_MAX_CHANNELS];
     unsigned char input_mixerflags[FF_MATRIXMIXER_SIZE];
     unsigned char playback_mixerflags[FF_MATRIXMIXER_SIZE];
+    unsigned char output_mixerflags[FF_MATRIXMIXER_SIZE];
 } FF_software_settings_t;
 
 // Defines used to interpret the software settings structure.  For now we
@@ -518,7 +519,8 @@ typedef struct {
 // Flags for the *_mixerflags fields
 #define FF_SWPARAM_MF_NORMAL    0x00
 #define FF_SWPARAM_MF_MUTED     0x01
-#define FF_SWPARAM_MF_INVERTED  0x02
+#define FF_SWPARAM_MF_INVERTED  0x02    // Inputs/playbacks only
+#define FF_SWPARAM_MF_REC       0x04    // Outputs only
 
 // Indices into the amp_gains array
 #define FF400_AMPGAIN_MIC1      0

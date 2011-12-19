@@ -196,7 +196,7 @@ private:
     signed int set_hardware_mixergain(unsigned int ctype, 
         unsigned int src_channel, unsigned int dest_channel, signed int val);
 
-    signed int set_hardware_channel_mute(signed int mute);
+    signed int set_hardware_channel_mute(signed int chan, signed int mute);
     signed int set_hardware_output_rec(signed int rec);
 
     signed int getMixerGainIndex(unsigned int src_channel, unsigned int dest_channel);

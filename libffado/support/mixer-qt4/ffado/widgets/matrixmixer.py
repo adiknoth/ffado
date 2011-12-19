@@ -200,11 +200,17 @@ class MixerChannel(QtGui.QWidget):
 
 
 class MatrixMixer(QtGui.QWidget):
-    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1):
+    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1, mutespath=None):
         QtGui.QWidget.__init__(self, parent)
         self.bus = dbus.SessionBus()
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
+
+        self.mutes_dev = None
+        self.mutes_interface = None
+        if (mutespath != None):
+            self.mutes_dev = self.bus.get_object(servername, mutespath)
+            self.mutes_interface = dbus.Interface(self.mutes_dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
 
         #palette = self.palette()
         #palette.setColor(QtGui.QPalette.Window, palette.color(QtGui.QPalette.Window).darker());

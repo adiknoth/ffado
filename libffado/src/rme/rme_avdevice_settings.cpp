@@ -204,6 +204,7 @@ Device::setMixerGain(unsigned int ctype,
 
     unsigned char *mixerflags = NULL;
     signed int idx = getMixerGainIndex(src_channel, dest_channel);
+
     switch (ctype) {
         case RME_FF_MM_INPUT:
             settings->input_faders[idx] = val;
@@ -215,13 +216,14 @@ Device::setMixerGain(unsigned int ctype,
             break;
         case RME_FF_MM_OUTPUT:
             settings->output_faders[src_channel] = val;
+            mixerflags = settings->output_mixerflags;
             break;
     }
 
     // If the matrix channel is muted, override the fader value and 
     // set it to zero.  Note that this is different to the hardware
     // mute control dealt with by set_hardware_channel_mute(); the
-    // latter deals with muting the output channels.
+    // latter deals with a muting separate from the mixer.
     if (mixerflags!=NULL && (mixerflags[idx] & FF_SWPARAM_MF_MUTED)!=0) {
         val = 0;
     }
@@ -249,8 +251,10 @@ Device::getMixerFlags(unsigned int ctype,
 
     unsigned char *mixerflags = NULL;
     signed int idx = getMixerGainIndex(src_channel, dest_channel);
-    if (ctype == RME_FF_MM_OUTPUT)
-        return 0;
+    if (ctype == RME_FF_MM_OUTPUT) {
+        mixerflags = settings->output_mixerflags;
+        idx = src_channel;
+    } else
     if (ctype == RME_FF_MM_INPUT)
         mixerflags = settings->input_mixerflags;
     else
@@ -266,8 +270,10 @@ Device::setMixerFlags(unsigned int ctype,
 
     unsigned char *mixerflags = NULL;
     signed int idx = getMixerGainIndex(src_channel, dest_channel);
-    if (ctype == RME_FF_MM_OUTPUT)
-        return 0;
+    if (ctype == RME_FF_MM_OUTPUT) {
+        mixerflags = settings->output_mixerflags;
+        idx = src_channel;
+    } else 
     if (ctype == RME_FF_MM_INPUT)
         mixerflags = settings->input_mixerflags;
     else

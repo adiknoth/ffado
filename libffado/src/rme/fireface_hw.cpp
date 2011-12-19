@@ -759,7 +759,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "  ret=%d\n", ret);
             dev_config->is_streaming = 1;
         }
 
-        set_hardware_channel_mute(0);
+        set_hardware_channel_mute(-1, 0);
 
     } else
         ret = 0;
@@ -790,7 +790,7 @@ Device::hardware_stop_streaming(void)
             dev_config->is_streaming = 0;
         }
 
-        set_hardware_channel_mute(1);
+        set_hardware_channel_mute(-1, 1);
 
     } else
         ret = 0;
@@ -897,22 +897,31 @@ Device::set_hardware_mixergain(unsigned int ctype, unsigned int src_channel,
 }
 
 signed int
-Device::set_hardware_channel_mute(signed int mute) {
-// Explicitly mute (mute!=0) or unmute (mute=0) all channels.
-// TODO: fill the details in to allow individual channels to be muted as 
-// required.
+Device::set_hardware_channel_mute(signed int chan, signed int mute) {
+
+// Mute hardware channels as instructed.  This mute probably relates to the
+// sampled input channels as delivered to the PC.  If "chan" is -1 the
+// supplied "mute" status is applied to all channels.  This is the only
+// supported "chan" value for now.  Down the track, if there's a need,
+// this could be extended to allow individual channel control.
     quadlet_t buf[28];
     signed int i;
     signed int n_channels = (m_rme_model==RME_MODEL_FIREFACE400)?
         RME_FF400_MAX_CHANNELS:RME_FF800_MAX_CHANNELS;
 
     i = 0;
-    while (i<n_channels && i<28) {
-        buf[i++] = (mute!=0);
+    if (chan < 0) {
+        while (i<n_channels && i<28) {
+            buf[i++] = (mute!=0);
+        }
+    } else {
+      return 0;
     }
+
     while (i < 28) {
         buf[i++] = 0x00000001;
     }
+
     // Write 28 quadlets even for FF400
     return writeBlock(RME_FF_CHANNEL_MUTE_MASK, buf, 28);
 }

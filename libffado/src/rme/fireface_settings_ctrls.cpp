@@ -328,6 +328,23 @@ double RmeSettingsMatrixCtrl::setValue(const int row, const int col, const doubl
         case RME_MATRIXCTRL_OUTPUT_FADER:
           return m_parent.setMixerGain(RME_FF_MM_OUTPUT, col, row, val);
           break;
+
+        case RME_MATRIXCTRL_INPUT_MUTE:
+          return m_parent.setMixerFlags(RME_FF_MM_INPUT, col, row, FF_SWPARAM_MF_MUTED, val!=0);
+          break;
+        case RME_MATRIXCTRL_PLAYBACK_MUTE:
+          return m_parent.setMixerFlags(RME_FF_MM_PLAYBACK, col, row, FF_SWPARAM_MF_MUTED, val!=0);
+          break;
+        case RME_MATRIXCTRL_OUTPUT_MUTE:
+          return m_parent.setMixerFlags(RME_FF_MM_OUTPUT, col, row, FF_SWPARAM_MF_MUTED, val!=0);
+          break;
+        case RME_MATRIXCTRL_INPUT_INVERT:
+          return m_parent.setMixerFlags(RME_FF_MM_INPUT, col, row, FF_SWPARAM_MF_INVERTED, val!=0);
+          break;
+        case RME_MATRIXCTRL_PLAYBACK_INVERT:
+          return m_parent.setMixerFlags(RME_FF_MM_PLAYBACK, col, row, FF_SWPARAM_MF_INVERTED, val!=0);
+          break;
+
     }
 
     return ret;
@@ -349,6 +366,22 @@ double RmeSettingsMatrixCtrl::getValue(const int row, const int col)
         case RME_MATRIXCTRL_OUTPUT_FADER:
             val = m_parent.getMixerGain(RME_FF_MM_OUTPUT, col, row);
             break;
+
+        case RME_MATRIXCTRL_INPUT_MUTE:
+          return m_parent.getMixerFlags(RME_FF_MM_INPUT, col, row, FF_SWPARAM_MF_MUTED) != 0;
+          break;
+        case RME_MATRIXCTRL_PLAYBACK_MUTE:
+          return m_parent.getMixerFlags(RME_FF_MM_PLAYBACK, col, row, FF_SWPARAM_MF_MUTED) != 0;
+          break;
+        case RME_MATRIXCTRL_OUTPUT_MUTE:
+          return m_parent.getMixerFlags(RME_FF_MM_OUTPUT, col, row, FF_SWPARAM_MF_MUTED) != 0;
+          break;
+        case RME_MATRIXCTRL_INPUT_INVERT:
+          return m_parent.getMixerFlags(RME_FF_MM_INPUT, col, row, FF_SWPARAM_MF_INVERTED) != 0;
+          break;
+        case RME_MATRIXCTRL_PLAYBACK_INVERT:
+          return m_parent.getMixerFlags(RME_FF_MM_PLAYBACK, col, row, FF_SWPARAM_MF_INVERTED) != 0;
+          break;
     }
 
     return val;
