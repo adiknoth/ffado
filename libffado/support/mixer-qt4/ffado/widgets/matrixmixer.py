@@ -54,7 +54,7 @@ class ColorForNumber:
                 (1-f)*lc.blue()  + f*hc.blue() )
 
 class MixerNode(QtGui.QAbstractSlider):
-    def __init__(self, input, output, value, max, parent):
+    def __init__(self, input, output, value, max, muted, parent):
         QtGui.QAbstractSlider.__init__(self, parent)
         #log.debug("MixerNode.__init__( %i, %i, %i, %i, %s )" % (input, output, value, max, str(parent)) )
 
@@ -95,12 +95,28 @@ class MixerNode(QtGui.QAbstractSlider):
             self.mapper.setMapping(action, text)
             self.addAction(action)
 
+        # Only show the mute menu item if a value has been supplied
+        self.mute_action = None
+        if (muted != None):
+            action = QtGui.QAction(text, self)
+            action.setSeparator(True)
+            self.addAction(action)
+            self.mute_action = QtGui.QAction("Mute", self)
+            self.mute_action.setCheckable(True)
+            self.mute_action.setChecked(muted)
+            self.connect(self.mute_action, QtCore.SIGNAL("triggered()"), self.mapper, QtCore.SLOT("map()"))
+            self.mapper.setMapping(self.mute_action, "Mute")
+            self.addAction(self.mute_action)
+
     def directValues(self,text):
         #log.debug("MixerNode.directValues( '%s' )" % text)
-        text = text.split(" ")[0].replace(",",".")
-        n = pow(10, (float(text)/20)) * pow(2,14)
-        #log.debug("%g" % n)
-        self.setValue(n)
+        if text == "Mute":
+            log.debug("Mute %d" % self.mute_action.isChecked())
+        else:
+            text = text.split(" ")[0].replace(",",".")
+            n = pow(10, (float(text)/20)) * pow(2,14)
+            #log.debug("%g" % n)
+            self.setValue(n)
 
     def mousePressEvent(self, ev):
         if ev.buttons() & Qt.Qt.LeftButton:
@@ -243,7 +259,7 @@ class MatrixMixer(QtGui.QWidget):
         for i in range(rows):
             self.items.append([])
             for j in range(cols):
-                node = MixerNode(j, i, self.interface.getValue(i,j), sliderMaxValue, self)
+                node = MixerNode(j, i, self.interface.getValue(i,j), sliderMaxValue, None, self)
                 self.connect(node, QtCore.SIGNAL("valueChanged"), self.valueChanged)
                 layout.addWidget(node, i+1, j+1)
                 self.items[i].append(node)
