@@ -294,7 +294,7 @@ class SaffireMixerMono(QWidget, SaffireMixerBase):
     def __init__(self,parent = None):
         self.my_parent = parent
         QWidget.__init__(self,parent)
-        uicLoad("ffado/mixer/saffire_stereo", self)
+        uicLoad("ffado/mixer/saffire_mono", self)
         SaffireMixerBase.__init__(self)
         QObject.connect(self.btnRefresh, SIGNAL('clicked()'), self.updateValues)
         QObject.connect(self.btnSwitchStereoMode, SIGNAL('clicked()'), self.switchStereoMode)
