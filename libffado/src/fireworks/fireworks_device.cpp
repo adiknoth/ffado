@@ -45,6 +45,7 @@
 #define FIREWORKS_MIN_FIRMWARE_VERSION 0x04080000
 
 #include <sstream>
+#include <unistd.h>
 using namespace std;
 
 // FireWorks is the platform used and developed by ECHO AUDIO

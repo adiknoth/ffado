@@ -34,6 +34,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <unistd.h>
 
 #include <assert.h>
 

@@ -35,6 +35,7 @@
 #include "libutil/Configuration.h"
 
 #include <cstring>
+#include <unistd.h>
 #include <assert.h>
 
 IMPL_DEBUG_MODULE( IsoHandlerManager, IsoHandlerManager, DEBUG_LEVEL_NORMAL );

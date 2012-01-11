@@ -24,6 +24,7 @@
 #include <argp.h>
 #include <stdlib.h>
 #include <iostream>
+#include <unistd.h>
 #include <signal.h>
 
 #include "controlclient.h"
