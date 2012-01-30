@@ -242,6 +242,7 @@ Device::setMixerGain(unsigned int ctype,
         val = -val;
     }
 
+fprintf(stderr, "val=%d\n", val);
     return set_hardware_mixergain(ctype, src_channel, dest_channel, val);
 }
 
@@ -278,6 +279,12 @@ Device::setMixerFlags(unsigned int ctype,
         mixerflags = settings->input_mixerflags;
     else
         mixerflags = settings->playback_mixerflags;
+
+// FIXME: When switching inversion modes, the hardware seems to a channel to
+// full volume for about 1/10 sec.  Attempt to avoid this by temporarily
+// muting the channel.  This doesn't seem to work though.
+//    if (flagmask & FF_SWPARAM_MF_INVERTED) 
+//        set_hardware_mixergain(ctype, src_channel, dest_channel, 0);
 
     if (val == 0)
         mixerflags[idx] &= ~flagmask;

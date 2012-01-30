@@ -125,7 +125,7 @@ class Rme(QWidget):
 
         # print self.hw.servername
         # print self.hw.basepath
-        self.inputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/InputFaders", self, 0x8000)
+        self.inputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/InputFaders", self, 0x8000, self.hw.basepath+"/Mixer/InputMutes", self.hw.basepath+"/Mixer/InputInverts")
         layout = QtGui.QVBoxLayout()
         scrollarea = QtGui.QScrollArea()
         scrollarea.setWidgetResizable(True)

@@ -54,7 +54,7 @@ class ColorForNumber:
                 (1-f)*lc.blue()  + f*hc.blue() )
 
 class MixerNode(QtGui.QAbstractSlider):
-    def __init__(self, input, output, value, max, muted, parent):
+    def __init__(self, input, output, value, max, muted, inverted, parent):
         QtGui.QAbstractSlider.__init__(self, parent)
         #log.debug("MixerNode.__init__( %i, %i, %i, %i, %s )" % (input, output, value, max, str(parent)) )
 
@@ -108,10 +108,28 @@ class MixerNode(QtGui.QAbstractSlider):
             self.mapper.setMapping(self.mute_action, "Mute")
             self.addAction(self.mute_action)
 
+        # Similarly, only show a phase inversion menu item if in use
+        self.inv_action = None
+        if (inverted != None):
+            if (muted == None):
+                action = QtGui.QAction(text, self)
+                action.setSeparator(True)
+                self.addAction(action)
+            self.inv_action = QtGui.QAction("Invert", self)
+            self.inv_action.setCheckable(True)
+            self.inv_action.setChecked(inverted)
+            self.connect(self.inv_action, QtCore.SIGNAL("triggered()"), self.mapper, QtCore.SLOT("map()"))
+            self.mapper.setMapping(self.inv_action, "Invert")
+            self.addAction(self.inv_action)
+
     def directValues(self,text):
         #log.debug("MixerNode.directValues( '%s' )" % text)
         if text == "Mute":
-            log.debug("Mute %d" % self.mute_action.isChecked())
+            #log.debug("Mute %d" % self.mute_action.isChecked())
+            self.parent().mutes_interface.setValue(self.output, self.input, self.mute_action.isChecked())
+        elif text == "Invert":
+            log.debug("Invert %d" % self.inv_action.isChecked())
+            self.parent().inverts_interface.setValue(self.output, self.input, self.inv_action.isChecked())
         else:
             text = text.split(" ")[0].replace(",",".")
             n = pow(10, (float(text)/20)) * pow(2,14)
@@ -216,7 +234,7 @@ class MixerChannel(QtGui.QWidget):
 
 
 class MatrixMixer(QtGui.QWidget):
-    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1, mutespath=None):
+    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1, mutespath=None, invertspath=None):
         QtGui.QWidget.__init__(self, parent)
         self.bus = dbus.SessionBus()
         self.dev = self.bus.get_object(servername, basepath)
@@ -227,6 +245,12 @@ class MatrixMixer(QtGui.QWidget):
         if (mutespath != None):
             self.mutes_dev = self.bus.get_object(servername, mutespath)
             self.mutes_interface = dbus.Interface(self.mutes_dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
+
+        self.inverts_dev = None
+        self.inverts_interface = None
+        if (invertspath != None):
+            self.inverts_dev = self.bus.get_object(servername, invertspath)
+            self.inverts_interface = dbus.Interface(self.inverts_dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
 
         #palette = self.palette()
         #palette.setColor(QtGui.QPalette.Window, palette.color(QtGui.QPalette.Window).darker());
@@ -259,7 +283,13 @@ class MatrixMixer(QtGui.QWidget):
         for i in range(rows):
             self.items.append([])
             for j in range(cols):
-                node = MixerNode(j, i, self.interface.getValue(i,j), sliderMaxValue, None, self)
+                mute_value = None
+                if (self.mutes_interface != None):
+                    mute_value = self.mutes_interface.getValue(i,j)
+                inv_value = None
+                if (self.inverts_interface != None):
+                    inv_value = self.inverts_interface.getValue(i,j)
+                node = MixerNode(j, i, self.interface.getValue(i,j), sliderMaxValue, mute_value, inv_value, self)
                 self.connect(node, QtCore.SIGNAL("valueChanged"), self.valueChanged)
                 layout.addWidget(node, i+1, j+1)
                 self.items[i].append(node)

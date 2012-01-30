@@ -199,15 +199,15 @@ Device::buildMixer() {
     result &= m_MixerContainer->addElement(
         new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_OUTPUT_FADER, "OutputFaders"));
     result &= m_MixerContainer->addElement(
-        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_INPUT_FADER, "InputMutes"));
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_INPUT_MUTE, "InputMutes"));
     result &= m_MixerContainer->addElement(
-        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_PLAYBACK_FADER, "PlaybackMutes"));
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_PLAYBACK_MUTE, "PlaybackMutes"));
     result &= m_MixerContainer->addElement(
-        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_OUTPUT_FADER, "OutputMutes"));
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_OUTPUT_MUTE, "OutputMutes"));
     result &= m_MixerContainer->addElement(
-        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_INPUT_FADER, "InputInverts"));
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_INPUT_INVERT, "InputInverts"));
     result &= m_MixerContainer->addElement(
-        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_PLAYBACK_FADER, "PlaybackInverts"));
+        new RmeSettingsMatrixCtrl(*this, RME_MATRIXCTRL_PLAYBACK_INVERT, "PlaybackInverts"));
 
     if (!result) {
         debugWarning("One or more device control/mixer elements could not be created\n");

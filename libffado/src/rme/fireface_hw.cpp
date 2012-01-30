@@ -858,7 +858,7 @@ Device::set_hardware_mixergain(unsigned int ctype, unsigned int src_channel,
         RME_FF400_MAX_CHANNELS:RME_FF800_MAX_CHANNELS;
     if (src_channel>n_channels || dest_channel>n_channels)
         return -1;
-    if (val<0 || val>0x10000)
+    if (abs(val)>0x10000)
         return -1;
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
