@@ -33,9 +33,7 @@ log = logging.getLogger('diag')
 
 # kernel
 def get_kernel_version():
-    (exitstatus, outtext) = commands.getstatusoutput('uname -r')
-    log.debug("uname -r outputs: %s" % outtext)
-    return outtext
+    return run_command('uname -r')
 
 def get_kernel_rt_patched():
     print "FIXME: implement test for RT kernel"
