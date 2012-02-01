@@ -104,6 +104,16 @@ if __name__== '__main__':
     else:
         devnode_permissions = None
 
+    if newstack_active:
+        # check permissions
+        newstack_permissions = get_juju_permissions()
+        print "  /dev/fw* permissions:"
+        print newstack_permissions
+
+    print "  User IDs:"
+    print get_user_ids()
+
+
     # check libraries
     print " Prerequisites (dynamic at run-time)..."
     print "   gcc ............... %s" % get_version_first_line('gcc --version')
