@@ -153,3 +153,8 @@ def list_host_controllers():
             cmd = "lspci -vv -nn -s %s" % tmp[0]
             print run_command(cmd)
 
+def get_juju_permissions():
+    return run_command('ls -lh /dev/fw*')
+
+def get_user_ids():
+    return run_command('id');
