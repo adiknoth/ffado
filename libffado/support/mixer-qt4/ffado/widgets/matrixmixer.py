@@ -129,7 +129,7 @@ class MixerNode(QtGui.QAbstractSlider):
             self.update()
             self.parent().mutes_interface.setValue(self.output, self.input, self.mute_action.isChecked())
         elif text == "Invert":
-            log.debug("Invert %d" % self.inv_action.isChecked())
+            #log.debug("Invert %d" % self.inv_action.isChecked())
             self.update()
             self.parent().inverts_interface.setValue(self.output, self.input, self.inv_action.isChecked())
         else:
