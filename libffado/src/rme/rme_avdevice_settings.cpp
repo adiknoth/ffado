@@ -242,7 +242,6 @@ Device::setMixerGain(unsigned int ctype,
         val = -val;
     }
 
-fprintf(stderr, "val=%d\n", val);
     return set_hardware_mixergain(ctype, src_channel, dest_channel, val);
 }
 

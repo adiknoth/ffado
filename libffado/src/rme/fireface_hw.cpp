@@ -886,6 +886,8 @@ Device::set_hardware_mixergain(unsigned int ctype, unsigned int src_channel,
     // the separate gain register in sync.
     if (ctype==RME_FF_MM_OUTPUT && m_rme_model==RME_MODEL_FIREFACE400) {
         signed int dB;
+        if (val < 0)
+          val = -val;
         if (val==0)
             dB = -90;
         else
