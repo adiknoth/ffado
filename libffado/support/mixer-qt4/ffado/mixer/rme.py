@@ -133,7 +133,7 @@ class Rme(QWidget):
         layout.addWidget(scrollarea)
         self.mixer.setLayout(layout)
 
-        self.playbackmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/PlaybackFaders", self, 0x8000)
+        self.playbackmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/PlaybackFaders", self, 0x8000, self.hw.basepath+"/Mixer/PlaybackMutes", self.hw.basepath+"/Mixer/PlaybackInverts")
         layout = QtGui.QVBoxLayout()
         scrollarea = QtGui.QScrollArea()
         scrollarea.setWidgetResizable(True)
@@ -141,7 +141,7 @@ class Rme(QWidget):
         layout.addWidget(scrollarea)
         self.playbackmixer.setLayout(layout)
 
-        self.outputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/OutputFaders", self, 0x8000)
+        self.outputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/OutputFaders", self, 0x8000, self.hw.basepath+"/Mixer/OutputMutes")
         layout = QtGui.QVBoxLayout()
         scrollarea = QtGui.QScrollArea()
         scrollarea.setWidgetResizable(True)
