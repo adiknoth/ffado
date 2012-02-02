@@ -51,8 +51,8 @@ following:
 * the device works
 
 Through reverse-engineering the following devices will also work:
-* MOTU traveller
-* MOTU 828mkII
+* MOTU Traveler
+* MOTU 828mkII, MOTU Ultralite, MOTU 896HD, MOTU 8pre
 Note: the support for these devices is based on a significant reverse
 engineering effort. This means that the developers had no support from the
 device vendor, and this of course limits the extent to which problems can
@@ -114,10 +114,6 @@ Qt  >= 4.0,            http://trolltech.com/products/qt
 SIP >= 4.7.0,          http://www.riverbankcomputing.co.uk/software/sip/intro
 PyQt (note below),     http://www.riverbankcomputing.co.uk/software/pyqt/intro 
 dbus-python >= 0.82.0, http://dbus.freedesktop.org/releases/dbus-python/
-
-The mixer applets are available for both QT3 and QT4. However, the QT3 versions
-are no longer actively developed. The build script will automatically fallback
-to the QT3 version if you don't have QT4 installed.
 
 The version of PyQt must be chosen to exactly match the version of Qt in use.
 For Qt 4.x use PyQt 4.x.
@@ -264,5 +260,3 @@ Be sure to include the following information:
   reproduce the issue on your system. A one-time failure is very difficult
   to diagnose and/or fix.
 * the distribution and its version
-
-
