@@ -285,6 +285,8 @@ class MatrixMixer(QtGui.QWidget):
             self.connect(ch, QtCore.SIGNAL("hide"), self.hideRow)
             layout.addWidget(ch, i+1, 0)
             self.rowHeaders.append( ch )
+        layout.setRowStretch(0, 0)
+        layout.setRowStretch(1, 10)
 
         # Add node-widgets
         for i in range(rows):
