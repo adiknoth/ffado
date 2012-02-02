@@ -126,9 +126,11 @@ class MixerNode(QtGui.QAbstractSlider):
         #log.debug("MixerNode.directValues( '%s' )" % text)
         if text == "Mute":
             #log.debug("Mute %d" % self.mute_action.isChecked())
+            self.update()
             self.parent().mutes_interface.setValue(self.output, self.input, self.mute_action.isChecked())
         elif text == "Invert":
             log.debug("Invert %d" % self.inv_action.isChecked())
+            self.update()
             self.parent().inverts_interface.setValue(self.output, self.input, self.inv_action.isChecked())
         else:
             text = text.split(" ")[0].replace(",",".")
@@ -165,7 +167,10 @@ class MixerNode(QtGui.QAbstractSlider):
         p = QtGui.QPainter(self)
         rect = self.rect()
         v = self.value()
-        color = self.bgcolors.getColor(v)
+        if (self.mute_action!=None and self.mute_action.isChecked()):
+            color = QtGui.QColor(64, 64, 64)
+        else:
+            color = self.bgcolors.getColor(v)
         p.fillRect(rect, color)
 
         if self.small:
@@ -183,6 +188,8 @@ class MixerNode(QtGui.QAbstractSlider):
         if v == 0:
             text = "-ꝏ dB"
         p.drawText(rect, Qt.Qt.AlignCenter, QtCore.QString.fromUtf8(text))
+        if (self.inv_action!=None and self.inv_action.isChecked()):
+            p.drawText(rect, Qt.Qt.AlignLeft|Qt.Qt.AlignTop, QtCore.QString.fromUtf8(" ϕ"))
 
     def internalValueChanged(self, value):
         #log.debug("MixerNode.internalValueChanged( %i )" % value)
