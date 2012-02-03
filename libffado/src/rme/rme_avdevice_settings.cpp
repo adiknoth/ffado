@@ -159,6 +159,47 @@ Device::setSpdifInputMode(signed int mode) {
 }
 
 signed int
+Device::getSpdifOutputIsOptical(void) {
+    return settings->spdif_output_mode == FF_SWPARAM_SPDIF_OUTPUT_OPTICAL;
+}
+signed int
+Device::setSpdifOutputIsOptical(signed int enable) {
+  settings->spdif_output_mode = enable==1?FF_SWPARAM_SPDIF_OUTPUT_OPTICAL:FF_SWPARAM_SPDIF_OUTPUT_COAX;
+  set_hardware_params();
+  return 0;
+}
+signed int
+Device::getSpdifOutputEmphasisOn(void) {
+    return settings->spdif_output_emphasis == FF_SWPARAM_SPDIF_OUTPUT_EMPHASIS_ON;
+}
+signed int
+Device::setSpdifOutputEmphasisOn(signed int enable) {
+  settings->spdif_output_emphasis = enable==1?FF_SWPARAM_SPDIF_OUTPUT_EMPHASIS_ON:0;
+  set_hardware_params();
+  return 0;
+}
+signed int
+Device::getSpdifOutputNonAudioOn(void) {
+    return settings->spdif_output_nonaudio == FF_SWPARAM_SPDIF_OUTPUT_NONAUDIO_ON;
+}
+signed int
+Device::setSpdifOutputNonAudioOn(signed int enable) {
+  settings->spdif_output_nonaudio = enable==1?FF_SWPARAM_SPDIF_OUTPUT_NONAUDIO_ON:0;
+  set_hardware_params();
+  return 0;
+}
+signed int
+Device::getSpdifOutputProOn(void) {
+    return settings->spdif_output_pro == FF_SWPARAM_SPDIF_OUTPUT_PRO_ON;
+}
+signed int
+Device::setSpdifOutputProOn(signed int enable) {
+  settings->spdif_output_pro = enable==1?FF_SWPARAM_SPDIF_OUTPUT_PRO_ON:0;
+  set_hardware_params();
+  return 0;
+}
+
+signed int
 Device::getAmpGain(unsigned int index) {
     if (m_rme_model != RME_MODEL_FIREFACE400) {
         debugOutput(DEBUG_LEVEL_WARNING, "Amp gains only supported on FF400\n");

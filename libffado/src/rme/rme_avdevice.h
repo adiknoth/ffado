@@ -117,6 +117,14 @@ public:
     signed int setInputInstrOpt(unsigned int channel, unsigned int status);
     signed int getSpdifInputMode(void);
     signed int setSpdifInputMode(signed int mode);
+    signed int getSpdifOutputIsOptical(void);
+    signed int setSpdifOutputIsOptical(signed int enable);
+    signed int getSpdifOutputEmphasisOn(void);
+    signed int setSpdifOutputEmphasisOn(signed int enable);
+    signed int getSpdifOutputNonAudioOn(void);
+    signed int setSpdifOutputNonAudioOn(signed int enable);
+    signed int getSpdifOutputProOn(void);
+    signed int setSpdifOutputProOn(signed int enable);
     signed int getAmpGain(unsigned int index);
     signed int setAmpGain(unsigned int index, signed int val);
     signed int getMixerGain(unsigned int ctype,

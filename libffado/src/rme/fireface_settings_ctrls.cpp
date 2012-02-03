@@ -119,6 +119,26 @@ signed int err = 0;
                 m_value = v;
             }
             break;
+        case RME_CTRL_SPDIF_OUTPUT_OPTICAL:
+            if (m_parent.setSpdifOutputIsOptical(v!=0) == 0) {
+               m_value = (v != 0);
+            }
+            break;
+        case RME_CTRL_SPDIF_OUTPUT_PRO:
+            if (m_parent.setSpdifOutputProOn(v!=0) == 0) {
+               m_value = (v != 0);
+            }
+            break;
+        case RME_CTRL_SPDIF_OUTPUT_EMPHASIS:
+            if (m_parent.setSpdifOutputEmphasisOn(v!=0) == 0) {
+               m_value = (v != 0);
+            }
+            break;
+        case RME_CTRL_SPDIF_OUTPUT_NONAUDIO:
+            if (m_parent.setSpdifOutputNonAudioOn(v!=0) == 0) {
+               m_value = (v != 0);
+            }
+            break;
         case RME_CTRL_PHONES_LEVEL:
             if (m_parent.setPhonesLevel(v)) {
                 m_value = v;
@@ -172,6 +192,18 @@ signed int val = 0;
         case RME_CTRL_SPDIF_INPUT_MODE:
             i = m_parent.getSpdifInputMode();
             return i==FF_SWPARAM_SPDIF_INPUT_COAX?0:1;
+            break;
+        case RME_CTRL_SPDIF_OUTPUT_OPTICAL:
+            return m_parent.getSpdifOutputIsOptical();
+            break;
+        case RME_CTRL_SPDIF_OUTPUT_PRO:
+            return m_parent.getSpdifOutputProOn();
+            break;
+        case RME_CTRL_SPDIF_OUTPUT_EMPHASIS:
+            return m_parent.getSpdifOutputEmphasisOn();
+            break;
+        case RME_CTRL_SPDIF_OUTPUT_NONAUDIO:
+            return m_parent.getSpdifOutputNonAudioOn();
             break;
         case RME_CTRL_PHONES_LEVEL:
             return m_parent.getPhonesLevel();

@@ -163,6 +163,18 @@ Device::buildMixer() {
         new RmeSettingsCtrl(*this, RME_CTRL_SPDIF_INPUT_MODE, 0,
             "SPDIF_input_mode", "SPDIF input mode", ""));
     result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_SPDIF_OUTPUT_OPTICAL, 0,
+            "SPDIF_output_optical", "SPDIF output optical", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_SPDIF_OUTPUT_EMPHASIS, 0,
+            "SPDIF_output_emphasis", "SPDIF output emphasis", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_SPDIF_OUTPUT_PRO, 0,
+            "SPDIF_output_pro", "SPDIF output pro", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_SPDIF_OUTPUT_NONAUDIO, 0,
+            "SPDIF_output_nonaudio", "SPDIF output non-audio", ""));
+    result &= m_ControlContainer->addElement(
         new RmeSettingsCtrl(*this, RME_CTRL_PHONES_LEVEL, 0,
             "Phones_level", "Phones level", ""));
 

@@ -57,6 +57,11 @@ class Rme(QWidget):
             self.ff400_chan3_opt_pad:   ['/Control/Chan3_opt_pad'],
             self.ff400_chan4_opt_instr: ['/Control/Chan4_opt_instr'],
             self.ff400_chan4_opt_pad:   ['/Control/Chan4_opt_pad'],
+
+            self.spdif_output_optical:  ['/Control/SPDIF_output_optical', 0],
+            self.spdif_output_emphasis: ['/Control/SPDIF_output_emphasis', 0],
+            self.spdif_output_pro:      ['/Control/SPDIF_output_pro', 0],
+            self.spdif_output_nonaudio: ['/Control/SPDIF_output_nonaudio', 0],
         }
 
         self.Radiobuttons={
