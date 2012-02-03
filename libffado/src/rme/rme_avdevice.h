@@ -75,6 +75,7 @@ public:
     virtual int getSamplingFrequency( );
     virtual std::vector<int> getSupportedSamplingFrequencies();
 
+    ClockSource dummyClockSource(void);
     virtual ClockSourceVector getSupportedClockSources();
     virtual bool setActiveClockSource(ClockSource);
     virtual ClockSource getActiveClockSource();

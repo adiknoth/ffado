@@ -518,21 +518,35 @@ Device::getSupportedSamplingFrequencies()
     return frequencies;
 }
 
+// The RME clock source selection logic is a little more complex than a
+// simple list can cater for.  Therefore we just put in a placeholder and
+// rely on the extended controls in ffado-mixer to deal with the details.
+//
+FFADODevice::ClockSource
+Device::dummyClockSource(void) {
+    ClockSource s;
+    s.id = 0;
+    s.type = eCT_Internal;
+    s.description = "Selected via device controls";
+    s.valid = s.active = s.locked = true;
+    s.slipping = false;
+    return s;
+}
 FFADODevice::ClockSourceVector
 Device::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
+    ClockSource s;
+    s = dummyClockSource();
+    r.push_back(s);
     return r;
 }
-
 bool
 Device::setActiveClockSource(ClockSource s) {
-    return false;
+    return true;
 }
-
 FFADODevice::ClockSource
 Device::getActiveClockSource() {
-    ClockSource s;
-    return s;
+    return dummyClockSource();
 }
 
 bool
