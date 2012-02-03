@@ -114,6 +114,11 @@ signed int err = 0;
                 m_value = (v != 0);
             }
             break;
+        case RME_CTRL_SPDIF_INPUT_MODE:
+            if (m_parent.setSpdifInputMode(v==0?FF_SWPARAM_SPDIF_INPUT_COAX:FF_SWPARAM_SPDIF_INPUT_OPTICAL)) {
+                m_value = v;
+            }
+            break;
         case RME_CTRL_PHONES_LEVEL:
             if (m_parent.setPhonesLevel(v)) {
                 m_value = v;
@@ -163,6 +168,10 @@ signed int val = 0;
             break;
         case RME_CTRL_FF400_INSTR_SW:
             return m_parent.getInputInstrOpt(m_info);
+            break;
+        case RME_CTRL_SPDIF_INPUT_MODE:
+            i = m_parent.getSpdifInputMode();
+            return i==FF_SWPARAM_SPDIF_INPUT_COAX?0:1;
             break;
         case RME_CTRL_PHONES_LEVEL:
             return m_parent.getPhonesLevel();

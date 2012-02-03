@@ -115,6 +115,8 @@ public:
     signed int setInputPadOpt(unsigned int channel, unsigned int status);
     signed int getInputInstrOpt(unsigned int channel);
     signed int setInputInstrOpt(unsigned int channel, unsigned int status);
+    signed int getSpdifInputMode(void);
+    signed int setSpdifInputMode(signed int mode);
     signed int getAmpGain(unsigned int index);
     signed int setAmpGain(unsigned int index, signed int val);
     signed int getMixerGain(unsigned int ctype,

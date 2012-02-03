@@ -68,6 +68,9 @@ class Rme(QWidget):
             self.level_out_p4dBu:   ['/Control/Output_level', 2],
             self.level_out_m10dBV:  ['/Control/Output_level', 3],
 
+            self.spdif_input_coax:    ['/Control/SPDIF_input_mode', 0],
+            self.spdif_input_optical: ['/Control/SPDIF_input_mode', 1],
+
             self.phones_hi_gain: ['/Control/Phones_level', 1],
             self.phones_p4dBu:   ['/Control/Phones_level', 2],
             self.phones_m10dBV:  ['/Control/Phones_level', 3],

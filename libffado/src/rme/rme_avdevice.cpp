@@ -160,6 +160,9 @@ Device::buildMixer() {
         new RmeSettingsCtrl(*this, RME_CTRL_OUTPUT_LEVEL, 0,
             "Output_level", "Output level", ""));
     result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_SPDIF_INPUT_MODE, 0,
+            "SPDIF_input_mode", "SPDIF input mode", ""));
+    result &= m_ControlContainer->addElement(
         new RmeSettingsCtrl(*this, RME_CTRL_PHONES_LEVEL, 0,
             "Phones_level", "Phones level", ""));
 

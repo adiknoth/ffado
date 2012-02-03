@@ -146,6 +146,18 @@ Device::setInputInstrOpt(unsigned int channel, unsigned int status) {
     return 0;
 }
 
+signed int 
+Device::getSpdifInputMode(void) {
+    return settings->spdif_input_mode;
+}
+
+signed int 
+Device::setSpdifInputMode(signed int mode) {
+    settings->spdif_input_mode = mode;
+    set_hardware_params();
+    return 0;
+}
+
 signed int
 Device::getAmpGain(unsigned int index) {
     if (m_rme_model != RME_MODEL_FIREFACE400) {
