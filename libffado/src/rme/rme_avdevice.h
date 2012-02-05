@@ -136,6 +136,8 @@ public:
         unsigned int src_channel, unsigned int dest_channel, unsigned int flagmask);
     signed int setMixerFlags(unsigned int ctype,
         unsigned int src_channel, unsigned int dest_channel, unsigned int flagmask, signed int val);
+    signed int getClockMode(void);
+    signed int setClockMode(signed int mode);
 
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }

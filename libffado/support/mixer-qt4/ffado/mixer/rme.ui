@@ -473,16 +473,16 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_2">
              <item>
-              <widget class="QRadioButton" name="spdif_input_coax">
+              <widget class="QRadioButton" name="spdif_input_optical">
                <property name="text">
-                <string>Coax</string>
+                <string>Optical</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="spdif_input_optical">
+              <widget class="QRadioButton" name="spdif_input_coax">
                <property name="text">
-                <string>Optical</string>
+                <string>Coax</string>
                </property>
               </widget>
              </item>
@@ -669,14 +669,14 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_3">
              <item>
-              <widget class="QRadioButton" name="radioButton_3">
+              <widget class="QRadioButton" name="clock_mode_autosync">
                <property name="text">
                 <string>Autosync</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QRadioButton" name="radioButton_4">
+              <widget class="QRadioButton" name="clock_mode_master">
                <property name="text">
                 <string>Master</string>
                </property>

@@ -351,4 +351,17 @@ Device::setMixerFlags(unsigned int ctype,
     return 0;
 }
 
+signed int
+Device::getClockMode(void) {
+  return settings->clock_mode;
+}
+signed int
+Device::setClockMode(signed int mode) {
+  if (mode!=FF_SWPARAM_CLOCK_MODE_MASTER && mode!=FF_SWPARAM_CLOCK_MODE_AUTOSYNC)
+    return -1;
+  settings->clock_mode = mode;
+  set_hardware_params();
+  return 0;
+}
+
 }

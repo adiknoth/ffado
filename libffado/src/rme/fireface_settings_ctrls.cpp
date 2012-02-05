@@ -145,6 +145,12 @@ signed int err = 0;
             }
             break;
 
+        case RME_CTRL_CLOCK_MODE:
+            if (m_parent.setClockMode(v==1?FF_SWPARAM_CLOCK_MODE_AUTOSYNC:FF_SWPARAM_CLOCK_MODE_MASTER) == 0) {
+                m_value = v;
+            }
+            break;
+
         // All RME_CTRL_INFO_* controls are read-only.  Warn on attempts to
         // set these.
         case RME_CTRL_INFO_MODEL:
@@ -207,6 +213,9 @@ signed int val = 0;
             break;
         case RME_CTRL_PHONES_LEVEL:
             return m_parent.getPhonesLevel();
+            break;
+        case RME_CTRL_CLOCK_MODE:
+            return m_parent.getClockMode()==FF_SWPARAM_CLOCK_MODE_AUTOSYNC?1:0;
             break;
 
         case RME_CTRL_INFO_MODEL:

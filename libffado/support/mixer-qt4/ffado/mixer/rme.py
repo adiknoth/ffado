@@ -79,6 +79,9 @@ class Rme(QWidget):
             self.phones_hi_gain: ['/Control/Phones_level', 1],
             self.phones_p4dBu:   ['/Control/Phones_level', 2],
             self.phones_m10dBV:  ['/Control/Phones_level', 3],
+
+            self.clock_mode_autosync: ['/Control/Clock_mode', 1],
+            self.clock_mode_master: ['/Control/Clock_mode', 0],
         }
 
 

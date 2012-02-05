@@ -178,6 +178,10 @@ Device::buildMixer() {
         new RmeSettingsCtrl(*this, RME_CTRL_PHONES_LEVEL, 0,
             "Phones_level", "Phones level", ""));
 
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_CLOCK_MODE, 0,
+            "Clock_mode", "Clock mode", ""));
+
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         // Instrument input options
         for (i=3; i<=4; i++) {
