@@ -53,6 +53,12 @@ namespace Rme {
 
 #define RME_CTRL_INFO_MODEL            0x0100
 #define RME_CTRL_INFO_TCO_PRESENT      0x0200
+#define RME_CTRL_INFO_SYSCLOCK_MODE    0x0300
+#define RME_CTRL_INFO_SYSCLOCK_FREQ    0x0301
+#define RME_CTRL_INFO_AUTOSYNC_FREQ    0x0310
+#define RME_CTRL_INFO_AUTOSYNC_SRC     0x0311
+#define RME_CTRL_INFO_SYNC_STATUS      0x0312
+#define RME_CTRL_INFO_SPDIF_FREQ       0x0313
 
 /* Control types for an RmeSettingsMatrixCtrl object */
 #define RME_MATRIXCTRL_NONE            0x0000

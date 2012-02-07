@@ -155,6 +155,11 @@ signed int err = 0;
         // set these.
         case RME_CTRL_INFO_MODEL:
         case RME_CTRL_INFO_TCO_PRESENT:
+        case RME_CTRL_INFO_SYSCLOCK_FREQ:
+        case RME_CTRL_INFO_AUTOSYNC_FREQ:
+        case RME_CTRL_INFO_AUTOSYNC_SRC:
+        case RME_CTRL_INFO_SYNC_STATUS:
+        case RME_CTRL_INFO_SPDIF_FREQ:
             debugOutput(DEBUG_LEVEL_ERROR, "Attempt to set readonly info control 0x%08x\n", m_type);
             err = 1;
             break;
@@ -172,6 +177,7 @@ RmeSettingsCtrl::getValue() {
 
 signed int i;
 signed int val = 0;
+FF_state_t ff_state;
 
     switch (m_type) {
         case RME_CTRL_NONE:
@@ -224,6 +230,33 @@ signed int val = 0;
 
         case RME_CTRL_INFO_TCO_PRESENT:
             return m_parent.getTcoPresent();
+
+        case RME_CTRL_INFO_SYSCLOCK_MODE:
+            if (m_parent.get_hardware_state(&ff_state) == 0)
+                return ff_state.clock_mode;
+            break;
+        case RME_CTRL_INFO_SYSCLOCK_FREQ:
+            return m_parent.getSamplingFrequency();
+        case RME_CTRL_INFO_AUTOSYNC_FREQ:
+            if (m_parent.get_hardware_state(&ff_state) == 0)
+                return ff_state.autosync_freq;
+            break;
+        case RME_CTRL_INFO_AUTOSYNC_SRC:
+            if (m_parent.get_hardware_state(&ff_state) == 0)
+                return ff_state.autosync_source;
+            break;
+        case RME_CTRL_INFO_SYNC_STATUS:
+            if (m_parent.get_hardware_state(&ff_state) == 0)
+                return (ff_state.adat1_sync_status) |
+                       (ff_state.adat2_sync_status << 2) |
+                       (ff_state.spdif_sync_status << 4) |
+                       (ff_state.wclk_sync_status << 6) |
+                       (ff_state.tco_sync_status << 8);
+            break;
+        case RME_CTRL_INFO_SPDIF_FREQ:
+            if (m_parent.get_hardware_state(&ff_state) == 0)
+                return ff_state.spdif_freq;
+            break;
 
         default:
             debugOutput(DEBUG_LEVEL_ERROR, "Unknown control type 0x%08x\n", m_type);

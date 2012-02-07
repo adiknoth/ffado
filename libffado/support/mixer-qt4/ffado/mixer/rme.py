@@ -22,7 +22,7 @@
 
 from PyQt4 import QtGui
 
-from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
+from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt, QTimer
 from PyQt4.QtGui import QWidget, QApplication
 from ffado.config import *
 
@@ -127,6 +127,28 @@ class Rme(QWidget):
         log.debug("gain %s[%d] set to %d" % (self.Gains[sender][0], self.Gains[sender][1], a0))
         self.hw.setMatrixMixerValue(self.Gains[sender][0], 0, self.Gains[sender][1], a0)
 
+    def status_update(self):
+        # log.debug("timer event")
+        clk_mode = ['Master', 'Slave']
+        src_str = ['None', 'ADAT 1', 'ADAT 2', 'SPDIF', 'Wordclock', 'TCO']
+        sync_stat = ['No lock', 'Locked', 'Synced']
+        sysclock_mode = self.hw.getDiscrete('/Control/sysclock_mode')
+        sysclock_freq = self.hw.getDiscrete('/Control/sysclock_freq')
+        autosync_freq = self.hw.getDiscrete('/Control/autosync_freq')
+        autosync_src = self.hw.getDiscrete('/Control/autosync_src')
+        sync_status = self.hw.getDiscrete('/Control/sync_status')
+        spdif_freq = self.hw.getDiscrete('/Control/spdif_freq')
+        self.sysclock_freq.setText("%d Hz" % (sysclock_freq))
+        self.sysclock_mode.setText(clk_mode[sysclock_mode])
+        self.autosync_freq.setText("%d Hz" % (autosync_freq))
+        self.autosync_src.setText(src_str[autosync_src])
+        self.sync_check_adat1_status.setText(sync_stat[sync_status & 0x03])
+        self.sync_check_adat2_status.setText(sync_stat[(sync_status >> 2) & 0x03])
+        self.sync_check_spdif_status.setText(sync_stat[(sync_status >> 4) & 0x03])
+        self.sync_check_wclk_status.setText(sync_stat[(sync_status >> 6) & 0x03])
+        self.sync_check_tco_status.setText(sync_stat[(sync_status >> 8) & 0x03])
+        self.spdif_freq.setText("%d Hz" % (spdif_freq))
+
     # Hide and disable a control
     def disable_hide(self,widget):
         widget.hide()
@@ -193,6 +215,10 @@ class Rme(QWidget):
             self.sync_check_adat2_label.setEnabled(False)
             self.sync_check_adat2_status.setEnabled(False)
 
+        if (not(self.tco_present)):
+            self.sync_check_tco_label.setEnabled(False)
+            self.sync_check_tco_status.setEnabled(False)
+
         # Only the FF400 has specific channel 3/4 options, input gain
         # controls and switchable phones level
         if (self.model != RME_MODEL_FF400):
@@ -248,5 +274,9 @@ class Rme(QWidget):
             log.debug("gain %s[%d] is %d" % (info[0], info[1], val))
             ctrl.setValue(val);
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateGain)
+
+        self.update_timer = QTimer(self)
+        QObject.connect(self.update_timer, SIGNAL('timeout()'), self.status_update)
+        self.update_timer.start(1000)
 
 # vim: et

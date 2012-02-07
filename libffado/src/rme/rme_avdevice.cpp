@@ -149,6 +149,24 @@ Device::buildMixer() {
     result &= m_ControlContainer->addElement(
         new RmeSettingsCtrl(*this, RME_CTRL_INFO_TCO_PRESENT, 0,
             "TCO_present", "TCO is present", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_INFO_SYSCLOCK_MODE, 0,
+            "sysclock_mode", "System clock mode", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_INFO_SYSCLOCK_FREQ, 0,
+            "sysclock_freq", "System clock frequency", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_INFO_AUTOSYNC_FREQ, 0,
+            "autosync_freq", "Autosync frequency", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_INFO_AUTOSYNC_SRC, 0,
+            "autosync_src", "Autosync source", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_INFO_SYNC_STATUS, 0,
+            "sync_status", "Sync status", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_INFO_SPDIF_FREQ, 0,
+            "spdif_freq", "SPDIF frequency", ""));
 
     result &= m_ControlContainer->addElement(
         new RmeSettingsCtrl(*this, RME_CTRL_PHANTOM_SW, 0,
