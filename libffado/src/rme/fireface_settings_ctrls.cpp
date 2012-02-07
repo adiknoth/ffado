@@ -155,6 +155,7 @@ signed int err = 0;
         // set these.
         case RME_CTRL_INFO_MODEL:
         case RME_CTRL_INFO_TCO_PRESENT:
+        case RME_CTRL_INFO_SYSCLOCK_MODE:
         case RME_CTRL_INFO_SYSCLOCK_FREQ:
         case RME_CTRL_INFO_AUTOSYNC_FREQ:
         case RME_CTRL_INFO_AUTOSYNC_SRC:
