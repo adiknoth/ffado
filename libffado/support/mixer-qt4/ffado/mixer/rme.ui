@@ -733,6 +733,13 @@
               </widget>
              </item>
              <item>
+              <widget class="QRadioButton" name="sync_ref_tco">
+               <property name="text">
+                <string>TCO</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <spacer name="verticalSpacer_15">
                <property name="orientation">
                 <enum>Qt::Vertical</enum>

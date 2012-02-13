@@ -150,6 +150,22 @@ signed int err = 0;
                 m_value = v;
             }
             break;
+        case RME_CTRL_SYNC_REF: {
+            signed int val;
+            switch (v) {
+              case 0: val = FF_SWPARAM_SYNCREF_WORDCLOCK; break;
+              case 1: val = FF_SWPARAM_SYNCREF_ADAT1; break;
+              case 2: val = FF_SWPARAM_SYNCREF_ADAT2; break;
+              case 3: val = FF_SWPARAM_SYNCREF_SPDIF; break;
+              case 4: val = FF_SWPARAM_SYNCREC_TCO; break;
+              default:
+                val = FF_SWPARAM_SYNCREF_WORDCLOCK;
+            }
+            if (m_parent.setSyncRef(val) == 0) {
+              m_value = v;
+            }
+            break;
+        }
 
         // All RME_CTRL_INFO_* controls are read-only.  Warn on attempts to
         // set these.
@@ -224,7 +240,19 @@ FF_state_t ff_state;
         case RME_CTRL_CLOCK_MODE:
             return m_parent.getClockMode()==FF_SWPARAM_CLOCK_MODE_AUTOSYNC?1:0;
             break;
-
+        case RME_CTRL_SYNC_REF: {
+            signed int val = m_parent.getSyncRef();
+            switch (val) {
+              case FF_SWPARAM_SYNCREF_WORDCLOCK: return 0;
+              case FF_SWPARAM_SYNCREF_ADAT1: return 1;
+              case FF_SWPARAM_SYNCREF_ADAT2: return 2;
+              case FF_SWPARAM_SYNCREF_SPDIF: return 3;
+              case FF_SWPARAM_SYNCREC_TCO: return 4;
+              default:
+                return 0;
+            }
+            break;
+        }
         case RME_CTRL_INFO_MODEL:
             return m_parent.getRmeModel();
             break;

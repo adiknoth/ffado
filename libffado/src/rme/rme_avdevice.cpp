@@ -199,6 +199,9 @@ Device::buildMixer() {
     result &= m_ControlContainer->addElement(
         new RmeSettingsCtrl(*this, RME_CTRL_CLOCK_MODE, 0,
             "Clock_mode", "Clock mode", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_SYNC_REF, 0,
+            "Sync_ref", "Preferred sync ref", ""));
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         // Instrument input options

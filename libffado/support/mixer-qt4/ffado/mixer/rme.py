@@ -82,6 +82,12 @@ class Rme(QWidget):
 
             self.clock_mode_autosync: ['/Control/Clock_mode', 1],
             self.clock_mode_master: ['/Control/Clock_mode', 0],
+
+            self.sync_ref_wordclk: ['/Control/Sync_ref', 0],
+            self.sync_ref_adat1: ['/Control/Sync_ref', 1],
+            self.sync_ref_adat2: ['/Control/Sync_ref', 2],
+            self.sync_ref_spdif: ['/Control/Sync_ref', 3],
+            self.sync_ref_tco: ['/Control/Sync_ref', 4],
         }
 
 
@@ -218,6 +224,7 @@ class Rme(QWidget):
         if (not(self.tco_present)):
             self.sync_check_tco_label.setEnabled(False)
             self.sync_check_tco_status.setEnabled(False)
+            self.sync_ref_tco.setEnabled(False)
 
         # Only the FF400 has specific channel 3/4 options, input gain
         # controls and switchable phones level

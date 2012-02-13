@@ -364,4 +364,15 @@ Device::setClockMode(signed int mode) {
   return 0;
 }
 
+signed int
+Device::getSyncRef(void) {
+  return settings->sync_ref;
+}
+signed int
+Device::setSyncRef(signed int ref) {
+  settings->sync_ref = ref;
+  set_hardware_params();
+  return 0;
+}
+
 }

@@ -138,6 +138,8 @@ public:
         unsigned int src_channel, unsigned int dest_channel, unsigned int flagmask, signed int val);
     signed int getClockMode(void);
     signed int setClockMode(signed int mode);
+    signed int getSyncRef(void);
+    signed int setSyncRef(signed int ref);
 
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }
