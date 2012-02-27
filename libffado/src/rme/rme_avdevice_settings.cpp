@@ -375,4 +375,18 @@ Device::setSyncRef(signed int ref) {
   return 0;
 }
 
+signed int
+Device::getBandwidthLimit(void) {
+  return settings->limit_bandwidth;
+}
+signed int
+Device::setBandwidthLimit(signed int limit) {
+  if (limit < FF_DEV_FLASH_BWLIMIT_SEND_ALL_CHANNELS ||
+          limit > FF_DEV_FLASH_BWLIMIT_ANALOG_ONLY)
+      return -1;
+  settings->limit_bandwidth = limit;
+  set_hardware_params();
+  return 0;
+}
+
 }

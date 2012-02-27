@@ -133,6 +133,14 @@ class Rme(QWidget):
         log.debug("gain %s[%d] set to %d" % (self.Gains[sender][0], self.Gains[sender][1], a0))
         self.hw.setMatrixMixerValue(self.Gains[sender][0], 0, self.Gains[sender][1], a0)
 
+    def updateBandwidthLimit(self, a0):
+        # Account for the "No ADAT-2" item which will not be present on
+        # a FF400.
+        if (self.model==RME_MODEL_FF400 and a0>0):
+            a0 = a0 + 1
+        # log.debug("limit update: %d" % (a0));
+        self.hw.setDiscrete('/Control/Bandwidth_limit', a0);
+
     def updateStreamingState(self):
         ss = self.streamingstatus.selected()
         ss_txt = self.streamingstatus.getEnumLabel(ss)
@@ -242,6 +250,17 @@ class Rme(QWidget):
             self.disable_hide(self.input_gains_group)
             self.disable_hide(self.channel_3_4_options_group)
             self.phones_level_group.setEnabled(False)
+
+        # Add the "No ADAT-2" item to the bandwidth limit control if the
+        # device is not a FF400.  Set the control to reflect the current
+        # device setting and connect an update signal.
+        if (self.model != RME_MODEL_FF400):
+            self.bandwidth_limit.insertItem(1, "No ADAT-2")
+        val = self.hw.getDiscrete('/Control/Bandwidth_limit')
+        if (self.model==RME_MODEL_FF400 and val>1):
+            val = val - 1
+        self.bandwidth_limit.setCurrentIndex(val);
+        QObject.connect(self.bandwidth_limit, SIGNAL('currentIndexChanged(int)'), self.updateBandwidthLimit)
 
         # Get current hardware values and connect GUI element signals to 
         # their respective slots

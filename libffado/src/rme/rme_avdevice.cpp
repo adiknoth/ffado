@@ -202,6 +202,9 @@ Device::buildMixer() {
     result &= m_ControlContainer->addElement(
         new RmeSettingsCtrl(*this, RME_CTRL_SYNC_REF, 0,
             "Sync_ref", "Preferred sync ref", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_LIMIT_BANDWIDTH, 0,
+            "Bandwidth_limit", "Bandwidth limit", ""));
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         // Instrument input options

@@ -167,6 +167,22 @@ signed int err = 0;
             break;
         }
 
+        case RME_CTRL_LIMIT_BANDWIDTH: {
+            signed int val;
+            switch (v) {
+              case 0: val = FF_DEV_FLASH_BWLIMIT_SEND_ALL_CHANNELS; break;
+              case 1: val = FF_DEV_FLASH_BWLIMIT_NO_ADAT2; break;
+              case 2: val = FF_DEV_FLASH_BWLIMIT_ANALOG_SPDIF_ONLY; break;
+              case 3: val = FF_DEV_FLASH_BWLIMIT_ANALOG_ONLY; break;
+              default:
+                val = FF_DEV_FLASH_BWLIMIT_SEND_ALL_CHANNELS;
+            }
+            if (m_parent.setBandwidthLimit(val) == 0) {
+              m_value = v;
+            }
+            break;
+        }
+
         // All RME_CTRL_INFO_* controls are read-only.  Warn on attempts to
         // set these.
         case RME_CTRL_INFO_MODEL:
@@ -248,6 +264,18 @@ FF_state_t ff_state;
               case FF_SWPARAM_SYNCREF_ADAT2: return 2;
               case FF_SWPARAM_SYNCREF_SPDIF: return 3;
               case FF_SWPARAM_SYNCREC_TCO: return 4;
+              default:
+                return 0;
+            }
+            break;
+        }
+        case RME_CTRL_LIMIT_BANDWIDTH: {
+            signed int val = m_parent.getBandwidthLimit();
+            switch (val) {
+              case FF_DEV_FLASH_BWLIMIT_SEND_ALL_CHANNELS: return 0;
+              case FF_DEV_FLASH_BWLIMIT_NO_ADAT2: return 1;
+              case FF_DEV_FLASH_BWLIMIT_ANALOG_SPDIF_ONLY: return 2;
+              case FF_DEV_FLASH_BWLIMIT_ANALOG_ONLY: return 3;
               default:
                 return 0;
             }

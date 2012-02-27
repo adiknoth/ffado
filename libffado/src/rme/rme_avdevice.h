@@ -141,6 +141,8 @@ public:
     signed int setClockMode(signed int mode);
     signed int getSyncRef(void);
     signed int setSyncRef(signed int ref);
+    signed int getBandwidthLimit(void);
+    signed int setBandwidthLimit(signed int limit);
 
     /* General information functions */
     signed int getRmeModel(void) { return m_rme_model; }
