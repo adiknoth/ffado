@@ -384,6 +384,13 @@ Device::setBandwidthLimit(signed int limit) {
   if (limit < FF_DEV_FLASH_BWLIMIT_SEND_ALL_CHANNELS ||
           limit > FF_DEV_FLASH_BWLIMIT_ANALOG_ONLY)
       return -1;
+
+  // FF400 doesn't have a second ADAT channel, so this setting isn't
+  // relevant for that interface.
+  if (m_rme_model==RME_MODEL_FIREFACE400 &&
+          limit==FF_DEV_FLASH_BWLIMIT_NO_ADAT2)
+      return -1;
+
   settings->limit_bandwidth = limit;
   set_hardware_params();
   return 0;
