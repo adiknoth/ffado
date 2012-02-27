@@ -87,6 +87,7 @@ public:
     virtual bool lock();
     virtual bool unlock();
 
+    virtual enum FFADODevice::eStreamingState getStreamingState();
     virtual bool startStreamByIndex(int i);
     virtual bool stopStreamByIndex(int i);
 

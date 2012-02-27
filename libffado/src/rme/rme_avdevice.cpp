@@ -802,6 +802,13 @@ Device::getStreamProcessorByIndex(int i) {
     return NULL;
 }
 
+enum FFADODevice::eStreamingState
+Device::getStreamingState() {
+  if (hardware_is_streaming())
+    return eSS_Both;
+  return eSS_Idle;
+}
+
 bool
 Device::startStreamByIndex(int i) {
     // The RME does not allow separate enabling of the transmit and receive

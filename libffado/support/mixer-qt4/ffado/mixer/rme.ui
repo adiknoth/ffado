@@ -1063,7 +1063,7 @@
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_12">
              <item>
-              <widget class="QComboBox" name="comboBox">
+              <widget class="QComboBox" name="bandwidth_limit">
                <item>
                 <property name="text">
                  <string>All channels</string>

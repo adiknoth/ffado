@@ -28,6 +28,8 @@ from ffado.config import *
 
 from ffado.widgets.matrixmixer import MatrixMixer
 
+from ffado.dbus_util import *
+
 import logging
 log = logging.getLogger('rme')
 
@@ -133,8 +135,20 @@ class Rme(QWidget):
         log.debug("gain %s[%d] set to %d" % (self.Gains[sender][0], self.Gains[sender][1], a0))
         self.hw.setMatrixMixerValue(self.Gains[sender][0], 0, self.Gains[sender][1], a0)
 
+    def updateStreamingState(self):
+        ss = self.streamingstatus.selected()
+        ss_txt = self.streamingstatus.getEnumLabel(ss)
+        if ss_txt != 'Idle':
+            self.is_streaming = True
+        else:
+            self.is_streaming = False
+        if (self.last_streaming_state != self.is_streaming):
+            self.bandwidth_limit.setEnabled(not(self.is_streaming));
+        self.last_streaming_state = self.is_streaming
+
     def status_update(self):
         # log.debug("timer event")
+        self.updateStreamingState()
         clk_mode = ['Master', 'Slave']
         src_str = ['None', 'ADAT 1', 'ADAT 2', 'SPDIF', 'Wordclock', 'TCO']
         sync_stat = ['No lock', 'Locked', 'Synced']
@@ -188,10 +202,8 @@ class Rme(QWidget):
         layout.addWidget(scrollarea)
         self.outputmixer.setLayout(layout)
 
-        # Is the device streaming?
-        #self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
-        self.is_streaming = 0
-        #log.debug("device streaming flag: %d" % (self.is_streaming))
+        self.is_streaming = False
+        self.last_streaming_state = False
 
         # Retrieve other device settings as needed and customise the UI
         # based on these options.
@@ -281,6 +293,9 @@ class Rme(QWidget):
             log.debug("gain %s[%d] is %d" % (info[0], info[1], val))
             ctrl.setValue(val);
             QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateGain)
+
+        self.updateStreamingState()
+        #log.debug("device streaming flag: %d" % (self.is_streaming))
 
         self.update_timer = QTimer(self)
         QObject.connect(self.update_timer, SIGNAL('timeout()'), self.status_update)
