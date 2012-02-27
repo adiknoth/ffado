@@ -66,6 +66,9 @@ The driver is written to provide generic support for all devices it might be
 able to handle. This means that most devices based on the BridgeCo BeBoB or
 the ECHO FireWorks platform will work, at least to a certain extent.
 
+Devices for which work is in progress:
+* RME Firewire devices
+
 Devices that have been reported to (partially) work with the generic support:
 * Presonus FireBox
 * Presonus FirePod / FP10
@@ -78,7 +81,6 @@ Usupported devices:
 * Other TC Konnekt devices
 * Other Alesis devices
 * Metric Halo devices
-* RME Firewire devices
 
 We constantly try to persuade vendors to help us extend our device support.
 
