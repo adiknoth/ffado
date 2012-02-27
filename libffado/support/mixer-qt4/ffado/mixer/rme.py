@@ -28,8 +28,6 @@ from ffado.config import *
 
 from ffado.widgets.matrixmixer import MatrixMixer
 
-from ffado.dbus_util import *
-
 import logging
 log = logging.getLogger('rme')
 
