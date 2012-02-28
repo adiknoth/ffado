@@ -43,22 +43,87 @@ FocusriteEAP::Poti* SaffirePro40::SaffirePro40EAP::getDimPoti(std::string name) 
     return new FocusriteEAP::Poti(this, name, 0x58);
 }
 
-void SaffirePro40::SaffirePro40EAP::setupSources() {
-    addSource("SPDIF",  6,  2, eRS_AES);
+//
+// Under 48kHz Saffire pro 40 has
+//  - 8 analogic inputs (mic/line)
+//  - 8 ADAT inputs
+//  - 2 SPDIF inputs
+//  - 20 ieee1394 inputs
+//  - 18 mixer inputs
+//
+//  - 10 analogic outputs
+//  - 8 ADAT outputs
+//  - 2 SPDIF outputs
+//  - 20 ieee1394 outputs
+//  - 16 mixer outputs
+//
+void SaffirePro40::SaffirePro40EAP::setupSources_low() {
+    addSource("SPDIF",  0,  2, eRS_AES);
     addSource("ADAT",   0,  8, eRS_ADAT);
-    addSource("Analog", 0,  8, eRS_InS0);
+    addSource("Analog", 16,  8, eRS_InS0);
     addSource("Mixer",  0, 16, eRS_Mixer);
-    addSource("1394",   0, 16, eRS_ARX0);
+    addSource("1394",   0, 10, eRS_ARX0);
+    addSource("1394",   0, 10, eRS_ARX1, 10);
     addSource("Mute",   0,  1, eRS_Muted);
 }
-void SaffirePro40::SaffirePro40EAP::setupDestinations() {
-    addDestination("SPDIF",  6,  2, eRD_AES);
+
+void SaffirePro40::SaffirePro40EAP::setupDestinations_low() {
+    addDestination("SPDIF",  0,  2, eRD_AES);
     addDestination("ADAT",   0,  8, eRD_ADAT);
-    addDestination("Analog", 0,  8, eRD_InS0);
+    addDestination("Analog", 0,  2, eRD_InS0);
+    addDestination("Analog", 0,  8, eRD_InS1, 2);
     addDestination("Mixer",  0, 16, eRD_Mixer0);
     addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
-    addDestination("1394",   0, 16, eRD_ATX0);
+    addDestination("1394",   0, 10, eRD_ATX0);
+    addDestination("1394",   0,  8, eRD_ATX1, 10);
+    addDestination("Loop",   8,  2, eRD_ATX1);
     addDestination("Mute",   0,  1, eRD_Muted);
+}
+
+//
+// Under 96kHz Saffire pro 40 has
+//  - 8 analogic inputs (mic/line)
+//  - 4 ADAT inputs
+//  - 2 SPDIF inputs
+//  - 16 ieee1394 inputs
+//  - 18 mixer inputs
+//
+//  - 10 analogic outputs
+//  - 4 ADAT outputs
+//  - 2 SPDIF outputs
+//  - 16 ieee1394 outputs
+//  - 16 mixer outputs
+//
+void SaffirePro40::SaffirePro40EAP::setupSources_mid() {
+      addSource("SPDIF",  0,  2, eRS_AES);
+      addSource("ADAT",   0,  4, eRS_ADAT);
+      addSource("Analog", 16,  8, eRS_InS0);
+      addSource("Mixer",  0, 16, eRS_Mixer);
+      addSource("1394",   0, 16, eRS_ARX0);
+      addSource("Mute",   0,  1, eRS_Muted);
+}
+
+void SaffirePro40::SaffirePro40EAP::setupDestinations_mid() {
+    addDestination("SPDIF",  0,  2, eRD_AES);
+    addDestination("ADAT",   0,  4, eRD_ADAT);
+    addDestination("Analog", 0,  2, eRD_InS0);
+    addDestination("Analog", 0,  8, eRD_InS1, 2);
+    addDestination("Mixer",  0, 16, eRD_Mixer0);
+    addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
+    addDestination("1394",   0, 14, eRD_ATX0);
+    addDestination("Loop",   14, 2, eRD_ATX0);
+    addDestination("Mute",   0,  1, eRD_Muted);
+}
+
+//
+// 192 kHz is not supported
+//
+void SaffirePro40::SaffirePro40EAP::setupSources_high() {
+    printMessage("High (192 kHz) sample rate not supported by Saffire Pro 40\n");
+}
+
+void SaffirePro40::SaffirePro40EAP::setupDestinations_high() {
+    printMessage("High (192 kHz) sample rate not supported by Saffire Pro 40\n");
 }
 
 SaffirePro40::SaffirePro40( DeviceManager& d,
