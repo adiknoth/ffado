@@ -362,6 +362,18 @@ Device::setSamplingFrequency( int samplingFrequency )
             return false;
         }
     }
+
+    // Update for the new samplerate
+    if ( !initIoFunctions() ) {
+        debugError("Could not initialize I/O functions\n");
+        return false;
+    }
+
+    if (m_eap) {
+        m_eap->update();
+    }
+    showDevice();
+
     return true;
 }
 
