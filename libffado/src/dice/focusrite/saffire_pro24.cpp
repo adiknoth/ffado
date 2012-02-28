@@ -43,6 +43,7 @@ FocusriteEAP::Poti* SaffirePro24::SaffirePro24EAP::getDimPoti(std::string name) 
     return new FocusriteEAP::Poti(this, name, 0x54);
 }
 
+/*
 void SaffirePro24::SaffirePro24EAP::setupSources() {
     addSource("SPDIF",  6,  2, eRS_AES);
     addSource("ADAT",   0,  8, eRS_ADAT);
@@ -59,7 +60,49 @@ void SaffirePro24::SaffirePro24EAP::setupDestinations() {
     addDestination("1394",   0, 16, eRD_ATX0);
     addDestination("Mute",   0,  1, eRD_Muted);
 }
+*/
 
+void SaffirePro24::SaffirePro24EAP::setupSources_low() {
+    addSource("SPDIF",  6,  2, eRS_AES);
+    addSource("ADAT",   0,  8, eRS_ADAT);
+    addSource("Analog", 0,  4, eRS_InS0);
+    addSource("Mixer",  0,  8, eRS_Mixer);
+    addSource("1394",   0,  8, eRS_ARX0);
+    addSource("Mute",   0,  1, eRS_Muted);
+}
+void SaffirePro24::SaffirePro24EAP::setupDestinations_low() {
+    addDestination("SPDIF",  6,  2, eRD_AES);
+    addDestination("Analog", 0,  6, eRD_InS0);
+    addDestination("Mixer",  0, 16, eRD_Mixer0);
+    addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
+    addDestination("1394",   0, 16, eRD_ATX0);
+    addDestination("Mute",   0,  1, eRD_Muted);
+}
+
+void SaffirePro24::SaffirePro24EAP::setupSources_mid() {
+    addSource("SPDIF",  6,  2, eRS_AES);
+    addSource("ADAT",   0,  4, eRS_ADAT);
+    addSource("Analog", 0,  4, eRS_InS0);
+    addSource("Mixer",  0, 16, eRS_Mixer);
+    addSource("1394",   0,  8, eRS_ARX0);
+    addSource("Mute",   0,  1, eRS_Muted);
+}
+void SaffirePro24::SaffirePro24EAP::setupDestinations_mid() {
+    addDestination("SPDIF",  6,  2, eRD_AES);
+    addDestination("Analog", 0,  6, eRD_InS0);
+    addDestination("Mixer",  0, 16, eRD_Mixer0);
+    addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
+    addDestination("1394",   0, 12, eRD_ATX0);
+    addDestination("Mute",   0,  1, eRD_Muted);
+}
+
+void SaffirePro24::SaffirePro24EAP::setupSources_high() {
+    printMessage("High (192 kHz) sample rate not supported by Saffire Pro 24\n");
+}
+
+void SaffirePro24::SaffirePro24EAP::setupDestinations_high() {
+    printMessage("High (192 kHz) sample rate not supported by Saffire Pro 24\n");
+}
 
 class SaffirePro24::LineInstSwitch : public Dice::Focusrite::FocusriteEAP::Switch
 {
