@@ -717,7 +717,7 @@ Device::showDevice()
     }
 
     printMessage(" RX param space:\n");
-    printMessage("  Nb of recv        : %1d\n", m_nb_tx);
+    printMessage("  Nb of recv        : %1d\n", m_nb_rx);
     for (unsigned int i=0;i<m_nb_rx;i++) {
         printMessage("  Receiver %d:\n",i);
 
