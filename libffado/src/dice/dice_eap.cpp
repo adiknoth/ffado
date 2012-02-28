@@ -200,8 +200,7 @@ EAP::init() {
             debugError("Could not allocate memory for router\n");
             return false;
         }
-        setupSources();
-        setupDestinations();
+        m_router->update();
 
         // add the router to the EAP control container
         if(!addElement(m_router)) {
@@ -212,9 +211,33 @@ EAP::init() {
     return true;
 }
 
+
+void
+EAP::update()
+{
+    // update EAP from the last init
+    //   update router sources and destinations
+    if (m_router) {
+        m_router->update();
+    }
+}
+
 void
 EAP::setupSources() {
-    // add the routing sources and destinations for a DICE chip
+    // define router sources (possibly depending on the samplerate)
+    switch(m_device.getCurrentConfig()) {
+        case Device::eDC_Low: setupSources_low(); return;
+        case Device::eDC_Mid: setupSources_mid(); return;
+        case Device::eDC_High: setupSources_high(); return;
+        default:
+            debugError("Unsupported configuration mode\n");
+            return;
+    }
+}
+
+void
+EAP::setupSources_low() {
+    // add the routing sources for a DICE chip
     switch(m_general_chip) {
         case DICE_EAP_CAP_GENERAL_CHIP_DICEII:
             // router/EAP currently not supported
@@ -247,8 +270,30 @@ EAP::setupSources() {
 }
 
 void
+EAP::setupSources_mid() {
+    setupSources_low();
+}
+
+void
+EAP::setupSources_high() {
+    setupSources_low();
+}
+
+void
 EAP::setupDestinations() {
-    // add the routing sources and destinations for a DICE chip
+    switch(m_device.getCurrentConfig()) {
+        case Device::eDC_Low: setupDestinations_low(); return;
+        case Device::eDC_Mid: setupDestinations_mid(); return;
+        case Device::eDC_High: setupDestinations_high(); return;
+        default:
+            debugError("Unsupported configuration mode\n");
+            return;
+    }
+}
+
+void
+EAP::setupDestinations_low() {
+    // add the routing destinations for a DICE chip
     switch(m_general_chip) {
         case DICE_EAP_CAP_GENERAL_CHIP_DICEII:
             // router/EAP currently not supported
@@ -279,6 +324,14 @@ EAP::setupDestinations() {
             // this is an unsupported chip
             break;
     }
+}
+void
+EAP::setupDestinations_mid() {
+    setupDestinations_low();
+}
+void
+EAP::setupDestinations_high() {
+    setupDestinations_low();
 }
 
 void
@@ -793,7 +846,12 @@ EAP::supportsEAP(Device &d)
     return true;
 }
 
-// ----------- Mixer -------------
+// -------------------------------- Mixer ----------------------------------
+//   Dice matrix-mixer is a one-dimensional array with inputs index varying
+//    first
+//
+//   "ffado convention" is that inputs are rows and outputs are columns
+//
 EAP::Mixer::Mixer(EAP &p)
 : Control::MatrixMixer(&p.m_device, "MatrixMixer")
 , m_eap(p)
@@ -973,6 +1031,10 @@ EAP::Mixer::show()
     char tmp[bufflen];
     int cnt;
 
+    //
+    // Caution the user that, displaying as further, because inputs index varies first
+    //  inputs will appears as columns at the opposite of the "ffado convention"
+    printMessage("   -- inputs index -->>\n");
     cnt = 0;
     for(int j=0; j < nb_inputs; j++) {
         cnt += snprintf(tmp+cnt, bufflen-cnt, "   %02d   ", j);
@@ -1032,7 +1094,7 @@ EAP::Mixer::setValue( const int row, const int col, const double val)
         return false;
     }
     int nb_inputs = m_eap.m_mixer_nb_tx;
-    int addr = ((nb_inputs * row) + col) * 4;
+    int addr = ((nb_inputs * col) + row) * 4;
     quadlet_t tmp = (quadlet_t) val;
     if(!m_eap.writeRegBlock(eRT_Mixer, 4+addr, &tmp, 4)) {
         debugError("Failed to write coefficient\n");
@@ -1045,7 +1107,7 @@ double
 EAP::Mixer::getValue( const int row, const int col)
 {
     int nb_inputs = m_eap.m_mixer_nb_tx;
-    int addr = ((nb_inputs * row) + col) * 4;
+    int addr = ((nb_inputs * col) + row) * 4;
     quadlet_t tmp;
     if(!m_eap.readRegBlock(eRT_Mixer, 4+addr, &tmp, 4)) {
         debugError("Failed to read coefficient\n");
@@ -1122,6 +1184,18 @@ EAP::Router::~Router()
 }
 
 void
+EAP::Router::update()
+{
+    // Clear and
+    //   define new sources and destinations for the router
+    m_sources.clear();
+    m_eap.setupSources();
+    m_destinations.clear();
+    m_eap.setupDestinations();
+    return;
+}
+
+void
 EAP::Router::addSource(const std::string& basename, enum eRouteSource srcid,
                        unsigned int base, unsigned int cnt, unsigned int offset)
 {
@@ -1187,6 +1261,7 @@ stringlist
 EAP::Router::getSourceNames()
 {
     stringlist n;
+
     for (std::map<std::string, int>::iterator it=m_sources.begin(); it!=m_sources.end(); ++it)
         n.push_back(it->first);
     return n;

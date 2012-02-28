@@ -394,6 +394,7 @@ public:
         Router(EAP &);
         ~Router();
 
+        void update();
         void show();
 
         void addDestination(const std::string& name, enum eRouteDestination dstid,
@@ -464,6 +465,9 @@ public:
       */
     bool init();
 
+    /// update EAP
+    void update();
+
     /// Show information about the EAP
     void show();
     /// Dump the first parts of the application space
@@ -509,7 +513,10 @@ protected:
 
       To ease custom device support, this function is not in EAP::Router but here.
       */
-    virtual void setupSources();
+    void setupSources();
+    virtual void setupSources_low();
+    virtual void setupSources_mid();
+    virtual void setupSources_high();
     /**
       @brief Setup all the available destinations
 
@@ -519,7 +526,10 @@ protected:
 
       To ease custom device support, this function is not in EAP::Router but here.
       */
-    virtual void setupDestinations();
+    void setupDestinations();
+    virtual void setupDestinations_low();
+    virtual void setupDestinations_mid();
+    virtual void setupDestinations_high();
 
     /**
       @brief Actually add the source
