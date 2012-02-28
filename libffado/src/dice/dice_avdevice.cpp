@@ -258,8 +258,7 @@ Device::getConfigurationId()
 bool
 Device::setSamplingFrequency( int samplingFrequency )
 {
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Setting sample rate: %d\n",
-        (samplingFrequency));
+    printMessage("Setting sample rate: %d\n", (samplingFrequency));
 
     bool supported=false;
     fb_quadlet_t select=0x0;
