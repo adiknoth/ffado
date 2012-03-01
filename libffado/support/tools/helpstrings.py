@@ -31,8 +31,9 @@ configuration is bogus.
 """
         strings['MODULES_NEW_STACK_LOADED']="""
 The new FireWire kernel stack is loaded. 
-This is still kind of experimental. If you encounter problems, please also check
-with the old stack.
+If running a kernel earlier than 2.6.37 and problems are experienced, either 
+try with the old Firewire kernel stack or upgrade to a newer kernel 
+(preferrably 2.6.37 or later).
 """
         strings['MODULES_OLD_STACK_NOT_LOADED']="""
 FireWire kernel module(s) not found. 
