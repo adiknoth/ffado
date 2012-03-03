@@ -378,6 +378,98 @@ EAP::updateConfigurationCache()
     return true;
 }
 
+// Get capture and playback names
+//   If the device has a router, capture and playback are destinations and sources, respectively,
+//     as defined above
+//   If no router is found, transmitters and receivers names are returned
+
+stringlist
+EAP::getCptrNameString(unsigned int i) {
+    std::vector<unsigned int> destid;
+    unsigned int destid_0;
+    stringlist cptr_names;
+    std::string dest_name, src_name;
+    
+    if (m_router) {
+        switch (i) {
+          case 0: destid_0 = (eRD_ATX0<<4); break;
+          case 1: destid_0 = (eRD_ATX1<<4); break;
+          // Only 2 transmitter possible (?)
+          default: return cptr_names;
+        }
+        // At most 16 destinations per eRD
+        for (int j=0; j<16; j++) {
+          destid.push_back(destid_0+j);
+        }
+        for (unsigned it=0; it<destid.size(); it++) {
+          // If destination identifier is not part of the router, destination name will be empty
+          dest_name = m_router->getDestinationName(destid.at(it));
+          if (dest_name.size() > 0) {
+            // get a source possibly routed to the destination (only one source per destination)
+            src_name = m_router->getSourceForDestination(dest_name);
+            if (src_name.size() > 0) {
+              dest_name.append(" ("); dest_name.append(src_name); dest_name.append(")");
+            }
+            cptr_names.push_back(dest_name);
+          }
+        }
+
+    } else {
+        StreamConfig *scfg = getActiveStreamConfig();
+        if(scfg) {
+          cptr_names = scfg->getTxNamesString(i);
+        }
+    }
+    return cptr_names;
+}
+
+stringlist
+EAP::getPbckNameString(unsigned int i) {
+    std::vector<unsigned int> srcid;
+    unsigned int srcid_0;
+    stringlist pbck_names, dest_names;
+    std::string src_name;
+    
+    if (m_router) {
+        switch (i) {
+           case 0: srcid_0 = (eRS_ARX0<<4); break;
+           case 1: srcid_0 = (eRS_ARX1<<4); break;
+            // Only 2 receiver possible (?)
+          default: return pbck_names;
+        }
+        // At most 16 destinations per eRD
+        for (int j=0; j<16; j++) {
+          srcid.push_back(srcid_0+j);
+        }
+        for (unsigned it=0; it<srcid.size(); it++) {
+          // If source identifier is not part of the router, source name will be empty
+          src_name = m_router->getSourceName(srcid.at(it));
+          if (src_name.size() > 0) {
+            // Search for destinations routed to this source
+            //   Multiple destinations for a single source are possible
+            dest_names = m_router->getDestinationsForSource(src_name);
+            if (dest_names.size() > 0) {
+              src_name.append(" (");
+              stringlist::iterator it_d = dest_names.begin();
+              stringlist::iterator it_d_end_m1 = dest_names.end(); --it_d_end_m1;
+              while (it_d != it_d_end_m1) {
+                src_name.append((*it_d).c_str()); src_name.append("; ");
+                it_d++;
+              }
+              src_name.append((*it_d).c_str()); src_name.append(")");
+            }
+            pbck_names.push_back(src_name);
+          }
+        }
+    } else {
+        StreamConfig *scfg = getActiveStreamConfig();
+        if(scfg) {
+          pbck_names = scfg->getRxNamesString(i);
+        }
+    }
+    return pbck_names;
+}
+
 /**
  * Returns the router configuration for the current rate mode
  */
@@ -1774,6 +1866,18 @@ EAP::StreamConfig::getNamesForBlock(struct ConfigBlock &b)
 
     namestring[DICE_EAP_CHANNEL_CONFIG_NAMESTR_LEN_BYTES]='\0';
     return m_eap.m_device.splitNameString(std::string(namestring));
+}
+
+stringlist
+EAP::StreamConfig::getTxNamesString(unsigned int i)
+{
+    return getNamesForBlock(m_tx_configs[i]);
+}
+
+stringlist
+EAP::StreamConfig::getRxNamesString(unsigned int i)
+{
+    return getNamesForBlock(m_rx_configs[i]);
 }
 
 void

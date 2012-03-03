@@ -310,6 +310,8 @@ private:
         };
         void showConfigBlock(struct ConfigBlock &);
         stringlist getNamesForBlock(struct ConfigBlock &b);
+        stringlist getTxNamesString(unsigned int);
+        stringlist getRxNamesString(unsigned int);
 
         bool read() {return read(m_base, m_offset);};
         bool write() {return write(m_base, m_offset);};
@@ -502,6 +504,10 @@ public:
     Mixer*  getMixer() {return m_mixer;};
     /** @brief Get access to the router */
     Router* getRouter() {return m_router;};
+
+    /** @brief Get capture and playback names */
+    stringlist getCptrNameString(unsigned int);
+    stringlist getPbckNameString(unsigned int);
 
 protected:
     /**

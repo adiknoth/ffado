@@ -830,9 +830,9 @@ Device::prepareSP(unsigned int i, const Streaming::Port::E_Direction direction_r
 
     if (direction == Streaming::Port::E_Capture) {
         // we are a receive processor
-        names_audio = getTxNameString(i);
+        names_audio = getCptrNameString(i);
     } else {
-        names_audio = getRxNameString(i);
+        names_audio = getPbckNameString(i);
     }
     
 
@@ -1445,6 +1445,18 @@ Device::getRxNameString(unsigned int i) {
     #endif
     namestring[DICE_RX_NAMES_SIZE]='\0';
     return splitNameString(std::string(namestring));
+}
+
+stringlist
+Device::getCptrNameString(unsigned int i) {
+    if (m_eap) return m_eap->getCptrNameString(i);
+    else return getTxNameString(i);
+}
+
+stringlist
+Device::getPbckNameString(unsigned int i) {
+    if (m_eap) return m_eap->getPbckNameString(i);
+    return getRxNameString(i);
 }
 
 stringlist

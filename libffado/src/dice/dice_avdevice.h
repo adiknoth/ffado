@@ -151,6 +151,8 @@ private: // helper functions
     stringlist splitNameString(std::string in);
     stringlist getTxNameString(unsigned int i);
     stringlist getRxNameString(unsigned int i);
+    stringlist getCptrNameString(unsigned int);
+    stringlist getPbckNameString(unsigned int);
     stringlist getClockSourceNameString();
 
     enum eClockSourceType  clockIdToType(unsigned int id);
