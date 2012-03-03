@@ -992,14 +992,17 @@ Device::addChannelToProcessor(
     diceChannelInfo *channelInfo,
     Streaming::StreamProcessor *processor,
     Streaming::Port::E_Direction direction) {
+    std::string dev_name;
 
     std::string id=std::string("dev?");
-    if(!getOption("id", id)) {
+    dev_name = getNickname();
+    if(!getOption("id", id) && dev_name.size() == 0) {
         debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
     }
 
+    if (dev_name.size() == 0) dev_name = id; 
     std::ostringstream portname;
-    portname << id << "_" << channelInfo->name;
+    portname << dev_name << "/" << channelInfo->name;
 
     Streaming::Port *p=NULL;
     switch(channelInfo->portType) {
