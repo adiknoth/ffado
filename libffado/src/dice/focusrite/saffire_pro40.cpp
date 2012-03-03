@@ -58,25 +58,25 @@ FocusriteEAP::Poti* SaffirePro40::SaffirePro40EAP::getDimPoti(std::string name) 
 //  - 16 mixer outputs
 //
 void SaffirePro40::SaffirePro40EAP::setupSources_low() {
-    addSource("SPDIF",  0,  2, eRS_AES);
-    addSource("ADAT",   0,  8, eRS_ADAT);
-    addSource("Analog", 16,  8, eRS_InS0);
-    addSource("Mixer",  0, 16, eRS_Mixer);
-    addSource("1394",   0, 12, eRS_ARX0);
-    addSource("1394",   0, 8, eRS_ARX1, 12);
+    addSource("SPDIF",  0,  2, eRS_AES, 1);
+    addSource("ADAT",   0,  8, eRS_ADAT, 1);
+    addSource("Mic/Lin", 16,  8, eRS_InS0, 1);
+    addSource("Mixer",  0, 16, eRS_Mixer, 1);
+    addSource("1394",   0, 12, eRS_ARX0, 1);
+    addSource("1394",   0,  8, eRS_ARX1, 13);
     addSource("Mute",   0,  1, eRS_Muted);
 }
 
 void SaffirePro40::SaffirePro40EAP::setupDestinations_low() {
-    addDestination("SPDIF",  0,  2, eRD_AES);
-    addDestination("ADAT",   0,  8, eRD_ADAT);
-    addDestination("Analog", 0,  2, eRD_InS0);
-    addDestination("Analog", 0,  8, eRD_InS1, 2);
-    addDestination("Mixer",  0, 16, eRD_Mixer0);
-    addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
-    addDestination("1394",   0, 10, eRD_ATX0);
-    addDestination("1394",   0,  8, eRD_ATX1, 10);
-    addDestination("Loop",   8,  2, eRD_ATX1);
+    addDestination("SPDIF",  0,  2, eRD_AES, 1);
+    addDestination("ADAT",   0,  8, eRD_ADAT, 1);
+    addDestination("Line", 0,  2, eRD_InS0, 1);
+    addDestination("Line", 0,  8, eRD_InS1, 3);
+    addDestination("Mixer",  0, 16, eRD_Mixer0, 1);
+    addDestination("Mixer",  0,  2, eRD_Mixer1, 17);
+    addDestination("1394",   0, 10, eRD_ATX0, 1);
+    addDestination("1394",   0,  8, eRD_ATX1, 11);
+    addDestination("Loop",   8,  2, eRD_ATX1, 1);
     addDestination("Mute",   0,  1, eRD_Muted);
 }
 
@@ -95,23 +95,23 @@ void SaffirePro40::SaffirePro40EAP::setupDestinations_low() {
 //  - 16 mixer outputs
 //
 void SaffirePro40::SaffirePro40EAP::setupSources_mid() {
-      addSource("SPDIF",  0,  2, eRS_AES);
-      addSource("ADAT",   0,  4, eRS_ADAT);
-      addSource("Analog", 16,  8, eRS_InS0);
-      addSource("Mixer",  0, 16, eRS_Mixer);
-      addSource("1394",   0, 16, eRS_ARX0);
-      addSource("Mute",   0,  1, eRS_Muted);
+    addSource("SPDIF",  0,  2, eRS_AES, 1);
+    addSource("ADAT",   0,  4, eRS_ADAT, 1);
+    addSource("Mic/Lin", 16,  8, eRS_InS0, 1);
+    addSource("Mixer",  0, 16, eRS_Mixer, 1);
+    addSource("1394",   0, 16, eRS_ARX0, 1);
+    addSource("Mute",   0,  1, eRS_Muted);
 }
 
 void SaffirePro40::SaffirePro40EAP::setupDestinations_mid() {
-    addDestination("SPDIF",  0,  2, eRD_AES);
-    addDestination("ADAT",   0,  4, eRD_ADAT);
-    addDestination("Analog", 0,  2, eRD_InS0);
-    addDestination("Analog", 0,  8, eRD_InS1, 2);
-    addDestination("Mixer",  0, 16, eRD_Mixer0);
-    addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
-    addDestination("1394",   0, 14, eRD_ATX0);
-    addDestination("Loop",   14, 2, eRD_ATX0);
+    addDestination("SPDIF",  0,  2, eRD_AES, 1);
+    addDestination("ADAT",   0,  4, eRD_ADAT, 1);
+    addDestination("Line", 0,  2, eRD_InS0, 1);
+    addDestination("Line", 0,  8, eRD_InS1, 3);
+    addDestination("Mixer",  0, 16, eRD_Mixer0, 1);
+    addDestination("Mixer",  0,  2, eRD_Mixer1, 17);
+    addDestination("1394",   0, 14, eRD_ATX0, 1);
+    addDestination("Loop",   14, 2, eRD_ATX0, 1);
     addDestination("Mute",   0,  1, eRD_Muted);
 }
 
