@@ -62,8 +62,8 @@ void SaffirePro40::SaffirePro40EAP::setupSources_low() {
     addSource("ADAT",   0,  8, eRS_ADAT);
     addSource("Analog", 16,  8, eRS_InS0);
     addSource("Mixer",  0, 16, eRS_Mixer);
-    addSource("1394",   0, 10, eRS_ARX0);
-    addSource("1394",   0, 10, eRS_ARX1, 10);
+    addSource("1394",   0, 12, eRS_ARX0);
+    addSource("1394",   0, 8, eRS_ARX1, 12);
     addSource("Mute",   0,  1, eRS_Muted);
 }
 
