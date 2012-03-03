@@ -265,7 +265,7 @@ Device::setSamplingFrequency( int samplingFrequency )
 
     bool snoopMode = false;
     if(!getOption("snoopMode", snoopMode)) {
-        debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
+        debugWarning("Could not retrieve snoopMode parameter, defaulting to false\n");
     }
 
     if(snoopMode) {
