@@ -1041,13 +1041,11 @@ EAP::Mixer::show()
     }
     printMessage("%s\n", tmp);
 
-    /*cnt = 0;
+    cnt = 0;
     for(int j=0; j < nb_inputs; j++) {
-        cnt += snprintf(tmp+cnt, bufflen-cnt, "%s:%02d ",
-                        srcBlockToString(m_input_route_map[j].src),
-                        m_input_route_map[j].srcChannel);
+        cnt += snprintf(tmp+cnt, bufflen-cnt, "%s ", getRowName(j).data());
     }
-    printMessage("%s\n", tmp);*/
+    printMessage("%s\n", tmp);
 
     // display coefficients
     for(int i=0; i < nb_outputs; i++) {
@@ -1055,23 +1053,9 @@ EAP::Mixer::show()
         for(int j=0; j < nb_inputs; j++) {
             cnt += snprintf(tmp+cnt, bufflen-cnt, "%07d ", *(m_coeff + nb_inputs * i + j));
         }
-
-        // construct the set of destinations
-        std::string destinations;
-        /*for ( RouterConfig::RouteVectorIterator it = m_output_route_map[i].begin();
-            it != m_output_route_map[i].end();
-            ++it )
-        {
-            RouterConfig::Route r = *it;
-            // check whether the destination is valid
-            if((r.dst != eRD_Invalid) && (r.dstChannel >= 0)) {
-                char tmp[128];
-                snprintf(tmp, 128, "%s:%d,", dstBlockToString(r.dst), r.dstChannel);
-                destinations += tmp;
-            }
-        }*/
-
-        cnt += snprintf(tmp+cnt, bufflen-cnt, "=[%02d]=> %s ", i, destinations.c_str());
+ 
+        // Display destinations name
+        cnt += snprintf(tmp+cnt, bufflen-cnt, "=[%02d]=> %s", i, getColName(i).data());
         printMessage("%s\n", tmp);
     }
 
@@ -1144,27 +1128,59 @@ EAP::Mixer::storeCoefficientMap(int &) {
 }
 
 // Names
-#if 0
-std::string
-EAP::Mixer::getColName(const int col) {
-    //debugOutput(DEBUG_LEVEL_VERBOSE, "EAP::Mixer::getColName( %i )\n");
-    char tmp[32];
-    snprintf(tmp, 32, "%s:%d", srcBlockToString(m_input_route_map[col].src), m_input_route_map[col].srcChannel);
-    return tmp;
-}
 std::string
 EAP::Mixer::getRowName(const int row) {
-    if (m_output_route_map[row].size() == 0) {
-        return "Not connected";
+    std::string mixer_src;
+    if (row < 0 || row > m_eap.m_mixer_nb_tx) return "Invalid";
+    unsigned int dstid = (eRD_Mixer0<<4) + row; // Mixer has consecutive ID's
+    debugOutput(DEBUG_LEVEL_VERBOSE, "EAP::Mixer::getRowName( %d ): ID's %d\n", row, dstid);
+    if (m_eap.m_router){ 
+      std::string mixer_dst = m_eap.m_router->getDestinationName(dstid);
+      mixer_src = m_eap.m_router->getSourceForDestination(mixer_dst);
+      debugOutput(DEBUG_LEVEL_VERBOSE, "EAP::Mixer::found %s as source for %s\n", mixer_src.data(),
+                  mixer_dst.data());
     }
-    if (m_output_route_map[row].size() > 1) {
-        return "Many";
+    else {
+      char tmp[32];
+      snprintf(tmp, 32, "MixIn:%d", row); 
+      mixer_src = tmp;
     }
-    char tmp[32];
-    snprintf(tmp, 32, "%s:%d", dstBlockToString(m_output_route_map[row][0].dst), m_output_route_map[row][0].dstChannel);
-    return tmp;
+
+    return mixer_src;
 }
-#endif
+
+std::string
+EAP::Mixer::getColName(const int col) {
+    std::string mixer_dst;
+    stringlist dest_names;
+    
+    // invalid col index
+    if (col < 0 || col > m_eap.m_mixer_nb_rx) {
+      mixer_dst.append("Invalid");
+      return mixer_dst;
+    }
+    
+    unsigned int srcid = (eRS_Mixer<<4) + col; // Mixer has consecutive ID's
+    debugOutput(DEBUG_LEVEL_VERBOSE, "EAP::Mixer::getColName( %d ): ID's %d\n", col, srcid);
+    if (m_eap.m_router){ 
+      std::string mixer_src = m_eap.m_router->getSourceName(srcid);
+      dest_names = m_eap.m_router->getDestinationsForSource(mixer_src);
+      if (dest_names.size() > 0) {
+        stringlist::iterator it_d = dest_names.begin();
+        stringlist::iterator it_d_end_m1 = dest_names.end(); --it_d_end_m1;
+        while (it_d != it_d_end_m1) {
+          mixer_dst.append((*it_d).c_str()); mixer_dst.append("; ");
+            it_d++;
+        }
+      }
+    } else {
+      char tmp[32];
+      snprintf(tmp, 32, "MixOut:%d", col); 
+      mixer_dst.append(tmp);
+    }
+
+    return mixer_dst;
+}
 
 //
 // ----------- Router -------------

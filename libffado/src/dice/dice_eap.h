@@ -364,10 +364,10 @@ public:
         virtual double setValue( const int, const int, const double );
         virtual double getValue( const int, const int );
 
-        // @TODO: re-implement names
+        //
         bool hasNames() const { return false; }
-        //std::string getRowName( const int );
-        //std::string getColName( const int );
+        std::string getRowName( const int );
+        std::string getColName( const int );
 
         // TODO: implement connections.
         bool canConnect() const { return false; }
