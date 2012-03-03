@@ -90,12 +90,23 @@ class Rme(QWidget):
             self.sync_ref_tco: ['/Control/Sync_ref', 4],
         }
 
+        self.Checkboxes={
+            self.ch1_instr_fuzz: ['/Control/Chan1_instr_opts', 0x04],
+            self.ch1_instr_limiter: ['/Control/Chan1_instr_opts', 0x08],
+            self.ch1_instr_filter: ['/Control/Chan1_instr_opts', 0x02],
+        }
 
         self.Gains={
             self.gain_mic1: ['/Control/Gains', 0],
             self.gain_mic2: ['/Control/Gains', 1],
             self.gain_input3: ['/Control/Gains', 2],
             self.gain_input4: ['/Control/Gains', 3],
+        }
+
+        self.Combos={
+            self.ff800_ch1_src: ['/Control/Chan1_source'],
+            self.ff800_ch7_src: ['/Control/Chan7_source'],
+            self.ff800_ch8_src: ['/Control/Chan8_source'],
         }
 
         # Other mixer variables
@@ -127,6 +138,16 @@ class Rme(QWidget):
             log.debug("radiobutton group %s set to %d" % (self.Radiobuttons[sender][0], self.Radiobuttons[sender][1]))
             self.hw.setDiscrete(self.Radiobuttons[sender][0], self.Radiobuttons[sender][1])
 
+    def updateCheckboxes(self, a0):
+        sender = self.sender()
+        val = self.hw.getDiscrete(self.Checkboxes[sender][0]);
+        if (a0 != 0):
+            val = val | self.Checkboxes[sender][1]
+        else:
+            val = val & ~self.Checkboxes[sender][1]
+        log.debug("checkbox group %s set to %d" % (self.Checkboxes[sender][0], val));
+        self.hw.setDiscrete(self.Checkboxes[sender][0], val)
+
     # Public slot: update gains
     def updateGain(self, a0):
         sender = self.sender()
@@ -140,6 +161,11 @@ class Rme(QWidget):
             a0 = a0 + 1
         # log.debug("limit update: %d" % (a0));
         self.hw.setDiscrete('/Control/Bandwidth_limit', a0);
+
+    def updateCombo(self, a0):
+        sender = self.sender()
+        log.debug("combo %s set to %d" % (self.Combos[sender][0], a0))
+        self.hw.setDiscrete(self.Combos[sender][0], a0)
 
     def updateStreamingState(self):
         ss = self.streamingstatus.selected()
@@ -239,6 +265,14 @@ class Rme(QWidget):
             self.sync_check_adat2_label.setEnabled(False)
             self.sync_check_adat2_status.setEnabled(False)
 
+        for ctrl, info in self.Combos.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue;
+            val = self.hw.getDiscrete(info[0])
+            log.debug("combo %s is %d" % (info[0], val));
+            ctrl.setCurrentIndex(val);
+            QObject.connect(ctrl, SIGNAL('currentIndexChanged(int)'), self.updateCombo)
+
         if (not(self.tco_present)):
             self.sync_check_tco_label.setEnabled(False)
             self.sync_check_tco_status.setEnabled(False)
@@ -302,6 +336,23 @@ class Rme(QWidget):
             ctrl.setChecked(val)
             log.debug("Radiobutton %s[%d] is %d" % (info[0], info[1], val))
             QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateRadiobutton)
+
+        for ctrl, info in self.Checkboxes.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue;
+            # This is a touch wasteful since it means we retrieve the control
+            # value once per checkbox button rather than once per checkbox
+            # group.  In time we might introduce checkbox groupings in the
+            # self.* datastructures to avoid this, but for the moment this is
+            # easy and it works.
+            val = self.hw.getDiscrete(info[0])
+            if (val & info[1]):
+                val = 1
+            else:
+                val = 0
+            ctrl.setChecked(val)
+            log.debug("Checkbox %s[%d] is %d" % (info[0], info[1], val))
+            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateCheckboxes)
 
         for ctrl, info in self.Gains.iteritems():
             if (not(ctrl.isEnabled())):

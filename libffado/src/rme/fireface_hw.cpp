@@ -93,6 +93,14 @@ Device::init_hardware(void)
         // TODO: store and set matrix mixer values
         // TODO: store and manipulate channel mute/rec flags
 
+        // The FF800 needs the input source set via the input options.
+        // Start with the channel 1 limiter disabled too.
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
+            settings->input_opt[0] = settings->input_opt[1] = 
+              settings->input_opt[2] = FF_SWPARAM_FF800_INPUT_OPT_FRONT;
+            settings->limiter_disable = 1;
+        }
+
         // Configure the hardware to match the current software status. 
         // This is only done if the settings valid flag is 0; if it is 1 it
         // indicates that something has already set the device up to match
@@ -333,16 +341,18 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
     }
 
     /* Phones level */
-    switch (sw_settings->phones_level) {
-        case FF_SWPARAM_PHONESLEVEL_HIGAIN:
-            data[0] |= CRO_PHLEVEL_HIGAIN;
-            break;
-        case FF_SWPARAM_PHONESLEVEL_4dBU:
-            data[0] |= CR0_PHLEVEL_4dBU;
-            break;
-        case FF_SWPARAM_PHONESLEVEL_m10dBV:
-            data[0] |= CRO_PHLEVEL_m10dBV;
-            break;
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        switch (sw_settings->phones_level) {
+            case FF_SWPARAM_PHONESLEVEL_HIGAIN:
+                data[0] |= CRO_PHLEVEL_HIGAIN;
+                break;
+            case FF_SWPARAM_PHONESLEVEL_4dBU:
+                data[0] |= CR0_PHLEVEL_4dBU;
+                break;
+            case FF_SWPARAM_PHONESLEVEL_m10dBV:
+                data[0] |= CRO_PHLEVEL_m10dBV;
+                break;
+        }
     }
 
     /* Input level */

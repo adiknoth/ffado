@@ -117,6 +117,8 @@ public:
     signed int setInputPadOpt(unsigned int channel, unsigned int status);
     signed int getInputInstrOpt(unsigned int channel);
     signed int setInputInstrOpt(unsigned int channel, unsigned int status);
+    signed int getInputSource(unsigned int channel);
+    signed int setInputSource(unsigned int channel, unsigned int src);
     signed int getSpdifInputMode(void);
     signed int setSpdifInputMode(signed int mode);
     signed int getSpdifOutputIsOptical(void);

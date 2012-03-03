@@ -128,20 +128,82 @@ Device::setInputPadOpt(unsigned int channel, unsigned int status) {
 
 signed int 
 Device::getInputInstrOpt(unsigned int channel) {
-    if (m_rme_model!=RME_MODEL_FIREFACE400 || channel<3 || channel>4) {
-        debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument option not supported for model %d\n", channel, m_rme_model);
-        return -1;
+    switch (m_rme_model) {
+        case RME_MODEL_FIREFACE400:
+            if (channel<3 || channel>4) {
+                debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument option not supported for model FF400\n", channel);
+                return -1;
+            }
+            return settings->ff400_instr_input[channel-3] != 0;
+            break;
+        case RME_MODEL_FIREFACE800:
+            if (channel != 1) {
+                debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument options not supported for FF800\n", channel);
+                return -1;
+            }
+            return (settings->filter?FF800_INSTR_OPT_FILTER:0) |
+                   (settings->fuzz?FF800_INSTR_OPT_FUZZ:0) |
+                   (settings->limiter_disable?0:FF800_INSTR_OPT_LIMITER);
+            break;
+        default:
+            return -1;
     }
-    return settings->ff400_instr_input[channel-3] != 0;
+    return -1;
 }
 
 signed int 
 Device::setInputInstrOpt(unsigned int channel, unsigned int status) {
-    if (m_rme_model!=RME_MODEL_FIREFACE400 || channel<3 || channel>4) {
-        debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument option not supported for model %d\n", channel, m_rme_model);
+    switch (m_rme_model) {
+        case RME_MODEL_FIREFACE400:
+            if (channel<3 || channel>4) {
+                debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument option not supported for FF400\n", channel);
+                return -1;
+            }
+            settings->ff400_instr_input[channel-3] = (status != 0);
+            break;
+        case RME_MODEL_FIREFACE800:
+            if (channel != 1) {
+                debugOutput(DEBUG_LEVEL_WARNING, "Channel %d input instrument options not supported for FF800\n", channel);
+                return -1;
+            }
+            settings->filter = (status & FF800_INSTR_OPT_FILTER)!=0;
+            settings->fuzz = (status & FF800_INSTR_OPT_FUZZ)!=0;
+            settings->limiter_disable = (status & FF800_INSTR_OPT_LIMITER)==0;
+            break;
+        default:
+            return -1;
+    }
+    set_hardware_params();
+    return 0;
+}
+
+signed int
+Device::getInputSource(unsigned int channel) {
+    if (m_rme_model!=RME_MODEL_FIREFACE800 || (channel!=1 && channel!=7 && channel!=8)) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Channel %d source is fixed on model %d\n", channel, m_rme_model);
         return -1;
     }
-    settings->ff400_instr_input[channel-3] = (status != 0);
+    if (channel == 1)
+        return settings->input_opt[0];
+    else
+        return settings->input_opt[channel-6];
+}
+
+signed int
+Device::setInputSource(unsigned int channel, unsigned int src) {
+    /* "opt" should be composed only of the FF_SWPARAM_FF800_INPUT_OPT_* 
+     * defines.
+     */
+    signed int index;
+    if (m_rme_model!=RME_MODEL_FIREFACE800 || (channel!=1 && channel!=7 && channel!=8)) {
+        debugOutput(DEBUG_LEVEL_WARNING, "Channel %d source cannot be set on model %d\n", channel, m_rme_model);
+        return -1;
+    }
+    if (channel == 1)
+        index = 0;
+    else
+        index = channel-6;
+    settings->input_opt[index] = src;
     set_hardware_params();
     return 0;
 }

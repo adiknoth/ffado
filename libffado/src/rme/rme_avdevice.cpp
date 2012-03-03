@@ -206,6 +206,21 @@ Device::buildMixer() {
         new RmeSettingsCtrl(*this, RME_CTRL_LIMIT_BANDWIDTH, 0,
             "Bandwidth_limit", "Bandwidth limit", ""));
 
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        result &= m_ControlContainer->addElement(
+            new RmeSettingsCtrl(*this, RME_CTRL_INPUT_SOURCE, 1,
+                "Chan1_source", "Channel 1 source", ""));
+        result &= m_ControlContainer->addElement(
+            new RmeSettingsCtrl(*this, RME_CTRL_INPUT_SOURCE, 7,
+                "Chan7_source", "Channel 7 source", ""));
+        result &= m_ControlContainer->addElement(
+            new RmeSettingsCtrl(*this, RME_CTRL_INPUT_SOURCE, 8,
+                "Chan8_source", "Channel 8 source", ""));
+        result &= m_ControlContainer->addElement(
+            new RmeSettingsCtrl(*this, RME_CTRL_INSTRUMENT_OPTIONS, 1,
+                "Chan1_instr_opts", "Input instrument options channel 1", ""));
+    }
+
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         // Instrument input options
         for (i=3; i<=4; i++) {

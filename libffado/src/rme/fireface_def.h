@@ -515,7 +515,13 @@ typedef struct {
 
 #define FF_SWPARAM_FF800_INPUT_OPT_FRONT       FF_SWPARAM_INPUT_OPT_A
 #define FF_SWPARAM_FF800_INPUT_OPT_REAR        FF_SWPARAM_INPUT_OPT_B
-//
+
+// Flags for the "status" parameter of setInputInstrOpt()
+#define FF400_INSTR_OPT_ACTIVE  0x01
+#define FF800_INSTR_OPT_FILTER  0x02
+#define FF800_INSTR_OPT_FUZZ    0x04
+#define FF800_INSTR_OPT_LIMITER 0x08
+
 // Flags for the *_mixerflags fields
 #define FF_SWPARAM_MF_NORMAL    0x00
 #define FF_SWPARAM_MF_MUTED     0x01

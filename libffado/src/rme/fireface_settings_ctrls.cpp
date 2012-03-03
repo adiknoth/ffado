@@ -114,6 +114,22 @@ signed int err = 0;
                 m_value = (v != 0);
             }
             break;
+        case RME_CTRL_INPUT_SOURCE: {
+            // m_info is the channel number
+            signed int src = 0;
+            if (v==0 || v==2) 
+                src |= FF_SWPARAM_FF800_INPUT_OPT_FRONT;
+            if (v==1 || v==2)
+                src |= FF_SWPARAM_FF800_INPUT_OPT_REAR;
+            if (m_parent.setInputSource(m_info, src) == 0)
+                m_value = src;
+            break;
+        }
+        case RME_CTRL_INSTRUMENT_OPTIONS:
+            // m_info is the channel number
+            if (m_parent.setInputInstrOpt(m_info, v) == 0)
+                m_value = v;
+            break;
         case RME_CTRL_SPDIF_INPUT_MODE:
             if (m_parent.setSpdifInputMode(v==0?FF_SWPARAM_SPDIF_INPUT_COAX:FF_SWPARAM_SPDIF_INPUT_OPTICAL)) {
                 m_value = v;
@@ -234,6 +250,19 @@ FF_state_t ff_state;
         case RME_CTRL_FF400_INSTR_SW:
             return m_parent.getInputInstrOpt(m_info);
             break;
+        case RME_CTRL_INPUT_SOURCE: {
+            signed int src;
+            src = m_parent.getInputSource(m_info);
+            if (src == FF_SWPARAM_FF800_INPUT_OPT_FRONT)
+                return 0;
+            if (src == FF_SWPARAM_FF800_INPUT_OPT_REAR)
+                return 1;
+            return 2;
+            break;
+        }
+        case RME_CTRL_INSTRUMENT_OPTIONS: 
+            return m_parent.getInputInstrOpt(m_info);
+            break;
         case RME_CTRL_SPDIF_INPUT_MODE:
             i = m_parent.getSpdifInputMode();
             return i==FF_SWPARAM_SPDIF_INPUT_COAX?0:1;
@@ -326,19 +355,36 @@ FF_state_t ff_state;
 static std::string getOutputName(const signed int model, const int idx)
 {
     char buf[64];
-    if (model == RME_MODEL_FIREFACE400) {
-        if (idx >= 10)
-            snprintf(buf, sizeof(buf), "ADAT out %d", idx-9);
-        else
-        if (idx >= 8)
-            snprintf(buf, sizeof(buf), "SPDIF out %d", idx-7);
-        else
-        if (idx >= 6)
-            snprintf(buf, sizeof(buf), "Mon out %d", idx+1);
-        else
-            snprintf(buf, sizeof(buf), "Line out %d", idx+1);
-    } else {
-        snprintf(buf, sizeof(buf), "out %d", idx);
+    switch(model) {
+        case RME_MODEL_FIREFACE400:
+            if (idx >= 10)
+                snprintf(buf, sizeof(buf), "ADAT out %d", idx-9);
+            else
+            if (idx >= 8)
+                snprintf(buf, sizeof(buf), "SPDIF out %d", idx-7);
+            else
+            if (idx >= 6)
+                snprintf(buf, sizeof(buf), "Mon out %d", idx+1);
+            else
+                snprintf(buf, sizeof(buf), "Line out %d", idx+1);
+            break;
+        case RME_MODEL_FIREFACE800:
+            if (idx >= 20)
+                snprintf(buf, sizeof(buf), "ADAT-2 out %d", idx-19);
+            else
+            if (idx >= 12)
+                snprintf(buf, sizeof(buf), "ADAT-1 out %d", idx-11);
+            else
+            if (idx >= 10)
+                snprintf(buf, sizeof(buf), "SPDIF out %d", idx-9);
+            else
+            if (idx >= 8)
+                snprintf(buf, sizeof(buf), "Mon, ch %d", idx+1);
+            else
+                snprintf(buf, sizeof(buf), "Line out %d", idx+1);
+            break;
+        default:
+            snprintf(buf, sizeof(buf), "out %d", idx);
     }
     return buf;
 }
@@ -346,22 +392,42 @@ static std::string getOutputName(const signed int model, const int idx)
 static std::string getInputName(const signed int model, const int idx)
 {
     char buf[64];
-    if (model == RME_MODEL_FIREFACE400) {
-        if (idx >= 10)
-            snprintf(buf, sizeof(buf), "ADAT in %d", idx-9);
-        else
-        if (idx >= 8)
-            snprintf(buf, sizeof(buf), "SPDIF in %d", idx-7);
-        else
-        if (idx >= 4)
-            snprintf(buf, sizeof(buf), "Line in %d", idx+1);
-        else
-        if (idx >= 2)
-            snprintf(buf, sizeof(buf), "Inst/line %d", idx+1);
-        else
-            snprintf(buf, sizeof(buf), "Mic/line %d", idx+1);
-    } else {
-        snprintf(buf, sizeof(buf), "in %d", idx);
+    switch (model) {
+        case RME_MODEL_FIREFACE400:
+            if (idx >= 10)
+                snprintf(buf, sizeof(buf), "ADAT in %d", idx-9);
+            else
+            if (idx >= 8)
+                snprintf(buf, sizeof(buf), "SPDIF in %d", idx-7);
+            else
+            if (idx >= 4)
+                snprintf(buf, sizeof(buf), "Line in %d", idx+1);
+            else
+            if (idx >= 2)
+                snprintf(buf, sizeof(buf), "Inst/line %d", idx+1);
+            else
+                snprintf(buf, sizeof(buf), "Mic/line %d", idx+1);
+            break;
+        case RME_MODEL_FIREFACE800:
+            if (idx >= 20)
+                snprintf(buf, sizeof(buf), "ADAT-2 in %d", idx-19);
+            else
+            if (idx >= 12)
+                snprintf(buf, sizeof(buf), "ADAT-1 in %d", idx-11);
+            else
+            if (idx >= 10)
+                snprintf(buf, sizeof(buf), "SPDIF in %d", idx-9);
+            else
+            if (idx >= 6)
+                snprintf(buf, sizeof(buf), "Mic/line %d", idx+1);
+            else
+            if (idx >= 1)
+                snprintf(buf, sizeof(buf), "Line %d", idx+1);
+            else
+                snprintf(buf, sizeof(buf), "Instr/line %d", idx+1);
+            break;
+        default:
+            snprintf(buf, sizeof(buf), "in %d", idx);
     }
     return buf;
 }
