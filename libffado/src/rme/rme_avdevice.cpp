@@ -108,7 +108,9 @@ Device::~Device()
     if (iso_tx_channel>=0 && !get1394Service().freeIsoChannel(iso_tx_channel)) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free tx iso channel %d\n", iso_tx_channel);
     }
-    if (iso_rx_channel>=0 && !get1394Service().freeIsoChannel(iso_rx_channel)) {
+    if (iso_rx_channel>=0 && m_rme_model==RME_MODEL_FIREFACE400 &&
+            !get1394Service().freeIsoChannel(iso_rx_channel)) {
+        // FF800 handles the rx channel itself
         debugOutput(DEBUG_LEVEL_VERBOSE, "Could not free rx iso channel %d\n", iso_rx_channel);
     }
 
@@ -681,6 +683,8 @@ Device::prepare() {
     if (iso_tx_channel < 0) {
         debugFatal("Could not allocate iso tx channel\n");
         return false;
+    } else {
+      debugOutput(DEBUG_LEVEL_NORMAL, "iso tx channel: %d\n", iso_tx_channel);
     }
 
     err = hardware_init_streaming(dev_config->hardware_freq, iso_tx_channel) != 0;
@@ -711,7 +715,11 @@ debugOutput(DEBUG_LEVEL_NORMAL, "init stat: %08x %08x %08x %08x\n",
                 usleep(5000);
             } else {
                 iso_rx_channel = stat[2] & 63;
-                iso_rx_channel = get1394Service().allocateFixedIsoChannelGeneric(iso_rx_channel, bandwidth);
+
+                // The device seems to register this channel itself.  raw1394_channel_modify()
+                // returns an error if used on the returned channel.
+                //   iso_rx_channel = get1394Service().allocateFixedIsoChannelGeneric(iso_rx_channel, bandwidth);
+                break;
             }
         }
         if (iso_rx_channel < 0) {
@@ -723,7 +731,8 @@ debugOutput(DEBUG_LEVEL_NORMAL, "init stat: %08x %08x %08x %08x\n",
     if (err) {
         if (iso_tx_channel >= 0) 
             get1394Service().freeIsoChannel(iso_tx_channel);
-        if (iso_rx_channel >= 0)
+        if (iso_rx_channel>=0 && m_rme_model==RME_MODEL_FIREFACE400)
+            // The FF800 manages this channel itself.
             get1394Service().freeIsoChannel(iso_rx_channel);
         return false;
     }
