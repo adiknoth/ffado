@@ -229,9 +229,18 @@ class Rme(QWidget):
         self.outputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/OutputFaders", self, 0x8000, self.hw.basepath+"/Mixer/OutputMutes")
         layout = QtGui.QVBoxLayout()
         scrollarea = QtGui.QScrollArea()
-        scrollarea.setWidgetResizable(True)
         scrollarea.setWidget(self.outputmatrix)
-        layout.addWidget(scrollarea)
+        scrollarea.setWidgetResizable(True)
+
+        # This is a bit of a hack, but it works to ensure this single-row
+        # matrix mixer doesn't fill the entire screen but also doesn't end
+        # up with a pointless scrollbar.  The matrix mixer's minimum height
+        # is 0 according to minimumHeight(), which is probably the
+        # fundamental issue here; however, I've already wasted too much time
+        # trying to get this to work so if the hack is effective we'll run
+        # with it.
+        scrollarea.setMinimumHeight(150)
+        layout.addWidget(scrollarea, 0, Qt.AlignTop)
         self.outputmixer.setLayout(layout)
 
         self.is_streaming = False
