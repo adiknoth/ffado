@@ -211,7 +211,7 @@ class MixerNode(QtGui.QAbstractSlider):
 
 
 class MixerChannel(QtGui.QWidget):
-    def __init__(self, number, parent=None, name=""):
+    def __init__(self, number, parent=None, name="", smallFont=False):
         QtGui.QWidget.__init__(self, parent)
         layout = QtGui.QGridLayout(self)
         self.number = number
@@ -220,6 +220,10 @@ class MixerChannel(QtGui.QWidget):
         self.name = name
         self.lbl = QtGui.QLabel(self)
         self.lbl.setAlignment(Qt.Qt.AlignCenter)
+        if (smallFont):
+            font = self.lbl.font()
+            font.setPointSize(font.pointSize()/1.5)
+            self.lbl.setFont(font)
         layout.addWidget(self.lbl, 0, 0, 1, 2)
         self.hideChannel(False)
 
@@ -241,7 +245,7 @@ class MixerChannel(QtGui.QWidget):
 
 
 class MatrixMixer(QtGui.QWidget):
-    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1, mutespath=None, invertspath=None):
+    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False):
         QtGui.QWidget.__init__(self, parent)
         self.bus = dbus.SessionBus()
         self.dev = self.bus.get_object(servername, basepath)
@@ -278,7 +282,7 @@ class MatrixMixer(QtGui.QWidget):
         # row/column
         if (cols > 1):
             for i in range(cols):
-                ch = MixerChannel(i, self, self.interface.getColName(i))
+                ch = MixerChannel(i, self, self.interface.getColName(i), smallFont)
                 self.connect(ch, QtCore.SIGNAL("hide"), self.hideColumn)
                 layout.addWidget(ch, 0, i+1)
                 self.columnHeaders.append( ch )
@@ -286,7 +290,7 @@ class MatrixMixer(QtGui.QWidget):
             layout.setRowStretch(1, 10)
         if (rows > 1):
             for i in range(rows):
-                ch = MixerChannel(i, self, self.interface.getRowName(i))
+                ch = MixerChannel(i, self, self.interface.getRowName(i), smallFont)
                 self.connect(ch, QtCore.SIGNAL("hide"), self.hideRow)
                 layout.addWidget(ch, i+1, 0)
                 self.rowHeaders.append( ch )
@@ -302,6 +306,10 @@ class MatrixMixer(QtGui.QWidget):
                 if (self.inverts_interface != None):
                     inv_value = self.inverts_interface.getValue(i,j)
                 node = MixerNode(j, i, self.interface.getValue(i,j), sliderMaxValue, mute_value, inv_value, self)
+                if (smallFont):
+                    font = node.font()
+                    font.setPointSize(font.pointSize()/1.5)
+                    node.setFont(font)
                 self.connect(node, QtCore.SIGNAL("valueChanged"), self.valueChanged)
                 layout.addWidget(node, i+1, j+1)
                 self.items[i].append(node)
