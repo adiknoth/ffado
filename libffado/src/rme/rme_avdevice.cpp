@@ -956,18 +956,18 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
     for (i=0; i<n_phones; i++) {
       snprintf(name, sizeof(name), "%s_%s_phones-%c", id.c_str(), mode_str, 
         i==0?'L':'R');
-      /* The headphone channels start at offset 24 */
-      addPort(s_processor, name, direction, 24+i*4, 0);
+      /* The headphone channels follow the straight analog lines */
+      addPort(s_processor, name, direction, n_analog*4+i*4, 0);
     }
     for (i=0; i<n_spdif; i++) {
       snprintf(name, sizeof(name), "%s_%s_SPDIF-%d", id.c_str(), mode_str, i+1);
-      /* The SPDIF channels start at offset 32 */
-      addPort(s_processor, name, direction, 32+i*4, 0);
+      /* The SPDIF channels start after all analog lines */
+      addPort(s_processor, name, direction, (n_analog+n_phones)*4+i*4, 0);
     }
     for (i=0; i<n_adat; i++) {
       snprintf(name, sizeof(name), "%s_%s_adat-%d", id.c_str(), mode_str, i+1);
-      /* ADAT ports start at offset 40 */
-      addPort(s_processor, name, direction, 40+i*4, 0);
+      /* ADAT ports follow all other ports */
+      addPort(s_processor, name, direction, (n_analog+n_phones+n_spdif)*4+i*4, 0);
     }
 
     return true;
