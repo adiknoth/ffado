@@ -274,19 +274,22 @@ class MatrixMixer(QtGui.QWidget):
         self.columnHeaders = []
         self.items = []
 
-        # Add row/column headers
-        for i in range(cols):
-            ch = MixerChannel(i, self, self.interface.getColName(i))
-            self.connect(ch, QtCore.SIGNAL("hide"), self.hideColumn)
-            layout.addWidget(ch, 0, i+1)
-            self.columnHeaders.append( ch )
-        for i in range(rows):
-            ch = MixerChannel(i, self, self.interface.getRowName(i))
-            self.connect(ch, QtCore.SIGNAL("hide"), self.hideRow)
-            layout.addWidget(ch, i+1, 0)
-            self.rowHeaders.append( ch )
-        layout.setRowStretch(0, 0)
-        layout.setRowStretch(1, 10)
+        # Add row/column headers, but only if there's more than one 
+        # row/column
+        if (cols > 1):
+            for i in range(cols):
+                ch = MixerChannel(i, self, self.interface.getColName(i))
+                self.connect(ch, QtCore.SIGNAL("hide"), self.hideColumn)
+                layout.addWidget(ch, 0, i+1)
+                self.columnHeaders.append( ch )
+            layout.setRowStretch(0, 0)
+            layout.setRowStretch(1, 10)
+        if (rows > 1):
+            for i in range(rows):
+                ch = MixerChannel(i, self, self.interface.getRowName(i))
+                self.connect(ch, QtCore.SIGNAL("hide"), self.hideRow)
+                layout.addWidget(ch, i+1, 0)
+                self.rowHeaders.append( ch )
 
         # Add node-widgets
         for i in range(rows):
