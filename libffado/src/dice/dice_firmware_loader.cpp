@@ -57,24 +57,23 @@ using namespace std;
 namespace Dice {
 
 fb_quadlet_t tmp_quadlet;
-static const fb_nodeaddr_t offset = DICE_FL_OFFSET;
 
 bool
 Device::showDiceInfoFL() {
 
 	DICE_FL_GET_VENDOR_IMAGE_DESC_RETURN image_desc;
 
-	writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_GET_RUNNING_IMAGE_VINFO);
+	writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_GET_RUNNING_IMAGE_VINFO);
 
 	do {
 		usleep(10000);
-		readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+		readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 	} while (tmp_quadlet & (1UL<<31));
 
-	readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+	readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 	if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
-		readRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &image_desc, sizeof(image_desc));
+		readRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &image_desc, sizeof(image_desc));
 		printMessage("Dice image vendor and product information:\n");
 		printMessage("  uiVProductID: %i\n", image_desc.uiProductID);
 		printMessage("  uiVendorID: %s\n", image_desc.uiVendorID);
@@ -110,19 +109,19 @@ Device::dumpFirmwareFL(const char* filename) {
 				memory.uiLen = min<uint32_t>(end-start, sizeof(memory.ReadBuffer));
 				memory.uiStartAddress = start;
 
-				writeRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &memory, sizeof(memory));
+				writeRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &memory, sizeof(memory));
 
-				writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_READ_MEMORY);
+				writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_READ_MEMORY);
 
 				do {
 					usleep(4000);
-					readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+					readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 				} while (tmp_quadlet & (1UL<<31));
 
-				readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+				readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 				if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
-					readRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &memory, sizeof(memory));
+					readRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &memory, sizeof(memory));
 					file.write(memory.ReadBuffer, memory.uiLen);
 				} else {
 					printMessage("in dumpFirmwareFL, unknown error =  0x%X \nSTOP.\n", tmp_quadlet);
@@ -146,17 +145,17 @@ Device::showFlashInfoFL(bool v) {
 	DICE_FL_INFO_PARAM flash_info;
 	DICE_FL_INFO_PARAM* pflash_info = new DICE_FL_INFO_PARAM;
 
-	writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_GET_FLASH_INFO);
+	writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_GET_FLASH_INFO);
 
 	do {
 		usleep(10000);
-		readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+		readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 	} while (tmp_quadlet & (1UL<<31));
 
-	readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+	readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 	if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
-		readRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &flash_info, sizeof(flash_info));
+		readRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &flash_info, sizeof(flash_info));
 		if (v) {
 			printMessage("Flash Information:\n");
 			printMessage("  uiStartAddress: 0x%X\n", flash_info.uiStartAddress);
@@ -179,18 +178,18 @@ Device::showImgInfoFL() {
 	uint32_t imageID=0;
 
 	do {
-		writeReg(offset + DICE_FL_PARAMETER, imageID);
+		writeReg(DICE_FL_OFFSET + DICE_FL_PARAMETER, imageID);
 
-		writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_GET_IMAGE_DESC);
+		writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_GET_IMAGE_DESC);
 		do {
 			usleep(100);
-			readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+			readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 		} while (tmp_quadlet & (1UL<<31));
 
-		readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+		readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 		if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
-			readRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &img_desc, sizeof(img_desc));
+			readRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &img_desc, sizeof(img_desc));
 			printMessage("Detailed information of:\n");
 			printMessage("  image: %s\n", img_desc.name);
 			printMessage("  flashBase @addr: 0x%X\n", img_desc.flashBase);
@@ -222,17 +221,17 @@ Device::showAppInfoFL() {
 
 	DICE_FL_GET_APP_INFO_RETURN app_info;
 
-	writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_GET_APP_INFO);
+	writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_GET_APP_INFO);
 
 	do {
 		usleep(10000);
-		readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+		readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 	} while (tmp_quadlet & (1UL<<31));
 
-	readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+	readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 	if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
-		readRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &app_info, sizeof(app_info));
+		readRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &app_info, sizeof(app_info));
 		printMessage("Application information of 'dice' image:\n");
 		printMessage("  uiBaseSDKVersion: %X\n", app_info.uiBaseSDKVersion); //value needs to be parsed, but how?
 		printMessage("  uiApplicationVersion: %X\n", app_info.uiApplicationVersion); //value needs to be parsed, but how?
@@ -278,16 +277,16 @@ Device::testDiceFL(int action) {
 			cin >> pvalue1;
 			testParam.lvalue1 = strtoul(pvalue1, &pEnd, 16);
 
-			writeRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &testParam, sizeof(testParam));
+			writeRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &testParam, sizeof(testParam));
 
-			writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_TEST_ACTION);
+			writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_TEST_ACTION);
 
 			do {
 				usleep(10000);
-				readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+				readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 			} while (tmp_quadlet & (1UL<<31));
 
-			readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+			readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 			if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
 				printMessage("Quadlet written successfully\n");
@@ -307,19 +306,19 @@ Device::testDiceFL(int action) {
 			cin >> pvalue0;
 			testParam.lvalue0 = strtoul(pvalue0, &pEnd, 16);
 
-			writeRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &testParam, sizeof(testParam));
+			writeRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &testParam, sizeof(testParam));
 
-			writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_TEST_ACTION);
+			writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_TEST_ACTION);
 
 			do {
 				usleep(10000);
-				readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+				readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 			} while (tmp_quadlet & (1UL<<31));
 
-			readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+			readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 			if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
-				readRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &testReturn, sizeof(testReturn));
+				readRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &testReturn, sizeof(testReturn));
 				printMessage("Value @addr 0x%X = 0x%X\n", testParam.lvalue0, testReturn.data[0]);
 				printMessage("Quadlet read successfully\n");
 				return true;
@@ -346,16 +345,16 @@ Device::deleteImgFL(const char* image, bool v) {
 	printMessage("Please wait, this will take some time\n");
 	printMessage("Deletion in progress ...\n");
 
-	writeRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &imageDelete, sizeof(imageDelete));
+	writeRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &imageDelete, sizeof(imageDelete));
 
-	writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_DELETE_IMAGE);
+	writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_DELETE_IMAGE);
 
 	do {
 		usleep(300000);
-		readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+		readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 	} while (tmp_quadlet & (1UL<<31));
 
-	readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+	readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 	if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
 		printMessage("Deletion successfully finished\n");
@@ -381,7 +380,7 @@ Device::flashDiceFL(const char* filename, const char* image) {
 	 * CHECKING CAPABILITY BITS
 	 ***************************/
 
-	readReg(offset + DICE_FL_CAPABILITIES, &tmp_quadlet);
+	readReg(DICE_FL_OFFSET + DICE_FL_CAPABILITIES, &tmp_quadlet);
 
 	printMessage("CAPABILITIES = 0x%X\n", tmp_quadlet);
 	/*
@@ -421,17 +420,17 @@ Device::flashDiceFL(const char* filename, const char* image) {
 					chksum += *byteValue++;
 				}
 
-				writeRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &upload_header, sizeof(upload_header));
-				writeRegBlock(offset + DICE_FL_BUFFER, (fb_quadlet_t*) &upload_data, sizeof(upload_data));
+				writeRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &upload_header, sizeof(upload_header));
+				writeRegBlock(DICE_FL_OFFSET + DICE_FL_BUFFER, (fb_quadlet_t*) &upload_data, sizeof(upload_data));
 
-				writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_UPLOAD);
+				writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_UPLOAD);
 
 				do {
 					usleep(100);
-					readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+					readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 				} while (tmp_quadlet & (1UL<<31));
 
-				readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+				readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 				if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
 					//printMessage("Upload operation successful");
@@ -456,19 +455,19 @@ Device::flashDiceFL(const char* filename, const char* image) {
 	 * UPLOAD_STAT
 	 **************/
 
-	writeReg(offset + DICE_FL_PARAMETER, imageSize);
+	writeReg(DICE_FL_OFFSET + DICE_FL_PARAMETER, imageSize);
 
-	writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_UPLOAD_STAT);
+	writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_UPLOAD_STAT);
 
 	do {
 		usleep(1000000); //take care on polling, depends on dice-image size (to low values lead to a read error)
-		readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+		readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 	} while (tmp_quadlet & (1UL<<31));
 
-	readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+	readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 	if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
-		readReg(offset + DICE_FL_PARAMETER, &tmp_quadlet);
+		readReg(DICE_FL_OFFSET + DICE_FL_PARAMETER, &tmp_quadlet);
 		//printMessage("Offline (DICE) checksum calculation = %i\n", tmp_quadlet);
 		//printMessage("Offline (local) checksum calculation = %i\n", chksum);
 	} else {
@@ -510,16 +509,16 @@ Device::flashDiceFL(const char* filename, const char* image) {
 			printMessage("Please wait, this will take some time\n");
 			printMessage("Flash in progress ...\n");
 
-			writeRegBlock(offset + DICE_FL_PARAMETER, (fb_quadlet_t*) &imageCreate, sizeof(imageCreate));
+			writeRegBlock(DICE_FL_OFFSET + DICE_FL_PARAMETER, (fb_quadlet_t*) &imageCreate, sizeof(imageCreate));
 
-			writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_CREATE_IMAGE);
+			writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_CREATE_IMAGE);
 
 			do {
 				usleep(300000);
-				readReg(offset + DICE_FL_OPCODE, &tmp_quadlet);
+				readReg(DICE_FL_OFFSET + DICE_FL_OPCODE, &tmp_quadlet);
 			} while (tmp_quadlet & (1UL<<31));
 
-			readReg(offset + DICE_FL_RETURN_STATUS, &tmp_quadlet);
+			readReg(DICE_FL_OFFSET + DICE_FL_RETURN_STATUS, &tmp_quadlet);
 
 			if (tmp_quadlet == DICE_FL_RETURN_NO_ERROR) {
 				printMessage("Flashing successfully finished\n");
@@ -537,7 +536,7 @@ Device::flashDiceFL(const char* filename, const char* image) {
 		 * RESET_IMAGE
 		 **************/
 
-		//writeReg(offset + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_RESET_IMAGE);
+		//writeReg(DICE_FL_OFFSET + DICE_FL_OPCODE, (1UL<<31) | DICE_FL_OP_RESET_IMAGE);
 		/*
 		 * this would lead to a segmentation fault due to a BUS reset by DICE device
 		 */
