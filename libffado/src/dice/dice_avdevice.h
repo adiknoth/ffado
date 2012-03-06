@@ -24,6 +24,8 @@
 #ifndef DICEDEVICE_H
 #define DICEDEVICE_H
 
+#include "dice_firmware_loader.h"
+
 #include "ffadotypes.h"
 #include "ffadodevice.h"
 
@@ -77,6 +79,15 @@ public:
     static int getConfigurationId( );
 
     virtual void showDevice();
+
+    virtual bool deleteImgFL(const char*, bool v = true);
+    virtual bool flashDiceFL(const char*, const char* image = "dice");
+    virtual bool dumpFirmwareFL(const char*);
+    virtual bool showDiceInfoFL();
+    virtual bool showImgInfoFL();
+    virtual bool testDiceFL(int);
+    virtual DICE_FL_INFO_PARAM* showFlashInfoFL(bool v = true);
+    virtual bool showAppInfoFL();
 
     virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
@@ -173,11 +184,18 @@ private: // register I/O routines
     bool startstopStreamByIndex(int i, const bool start);
     bool prepareSP (unsigned int, const Streaming::Port::E_Direction direction_requested);
     void setRXTXfuncs (const Streaming::Port::E_Direction direction);
+
     // quadlet read/write routines
     bool readReg(fb_nodeaddr_t, fb_quadlet_t *);
     bool writeReg(fb_nodeaddr_t, fb_quadlet_t);
     bool readRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
     bool writeRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
+
+    // quadlet read/write firmware loader routines
+    bool readRegFL(fb_nodeaddr_t, fb_quadlet_t *);
+    bool writeRegFL(fb_nodeaddr_t, fb_quadlet_t);
+    bool readRegBlockFL(fb_nodeaddr_t, fb_quadlet_t *, size_t);
+    bool writeRegBlockFL(fb_nodeaddr_t, fb_quadlet_t *, size_t);
 
     bool readGlobalReg(fb_nodeaddr_t, fb_quadlet_t *);
     bool writeGlobalReg(fb_nodeaddr_t, fb_quadlet_t);
@@ -229,6 +247,7 @@ public:
      */
     #define DICE_NOTIFIER_BASE_ADDRESS 0x0000FFFFE0000000ULL
     #define DICE_NOTIFIER_BLOCK_LENGTH 4
+
     class Notifier : public Ieee1394Service::ARMHandler
     {
     public:
@@ -247,5 +266,5 @@ public:
 };
 
 }
-// vim: et
+
 #endif

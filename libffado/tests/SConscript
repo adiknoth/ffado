@@ -75,6 +75,7 @@ if env['ENABLE_FIREWORKS']:
 	apps.update( { "test-echomixer" : "test-echomixer.cpp" } )
 if env['ENABLE_DICE']:
 	apps.update( { "test-dice-eap" : "test-dice-eap.cpp" } )
+	apps.update( { "dice-firmware-utility" : "dice-firmware-utility.cpp" } )
 
 for app in apps.keys():
 	env.Program( target=app, source = env.Split( apps[app] ) )

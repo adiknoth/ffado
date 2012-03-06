@@ -1638,6 +1638,29 @@ Device::readReg(fb_nodeaddr_t offset, fb_quadlet_t *result) {
 }
 
 bool
+Device::readRegFL (fb_nodeaddr_t offset, fb_quadlet_t *result) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Reading base register offset 0x%08"PRIX64"\n", offset);
+
+    if(offset >= DICE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%016"PRIX64"\n", offset);
+        return false;
+    }
+
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
+
+    if(!get1394Service().read_quadlet(nodeId, offset, result)) {
+        debugError("Could not read from node 0x%04X addr 0x%12"PRIX64"\n", nodeId, offset);
+        return false;
+    }
+
+    *result = CondSwapFromBus32(*result);
+
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Read result: 0x%08"PRIX32"\n", *result);
+
+    return true;
+}
+
+bool
 Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08"PRIX64", data: 0x%08"PRIX32"\n",
         offset, data);
@@ -1652,6 +1675,25 @@ Device::writeReg(fb_nodeaddr_t offset, fb_quadlet_t data) {
 
     if(!get1394Service().write_quadlet( nodeId, addr, CondSwapToBus32(data) ) ) {
         debugError("Could not write to node 0x%04X addr 0x%12"PRIX64"\n", nodeId, addr);
+        return false;
+    }
+    return true;
+}
+
+bool
+Device::writeRegFL(fb_nodeaddr_t offset, fb_quadlet_t data) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08"PRIX64", data: 0x%08"PRIX32"\n",
+        offset, data);
+
+    if(offset >= DICE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%012"PRIX64"\n", offset);
+        return false;
+    }
+
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
+
+    if(!get1394Service().write_quadlet( nodeId, offset, CondSwapToBus32(data) ) ) {
+        debugError("Could not write to node 0x%04X addr 0x%12"PRIX64"\n", nodeId, offset);
         return false;
     }
     return true;
@@ -1680,6 +1722,48 @@ Device::readRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
         int quads_todo = length_quads - quads_done;
         debugOutput(DEBUG_LEVEL_VERBOSE, "reading addr: 0x%012"PRIX64", %d quads to %p\n", curr_addr, quads_todo, curr_data);
         
+        if (quads_todo > blocksize_quads) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Truncating read from %d to %d quadlets\n", quads_todo, blocksize_quads);
+            quads_todo = blocksize_quads;
+        }
+        #ifdef DEBUG
+        if (quads_todo < 0) {
+            debugError("BUG: quads_todo < 0: %d\n", quads_todo);
+        }
+        #endif
+
+        if(!get1394Service().read( nodeId, curr_addr, quads_todo, curr_data ) ) {
+            debugError("Could not read %d quadlets from node 0x%04X addr 0x%012"PRIX64"\n", quads_todo, nodeId, curr_addr);
+            return false;
+        }
+        quads_done += quads_todo;
+    }
+
+    byteSwapFromBus(data, length/4);
+    return true;
+}
+
+bool
+Device::readRegBlockFL(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERBOSE,
+                "Reading base register offset 0x%08"PRIX64", length %zd, to %p\n",
+                offset, length, data);
+    const int blocksize_quads = 512/4;
+
+    if(offset >= DICE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%012"PRIX64"\n", offset);
+        return false;
+    }
+
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
+    int quads_done = 0;
+    int length_quads = (length+3)/4; // round to next full quadlet
+    while(quads_done < length_quads) {
+        fb_nodeaddr_t curr_addr = offset + quads_done*4;
+        fb_quadlet_t *curr_data = data + quads_done;
+        int quads_todo = length_quads - quads_done;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "reading addr: 0x%012"PRIX64", %d quads to %p\n", curr_addr, quads_todo, curr_data);
+
         if (quads_todo > blocksize_quads) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "Truncating read from %d to %d quadlets\n", quads_todo, blocksize_quads);
             quads_todo = blocksize_quads;
@@ -1735,6 +1819,48 @@ Device::writeRegBlock(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
         #endif
 
         if(!get1394Service().write( nodeId, addr, quads_todo, curr_data ) ) {
+            debugError("Could not write %d quadlets to node 0x%04X addr 0x%012"PRIX64"\n", quads_todo, nodeId, curr_addr);
+            return false;
+        }
+        quads_done += quads_todo;
+    }
+
+    return true;
+}
+
+bool
+Device::writeRegBlockFL(fb_nodeaddr_t offset, fb_quadlet_t *data, size_t length) {
+    debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"Writing base register offset 0x%08"PRIX64", length: %zd\n",
+        offset, length);
+    const int blocksize_quads = 512/4;
+
+    if(offset >= DICE_INVALID_OFFSET) {
+        debugError("invalid offset: 0x%012"PRIX64"\n", offset);
+        return false;
+    }
+
+    fb_quadlet_t data_out[length/4];
+    memcpy(data_out, data, length);
+    byteSwapToBus(data_out, length/4);
+
+    fb_nodeid_t nodeId = getNodeId() | 0xFFC0;
+    int quads_done = 0;
+    int length_quads = (length+3)/4;
+    while(quads_done < length_quads) {
+        fb_nodeaddr_t curr_addr = offset + quads_done*4;
+        fb_quadlet_t *curr_data = data_out + quads_done;
+        int quads_todo = length_quads - quads_done;
+        if (quads_todo > blocksize_quads) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Truncating write from %d to %d quadlets\n", quads_todo, blocksize_quads);
+            quads_todo = blocksize_quads;
+        }
+        #ifdef DEBUG
+        if (quads_todo < 0) {
+            debugError("BUG: quads_todo < 0: %d\n", quads_todo);
+        }
+        #endif
+
+        if(!get1394Service().write( nodeId, curr_addr, quads_todo, curr_data ) ) {
             debugError("Could not write %d quadlets to node 0x%04X addr 0x%012"PRIX64"\n", quads_todo, nodeId, curr_addr);
             return false;
         }
