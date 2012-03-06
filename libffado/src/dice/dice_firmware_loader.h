@@ -28,9 +28,11 @@
 #define __DICE_FIRMWARE_LOADER_H__
 
 #include <stdint.h>
+#include "dice_defines.h"
 
 /* private memory space offset for command interface */
 #define DICE_FL_INTERFACE_SPACE	0x0000FFFFE0100000ULL
+#define DICE_FL_OFFSET (DICE_FL_INTERFACE_SPACE ^ DICE_REGISTER_BASE)
 
 /* memory space offsets relative to DICE_FL_INTERFACE_SPACE */
 #define DICE_FL_VERSION			0x0 //unused
