@@ -53,6 +53,10 @@ if env['ENABLE_BEBOB']:
 if env['ENABLE_FIREWORKS']:
     apps["ffado-fireworks-downloader"] = "downloader.cpp fireworks-downloader.cpp"
     installapps += [ "ffado-fireworks-downloader" ]
+if env['ENABLE_DICE']:
+    apps["ffado-dice-firmware"] = "dice-firmware-utility.cpp"
+    installapps += [ "ffado-dice-firmware" ]
+
 
 for app in apps.keys():
     env.Program( target=app, source = env.Split( apps[app] ) )
