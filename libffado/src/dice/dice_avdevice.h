@@ -191,12 +191,6 @@ private: // register I/O routines
     bool readRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
     bool writeRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
 
-    // quadlet read/write firmware loader routines
-    bool readRegFL(fb_nodeaddr_t, fb_quadlet_t *);
-    bool writeRegFL(fb_nodeaddr_t, fb_quadlet_t);
-    bool readRegBlockFL(fb_nodeaddr_t, fb_quadlet_t *, size_t);
-    bool writeRegBlockFL(fb_nodeaddr_t, fb_quadlet_t *, size_t);
-
     bool readGlobalReg(fb_nodeaddr_t, fb_quadlet_t *);
     bool writeGlobalReg(fb_nodeaddr_t, fb_quadlet_t);
     bool readGlobalRegBlock(fb_nodeaddr_t, fb_quadlet_t *, size_t);
