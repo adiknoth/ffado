@@ -1261,9 +1261,10 @@ EAP::Mixer::getColName(const int col) {
         stringlist::iterator it_d = dest_names.begin();
         stringlist::iterator it_d_end_m1 = dest_names.end(); --it_d_end_m1;
         while (it_d != it_d_end_m1) {
-          mixer_dst.append((*it_d).c_str()); mixer_dst.append("; ");
-            it_d++;
+          mixer_dst.append((*it_d).c_str()); mixer_dst.append(";\n");
+          it_d++;
         }
+        mixer_dst.append((*it_d).c_str());
       }
     } else {
       char tmp[32];
