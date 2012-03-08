@@ -348,6 +348,18 @@ public:
     virtual bool prepare() = 0;
 
     /**
+     * @brief Performs operations needed to prepare for a stream start
+     *
+     * This is called by the streaming layer just before streaming is
+     * started.  It provides a place where reset activity can be done which
+     * ensures the object is ready to restart streaming even if streaming
+     * has been previously started and stopped.
+     *
+     * @return true if successful, false if not
+     */
+    virtual bool resetForStreaming() { return true; }
+
+    /**
      * @brief Returns the number of ISO streams implemented/used by this device
      *
      * Most likely this is 2 streams, i.e. one transmit stream and one

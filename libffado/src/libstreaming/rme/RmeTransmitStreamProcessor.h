@@ -72,6 +72,8 @@ public:
     enum eChildReturnValue generateSilentPacketData(unsigned char *data, unsigned int *length);
     virtual bool prepareChild();
 
+    bool resetForStreaming();
+
 public:
     virtual unsigned int getEventSize() 
                 {return m_event_size;};
@@ -128,6 +130,7 @@ private:
     unsigned int midibuffer[MIDIBUFFER_SIZE];
     unsigned int mb_head, mb_tail;
     unsigned int midi_lock;
+    signed int streaming_has_run, streaming_has_dryrun;
     unsigned int midi_tx_period; /* Measured in audio clock periods */
 };
 

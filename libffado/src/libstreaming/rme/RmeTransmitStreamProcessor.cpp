@@ -77,6 +77,8 @@ RmeTransmitStreamProcessor::RmeTransmitStreamProcessor(FFADODevice &parent,
         , mb_head( 0 )
         , mb_tail( 0 )
         , midi_lock( 0 )
+        , streaming_has_run ( 0 )
+        , streaming_has_dryrun ( 0 )
 {
   int srate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
   /* Work out how many audio samples should be left between MIDI data bytes
@@ -97,6 +99,14 @@ RmeTransmitStreamProcessor::getMaxPacketSize() {
 unsigned int
 RmeTransmitStreamProcessor::getNominalFramesPerPacket() {
     return static_cast<Rme::Device *>(&m_Parent)->getFramesPerPacket();
+}
+
+bool
+RmeTransmitStreamProcessor::resetForStreaming()
+{
+    streaming_has_run = 0;
+    streaming_has_dryrun = 0;
+    return true;
 }
 
 enum StreamProcessor::eChildReturnValue
@@ -341,8 +351,6 @@ RmeTransmitStreamProcessor::generateEmptyPacketHeader (
     uint32_t pkt_ctr )
 {
 static signed int cx = 0;
-static signed int has_dryrun = 0;
-static signed int has_run = 0;
 
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04lu, TSP=%011llu (%04u)\n",
                 CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp, 
@@ -367,19 +375,19 @@ static signed int has_run = 0;
     // they are only sent during the startup sequence.  This logic is
     // presently a quick and dirty hack and will be revisited in due course
     // once a final control method has been established.
-    if (has_run==0 && isDryRunning()) {
+    if (streaming_has_run==0 && isDryRunning()) {
         signed n_events = getNominalFramesPerPacket();
 //        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 
-        has_dryrun = 1;
+        streaming_has_dryrun = 1;
         if (cx < (1)*n_events) {
             cx += n_events;
             *length = n_events * m_event_size;
         }
     }
 
-    if (!isDryRunning() && has_dryrun==1)
-        has_run=1;
+    if (!isDryRunning() && streaming_has_dryrun==1)
+        streaming_has_run=1;
 
 //    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
 

@@ -1765,6 +1765,19 @@ IsoHandlerManager::IsoHandler::enable(int cycle)
     }
     raw1394_set_userdata(m_handle, static_cast<void *>(this));
 
+#ifdef DEBUG
+    m_min_ahead = 7999;
+#endif
+
+    m_packets = 0;
+
+    // indicate that the first iterate() still has to occur.
+    m_last_now = 0xFFFFFFFF;
+    m_last_packet_handled_at = 0xFFFFFFFF;
+
+    m_last_cycle = -1;
+
+
     // prepare the handler, allocate the resources
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing iso handler (%p, client=%p)\n", this, m_Client);
     dumpInfo();
@@ -1804,16 +1817,6 @@ IsoHandlerManager::IsoHandler::enable(int cycle)
             return false;
         }
     }
-
-#ifdef DEBUG
-    m_min_ahead = 7999;
-#endif
-
-    m_packets = 0;
-
-    // indicate that the first iterate() still has to occur.
-    m_last_now = 0xFFFFFFFF;
-    m_last_packet_handled_at = 0xFFFFFFFF;
 
     m_State = eHS_Running;
     m_NextState = eHS_Running;

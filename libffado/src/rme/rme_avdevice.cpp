@@ -621,6 +621,23 @@ Device::showDevice()
 }
 
 bool
+Device::resetForStreaming() {
+    signed int err;
+
+    // Ensure the transmit processor is ready to start streaming.
+    m_transmitProcessor->resetForStreaming();
+
+    // FIXME: this may yet move back into prepare().
+    err = hardware_init_streaming(dev_config->hardware_freq, iso_tx_channel) != 0;
+    if (err) {
+        debugFatal("Could not intialise device streaming system\n");
+        return false;
+    }
+
+    return FFADODevice::resetForStreaming();
+}
+
+bool
 Device::prepare() {
 
     signed int mult, bandwidth;
@@ -687,10 +704,10 @@ Device::prepare() {
       debugOutput(DEBUG_LEVEL_NORMAL, "iso tx channel: %d\n", iso_tx_channel);
     }
 
-    err = hardware_init_streaming(dev_config->hardware_freq, iso_tx_channel) != 0;
-    if (err) {
-        debugFatal("Could not intialise device streaming system\n");
-    }
+//    err = hardware_init_streaming(dev_config->hardware_freq, iso_tx_channel) != 0;
+//    if (err) {
+//        debugFatal("Could not intialise device streaming system\n");
+//    }
 
     if (err == 0) {
         signed int i;

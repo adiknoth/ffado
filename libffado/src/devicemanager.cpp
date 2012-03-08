@@ -856,6 +856,10 @@ DeviceManager::startStreamingOnDevice(FFADODevice *device)
     int j=0;
     bool all_streams_started = true;
     bool device_start_failed = false;
+
+    if (device->resetForStreaming() == false)
+        return false;
+
     for(j=0; j < device->getStreamCount(); j++) {
         debugOutput(DEBUG_LEVEL_VERBOSE,"Starting stream %d of device %p\n", j, device);
         // start the stream

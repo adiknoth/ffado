@@ -83,6 +83,7 @@ public:
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
 
+    virtual bool resetForStreaming();
     virtual bool prepare();
     virtual bool lock();
     virtual bool unlock();
