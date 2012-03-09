@@ -624,15 +624,65 @@ bool
 Device::resetForStreaming() {
     signed int err;
 
-    // Ensure the transmit processor is ready to start streaming.
-    m_transmitProcessor->resetForStreaming();
+signed int iso_rx;
+unsigned int stat[4];
+signed int i;
 
-    // FIXME: this may yet move back into prepare().
+    // Ensure the transmit processor is ready to start streaming.  When
+    // this function is called from prepare() the transmit processor
+    // won't be allocated.
+    if (m_transmitProcessor != NULL)
+        m_transmitProcessor->resetForStreaming();
+
+    // Whenever streaming is restarted hardware_init_streaming() needs to be
+    // called.  Otherwise the device won't start sending data when data is
+    // sent to it and the rx stream will fail to start.
     err = hardware_init_streaming(dev_config->hardware_freq, iso_tx_channel) != 0;
     if (err) {
         debugFatal("Could not intialise device streaming system\n");
         return false;
     }
+
+    i = 0;
+    while (i < 100) {
+        err = (get_hardware_streaming_status(stat, 4) != 0);
+        if (err) {
+            debugFatal("error reading status register\n");
+            break;
+        }
+
+// FIXME: this can probably go once the driver matures.
+debugOutput(DEBUG_LEVEL_NORMAL, "init stat: %08x %08x %08x %08x\n",
+  stat[0], stat[1], stat[2], stat[3]);
+
+        if (m_rme_model == RME_MODEL_FIREFACE400) {
+            break;
+        }
+
+        // The Fireface-800 chooses its tx channel (our rx channel).  Wait
+        // for the device busy flag to clear, then confirm that the rx iso
+        // channel hasn't changed (it shouldn't across a restart).
+        if (stat[2] == 0xffffffff) {
+            // Device not ready; wait 5 ms and try again
+            usleep(5000);
+        } else {
+            iso_rx = stat[2] & 63;
+            if (iso_rx!=iso_rx_channel && iso_rx_channel!=-1)
+                debugOutput(DEBUG_LEVEL_WARNING, "rx iso: now %d, was %d\n",
+                    iso_rx, iso_rx_channel);
+            iso_rx_channel = iso_rx;
+
+            // Even if the rx channel has changed, the device takes care of
+            // registering the channel itself, so we don't have to (neither
+            // do we have to release the old one).  If we try to call
+            // raw1394_channel_modify() on the returned channel we'll get an
+            // error.
+            //   iso_rx_channel = get1394Service().allocateFixedIsoChannelGeneric(iso_rx_channel, bandwidth);
+            break;
+        }
+    }
+    if (i==100 || err)
+        return false;
 
     return FFADODevice::resetForStreaming();
 }
@@ -704,46 +754,11 @@ Device::prepare() {
       debugOutput(DEBUG_LEVEL_NORMAL, "iso tx channel: %d\n", iso_tx_channel);
     }
 
-//    err = hardware_init_streaming(dev_config->hardware_freq, iso_tx_channel) != 0;
-//    if (err) {
-//        debugFatal("Could not intialise device streaming system\n");
-//    }
-
-    if (err == 0) {
-        signed int i;
-        for (i=0; i<100; i++) {
-            err = (get_hardware_streaming_status(stat, 4) != 0);
-            if (err) {
-                debugFatal("error reading status register\n");
-                break;
-            }
-
-// FIXME: this can probably go once the driver matures.
-debugOutput(DEBUG_LEVEL_NORMAL, "init stat: %08x %08x %08x %08x\n",
-  stat[0], stat[1], stat[2], stat[3]);
-
-            if (m_rme_model == RME_MODEL_FIREFACE400) {
-                iso_rx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
-                break;
-            }
-            // The Fireface-800 chooses its tx channel (our rx channel).
-            if (stat[2] == 0xffffffff) {
-                // Device not ready; wait 5 ms and try again
-                usleep(5000);
-            } else {
-                iso_rx_channel = stat[2] & 63;
-
-                // The device seems to register this channel itself.  raw1394_channel_modify()
-                // returns an error if used on the returned channel.
-                //   iso_rx_channel = get1394Service().allocateFixedIsoChannelGeneric(iso_rx_channel, bandwidth);
-                break;
-            }
-        }
-        if (iso_rx_channel < 0) {
-            debugFatal("Could not allocate/determine iso rx channel\n");
-            err = 1;
-        }
-    }
+    // Call this to initialise the device's streaming system and, in the
+    // case of the FF800, obtain the rx iso channel to use.  Having that
+    // functionality in resetForStreaming() means it's effectively done
+    // twice when FFADO is first started, but this does no harm.
+    resetForStreaming();
   
     if (err) {
         if (iso_tx_channel >= 0) 
@@ -752,6 +767,11 @@ debugOutput(DEBUG_LEVEL_NORMAL, "init stat: %08x %08x %08x %08x\n",
             // The FF800 manages this channel itself.
             get1394Service().freeIsoChannel(iso_rx_channel);
         return false;
+    }
+
+    /* We need to manage the FF400's iso rx channel */
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        iso_rx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
     }
 
     if ((stat[1] & SR1_CLOCK_MODE_MASTER) ||

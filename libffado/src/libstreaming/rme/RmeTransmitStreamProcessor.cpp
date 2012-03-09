@@ -79,6 +79,7 @@ RmeTransmitStreamProcessor::RmeTransmitStreamProcessor(FFADODevice &parent,
         , midi_lock( 0 )
         , streaming_has_run ( 0 )
         , streaming_has_dryrun ( 0 )
+        , streaming_start_count ( 0 )
 {
   int srate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
   /* Work out how many audio samples should be left between MIDI data bytes
@@ -106,6 +107,7 @@ RmeTransmitStreamProcessor::resetForStreaming()
 {
     streaming_has_run = 0;
     streaming_has_dryrun = 0;
+    streaming_start_count = 0;
     return true;
 }
 
@@ -350,8 +352,6 @@ RmeTransmitStreamProcessor::generateEmptyPacketHeader (
     unsigned char *tag, unsigned char *sy,
     uint32_t pkt_ctr )
 {
-static signed int cx = 0;
-
     debugOutput ( DEBUG_LEVEL_VERY_VERBOSE, "XMIT EMPTY: CY=%04lu, TSP=%011llu (%04u)\n",
                 CYCLE_TIMER_GET_CYCLES(pkt_ctr), m_last_timestamp, 
                 ( unsigned int ) TICKS_TO_CYCLES ( m_last_timestamp ) );
@@ -380,9 +380,10 @@ static signed int cx = 0;
 //        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 
         streaming_has_dryrun = 1;
-        if (cx < (1)*n_events) {
-            cx += n_events;
+        if (streaming_start_count < (1)*n_events) {
+            streaming_start_count += n_events;
             *length = n_events * m_event_size;
+//            generateSilentPacketData(data, length);
         }
     }
 

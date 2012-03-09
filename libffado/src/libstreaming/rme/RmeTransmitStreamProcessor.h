@@ -131,6 +131,7 @@ private:
     unsigned int mb_head, mb_tail;
     unsigned int midi_lock;
     signed int streaming_has_run, streaming_has_dryrun;
+    signed int streaming_start_count;
     unsigned int midi_tx_period; /* Measured in audio clock periods */
 };
 
