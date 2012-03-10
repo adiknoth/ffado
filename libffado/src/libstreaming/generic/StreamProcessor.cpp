@@ -94,6 +94,51 @@ StreamProcessor::~StreamProcessor() {
 }
 
 bool
+StreamProcessor::periodSizeChanged(unsigned int new_periodsize) {
+    // This is called by the StreamProcessorManager whenever the period size
+    // is changed via setPeriodSize().  If the stream processor needs to do
+    // anything in response it can be done in this method.  Buffer size
+    // changes should only ever be made when streaming is not active.
+    //
+    // Return false if there was a problem dealing with the resize.
+    if (m_state!=ePS_Stopped && m_state!=ePS_Created) {
+        debugOutput(DEBUG_LEVEL_WARNING, "(%p) period change should only be done with streaming stopped\n", this);
+        return false;
+    }
+
+    // make the scratch buffer one period of frames long
+    m_scratch_buffer_size_bytes = new_periodsize * getEventsPerFrame() * getEventSize();
+    debugOutput( DEBUG_LEVEL_VERBOSE, " Allocate scratch buffer of %zd quadlets\n", m_scratch_buffer_size_bytes);
+    if(m_scratch_buffer) delete[] m_scratch_buffer;
+    m_scratch_buffer = new byte_t[m_scratch_buffer_size_bytes];
+    if(m_scratch_buffer == NULL) {
+        debugFatal("Could not allocate scratch buffer\n");
+        return false;
+    }
+
+    // set the parameters of ports we can:
+    // we want the audio ports to be period buffered,
+    // and the midi ports to be packet buffered
+    for ( PortVectorIterator it = m_Ports.begin();
+        it != m_Ports.end();
+        ++it )
+    {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
+        if(!(*it)->setBufferSize(m_StreamProcessorManager.getPeriodSize())) {
+            debugFatal("Could not set buffer size to %d\n",m_StreamProcessorManager.getPeriodSize());
+            return false;
+        }
+    }
+
+    if (!setupDataBuffer()) {
+        debugFatal("Could not setup data buffer\n");
+        return false;
+    }
+
+    return updateState();
+}
+
+bool
 StreamProcessor::handleBusResetDo()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "(%p) handling busreset\n", this);
@@ -167,6 +212,48 @@ StreamProcessor::getNbPacketsIsoXmitBuffer()
 /***********************************************
  * Buffer management and manipulation          *
  ***********************************************/
+bool
+StreamProcessor::setupDataBuffer() {
+    assert(m_data_buffer);
+
+    unsigned int ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
+    ringbuffer_size_frames += m_extra_buffer_frames;
+    ringbuffer_size_frames += 1; // to ensure that we can fit it all in there
+
+    bool result = true;
+
+    m_correct_last_timestamp = false;
+        
+    // initialize internal buffer
+    result &= m_data_buffer->setBufferSize(ringbuffer_size_frames);
+
+    result &= m_data_buffer->setEventSize( getEventSize() );
+    result &= m_data_buffer->setEventsPerFrame( getEventsPerFrame() );
+    if(getType() == ePT_Receive) {
+        result &= m_data_buffer->setUpdatePeriod( getNominalFramesPerPacket() );
+    } else {
+        result &= m_data_buffer->setUpdatePeriod( m_StreamProcessorManager.getPeriodSize() );
+    }
+    // Completing the buffer's setup and calling the prepare() method is not
+    // applicable unless the nominal rate (m_ticks_per_frame) has been
+    // configured.  This may not be the case when setupDataBuffer() is
+    // called from prepare() via periodSizeChanged(), but will be when called
+    // from doStop() and from periodSizeChanged() via the stream processor's
+    // setPeriodSize() method.
+    if (m_ticks_per_frame > 0) {
+        result &= m_data_buffer->setNominalRate(m_ticks_per_frame);
+        result &= m_data_buffer->setWrapValue(128L * TICKS_PER_SECOND);
+        result &= m_data_buffer->setBandwidth(STREAMPROCESSOR_DLL_FAST_BW_HZ / (double)TICKS_PER_SECOND);
+
+        result &= m_data_buffer->prepare(); // FIXME: the name
+
+        debugOutput(DEBUG_LEVEL_VERBOSE, "DLL info: nominal tpf: %f, update period: %d, bandwidth: %e 1/ticks (%e Hz)\n", 
+                    m_data_buffer->getNominalRate(), m_data_buffer->getUpdatePeriod(), m_data_buffer->getBandwidth(), m_data_buffer->getBandwidth() * TICKS_PER_SECOND);
+    }
+
+    return result;
+}
+
 void
 StreamProcessor::getBufferHeadTimestamp(ffado_timestamp_t *ts, signed int *fc)
 {
@@ -1069,29 +1156,9 @@ bool StreamProcessor::prepare()
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Prepare SP (%p)...\n", this);
 
-    // make the scratch buffer one period of frames long
-    m_scratch_buffer_size_bytes = m_StreamProcessorManager.getPeriodSize() * getEventsPerFrame() * getEventSize();
-    debugOutput( DEBUG_LEVEL_VERBOSE, " Allocate scratch buffer of %zd quadlets\n", m_scratch_buffer_size_bytes);
-    if(m_scratch_buffer) delete[] m_scratch_buffer;
-    m_scratch_buffer = new byte_t[m_scratch_buffer_size_bytes];
-    if(m_scratch_buffer == NULL) {
-        debugFatal("Could not allocate scratch buffer\n");
+    if (periodSizeChanged(m_StreamProcessorManager.getPeriodSize()) == false)
         return false;
-    }
 
-    // set the parameters of ports we can:
-    // we want the audio ports to be period buffered,
-    // and the midi ports to be packet buffered
-    for ( PortVectorIterator it = m_Ports.begin();
-        it != m_Ports.end();
-        ++it )
-    {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Setting up port %s\n",(*it)->getName().c_str());
-        if(!(*it)->setBufferSize(m_StreamProcessorManager.getPeriodSize())) {
-            debugFatal("Could not set buffer size to %d\n",m_StreamProcessorManager.getPeriodSize());
-            return false;
-        }
-    }
     // the API specific settings of the ports should already be set,
     // as this is called from the processorManager->prepare()
     // so we can init the ports
@@ -1354,9 +1421,6 @@ StreamProcessor::doStop()
     assert(m_data_buffer);
 
     float ticks_per_frame;
-    unsigned int ringbuffer_size_frames = m_StreamProcessorManager.getNbBuffers() * m_StreamProcessorManager.getPeriodSize();
-    ringbuffer_size_frames += m_extra_buffer_frames;
-    ringbuffer_size_frames += 1; // to ensure that we can fit it all in there
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Enter from state: %s\n", ePSToString(m_state));
     bool result = true;
@@ -1371,23 +1435,7 @@ StreamProcessor::doStop()
         
             debugOutput(DEBUG_LEVEL_VERBOSE, "Initializing remote ticks/frame to %f\n", ticks_per_frame);
         
-            // initialize internal buffer
-            result &= m_data_buffer->setBufferSize(ringbuffer_size_frames);
-        
-            result &= m_data_buffer->setEventSize( getEventSize() );
-            result &= m_data_buffer->setEventsPerFrame( getEventsPerFrame() );
-            if(getType() == ePT_Receive) {
-                result &= m_data_buffer->setUpdatePeriod( getNominalFramesPerPacket() );
-            } else {
-                result &= m_data_buffer->setUpdatePeriod( m_StreamProcessorManager.getPeriodSize() );
-            }
-            result &= m_data_buffer->setNominalRate(ticks_per_frame);
-            result &= m_data_buffer->setWrapValue(128L * TICKS_PER_SECOND);
-            result &= m_data_buffer->setBandwidth(STREAMPROCESSOR_DLL_FAST_BW_HZ / (double)TICKS_PER_SECOND);
-            result &= m_data_buffer->prepare(); // FIXME: the name
-
-            debugOutput(DEBUG_LEVEL_VERBOSE, "DLL info: nominal tpf: %f, update period: %d, bandwidth: %e 1/ticks (%e Hz)\n", 
-                        m_data_buffer->getNominalRate(), m_data_buffer->getUpdatePeriod(), m_data_buffer->getBandwidth(), m_data_buffer->getBandwidth() * TICKS_PER_SECOND);
+            result &= setupDataBuffer();
             break;
         case ePS_DryRunning:
             if(!m_IsoHandlerManager.stopHandlerForStream(this)) {

@@ -95,6 +95,7 @@ public:
     bool stopStreaming();
     bool resetStreaming();
     enum eWaitResult waitForPeriod();
+    bool setPeriodSize(unsigned int period);
     bool setStreamingParams(unsigned int period, unsigned int rate, unsigned int nb_buffers);
 
     bool isValidNode( int node );

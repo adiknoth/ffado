@@ -90,8 +90,8 @@ bool Port::setName(std::string name) {
 
 bool Port::setBufferSize(unsigned int newsize) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting buffersize to %d for port %s\n",newsize,m_Name.c_str());
-    if (m_State != E_Created) {
-        debugFatal("Port (%s) not in E_Created state: %d\n",m_Name.c_str(),m_State);
+    if (m_State != E_Created && m_disabled == false) {
+        debugFatal("Port (%s) not in E_Created/disabled state: %d\n",m_Name.c_str(),m_State);
         return false;
     }
     m_buffersize=newsize;

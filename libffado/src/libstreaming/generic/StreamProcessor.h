@@ -62,6 +62,9 @@ public:
     };
     ///> returns the type of the streamprocessor
     virtual enum eProcessorType getType() { return m_processor_type; };
+
+    ///> notification of a buffer size change
+    virtual bool periodSizeChanged(unsigned int new_periodsize);
 private:
     // this can only be set by the constructor
     enum eProcessorType m_processor_type;
@@ -298,6 +301,7 @@ protected:
 
 //--- data buffering and accounting
 public:
+    bool setupDataBuffer();
     void getBufferHeadTimestamp ( ffado_timestamp_t *ts, signed int *fc );
     void getBufferTailTimestamp ( ffado_timestamp_t *ts, signed int *fc );
 

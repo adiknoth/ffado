@@ -306,6 +306,47 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
     return false; //not found
 }
 
+void StreamProcessorManager::setPeriodSize(unsigned int period) {
+    // This method is called early in the initialisation sequence to set the
+    // initial period size.  However, at that point in time the stream
+    // processors haven't been registered so they won't have their buffers
+    // configured from here.  The initial allocation of the stream processor
+    // (SP) buffers happens from within the SP prepare() method.
+    //
+    // SP period size changes will normally only be acted on from here
+    // if the change comes about due to a runtime change in the buffer size,
+    // as happens via jack's setbufsize facility for example.
+
+    if (period == m_period)
+        return;
+
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Setting period size to %d (was %d)\n", period, m_period);
+    m_period = period;
+
+    for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
+          it != m_ReceiveProcessors.end();
+          ++it )
+    {
+        if ((*it)->periodSizeChanged(period) == false)
+            debugWarning("receive stream processor %p couldn't set period size\n", *it);
+    }
+    for ( StreamProcessorVectorIterator it = m_TransmitProcessors.begin();
+          it != m_TransmitProcessors.end();
+          ++it )
+    {
+        if ((*it)->periodSizeChanged(period) == false)
+            debugWarning("transmit stream processor %p couldn't set period size\n", *it);
+    }
+
+    // Keep the activity timeout in sync with the new period size.  See
+    // also comments about this in prepare().
+    if (m_nominal_framerate > 0) {
+        int timeout_usec = 2*1000LL * 1000LL * m_period / m_nominal_framerate;
+        debugOutput(DEBUG_LEVEL_VERBOSE, "setting activity timeout to %d\n", timeout_usec);
+        setActivityWaitTimeoutUsec(timeout_usec);
+    }
+}
+
 bool StreamProcessorManager::setSyncSource(StreamProcessor *s) {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Setting sync source to (%p)\n", s);
     m_SyncSource = s;

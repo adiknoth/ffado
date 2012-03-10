@@ -185,6 +185,15 @@ ffado_device_t *ffado_streaming_init (ffado_device_info_t device_info, ffado_opt
     return dev;
 }
 
+int ffado_streaming_set_period_size(ffado_device_t *dev, unsigned int period) {
+    if (!dev->m_deviceManager->setPeriodSize(period))
+    {
+        debugFatal( "Could not set period size of device manager\n" );
+        return -1;
+    }
+    return 0;
+}
+
 int ffado_streaming_prepare(ffado_device_t *dev) {
     debugOutput(DEBUG_LEVEL_VERBOSE, "Preparing...\n");
     // prepare here or there are no ports for jack

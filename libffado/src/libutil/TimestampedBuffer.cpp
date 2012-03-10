@@ -395,6 +395,8 @@ bool TimestampedBuffer::prepare() {
     //       enforces packet alignment)
     m_cluster_size = m_events_per_frame * m_event_size;
     m_process_block_size = m_cluster_size * FRAMES_PER_PROCESS_BLOCK;
+    if (m_process_buffer != NULL)
+        free(m_process_buffer);
     if( !(m_process_buffer=(char *)calloc(m_process_block_size, 1))) {
             debugFatal("Could not allocate temporary cluster buffer\n");
         ffado_ringbuffer_free(m_event_buffer);

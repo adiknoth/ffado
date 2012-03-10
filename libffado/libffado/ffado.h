@@ -257,6 +257,17 @@ ffado_device_t *ffado_streaming_init(
                      ffado_options_t options);
 
 /**
+ * This permits the setting of the period size at some time after 
+ * initialisation.  The primary use of this function is to support the
+ * setbufsize functionality of JACK.
+ *
+ * @param dev the ffado device
+ * @param period the new period size
+ * @return 0 on success, non-zero if an error occurred
+ */
+int ffado_streaming_set_period_size(ffado_device_t *dev, unsigned int period);
+
+/**
  * preparation should be done after setting all per-stream parameters
  * the way you want them. being buffer data type etc...
  *
