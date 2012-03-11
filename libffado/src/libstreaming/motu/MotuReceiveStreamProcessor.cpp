@@ -176,7 +176,8 @@ static int pktcx = 0;
         // resolved.  JMW, 31 May 2010.
         if ((!len_shown || pktcx==0) && getDebugLevel()>0 ) {
             unsigned int i;
-            debugOutput(DEBUG_LEVEL_VERBOSE,"Packet from MOTU: length=%d, eventsize=%d, n_events=%d\n", length, m_event_size, n_events);
+//            debugOutput(DEBUG_LEVEL_VERBOSE,"Packet from MOTU: length=%d, eventsize=%d, n_events=%d\n", length, m_event_size, n_events);
+            fprintf(stderr, "Packet from MOTU: length=%d, eventsize=%d, n_events=%d\n", length, m_event_size, n_events);
             for (i=0; i<length; i++) {
               if ((i&0x000f) == 0)
                 fprintf(stderr, "%08x  ", i);
