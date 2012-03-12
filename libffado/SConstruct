@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2007, 2008, 2010 Arnold Krille
 # Copyright (C) 2007, 2008 Pieter Palmers
-# Copyright (C) 2008 Jonathan Woithe
+# Copyright (C) 2008, 2012 Jonathan Woithe
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -24,7 +24,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-FFADO_API_VERSION = "8"
+FFADO_API_VERSION = "9"
 FFADO_VERSION="2.999.0"
 
 import os
