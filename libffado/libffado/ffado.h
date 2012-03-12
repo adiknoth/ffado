@@ -46,6 +46,18 @@ typedef struct ffado_handle* ffado_handle_t;
 extern "C" {
 #endif
 
+#ifdef __APPLE__
+#define WEAK_ATTRIBUTE weak_import
+#else
+#define WEAK_ATTRIBUTE __weak__
+#endif
+
+#ifdef __GNUC__
+#define FFADO_WEAK_EXPORT __attribute__((WEAK_ATTRIBUTE))
+#else
+/* Add support for non-gcc platforms here */
+#endif
+
 /* ABI stuff */
 const char*
 ffado_get_version();
@@ -265,7 +277,8 @@ ffado_device_t *ffado_streaming_init(
  * @param period the new period size
  * @return 0 on success, non-zero if an error occurred
  */
-int ffado_streaming_set_period_size(ffado_device_t *dev, unsigned int period);
+int ffado_streaming_set_period_size(ffado_device_t *dev, 
+                     unsigned int period) FFADO_WEAK_EXPORT;
 
 /**
  * preparation should be done after setting all per-stream parameters
