@@ -2317,6 +2317,9 @@ signed int n_groups = devprop->n_portgroup_entries;
         case MOTU_OPTICAL_MODE_TOSLINK: flags |= MOTU_PA_MK3_OPT_B_TOSLINK; break;
     }
 
+fprintf(stderr, "initDirPortGroups(): flags=0x%08x, opta=0x%x, optb=0x%x\n",
+  flags, optical_a_mode, optical_b_mode);
+
     /* Scan through the port groups, allocating packet offsets for all
      * port groups which are found to be active in the device's current state.
      */
