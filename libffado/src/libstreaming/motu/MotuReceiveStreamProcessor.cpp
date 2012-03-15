@@ -36,6 +36,8 @@
 
 #include "libutil/ByteSwap.h"
 
+#include "../../motu/motu_avdevice.h"
+
 #include <cstring>
 #include <math.h>
 #include <assert.h>
@@ -85,6 +87,11 @@ MotuReceiveStreamProcessor::MotuReceiveStreamProcessor(FFADODevice &parent, unsi
     , mb_head ( 0 )
     , mb_tail ( 0 )
 {
+    // The model needs to be easily visible since the interpretation of the
+    // receive stream is dependent on the model in a slight but important
+    // way.
+    Motu::MotuDevice *dev = static_cast<Motu::MotuDevice *>(&parent);
+    m_motu_model = dev->m_motu_model;
     memset(&m_devctrls, 0, sizeof(m_devctrls));
 }
 
@@ -253,8 +260,12 @@ bool MotuReceiveStreamProcessor::processReadBlock(char *data,
 {
     bool no_problem=true;
 
-    /* Scan incoming block for device control events */
-    decodeMotuCtrlEvents(data, nevents);
+    /* Scan incoming block for device control events.  These do not seem to
+     * be present on the 828Mk1 (or at the very least are in a different
+     * location).
+     */
+    if (m_motu_model != Motu::MOTU_MODEL_828MkI)
+        decodeMotuCtrlEvents(data, nevents);
 
     for ( PortVectorIterator it = m_Ports.begin();
           it != m_Ports.end();

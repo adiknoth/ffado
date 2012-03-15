@@ -85,24 +85,24 @@ static VendorModelEntry supportedDeviceList[] =
 // Ports declarations
 const PortEntry Ports_828MKI[] =
 {
-    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
-    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
-    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
-    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
-    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
-    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
-    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
-    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
-    {"SPDIF1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 34},
-    {"SPDIF2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 37},
-    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
-    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
-    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 46},
-    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 49},
-    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 52},
-    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 55},
-    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 58},
-    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 61},
+    {"Analog1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY,  4},
+    {"Analog2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY,  7},
+    {"Analog3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 10},
+    {"Analog4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 13},
+    {"Analog5", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 16},
+    {"Analog6", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 19},
+    {"Analog7", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 22},
+    {"Analog8", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 25},
+    {"SPDIF1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 28},
+    {"SPDIF2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 31},
+    {"ADAT1", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 34},
+    {"ADAT2", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 37},
+    {"ADAT3", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 40},
+    {"ADAT4", MOTU_PA_INOUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ADAT, 43},
+    {"ADAT5", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 46},
+    {"ADAT6", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 49},
+    {"ADAT7", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 52},
+    {"ADAT8", MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ADAT, 55},
 };
 
 const PortEntry Ports_896HD[] =
@@ -2107,9 +2107,12 @@ unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
 unsigned int flags = 0;
 unsigned int port_flags;
 
-    // At the very least an event consists of the SPH (4 bytes) and the control/MIDI
-    // bytes (6 bytes).
-    size = 4+6;
+    // At the very least an event consists of the SPH (4 bytes).  On all 
+    // interfaces except the 828Mk1 there are also 6 bytes of control/MIDI
+    // data at the start.
+    size = 4;
+    if (m_motu_model != MOTU_MODEL_828MkI)
+      size += 6;
     getOpticalMode(direction, &optical_mode_a, &optical_mode_b);
 
     if ( sample_rate > 96000 )
@@ -2158,6 +2161,12 @@ unsigned int port_flags;
     else
         size = m_tx_event_size;
 #endif
+
+    // The 828Mk1 includes an additional 6 bytes at the end of the packet.
+    // The purpose of these is unknown at this stage, but we need to allow
+    // for them in the event size calculation.
+    if (m_motu_model == MOTU_MODEL_828MkI)
+      size += 6;
 
     // Finally round size up to the next quadlet boundary
     return ((size+3)/4)*4;

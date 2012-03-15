@@ -171,6 +171,7 @@ private:
      */
     unsigned int m_event_size;
 
+    signed int m_motu_model;
     struct MotuDevControls m_devctrls;
 
     /* A small MIDI buffer to cover for the case where we need to span a
