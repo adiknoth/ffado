@@ -2112,7 +2112,7 @@ unsigned int port_flags;
     // data at the start.
     size = 4;
     if (m_motu_model != MOTU_MODEL_828MkI)
-      size += 6;
+        size += 6;
     getOpticalMode(direction, &optical_mode_a, &optical_mode_b);
 
     if ( sample_rate > 96000 )
@@ -2155,18 +2155,19 @@ unsigned int port_flags;
             size += 3;
         }
     }
+
+    // The 828Mk1 includes an additional 6 bytes at the end of the packet.
+    // The purpose of these is unknown at this stage, but we need to allow
+    // for them in the event size calculation.
+    if (m_motu_model == MOTU_MODEL_828MkI)
+        size += 6;
+
 #else
     if (direction==Streaming::Port::E_Capture)
         size = m_rx_event_size;
     else
         size = m_tx_event_size;
 #endif
-
-    // The 828Mk1 includes an additional 6 bytes at the end of the packet.
-    // The purpose of these is unknown at this stage, but we need to allow
-    // for them in the event size calculation.
-    if (m_motu_model == MOTU_MODEL_828MkI)
-      size += 6;
 
     // Finally round size up to the next quadlet boundary
     return ((size+3)/4)*4;
@@ -2299,12 +2300,18 @@ unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
 const signed int mode_idx = direction==Streaming::Port::E_Capture?1:0;
 unsigned int flags = 0;
 unsigned int portgroup_flags;
-signed int pkt_ofs = 10;       /* Port data starts at offset 10 */
+signed int pkt_ofs;
 const DevicePropertyEntry *devprop = &DevicesProperty[m_motu_model-1];
 signed int n_groups = devprop->n_portgroup_entries;
 
     if (n_groups <= 0)
         return true;
+
+    /* Port data starts at offset 10 on most models, and 4 on the 828mk1 */
+    if (m_motu_model == MOTU_MODEL_828MkI)
+        pkt_ofs = 4;
+    else
+        pkt_ofs = 10;
 
     if ( sample_rate > 96000 )
         flags |= MOTU_PA_RATE_4x;
@@ -2354,10 +2361,20 @@ fprintf(stderr, "initDirPortGroups(): flags=0x%08x, opta=0x%x, optb=0x%x\n",
         }
     }
 
+    /* The 828mk1 has an additional 6 bytes tacked onto the end of the
+     * packet, which we must account for when using pkt_ofs as a proxy for
+     * size.
+     */
+    if (m_motu_model == MOTU_MODEL_828MkI)
+        pkt_ofs += 6;
+
     if (direction == Streaming::Port::E_Capture)
         m_rx_event_size = pkt_ofs;
     else
         m_tx_event_size = pkt_ofs;
+
+fprintf(stderr, "initDirPortGroups(): rxsize=%d, txsize=%d\n",
+  m_rx_event_size, m_tx_event_size);
 
     return true;
 }
