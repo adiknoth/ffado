@@ -417,6 +417,13 @@ device_definitions = (
     modelname = "Desktop Konnekt 6";
     driver = 20;
 },
+{ 
+    vendorid = 0x000166; 
+    modelid = 0x00000027; 
+    vendorname = "TC Electronic"; 
+    modelname = "ImpactTwin"; 
+    driver = 20; 
+}, 
 {
     vendorid = 0x000595;
     modelid = 0x00000001;
