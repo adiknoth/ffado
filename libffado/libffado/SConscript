@@ -26,5 +26,7 @@ Import( 'env' )
 
 env = env.Clone()
 
+env.ScanReplace( "ffado.h.in" )
+
 env.Alias( 'install', env.Install( os.path.join(env['includedir'],"libffado"), "ffado.h" ) )
 

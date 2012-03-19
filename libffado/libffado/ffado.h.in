@@ -26,6 +26,8 @@
 #ifndef FFADO_H
 #define FFADO_H
 
+#define FFADO_API_VERSION $FFADO_API_VERSION
+
 #define FFADO_MAX_NAME_LEN 256
 
 #include <stdlib.h>
