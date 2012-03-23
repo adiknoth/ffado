@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <signal.h>
+#include <unistd.h>
 
 #include <semaphore.h>
 #include <cstring>

@@ -44,6 +44,7 @@
 
 #include <string>
 #include <cstring>
+#include <unistd.h>
 #include <assert.h>
 
 #include "libutil/Configuration.h"

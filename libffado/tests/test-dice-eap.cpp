@@ -45,6 +45,7 @@ using namespace Dice;
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <unistd.h>
 
 #include <signal.h>
 int run;

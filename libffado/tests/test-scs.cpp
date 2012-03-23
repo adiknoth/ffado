@@ -477,8 +477,8 @@ main(int argc, char **argv)
         }
         #endif
 
-        BridgeMapIterator it = seqport2bridgemap.find(portNumber);
-        if(it == seqport2bridgemap.end()) {
+        BridgeMapIterator it2 = seqport2bridgemap.find(portNumber);
+        if(it2 == seqport2bridgemap.end()) {
             seqport2bridgemap[portNumber] = bridge;
         } else {
             debugError("BUG: port already present in bridge map, duplicate port.\n");
