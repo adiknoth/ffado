@@ -1,0 +1,84 @@
+.TH FFADO-FIREWORKS-DOWNLOADER 1 27-Mar-2012 "ffado-fireworks-downloader"
+.SH NAME
+ffado-fireworks-downloader \- firmware download application for Echo
+Fireworks devices
+.SH SYNOPSIS
+.BI "ffado-fireworks-downloader [OPTION...] OPERATION
+.sp
+.SH DESCRIPTION
+.B ffado-bridgeco-downloader
+permits firmware updates to be made to Echo Fireworks devices under 
+Linux.
+.I OPERATION
+describes the action to be carried out.  An
+.I OPERATION
+comprises one of the following keywords and any arguments required by that 
+keyword.
+.TP
+.B list
+List devices on the firewire bus.
+.TP
+.B display
+Display information about a device and its firmware.
+.TP
+.B upload FILE
+Upload the firmware contained in
+.I FILE
+to the device
+.TP
+.B download FILE START_ADDR LEN
+Download the flash contents from the device.  
+.I LEN
+bytes will be downloaded starting at 
+.I START_ADDR
+and written to the file
+.I FILE
+.TP
+.B verify FILE
+Verify that the firmware contained in the device corresponds to the one in
+.I FILE
+.TP
+.B session_display
+Show information about the session on the device.
+.TP
+.B session_info FILE
+Show information about the device session stored in
+.I FILE
+.TP
+.B session_download FILE
+Download the session content from the device into 
+.I FILE
+.TP
+.B session_upload FILE
+Upload the session from 
+.I FILE
+to the device.
+.sp
+.SH OPTIONS
+.TP
+.B "\-h, \-\-help"
+Display brief usage information and exit
+.TP  
+.B "\-p, \-\-port=NUM"
+Specify use of IEEE1394 port
+.I NUM
+.TP   
+.B "\-v, \-\-verbose=LEVEL"
+Produce verbose output.  The higher the
+.I LEVEL
+the more verbose the messages.  The some verbose messages may only be
+available of FFADO was compiled with debugging enabled.
+.TP
+.B "\-g, \-\-guid=GUID"
+Specify the GUID of the device to interact with.  If this is not specified
+an attempt will be made to automatically detect a suitable device.
+.TP
+.B "\-m, \-\-magic=MAGIC"
+A magic number you have to obtain before this program will work.  Specifying
+it on the command line means that you accept the risks which come with this
+tool.  The magic number can be obtained in the source code.
+.sp
+.SH NOTES
+Manipulating firmware can cause your device to stop working.  The FFADO
+project accepts no responsibility if this occurs as a result of using this
+tool.

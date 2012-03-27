@@ -1,0 +1,25 @@
+.TH FFADO-MIXER 1 27-Mar-2012 "ffado-mixer"
+.SH NAME
+ffado-mixer \- a graphical front-end for the FFADO mixer DBus controls
+exposed by ffado-dbus-server.
+.SH SYNOPSIS
+.BI "ffado-mixer"
+.sp
+There are no command line options.
+.sp
+.SH DESCRIPTION
+.B ffado-mixer
+presents a graphical application allowing a FFADO device to be controlled. 
+The extent of the control is determined by the level of support for the
+device in FFADO and in 
+.B ffado-dbus-server.
+Typical controls offered by
+.B ffado-mixer
+include faders for the on-board mixer, phantom power control, mode switches
+and so on.
+.SH "OPTIONS"
+Currently 
+.B ffado-mixer
+does not have any command line options.
+.SH "SEE ALSO"
+.BR ffado-dbus-server (1)

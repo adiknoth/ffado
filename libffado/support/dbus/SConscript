@@ -61,12 +61,21 @@ apps = {
     "test-dbus-server" : "test-dbus-server.cpp controlserver.cpp",
 }
 
+manpages = (
+    "ffado-dbus-server.1",
+)
+
 installapps += [ "ffado-dbus-server" ]
 
 for app in apps.keys():
     env.Program( target=app, source = env.Split( apps[app] ) )
     if app.find( "test" ) == -1:
         env.Install( "$bindir", app )
+
+for manpage in manpages:
+    section = manpage.split(".")[1]
+    dest = os.path.join("$mandir", "man"+section, manpage)
+    env.InstallAs(source=manpage, target=dest)
 
 servicefile = env.ScanReplace('org.ffado.Control.service.in')
 if env['dbus_service_dir'] and ( env.destdir or os.access( env['dbus_service_dir'], os.W_OK ) ):

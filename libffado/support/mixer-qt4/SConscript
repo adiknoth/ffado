@@ -56,4 +56,8 @@ if env.has_key('PYUIC4'):
 
     e.Install( "$sharedir/icons", "../xdg/hi64-apps-ffado.png" )
 
+    # Install the ffado-mixer manpage in section 1
+    dest = os.path.join("$mandir", "man1", "ffado-mixer.1")
+    env.InstallAs(source="ffado-mixer.1", target=dest)
+
 # vim: et

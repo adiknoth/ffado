@@ -43,3 +43,7 @@ e.Install( "$pythondir", "helpstrings.py" )
 e.Install( "$pythondir", "listirqinfo.py" )
 e.Install( "$pythondir", "static_info.txt" )
 e.Install( "$pythondir", "ffado_diag_helpers.py" )
+
+# Install manpages in section 1
+dest = os.path.join("$mandir", "man1", "ffado-diag.1")
+env.InstallAs(source="ffado-diag.1", target=dest)

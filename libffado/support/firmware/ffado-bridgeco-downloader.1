@@ -1,0 +1,73 @@
+.TH FFADO-BRIDGECO-DOWNLOADER 1 27-Mar-2012 "ffado-bridgeco-downloader"
+.SH NAME
+ffado-bridgeco-downloader \- firmware download application for BridgeCo 
+devices
+.SH SYNOPSIS
+.BI "ffado-bridgeco-downloader [OPTION...] OPERATION
+.sp
+.SH DESCRIPTION
+.B ffado-bridgeco-downloader
+permits firmware updates to be made to BridgeCo (aka BeBoB) devices under 
+Linux.
+.I OPERATION
+describes the action to be carried out.  An
+.I OPERATION
+is introduced with the GUID of the device to operate on.  This is followed
+by one of the following keywords and any arguments required by that keyword.
+.TP
+.B display
+Display information about the interface
+.TP
+.B setguid NEW_GUID
+Set the device's GUID to
+.I NEW_GUID
+.TP
+.B firmware FILE
+Download the firmware file
+.I FILE
+to the device.
+.TP
+.B cne FILE
+Download the CnE file
+.I FILE
+to the device.
+.TP
+.B bcd FILE
+Parse the BeBoB BCD file
+.I FILE
+and display information about the contents.
+.sp
+.SH OPTIONS
+.TP
+.B "\-?, \-\-help, \-\-usage"
+Display brief usage information and exit
+.TP
+.B "\-V, \-\-version"
+Show the program version and exit
+.TP  
+.B "\-p, \-\-port=NUM"
+Specify use of IEEE1394 port
+.I NUM
+.TP   
+.B "\-v, \-\-verbose=LEVEL"
+Produce verbose output.  The higher the
+.I LEVEL
+the more verbose the messages.  The some verbose messages may only be
+available of FFADO was compiled with debugging enabled.
+.TP
+.B "\-b, \-\-noboot"
+Do not start the bootloader.  Use this if the bootloader is already running.
+.TP
+.B "\-f, \-\-force"
+Force firmware download in the event the program doesn't think it's a good 
+idea.  Use with caution.
+.TP
+.B "\-m, \-\-magic=MAGIC"
+A magic number you have to obtain before this program will work.  Specifying
+it on the command line means that you accept the risks which come with this
+tool.  The magic number can be obtained in the source code.
+.sp
+.SH NOTES
+Manipulating firmware can cause your device to stop working.  The FFADO
+project accepts no responsibility if this occurs as a result of using this
+tool.

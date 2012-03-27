@@ -1,0 +1,44 @@
+.TH FFADO-DBUS-SERVER 1 27-Mar-2012 "ffado-dbus-server"
+.SH NAME
+dbus \- expose the mixer features of connected FFADO devices through DBus
+.SH SYNOPSIS
+.BI "ffado-dbus-server [OPTION...]"
+.sp
+.SH DESCRIPTION
+.B ffado-dbus-server
+exposes the mixer and control features of connected FFADO devices though a
+DBUS interface.  The extent of support for controls on a given device
+depends entirely on the status of that device's FFADO driver.
+.PP
+By using DBus it is possible for control applications to be developed
+independently of FFADO.  The DBus interface provided by
+.B ffado-dbus-server
+is used by 
+.B ffado-mixer
+but there is no reason other implementations could not be written.
+.SH OPTIONS
+.TP
+.B "\-?, \-\-help, \-\-usage"
+Show brief usage information and exit
+.TP
+.B "\-V, \-\-version"
+Print the program version and exit
+.TP
+.B "\-q, \-q, \-\-quiet, \-\-silent"
+Don't produce any output
+.TP
+.B "\-n, \-\-node=ID"
+Only expose the mixer of a device on a specific node with an ID of
+.I ID
+.TP
+.B "\-p, \-\-port=NUM"
+Specify use of IEEE1394 port 
+.I NUM
+.TP
+.B "\-v, \-\-verbose=LEVEL
+Produce verbose output.  The higher the
+.I LEVEL
+the more verbose the messages.  The some verbose messages may only be
+available of FFADO was compiled with debugging enabled.
+.SH SEE ALSO
+.BR ffado-mixer (1)

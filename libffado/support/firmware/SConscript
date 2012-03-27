@@ -20,6 +20,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+import os
 
 Import( 'env' )
 
@@ -43,25 +44,37 @@ apps = {
 
 installapps = []
 
+manpages = []
+
 env.PrependUnique( LIBPATH=env['build_base']+"src" )
 env.PrependUnique( LIBS="ffado" )
 
 if env['ENABLE_BEBOB']:
     apps["ffado-bridgeco-downloader"] = "downloader.cpp bridgeco-downloader.cpp"
     installapps += [ "ffado-bridgeco-downloader" ]
+    manpages += [ "ffado-bridgeco-downloader.1" ]
 
 if env['ENABLE_FIREWORKS']:
     apps["ffado-fireworks-downloader"] = "downloader.cpp fireworks-downloader.cpp"
     installapps += [ "ffado-fireworks-downloader" ]
+    manpages += [ "ffado-fireworks-downloader.1" ]
+
 if env['ENABLE_DICE']:
     apps["ffado-dice-firmware"] = "dice-firmware-utility.cpp"
     installapps += [ "ffado-dice-firmware" ]
+    manpages += [ "ffado-dice-firmware.1" ]
 
 
 for app in apps.keys():
     env.Program( target=app, source = env.Split( apps[app] ) )
     if app.find( "test" ) == -1:
         env.Install( "$bindir", app )
+
+for manpage in manpages:
+    section = manpage.split(".")[1]
+    dest = os.path.join("$mandir", "man"+section, manpage)
+    env.InstallAs(source=manpage, target=dest)
+
 
 # static versions
 if static_env['BUILD_STATIC_TOOLS']:
