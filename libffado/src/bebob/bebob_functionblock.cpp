@@ -408,7 +408,7 @@ FunctionBlockEnhancedMixer::discover()
      * device out there do not use, and all implementations
      * are buggy. So there is no point to use it. 
      * All 'mixer' functions are implemented with selector function blocks
-
+*/
     AVC::FunctionBlockCmd fbCmd( m_subunit->getUnit().get1394Service(),
                                  FunctionBlockCmd::eFBT_Processing,
                                  m_id,
@@ -424,6 +424,9 @@ FunctionBlockEnhancedMixer::discover()
     delete fbCmd.m_pFBProcessing->m_pMixer;
     fbCmd.m_pFBProcessing->m_pMixer = 0;
     fbCmd.m_pFBProcessing->m_pEnhancedMixer = em.clone();
+
+    fbCmd.m_pFBProcessing->m_inputAudioChannelNumber = 0xff;
+    fbCmd.m_pFBProcessing->m_outputAudioChannelNumber = 0xff;
     
     if ( !fbCmd.fire() ) {
         debugError( "cmd failed\n" );
@@ -438,7 +441,6 @@ FunctionBlockEnhancedMixer::discover()
     if((fbCmd.getResponse() != AVCCommand::eR_Implemented)) {
         debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
     }
-    */
     
     return true;
 }
