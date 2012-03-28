@@ -183,7 +183,7 @@ FunctionBlockProcessingMixer::clone() const
 FunctionBlockProcessingEnhancedMixer::FunctionBlockProcessingEnhancedMixer()
     : IBusData()
     , m_controlSelector( FunctionBlockProcessing::eCSE_Processing_EnhancedMixer )
-    , m_statusSelector( eSS_ProgramableState )
+    , m_statusSelector( eSS_Level )
     , m_controlDataLength( 0 )
 {
 }
@@ -211,13 +211,13 @@ FunctionBlockProcessingEnhancedMixer::serialize( Util::Cmd::IOSSerialize& se )
     
     switch (m_statusSelector) {
         case eSS_ProgramableState:
-            m_controlDataLength=m_LevelData.size();
+        	m_controlDataLength=m_ProgramableStateData.size()/8;
             data_length_hi=(m_controlDataLength >> 8);
             data_length_lo=(m_controlDataLength & 0xFF);
             bStatus &= se.write( data_length_hi,  "FunctionBlockProcessingEnhancedMixer controlDataLengthHi" );
             bStatus &= se.write( data_length_lo,  "FunctionBlockProcessingEnhancedMixer controlDataLengthLo" );
 
-            for (int i=0;i<m_controlDataLength/8;i++) {
+            for (int i=0;i<m_controlDataLength;i++) {
                 byte_t value=0;
                 
                 for (int j=0;j<8;j++) {
@@ -227,20 +227,9 @@ FunctionBlockProcessingEnhancedMixer::serialize( Util::Cmd::IOSSerialize& se )
                 
                 bStatus &= se.write( value,  "FunctionBlockProcessingEnhancedMixer data" );
             }
-            
-            todo=m_controlDataLength%8;
-            done=m_controlDataLength-todo;
-            if (todo) {
-                byte_t value=0;
-                for (int j=0;j<todo;j++) {
-                    control_data_ext_length_t bit_value=m_ProgramableStateData.at(done*8+j);
-                    value |= bit_value << (7-j);
-                }
-                bStatus &= se.write( value,  "FunctionBlockProcessingEnhancedMixer data" );
-            }
             break;
         case eSS_Level:
-            m_controlDataLength=m_LevelData.size()/2;
+            m_controlDataLength=m_LevelData.size()*2;
             data_length_hi=(m_controlDataLength >> 8);
             data_length_lo=(m_controlDataLength & 0xFF);
             bStatus &= se.write( data_length_hi,  "FunctionBlockProcessingEnhancedMixer controlDataLengthHi" );
@@ -285,23 +274,11 @@ FunctionBlockProcessingEnhancedMixer::deserialize( Util::Cmd::IISDeserialize& de
     switch (m_statusSelector) {
         case eSS_ProgramableState:
             m_ProgramableStateData.clear();
-            for (int i=0;i<m_controlDataLength/8;i++) {
+            for (int i=0;i<m_controlDataLength;i++) {
                 byte_t value;
                 bStatus &= de.read( &value);
 
                 for (int j=7;j>=0;j--) {
-                    byte_t bit_value;
-                    bit_value=(((1<<j) & value) ? 1 : 0);
-                    m_ProgramableStateData.push_back(bit_value);
-                }
-            }
-
-            todo=m_controlDataLength%8;
-            if (todo) {
-                byte_t value;
-                bStatus &= de.read( &value);
-
-                for (int j=7;j>7-todo;j--) {
                     byte_t bit_value;
                     bit_value=(((1<<j) & value) ? 1 : 0);
                     m_ProgramableStateData.push_back(bit_value);
