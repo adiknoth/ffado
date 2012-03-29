@@ -475,6 +475,9 @@ public:
     /// Dump the first parts of the application space
     void showApplication();
 
+    /// Show the full router content
+    void showFullRouter();
+
     /// Restore from flash
     bool loadFlashConfig();
     /// Store to flash

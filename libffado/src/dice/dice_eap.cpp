@@ -718,6 +718,58 @@ EAP::showApplication()
     }
 }
 
+void
+EAP::showFullRouter()
+{
+    printMessage("--- Full router content ---\n");
+    fb_quadlet_t* tmp = (fb_quadlet_t *) calloc(m_router_nb_entries, sizeof(fb_quadlet_t));
+
+    printMessage(" %d entries to read\n", m_router_nb_entries);
+
+    // Current config
+    printMessage("  Current Configuration:\n");
+    // First bloc is the effective number of routes
+    uint32_t nb_routes;
+    if(!readRegBlock(eRT_CurrentCfg, 0, &nb_routes, 4)) {
+        printMessage("Failed to read number of entries\n");
+        return;
+    }
+    printMessage("   %d routes\n", nb_routes);
+
+    // read the route info
+    uint32_t tmp_entries[m_router_nb_entries];
+    if(!readRegBlock(eRT_CurrentCfg, 4, tmp_entries, m_router_nb_entries*4)) {
+        printMessage("Failed to read router config block information\n");
+        return;
+    }
+
+    // decode and print
+    for(unsigned int i=0; i < m_router_nb_entries; i++) {
+        printMessage("    %d: 0x%02x <- 0x%02x;\n", i, tmp_entries[i]&0xff, (tmp_entries[i]>>8)&0xff);
+    }
+    // New config
+    printMessage("  New Configuration:\n");
+    // First bloc is the effective number of routes
+    if(!readRegBlock(eRT_NewRouting, 0, &nb_routes, 4)) {
+        printMessage("Failed to read number of entries\n");
+        return;
+    }
+    printMessage("   %d routes\n", nb_routes);
+
+    // read the route info
+    if(!readRegBlock(eRT_NewRouting, 4, tmp_entries, m_router_nb_entries*4)) {
+        printMessage("Failed to read router config block information\n");
+        return;
+    }
+
+    // decode and print
+    for(unsigned int i=0; i < m_router_nb_entries; i++) {
+        printMessage("    %d: 0x%02x <- 0x%02x;\n", i, tmp_entries[i]&0xff, (tmp_entries[i]>>8)&0xff);
+    }
+
+    return;
+}
+
 // EAP load/store operations
 
 enum EAP::eWaitReturn
@@ -1527,10 +1579,12 @@ EAP::Router::show()
 {
     // print the peak space as it also contains the routing configuration
     printMessage("Router sources:\n");
+    printMessage(" %ld sources:\n", m_sources.size());
     for ( std::map<std::string, int>::iterator it=m_sources.begin(); it!=m_sources.end(); ++it ) {
         printMessage(" 0x%02x : %s\n", (*it).second, (*it).first.c_str());
     }
     printMessage("Router destinations:\n");
+    printMessage(" %ld destinations:\n", m_destinations.size());
     for ( std::map<std::string, int>::iterator it=m_destinations.begin(); it!=m_destinations.end(); ++it ) {
         printMessage(" 0x%02x : %s\n", (*it).second, (*it).first.c_str());
     }
@@ -1688,6 +1742,7 @@ EAP::RouterConfig::getDestinationsForSource(unsigned char source) {
 void
 EAP::RouterConfig::show()
 {
+    printMessage("%ld routes\n", m_routes2.size());
     for ( RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it ) {
         printMessage("0x%02x -> 0x%02x\n", it->second, it->first);
     }

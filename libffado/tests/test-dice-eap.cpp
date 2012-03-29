@@ -250,8 +250,10 @@ main(int argc, char **argv)
 
     EAP &eap = *(avDevice->getEAP());
 
-    if (arguments.application)
+    if (arguments.application) {
         eap.showApplication();
+        eap.showFullRouter();
+    }
     else
         eap.show();
     eap.lockControl();
