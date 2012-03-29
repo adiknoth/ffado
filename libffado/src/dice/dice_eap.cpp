@@ -784,7 +784,6 @@ EAP::showFullPeakSpace()
     // decode and print
     for (unsigned int i=0; i<m_router_nb_entries; ++i) {
         printMessage("  %d: 0x%02x: %d;\n", i, tmp_entries[i]&0xff, (tmp_entries[i]&0xfff0000)>>16);
-        unsigned char dest = tmp_entries[i]&0xff;
     }
     return;
 }
@@ -1664,7 +1663,7 @@ EAP::RouterConfig::read(enum eRegBase base, unsigned offset)
 
     // decode into the routing map
     for(unsigned int i=0; i < nb_routes; i++) {
-        m_routes2[tmp_entries[i]&0xff] = (tmp_entries[i]>>8)&0xff;
+        m_routes2.push_back(std::make_pair(tmp_entries[i]&0xff, (tmp_entries[i]>>8)&0xff));
     }
     return true;
 }
@@ -1713,18 +1712,26 @@ EAP::RouterConfig::write(enum eRegBase base, unsigned offset)
 bool
 EAP::RouterConfig::setupRoute(unsigned char src, unsigned char dest) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::setupRoute( 0x%02x, 0x%02x )\n", src, dest);
-    m_routes2[dest] = src;
-    return true;
+    for (RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it) {
+        if (it->first == dest) {
+          it->second = src;
+          return true;
+        }
+    }
+    m_routes2.push_back(std::make_pair(dest, src));
+    return false;
 }
 
 bool
 EAP::RouterConfig::removeRoute(unsigned char src, unsigned char dest) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::removeRoute( 0x%02x, 0x%02x )\n", src, dest);
-    if (m_routes2.count(dest) > 0) {
-        if (src != m_routes2[dest]) {
+    for (RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it) {
+        if (it->first == dest) {
+          if (it->second != src) {
             return false;
+          }
+          return removeRoute(dest);
         }
-        return removeRoute(dest);
     }
     return true;
 }
@@ -1732,17 +1739,21 @@ EAP::RouterConfig::removeRoute(unsigned char src, unsigned char dest) {
 bool
 EAP::RouterConfig::removeRoute(unsigned char dest) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::removeRoute( 0x%02x )\n", dest);
-    m_routes2.erase(dest);
-    if (m_routes2.count(dest) < 1) {
-        return false;
+    for (RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it) {
+        if (it->first == dest) {
+          m_routes2.erase(it);
+          return true;
+        }
     }
-    return true;
+    return false;
 }
 
 unsigned char
 EAP::RouterConfig::getSourceForDestination(unsigned char dest) {
-    if (m_routes2.count(dest) > 0) {
-        return m_routes2[dest];
+    for (RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it) {
+        if (it->first == dest) {
+          return it->second;
+        }
     }
     return -1;
 }

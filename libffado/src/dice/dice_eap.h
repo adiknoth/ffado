@@ -256,7 +256,8 @@ private:
           The key is the destination as each destination can only have audio from one source.
           Sources can be routed to several destinations though.
           */
-        typedef std::map<unsigned char,unsigned char> RouteVectorV2;
+//        typedef std::map<unsigned char,unsigned char> RouteVectorV2;
+        typedef std::vector< std::pair<unsigned char,unsigned char> > RouteVectorV2;
         RouteVectorV2 m_routes2;
     private:
         DECLARE_DEBUG_MODULE_REFERENCE;
