@@ -77,7 +77,8 @@ void SaffirePro40::SaffirePro40EAP::setupDestinations_low() {
     addDestination("1394",   0, 10, eRD_ATX0, 1);
     addDestination("1394",   0,  8, eRD_ATX1, 11);
     addDestination("Loop",   8,  2, eRD_ATX1, 1);
-    addDestination("Mute",   0,  1, eRD_Muted);
+// Is a Mute destination useful ?
+//    addDestination("Mute",   0,  1, eRD_Muted);
 }
 
 //
@@ -112,7 +113,8 @@ void SaffirePro40::SaffirePro40EAP::setupDestinations_mid() {
     addDestination("Mixer",  0,  2, eRD_Mixer1, 17);
     addDestination("1394",   0, 14, eRD_ATX0, 1);
     addDestination("Loop",   14, 2, eRD_ATX0, 1);
-    addDestination("Mute",   0,  1, eRD_Muted);
+// Is a Mute destination useful ?
+//    addDestination("Mute",   0,  1, eRD_Muted);
 }
 
 //

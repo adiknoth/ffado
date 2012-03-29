@@ -76,7 +76,8 @@ void SaffirePro24::SaffirePro24EAP::setupDestinations_low() {
     addDestination("Mixer",  0, 16, eRD_Mixer0);
     addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
     addDestination("1394",   0, 16, eRD_ATX0);
-    addDestination("Mute",   0,  1, eRD_Muted);
+// Is a Mute destination useful ?
+//    addDestination("Mute",   0,  1, eRD_Muted);
 }
 
 void SaffirePro24::SaffirePro24EAP::setupSources_mid() {
@@ -93,7 +94,8 @@ void SaffirePro24::SaffirePro24EAP::setupDestinations_mid() {
     addDestination("Mixer",  0, 16, eRD_Mixer0);
     addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
     addDestination("1394",   0, 12, eRD_ATX0);
-    addDestination("Mute",   0,  1, eRD_Muted);
+// Is a Mute destination useful ?
+//    addDestination("Mute",   0,  1, eRD_Muted);
 }
 
 void SaffirePro24::SaffirePro24EAP::setupSources_high() {
