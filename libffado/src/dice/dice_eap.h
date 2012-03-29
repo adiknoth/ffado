@@ -548,6 +548,8 @@ protected:
     void addDestination(const std::string name, unsigned int base, unsigned int count,
                         enum eRouteDestination destid, unsigned int offset=0);
 
+    uint16_t getMaxNbRouterEntries() {return m_router_nb_entries;};
+
 private:
     /// Return the router configuration for the current rate
     RouterConfig * getActiveRouterConfig();

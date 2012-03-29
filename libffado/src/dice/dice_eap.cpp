@@ -1616,9 +1616,11 @@ EAP::RouterConfig::write(enum eRegBase base, unsigned offset)
         ++i;
     }
 
-    uint32_t zeros[129];
-    for (int i=0; i<129; ++i) zeros[i] = 0;
-    if(!m_eap.writeRegBlock(base, offset, zeros, 129*4)) {
+    unsigned int nb_routes_max = m_eap.getMaxNbRouterEntries();
+    uint32_t zeros[nb_routes_max+1];
+
+    for (unsigned int i=0; i<nb_routes_max+1; ++i) zeros[i] = 0;
+    if(!m_eap.writeRegBlock(base, offset, zeros, (nb_routes_max+1)*4)) {
         debugError("Failed to write zeros to router config block\n");
         return false;
     }
