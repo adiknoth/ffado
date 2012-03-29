@@ -279,6 +279,11 @@ EAP::setupSources_high() {
     setupSources_low();
 }
 
+unsigned int
+EAP::getSMuteId() {
+    return m_router->getSourceIndex("Mute:00");
+}
+
 void
 EAP::setupDestinations() {
     switch(m_device.getCurrentConfig()) {
@@ -1506,7 +1511,12 @@ EAP::Router::setConnectionState(const int source, const int dest, const bool ena
     if (enable) {
         ret = rcfg->setupRoute(source, dest);
     } else {
-        ret = rcfg->removeRoute(source, dest);
+        ret = rcfg->muteRoute(dest);
+        // FixMe:
+        //   Not all devices are intended to work correctly with a variable number of router entries
+        //     so muting the destination is preferable
+        //   Now, this might be useful for some other ones, but is it the right place for this ?
+        //   ret = rcfg->removeRoute(source, dest);
     }
     m_eap.updateCurrentRouterConfig(*rcfg);
     return ret;
@@ -1722,6 +1732,7 @@ EAP::RouterConfig::setupRoute(unsigned char src, unsigned char dest) {
     return false;
 }
 
+
 bool
 EAP::RouterConfig::removeRoute(unsigned char src, unsigned char dest) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::removeRoute( 0x%02x, 0x%02x )\n", src, dest);
@@ -1730,10 +1741,22 @@ EAP::RouterConfig::removeRoute(unsigned char src, unsigned char dest) {
           if (it->second != src) {
             return false;
           }
-          return removeRoute(dest);
+          m_routes2.erase(it);
+          return true;
         }
     }
-    return true;
+    return false;
+}
+
+bool
+EAP::RouterConfig::muteRoute(unsigned char dest) {
+    for (RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it) {
+        if (it->first == dest) {
+          it->second = m_eap.getSMuteId();
+          return true;
+        }
+    }
+    return false;
 }
 
 bool

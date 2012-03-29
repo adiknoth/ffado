@@ -219,6 +219,15 @@ private:
           destination exists, a new route will be established.
           */
         bool setupRoute(unsigned char src, unsigned char dest);
+
+        /**
+          @brief Mute a route for dest
+
+          All EAP devices will support muting.
+          Not all of them support (at least full support) removing a dest (see comment below)
+          */
+        bool muteRoute(unsigned char dest);
+
         /**
           @brief Remove a route
 
@@ -528,6 +537,7 @@ protected:
     virtual void setupSources_low();
     virtual void setupSources_mid();
     virtual void setupSources_high();
+    virtual unsigned int getSMuteId();
     /**
       @brief Setup all the available destinations
 
