@@ -253,6 +253,7 @@ main(int argc, char **argv)
     if (arguments.application) {
         eap.showApplication();
         eap.showFullRouter();
+        eap.showFullPeakSpace();
     }
     else
         eap.show();

@@ -474,9 +474,10 @@ public:
     void show();
     /// Dump the first parts of the application space
     void showApplication();
-
     /// Show the full router content
     void showFullRouter();
+    /// Show the full peak space content
+    void showFullPeakSpace();
 
     /// Restore from flash
     bool loadFlashConfig();

@@ -722,7 +722,6 @@ void
 EAP::showFullRouter()
 {
     printMessage("--- Full router content ---\n");
-    fb_quadlet_t* tmp = (fb_quadlet_t *) calloc(m_router_nb_entries, sizeof(fb_quadlet_t));
 
     printMessage(" %d entries to read\n", m_router_nb_entries);
 
@@ -747,6 +746,7 @@ EAP::showFullRouter()
     for(unsigned int i=0; i < m_router_nb_entries; i++) {
         printMessage("    %d: 0x%02x <- 0x%02x;\n", i, tmp_entries[i]&0xff, (tmp_entries[i]>>8)&0xff);
     }
+
     // New config
     printMessage("  New Configuration:\n");
     // First bloc is the effective number of routes
@@ -767,6 +767,25 @@ EAP::showFullRouter()
         printMessage("    %d: 0x%02x <- 0x%02x;\n", i, tmp_entries[i]&0xff, (tmp_entries[i]>>8)&0xff);
     }
 
+    return;
+}
+
+void
+EAP::showFullPeakSpace()
+{
+    printMessage("--- Full Peak space content ---\n");
+
+    // read the peak/route info
+    uint32_t tmp_entries[m_router_nb_entries];
+    if(!readRegBlock(eRT_Peak, 0, tmp_entries, m_router_nb_entries*4)) {
+        debugError("Failed to read peak block information\n");
+        return;
+    }
+    // decode and print
+    for (unsigned int i=0; i<m_router_nb_entries; ++i) {
+        printMessage("  %d: 0x%02x: %d;\n", i, tmp_entries[i]&0xff, (tmp_entries[i]&0xfff0000)>>16);
+        unsigned char dest = tmp_entries[i]&0xff;
+    }
     return;
 }
 
