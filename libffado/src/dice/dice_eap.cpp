@@ -1469,8 +1469,11 @@ EAP::Router::getDestinationsForSource(const std::string& srcname) {
     }
     stringlist ret;
     std::vector<unsigned char> dests = rcfg->getDestinationsForSource(m_sources[srcname]);
+    std::string name;
     for (unsigned int i=0; i<dests.size(); ++i) {
-        ret.push_back(getDestinationName(dests[i]));
+        if ((name = getDestinationName(dests[i])) != "") {
+          ret.push_back(name);
+        }
     }
     return ret;
 }
