@@ -57,7 +57,8 @@ apps = {
 	"test-ipcringbuffer" : "test-ipcringbuffer.cpp",
 	"test-devicestringparser" : "test-devicestringparser.cpp",
 	"dumpiso_mod" : "dumpiso_mod.cpp",
-	"scan-devreg" : "scan-devreg.cpp"
+	"scan-devreg" : "scan-devreg.cpp",
+	"test-cycle-time" : "test-cycle-time.c"
 }
 
 if env['ENABLE_BEBOB']:
