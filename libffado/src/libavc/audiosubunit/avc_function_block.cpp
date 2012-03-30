@@ -202,7 +202,6 @@ FunctionBlockProcessingEnhancedMixer::~FunctionBlockProcessingEnhancedMixer()
 bool
 FunctionBlockProcessingEnhancedMixer::serialize( Util::Cmd::IOSSerialize& se )
 {
-    int todo,done;
     bool bStatus;
     byte_t data_length_hi, data_length_lo;
     
@@ -251,7 +250,6 @@ FunctionBlockProcessingEnhancedMixer::serialize( Util::Cmd::IOSSerialize& se )
 bool
 FunctionBlockProcessingEnhancedMixer::deserialize( Util::Cmd::IISDeserialize& de )
 {
-    int todo;
     bool bStatus;
     bStatus  = de.read( &m_controlSelector );
 
