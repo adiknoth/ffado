@@ -1610,12 +1610,12 @@ EAP::Router::show()
 {
     // print the peak space as it also contains the routing configuration
     printMessage("Router sources:\n");
-    printMessage(" %ld sources:\n", m_sources.size());
+    printMessage(" %llu sources:\n", (unsigned long long)m_sources.size());
     for ( std::map<std::string, int>::iterator it=m_sources.begin(); it!=m_sources.end(); ++it ) {
         printMessage(" 0x%02x : %s\n", (*it).second, (*it).first.c_str());
     }
     printMessage("Router destinations:\n");
-    printMessage(" %ld destinations:\n", m_destinations.size());
+    printMessage(" %llu destinations:\n", (unsigned long long)m_destinations.size());
     for ( std::map<std::string, int>::iterator it=m_destinations.begin(); it!=m_destinations.end(); ++it ) {
         printMessage(" 0x%02x : %s\n", (*it).second, (*it).first.c_str());
     }
@@ -1798,7 +1798,7 @@ EAP::RouterConfig::getDestinationsForSource(unsigned char source) {
 void
 EAP::RouterConfig::show()
 {
-    printMessage("%ld routes\n", m_routes2.size());
+    printMessage("%llu routes\n", (unsigned long long)m_routes2.size());
     for ( RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it ) {
         printMessage("0x%02x -> 0x%02x\n", it->second, it->first);
     }
