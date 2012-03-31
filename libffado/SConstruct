@@ -77,6 +77,7 @@ Build the tests in their directory. As some contain quite some functionality,
     BoolVariable( "ENABLE_OPTIMIZATIONS", "Enable optimizations and the use of processor specific extentions (MMX/SSE/...).", False ),
     BoolVariable( "PEDANTIC", "Enable -Werror and more pedantic options during compile.", False ),
     ( "COMPILE_FLAGS", "Add additional flags to the environment.\nOnly meant for distributors and gentoo-users who want to over-optimize their built.\n Using this is not supported by the ffado-devs!" ),
+    EnumVariable( "ENABLE_SETBUFFERSIZE_API_VER", "Report API version at runtime which includes support for dynamic buffer resizing (requires recent jack).", 'auto', allowed_values=('auto', 'true', 'false'), ignorecase=2),
 
     )
 
@@ -158,11 +159,18 @@ int main() {
     context.Result( ret )
     return ret
 
+def CheckPKG(context, name):
+    context.Message( 'Checking for %s... ' % name )
+    ret = context.TryAction('pkg-config --exists \'%s\'' % name)[0]
+    context.Result( ret )
+    return ret
+
 tests = {
     "ConfigGuess" : ConfigGuess,
     "CheckForApp" : CheckForApp,
     "CheckForPyModule": CheckForPyModule,
     "CompilerCheck" : CompilerCheck,
+    "CheckPKG" : CheckPKG,
 }
 tests.update( env['PKGCONFIG_TESTS'] )
 tests.update( env['PYUIC_TESTS'] )
@@ -216,6 +224,39 @@ if not env.GetOption('clean'):
 
     if not env['SERIALIZE_USE_EXPAT']:
         pkgs['libxml++-2.6'] = '2.13.0'
+
+    # Provide a way for users to compile newer libffado which will work 
+    # against older jack installations which will not accept the new API
+    # version reported at runtime.
+    good_jack1 = conf.CheckPKG('jack < 1.9.0') and conf.CheckPKG('jack >= 0.122.0')
+    good_jack2 = conf.CheckPKG('jack >= 1.9.9')
+    if env['ENABLE_SETBUFFERSIZE_API_VER'] == 'auto':
+        if not(good_jack1 or good_jack2):
+            FFADO_API_VERSION="8"
+            print """
+Installed jack does not support FFADO setbuffersize API: will report earlier
+API version at runtime
+"""
+        else:
+            print "Installed jack supports FFADO setbuffersize API"
+    elif env['ENABLE_SETBUFFERSIZE_API_VER'] == 'true':
+        if (not(good_jack1) and not(good_jack2)):
+            print """
+SetBufferSize API version is enabled but no suitable version of jack has been
+found.  The resulting FFADO would cause your jackd to abort with "incompatible
+FFADO version".  Please upgrade to jack1 >=0.122.0 or jack2 >=1.9.9, or set
+ENABLE_SETBUFFERSIZE_API_VER to "auto" or "false".
+"""
+            # Although it's not strictly an error, in almost every case that 
+            # this occurs the user will want to know about it and fix the
+            # problem, so we exit so they're guaranteed of seeing the above
+            # message.
+            Exit( 1 )
+        else:
+            print "Will reporting SetBufferSize API at runtime"
+    else:
+        FFADO_API_VERSION="8"
+        print "Will not report SetBufferSize API at runtime"
 
     for pkg in pkgs:
         name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
