@@ -235,7 +235,9 @@ if not env.GetOption('clean'):
             FFADO_API_VERSION="8"
             print """
 Installed jack does not support FFADO setbuffersize API: will report earlier
-API version at runtime
+API version at runtime.  Consider upgrading to jack1 >=0.122.0 or 
+jack2 >=1.9.9 at some point, and then recompile ffado to gain access to this
+added feature.
 """
         else:
             print "Installed jack supports FFADO setbuffersize API"
@@ -253,10 +255,10 @@ ENABLE_SETBUFFERSIZE_API_VER to "auto" or "false".
             # message.
             Exit( 1 )
         else:
-            print "Will reporting SetBufferSize API at runtime"
+            print "Will report SetBufferSize API version at runtime"
     else:
         FFADO_API_VERSION="8"
-        print "Will not report SetBufferSize API at runtime"
+        print "Will not report SetBufferSize API version at runtime"
 
     for pkg in pkgs:
         name2 = pkg.replace("+","").replace(".","").replace("-","").upper()
