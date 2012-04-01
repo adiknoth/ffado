@@ -84,6 +84,7 @@ public:
     bool registerProcessor(StreamProcessor *processor); ///< start managing a streamprocessor
     bool unregisterProcessor(StreamProcessor *processor); ///< stop managing a streamprocessor
 
+    bool streamingParamsOk(signed int period, signed int rate, signed int n_buffers);
     void setPeriodSize(unsigned int period);
     unsigned int getPeriodSize()
             {return m_period;};

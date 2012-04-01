@@ -1010,12 +1010,18 @@ DeviceManager::waitForPeriod() {
 bool
 DeviceManager::setPeriodSize(unsigned int period) {
     // Useful for cases where only the period size needs adjusting
+    if (!m_processorManager->streamingParamsOk(period, -1, -1)) {
+        return false;
+    }
     m_processorManager->setPeriodSize(period);
     return true;
 }
 
 bool
 DeviceManager::setStreamingParams(unsigned int period, unsigned int rate, unsigned int nb_buffers) {
+    if (!m_processorManager->streamingParamsOk(period, rate, nb_buffers)) {
+        return false;
+    }
     m_processorManager->setPeriodSize(period);
     m_processorManager->setNominalRate(rate);
     m_processorManager->setNbBuffers(nb_buffers);

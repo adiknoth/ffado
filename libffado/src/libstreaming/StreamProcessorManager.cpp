@@ -306,6 +306,53 @@ bool StreamProcessorManager::unregisterProcessor(StreamProcessor *processor)
     return false; //not found
 }
 
+bool StreamProcessorManager::streamingParamsOk(signed int period, signed int rate, signed int n_buffers)
+{
+    // Return true if the given parameter combination is valid.  If any
+    // parameter is set to -1 the currently set value is used in the test.
+    signed int min_period;
+
+    if (period < 0)
+        period = m_period;
+    if (rate < 0)
+        rate = m_nominal_framerate;
+    if (n_buffers < 0)
+        n_buffers = m_nb_buffers;
+
+    // For most interfaces data is transmitted with 8/16/32 samples per
+    // packet (at 1x, 2x and 4x rates respectively).  This more or less
+    // places a lower limit on the size of the period.  Furthermore, the
+    // current FFADO architecture dictates that m_nb_buffers can be no lower
+    // than 2.
+
+    if (n_buffers < 2) {
+        printMessage("FFADO requires at least 2 buffers\n");
+        return false;
+    }
+
+    // The boundary between 1x, 2x and 4x speed is taken from the RME driver
+    // since this seems to be the device with the widest available sampling
+    // rate range.
+    if (rate < 56000) {
+        // 1x speed
+        min_period = 8;
+    } else
+    if (rate < 112000) {
+        // 2x speed
+        min_period = 16;
+    } else {
+        // 4x speed
+        min_period = 32;
+    }
+
+    if (period < min_period) {
+        printMessage("At a rate of %d Hz, FFADO requires a buffer size of at least %d samples\n", 
+            rate, min_period);
+        return false;
+    }
+    return true;
+}
+
 void StreamProcessorManager::setPeriodSize(unsigned int period) {
     // This method is called early in the initialisation sequence to set the
     // initial period size.  However, at that point in time the stream
