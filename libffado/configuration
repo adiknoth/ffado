@@ -72,6 +72,7 @@ device_definitions = (
     modelid = 0x0000000b;
     vendorname = "Presonus";
     modelname = "Firestudio Project";
+    mixer = "Generic_Dice_EAP";
     driver = 20;
 },
 { # Entry for Firestudio mobile provided by "Pule" via the forums.
