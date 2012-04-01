@@ -228,10 +228,16 @@ if not env.GetOption('clean'):
     # Provide a way for users to compile newer libffado which will work 
     # against older jack installations which will not accept the new API
     # version reported at runtime.
+    have_jack = conf.CheckPKG('jack >= 0.0.0')
     good_jack1 = conf.CheckPKG('jack < 1.9.0') and conf.CheckPKG('jack >= 0.122.0')
     good_jack2 = conf.CheckPKG('jack >= 1.9.9')
     if env['ENABLE_SETBUFFERSIZE_API_VER'] == 'auto':
-        if not(good_jack1 or good_jack2):
+        if not(have_jack):
+            print """
+No jack installed: assuming a FFADO setbuffersize-compatible version will be
+used.
+"""
+        elif not(good_jack1 or good_jack2):
             FFADO_API_VERSION="8"
             print """
 Installed jack does not support FFADO setbuffersize API: will report earlier
@@ -242,7 +248,7 @@ added feature.
         else:
             print "Installed jack supports FFADO setbuffersize API"
     elif env['ENABLE_SETBUFFERSIZE_API_VER'] == 'true':
-        if (not(good_jack1) and not(good_jack2)):
+        if (have_jack and not(good_jack1) and not(good_jack2)):
             print """
 SetBufferSize API version is enabled but no suitable version of jack has been
 found.  The resulting FFADO would cause your jackd to abort with "incompatible
