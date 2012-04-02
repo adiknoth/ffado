@@ -581,6 +581,7 @@ next_index:
     return true;
 }
 
+//FIXME: DRY. Needs to be refactored with AmdtpTransmitStreamProcessor
 void
 AmdtpReceiveStreamProcessor::updatePortCache() {
     unsigned int idx;
@@ -589,12 +590,18 @@ AmdtpReceiveStreamProcessor::updatePortCache() {
         AmdtpAudioPort *port = p.port;
         p.buffer = port->getBufferAddress();
         p.enabled = !port->isDisabled();
+#ifdef DEBUG
+	p.buffer_size = port->getBufferSize();
+#endif
     }
     for (idx = 0; idx < m_nb_midi_ports; idx++) {
         struct _MIDI_port_cache& p = m_midi_ports.at(idx);
         AmdtpMidiPort *port = p.port;
         p.buffer = port->getBufferAddress();
         p.enabled = !port->isDisabled();
+#ifdef DEBUG
+	p.buffer_size = port->getBufferSize();
+#endif
     }
 }
 
