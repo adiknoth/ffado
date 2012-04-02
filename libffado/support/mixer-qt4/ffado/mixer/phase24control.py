@@ -76,7 +76,7 @@ class Phase24Control(QWidget):
     # public slot
     def setLineLevel(self,a0):
         log.debug("setting line level to %d" % (a0 * -768))
-        self.hw.setContignuous('/Mixer/Feature_2', a0 * -768)
+        self.hw.setContignuous('/Mixer/Feature_Volume_2', a0 * -768)
 
     # public slot
     def setFrontLevel(self,a0):
@@ -84,10 +84,10 @@ class Phase24Control(QWidget):
             return
         if(a0 == 0):
             log.debug("setting front level to %d" % (0))
-            self.hw.setContignuous('/Mixer/Feature_8', 0)
+            self.hw.setContignuous('/Mixer/Feature_Volume_8', 0)
         else:
             log.debug("setting front level to %d" % (1536))
-            self.hw.setContignuous('/Mixer/Feature_8', 1536)
+            self.hw.setContignuous('/Mixer/Feature_Volume_8', 1536)
 
     # public slot
     def setOutSource12(self,a0):
@@ -131,11 +131,11 @@ class Phase24Control(QWidget):
             else:
                 self.setWindowTitle("Terratec Phase 24 Control")
 
-                self.VolumeControls['master'] = ['/Mixer/Feature_1', self.sldMaster]
+                self.VolumeControls['master'] = ['/Mixer/Feature_Volume_1', self.sldMaster]
                 self.sldMaster.setEnabled(True)
 
                 self.cmbFrontLevel.setEnabled(True)
-                val = self.hw.getContignuous('/Mixer/Feature_8')
+                val = self.hw.getContignuous('/Mixer/Feature_Volume_8')
                 if val > 0:
                     self.cmbFrontLevel.setCurrentIndex(1)
                 else:
@@ -151,7 +151,7 @@ class Phase24Control(QWidget):
                 log.debug("%s state is %d" % (name , state))
                 ctrl[1].setCurrentIndex(state)
 
-            val = self.hw.getContignuous('/Mixer/Feature_2')/-768
+            val = self.hw.getContignuous('/Mixer/Feature_Volume_2')/-768
             if val > 4:
                 self.cmbLineLevel.setCurrentIndex(4)
             else:
