@@ -255,11 +255,6 @@ found.  The resulting FFADO would cause your jackd to abort with "incompatible
 FFADO version".  Please upgrade to jack1 >=0.122.0 or jack2 >=1.9.9, or set
 ENABLE_SETBUFFERSIZE_API_VER to "auto" or "false".
 """
-            # Although it's not strictly an error, in almost every case that 
-            # this occurs the user will want to know about it and fix the
-            # problem, so we exit so they're guaranteed of seeing the above
-            # message.
-            Exit( 1 )
         else:
             print "Will report SetBufferSize API version at runtime"
     else:
