@@ -76,6 +76,9 @@ class FFADOWindow(QMainWindow):
         self.updateaction.setEnabled(False)
         self.connect(self.updateaction, SIGNAL("triggered()"), self.manager.updatePanels)
         editmenu.addAction(self.updateaction)
+        refreshaction = QAction("Refresh Current Panels", self)
+        self.connect(refreshaction, SIGNAL("triggered()"), self.manager.refreshPanels)
+        editmenu.addAction(refreshaction)
 
         helpmenu = self.menuBar().addMenu( "Help" )
         aboutaction = QAction( "About FFADO", self )

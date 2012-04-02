@@ -387,4 +387,28 @@ mixerwidget = ffado.mixer.%s.%s( w )
 
         self.displayPanels()
 
+    def refreshPanels(self):
+        log.debug("PanelManager::refreshPanels()")
+        nbDevices = self.devmgr.getNbDevices()
+        #self.statusBar().showMessage("Reconfiguring the mixer panels...")
+
+        # list of panels present
+        guids_with_tabs = self.panels.keys()
+
+        # build list of guids on the bus now
+        guid_indexes = {}
+        for idx in range(nbDevices):
+            path = self.devmgr.getDeviceName(idx)
+            cfgrom = ConfigRomInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+'/DeviceManager/'+path)
+            guid = cfgrom.getGUID()
+            guid_indexes[guid] = idx
+
+        # remove/create the widget
+        for guid in guids_with_tabs:
+            self.removePanel(guid)
+            idx = guid_indexes[guid]
+            self.addPanel(idx)
+
+        self.displayPanels()
+
 # vim: et
