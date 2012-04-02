@@ -210,6 +210,135 @@ class PanelManager(QWidget):
                 w.deleteLater()
             self.emit(SIGNAL("connectionLost"))
 
+    def removePanel(self, guid):
+        print "Removing widget for device" + guid
+        w = self.panels[guid]
+        del self.panels[guid] # remove from the list
+        idx = self.tabs.indexOf(w)
+        self.tabs.removeTab(idx)
+        w.deleteLater()
+
+    def addPanel(self, idx):
+        path = self.devmgr.getDeviceName(idx)
+        log.debug("Adding device %d: %s" % (idx, path))
+
+        cfgrom = ConfigRomInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+'/DeviceManager/'+path)
+        vendorId = cfgrom.getVendorId()
+        modelId = cfgrom.getModelId()
+        unitVersion = cfgrom.getUnitVersion()
+        guid = cfgrom.getGUID()
+        vendorName = cfgrom.getVendorName()
+        modelName = cfgrom.getModelName()
+        log.debug(" Found (%s, %X, %X) %s %s" % (str(guid), vendorId, modelId, vendorName, modelName))
+
+        # check whether this has already been registered at ffado.org
+        reg = ffado_registration(FFADO_VERSION, int(guid, 16),
+                                     vendorId, modelId,
+                                     vendorName, modelName)
+        reg.check_for_registration()
+
+        # The MOTU devices use unitVersion to differentiate models.  For the
+        # moment though we don't need to know precisely which model we're
+        # using.
+        if vendorId == 0x1f2:
+            modelId = 0x00000000
+
+        # The RME devices use unitVersion to differentiate models. 
+        # Therefore in the configuration file we use the config file's
+        # modelid field to store the unit version.  As a result we must
+        # override the modelId with the unit version here so the correct
+        # configuration file entry (and hense mixer widget) is identified.
+        if vendorId == 0xa35:
+            modelId = unitVersion;
+
+        dev = self.devices.getDeviceById( vendorId, modelId )
+
+        w = QWidget( )
+        l = QVBoxLayout( w )
+
+        # create a control object
+        hw = ControlInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+'/DeviceManager/'+path)
+        clockselect = ClockSelectInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path )
+        samplerateselect = SamplerateSelectInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path )
+        streamingstatus = StreamingStatusInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path )
+        nickname = TextInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path+"/Generic/Nickname" )
+
+        #
+        # Generic elements for all mixers follow here:
+        #
+        globalmixer = GlobalMixer( w )
+        globalmixer.configrom = cfgrom
+        globalmixer.clockselect = clockselect
+        globalmixer.samplerateselect = samplerateselect
+        globalmixer.streamingstatus = streamingstatus
+        globalmixer.nickname = nickname
+        globalmixer.hw = hw
+        globalmixer.initValues()
+        l.addWidget( globalmixer, 1 )
+
+        #
+        # Line to separate
+        #
+        l.addWidget( HLine( w ) )
+
+        #
+        # Specific (or dummy) mixer widgets get loaded in the following
+        #
+        if 'mixer' in dev and dev['mixer'] != None:
+            mixerapp = dev['mixer']
+            exec( """
+import ffado.mixer.%s
+mixerwidget = ffado.mixer.%s.%s( w )
+""" % (mixerapp.lower(), mixerapp.lower(), mixerapp) )
+        else:
+            mixerwidget = Dummy( w )
+            mixerapp = modelName+" (Dummy)"
+
+        #
+        # The same for all mixers
+        #
+        l.addWidget( mixerwidget, 10 )
+        mixerwidget.configrom = cfgrom
+        mixerwidget.clockselect = clockselect
+        mixerwidget.samplerateselect = samplerateselect
+        mixerwidget.streamingstatus = streamingstatus
+        mixerwidget.nickname = nickname
+        mixerwidget.hw = hw
+        if 'buildMixer' in dir(mixerwidget):
+            mixerwidget.buildMixer()
+        if 'initValues' in dir(mixerwidget):
+            mixerwidget.initValues()
+        if 'getDisplayTitle' in dir(mixerwidget):
+            title = mixerwidget.getDisplayTitle()
+        else:
+            title = mixerapp
+
+        globalmixer.setName(title)
+        self.tabs.addTab( w, title )
+        self.panels[guid] = w
+
+    def displayPanels(self):
+        # if there is no panel, add the no-device message
+        # else make sure it is not present
+        if self.count() == 0:
+            self.tabs.hide()
+            self.tabs.setEnabled(False)
+            self.status.lblMessage.setText("No supported device found.")
+            self.status.show()
+            #self.statusBar().showMessage("No supported device found.", 5000)
+        else:
+            self.tabs.show()
+            self.tabs.setEnabled(True)
+            self.status.hide()
+            #self.statusBar().showMessage("Configured the mixer for %i devices." % self.tabs.count())
+            if use_generic:
+                #
+                # Show the generic (development) mixer if it is available
+                #
+                w = GenericMixer( devmgr.bus, FFADO_DBUS_SERVER, mw )
+                self.tabs.addTab( w, "Generic Mixer" )
+                self.panels[GUID_GENERIC_MIXER] = w
+    
     def updatePanels(self):
         log.debug("PanelManager::updatePanels()")
         nbDevices = self.devmgr.getNbDevices()
@@ -249,133 +378,13 @@ class PanelManager(QWidget):
 
         # update the widget
         for guid in to_remove:
-            print "Removing widget for device" + guid
-            w = self.panels[guid]
-            del self.panels[guid] # remove from the list
-            idx = self.tabs.indexOf(w)
-            self.tabs.removeTab(idx)
-            w.deleteLater()
+            self.removePanel(guid)
 
         for guid in to_add:
             # retrieve the device manager index
             idx = guid_indexes[guid]
-            path = self.devmgr.getDeviceName(idx)
-            log.debug("Adding device %d: %s" % (idx, path))
+            self.addPanel(idx)
 
-            cfgrom = ConfigRomInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+'/DeviceManager/'+path)
-            vendorId = cfgrom.getVendorId()
-            modelId = cfgrom.getModelId()
-            unitVersion = cfgrom.getUnitVersion()
-            guid = cfgrom.getGUID()
-            vendorName = cfgrom.getVendorName()
-            modelName = cfgrom.getModelName()
-            log.debug(" Found (%s, %X, %X) %s %s" % (str(guid), vendorId, modelId, vendorName, modelName))
-
-            # check whether this has already been registered at ffado.org
-            reg = ffado_registration(FFADO_VERSION, int(guid, 16),
-                                     vendorId, modelId,
-                                     vendorName, modelName)
-            reg.check_for_registration()
-
-            # The MOTU devices use unitVersion to differentiate models.  For the
-            # moment though we don't need to know precisely which model we're
-            # using.
-            if vendorId == 0x1f2:
-                modelId = 0x00000000
-
-            # The RME devices use unitVersion to differentiate models. 
-            # Therefore in the configuration file we use the config file's
-            # modelid field to store the unit version.  As a result we must
-            # override the modelId with the unit version here so the correct
-            # configuration file entry (and hense mixer widget) is identified.
-            if vendorId == 0xa35:
-                modelId = unitVersion;
-
-            dev = self.devices.getDeviceById( vendorId, modelId )
-
-            w = QWidget( )
-            l = QVBoxLayout( w )
-
-            # create a control object
-            hw = ControlInterface(FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+'/DeviceManager/'+path)
-            clockselect = ClockSelectInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path )
-            samplerateselect = SamplerateSelectInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path )
-            streamingstatus = StreamingStatusInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path )
-            nickname = TextInterface( FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH+"/DeviceManager/"+path+"/Generic/Nickname" )
-
-            #
-            # Generic elements for all mixers follow here:
-            #
-            globalmixer = GlobalMixer( w )
-            globalmixer.configrom = cfgrom
-            globalmixer.clockselect = clockselect
-            globalmixer.samplerateselect = samplerateselect
-            globalmixer.streamingstatus = streamingstatus
-            globalmixer.nickname = nickname
-            globalmixer.hw = hw
-            globalmixer.initValues()
-            l.addWidget( globalmixer, 1 )
-
-            #
-            # Line to separate
-            #
-            l.addWidget( HLine( w ) )
-
-            #
-            # Specific (or dummy) mixer widgets get loaded in the following
-            #
-            if 'mixer' in dev and dev['mixer'] != None:
-                mixerapp = dev['mixer']
-                exec( """
-import ffado.mixer.%s
-mixerwidget = ffado.mixer.%s.%s( w )
-""" % (mixerapp.lower(), mixerapp.lower(), mixerapp) )
-            else:
-                mixerwidget = Dummy( w )
-                mixerapp = modelName+" (Dummy)"
-
-            #
-            # The same for all mixers
-            #
-            l.addWidget( mixerwidget, 10 )
-            mixerwidget.configrom = cfgrom
-            mixerwidget.clockselect = clockselect
-            mixerwidget.samplerateselect = samplerateselect
-            mixerwidget.streamingstatus = streamingstatus
-            mixerwidget.nickname = nickname
-            mixerwidget.hw = hw
-            if 'buildMixer' in dir(mixerwidget):
-                mixerwidget.buildMixer()
-            if 'initValues' in dir(mixerwidget):
-                mixerwidget.initValues()
-            if 'getDisplayTitle' in dir(mixerwidget):
-                title = mixerwidget.getDisplayTitle()
-            else:
-                title = mixerapp
-
-            globalmixer.setName(title)
-            self.tabs.addTab( w, title )
-            self.panels[guid] = w
-
-        # if there is no panel, add the no-device message
-        # else make sure it is not present
-        if self.count() == 0:
-            self.tabs.hide()
-            self.tabs.setEnabled(False)
-            self.status.lblMessage.setText("No supported device found.")
-            self.status.show()
-            #self.statusBar().showMessage("No supported device found.", 5000)
-        else:
-            self.tabs.show()
-            self.tabs.setEnabled(True)
-            self.status.hide()
-            #self.statusBar().showMessage("Configured the mixer for %i devices." % self.tabs.count())
-            if use_generic:
-                #
-                # Show the generic (development) mixer if it is available
-                #
-                w = GenericMixer( devmgr.bus, FFADO_DBUS_SERVER, mw )
-                self.tabs.addTab( w, "Generic Mixer" )
-                self.panels[GUID_GENERIC_MIXER] = w
+        self.displayPanels()
 
 # vim: et
