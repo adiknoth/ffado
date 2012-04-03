@@ -77,7 +77,7 @@ Build the tests in their directory. As some contain quite some functionality,
     BoolVariable( "ENABLE_OPTIMIZATIONS", "Enable optimizations and the use of processor specific extentions (MMX/SSE/...).", False ),
     BoolVariable( "PEDANTIC", "Enable -Werror and more pedantic options during compile.", False ),
     ( "COMPILE_FLAGS", "Add additional flags to the environment.\nOnly meant for distributors and gentoo-users who want to over-optimize their built.\n Using this is not supported by the ffado-devs!" ),
-    EnumVariable( "ENABLE_SETBUFFERSIZE_API_VER", "Report API version at runtime which includes support for dynamic buffer resizing (requires recent jack).", 'auto', allowed_values=('auto', 'true', 'false'), ignorecase=2),
+    EnumVariable( "ENABLE_SETBUFFERSIZE_API_VER", "Report API version at runtime which includes support for dynamic buffer resizing (requires recent jack).", 'auto', allowed_values=('auto', 'true', 'false', 'force'), ignorecase=2),
 
     )
 
@@ -262,6 +262,8 @@ ENABLE_SETBUFFERSIZE_API_VER to "auto" or "false".
             Exit( 1 )
         else:
             print "Will report SetBufferSize API version at runtime"
+    elif env['ENABLE_SETBUFFERSIZE_API_VER'] == 'force':
+        print "Will report SetBufferSize API version at runtime"
     else:
         FFADO_API_VERSION="8"
         print "Will not report SetBufferSize API version at runtime"
