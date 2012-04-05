@@ -280,6 +280,7 @@
           <arg type="d" name="value" direction="out"/>
       </method>
       <method name="getPeakValues">
+          <annotation name="com.trolltech.QtDBus.QtTypeName.Out0" value="QVariantMap"/>
           <arg type="a(sd)" name="values" direction="out"/>
       </method>
   </interface>
