@@ -16,6 +16,13 @@ device_definitions = (
     mixer       = "MackieOnyx";
     xmit_max_cycles_early_transmit = 4;
 },
+{ # Added by yellius  
+    vendorid    = 0x0022E;  
+    modelid     = 0x10067;  
+    vendorname  = "Tascam";  
+    modelname   = "IFFWDM";  
+    driver      = 1; # BeBoB  
+},
 { # entries provided by Holger Dehnhardt
     vendorid    = 0x000ff2;
     modelid     = 0x081216;
