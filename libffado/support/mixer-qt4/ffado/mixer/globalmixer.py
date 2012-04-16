@@ -114,6 +114,8 @@ class GlobalMixer(QWidget):
         else:
             self.txtNickname.setEnabled(False)
 
+        self.streaming_status = self.streamingstatus.selected()
+
     def polledUpdate(self):
         self.samplerate.setEnabled(self.samplerateselect.canChangeValue())
         self.clocksource.setEnabled(self.clockselect.canChangeValue())
@@ -132,5 +134,9 @@ class GlobalMixer(QWidget):
         elif ss_txt == 'Both':
             self.chkStreamIn.setChecked(True)
             self.chkStreamOut.setChecked(True)
+
+        if (ss!=self.streaming_status and ss_txt!='Idle'):
+            self.samplerate.setCurrentIndex( self.samplerateselect.selected() )
+        self.streaming_status = ss
 
 # vim: et
