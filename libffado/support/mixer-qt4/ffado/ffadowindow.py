@@ -149,6 +149,20 @@ class FFADOWindow(QMainWindow):
 """ )
 
 
+def get_lock(process_name):
+    import socket
+    import sys
+
+    global lock_socket
+    lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    try:
+        lock_socket.bind('\0' + process_name)
+        # Lock acquired
+    except socket.error:
+        print 'ffado-mixer instance is already running'
+        sys.exit()
+
+
 def ffadomain(args):
     #set up logging
     import logging
@@ -158,6 +172,8 @@ def ffadomain(args):
         debug_level = logging.DEBUG
     else:
         debug_level = logging.INFO
+
+    get_lock('ffado-mixer')
 
     # main loggers:
     logging.getLogger('main').setLevel(debug_level)
