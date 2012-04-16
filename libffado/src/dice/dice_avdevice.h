@@ -99,6 +99,7 @@ public:
 
     virtual int getStreamCount();
     virtual Streaming::StreamProcessor *getStreamProcessorByIndex(int i);
+    virtual enum FFADODevice::eStreamingState getStreamingState();
 
     virtual bool prepare();
 

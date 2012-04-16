@@ -1209,6 +1209,16 @@ Device::getStreamProcessorByIndex(int i) {
     return NULL;
 }
 
+enum FFADODevice::eStreamingState
+Device::getStreamingState()
+{
+    if (isIsoStreamingEnabled() == 0)
+        return eSS_Idle;
+    // If streaming is not idle assume both transmit and receive are
+    // active since there is currently no way to distinguish these.
+    return eSS_Both;
+}
+
 bool
 Device::startstopStreamByIndex(int i, const bool start) {
     bool snoopMode = false;
