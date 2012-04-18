@@ -25,7 +25,7 @@
 import sys
 
 # Add the path of the installed dependent files
-sys.path.append( "$PYTHONDIR" )
+sys.path.insert(0, "$PYTHONDIR" )
 
 from listirqinfo import IRQ,SoftIRQ,IRQInfo
 from helpstrings import HelpStrings

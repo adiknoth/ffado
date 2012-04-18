@@ -26,7 +26,7 @@ import sys
 
 # Add the path of the installed ffado-modules
 # for path in sys.path:
-sys.path.append( "$PYPKGDIR" )
+sys.path.insert(0, "$PYPKGDIR" )
 
 from ffado.ffadowindow import *
 
