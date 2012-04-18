@@ -730,11 +730,19 @@ EAP::showFullRouter()
 
     printMessage(" %d entries to read\n", m_router_nb_entries);
 
+    unsigned int offset;
+    switch(m_device.getCurrentConfig()) {
+        case Device::eDC_Low: offset = DICE_EAP_CURRCFG_LOW_ROUTER; break;
+        case Device::eDC_Mid: offset = DICE_EAP_CURRCFG_MID_ROUTER; break;
+        case Device::eDC_High: offset = DICE_EAP_CURRCFG_HIGH_ROUTER; break;
+        default: offset = 0; break;
+    }
+
     // Current config
     printMessage("  Current Configuration:\n");
     // First bloc is the effective number of routes
     uint32_t nb_routes;
-    if(!readRegBlock(eRT_CurrentCfg, 0, &nb_routes, 4)) {
+    if(!readRegBlock(eRT_CurrentCfg, offset, &nb_routes, 4)) {
         printMessage("Failed to read number of entries\n");
         return;
     }
@@ -742,7 +750,7 @@ EAP::showFullRouter()
 
     // read the route info
     uint32_t tmp_entries[m_router_nb_entries];
-    if(!readRegBlock(eRT_CurrentCfg, 4, tmp_entries, m_router_nb_entries*4)) {
+    if(!readRegBlock(eRT_CurrentCfg, offset+4, tmp_entries, m_router_nb_entries*4)) {
         printMessage("Failed to read router config block information\n");
         return;
     }
