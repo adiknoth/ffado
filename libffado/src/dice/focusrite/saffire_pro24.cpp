@@ -63,37 +63,37 @@ void SaffirePro24::SaffirePro24EAP::setupDestinations() {
 */
 
 void SaffirePro24::SaffirePro24EAP::setupSources_low() {
-    addSource("SPDIF",  6,  2, eRS_AES);
-    addSource("ADAT",   0,  8, eRS_ADAT);
-    addSource("Analog", 0,  4, eRS_InS0);
-    addSource("Mixer",  0,  8, eRS_Mixer);
-    addSource("1394",   0,  8, eRS_ARX0);
+    addSource("SPDIF",  6,  2, eRS_AES, 1);
+    addSource("ADAT",   0,  8, eRS_ADAT, 1);
+    addSource("Analog", 0,  4, eRS_InS0, 1);
+    addSource("Mixer",  0, 16, eRS_Mixer, 1);
+    addSource("1394",   0,  8, eRS_ARX0, 1);
     addSource("Mute",   0,  1, eRS_Muted);
 }
 void SaffirePro24::SaffirePro24EAP::setupDestinations_low() {
-    addDestination("SPDIF",  6,  2, eRD_AES);
-    addDestination("Analog", 0,  6, eRD_InS0);
-    addDestination("Mixer",  0, 16, eRD_Mixer0);
-    addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
-    addDestination("1394",   0, 16, eRD_ATX0);
+    addDestination("SPDIF",  6,  2, eRD_AES, 1);
+    addDestination("Analog", 0,  6, eRD_InS0, 1);
+    addDestination("Mixer",  0, 16, eRD_Mixer0, 1);
+    addDestination("Mixer",  0,  2, eRD_Mixer1, 17);
+    addDestination("1394",   0, 16, eRD_ATX0, 1);
 // Is a Mute destination useful ?
 //    addDestination("Mute",   0,  1, eRD_Muted);
 }
 
 void SaffirePro24::SaffirePro24EAP::setupSources_mid() {
-    addSource("SPDIF",  6,  2, eRS_AES);
-    addSource("ADAT",   0,  4, eRS_ADAT);
-    addSource("Analog", 0,  4, eRS_InS0);
-    addSource("Mixer",  0, 16, eRS_Mixer);
-    addSource("1394",   0,  8, eRS_ARX0);
+    addSource("SPDIF",  6,  2, eRS_AES, 1);
+    addSource("ADAT",   0,  4, eRS_ADAT, 1);
+    addSource("Analog", 0,  4, eRS_InS0, 1);
+    addSource("Mixer",  0, 16, eRS_Mixer, 1);
+    addSource("1394",   0,  8, eRS_ARX0, 1);
     addSource("Mute",   0,  1, eRS_Muted);
 }
 void SaffirePro24::SaffirePro24EAP::setupDestinations_mid() {
-    addDestination("SPDIF",  6,  2, eRD_AES);
-    addDestination("Analog", 0,  6, eRD_InS0);
-    addDestination("Mixer",  0, 16, eRD_Mixer0);
-    addDestination("Mixer",  0,  2, eRD_Mixer1, 16);
-    addDestination("1394",   0, 12, eRD_ATX0);
+    addDestination("SPDIF",  6,  2, eRD_AES, 1);
+    addDestination("Analog", 0,  6, eRD_InS0, 1);
+    addDestination("Mixer",  0, 16, eRD_Mixer0, 1);
+    addDestination("Mixer",  0,  2, eRD_Mixer1, 17);
+    addDestination("1394",   0, 12, eRD_ATX0, 1);
 // Is a Mute destination useful ?
 //    addDestination("Mute",   0,  1, eRD_Muted);
 }
