@@ -51,6 +51,7 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
     PathVariable( "MANDIR", "Overwrite the directory where manpages are installed", "$PREFIX/man", PathVariable.PathAccept ),
     PathVariable( "PYPKGDIR", "The directory where the python modules get installed.",
         distutils.sysconfig.get_python_lib( prefix="$PREFIX" ), PathVariable.PathAccept ),
+    PathVariable( "UDEVDIR", "Overwrite the directory where udev rules are installed to.", "/lib/udev/rules.d/", PathVariable.PathAccept ),
     BoolVariable( "ENABLE_BEBOB", "Enable/Disable support for the BeBoB platform.", True ),
     BoolVariable( "ENABLE_FIREWORKS", "Enable/Disable support for the ECHO Audio FireWorks platform.", True ),
     BoolVariable( "ENABLE_OXFORD", "Enable/Disable support for the Oxford Semiconductor FW platform.", True ),
@@ -417,6 +418,7 @@ env['BINDIR'] = Template( env['BINDIR'] ).safe_substitute( env )
 env['LIBDIR'] = Template( env['LIBDIR'] ).safe_substitute( env )
 env['INCLUDEDIR'] = Template( env['INCLUDEDIR'] ).safe_substitute( env )
 env['SHAREDIR'] = Template( env['SHAREDIR'] ).safe_substitute( env )
+env['UDEVDIR'] = Template( env['UDEVDIR'] ).safe_substitute( env )
 env['prefix'] = Template( env.destdir + env['PREFIX'] ).safe_substitute( env )
 env['bindir'] = Template( env.destdir + env['BINDIR'] ).safe_substitute( env )
 env['libdir'] = Template( env.destdir + env['LIBDIR'] ).safe_substitute( env )
@@ -424,6 +426,7 @@ env['includedir'] = Template( env.destdir + env['INCLUDEDIR'] ).safe_substitute(
 env['sharedir'] = Template( env.destdir + env['SHAREDIR'] ).safe_substitute( env )
 env['mandir'] = Template( env.destdir + env['MANDIR'] ).safe_substitute( env )
 env['pypkgdir'] = Template( env.destdir + env['PYPKGDIR'] ).safe_substitute( env )
+env['udevdir'] = Template( env.destdir + env['UDEVDIR'] ).safe_substitute( env )
 env['PYPKGDIR'] = Template( env['PYPKGDIR'] ).safe_substitute( env )
 
 env.Command( target=env['sharedir'], source="", action=Mkdir( env['sharedir'] ) )

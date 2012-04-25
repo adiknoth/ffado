@@ -30,3 +30,4 @@ env.ScanReplace( "ffado.h.in" )
 
 env.Alias( 'install', env.Install( os.path.join(env['includedir'],"libffado"), "ffado.h" ) )
 
+env.Alias( 'install', env.Install( env['udevdir'], "60-ffado.rules" ) )
