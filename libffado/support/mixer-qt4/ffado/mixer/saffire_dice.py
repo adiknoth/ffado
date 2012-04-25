@@ -228,7 +228,7 @@ class Saffire_Dice(Generic_Dice_EAP):
         widget.volumeKnob.setValue(self.volumeInterface.getvalue())
         self.connect(widget.volumeKnob, QtCore.SIGNAL("valueChanged(int)"), self.volumeChanged)
 
-        if self.configrom.getModelName() == "SAFFIRE_PRO_24":
+        if self.configrom.getModelName() == "SAFFIRE_PRO_24" or self.configrom.getModelName() == "SAFFIRE_PRO_24DSP":
             widget.stacked.setCurrentWidget(widget.pagePro24)
             self.ch1inst = BooleanControl(self.hw, self.hw.basepath + "/EAP/Ch1LineInst")
             widget.chkInst1.setChecked(self.ch1inst.selected())

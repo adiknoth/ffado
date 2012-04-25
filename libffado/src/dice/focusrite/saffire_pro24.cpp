@@ -155,9 +155,10 @@ bool SaffirePro24::discover() {
         fb_quadlet_t* tmp = (fb_quadlet_t *)calloc(2, sizeof(fb_quadlet_t));
         getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x00, tmp, 1*sizeof(fb_quadlet_t));
         //hexDumpQuadlets(tmp, 2); // DEBUG
-        if (tmp[0] != 0x00010004 ) {
+        // 0x00010004 is a pro24, 0x00010008 is the pro24dsp
+        if (tmp[0] != 0x00010004 && tmp[0] != 0x00010008) {
             debugError("This is a Focusrite Saffire Pro24 but not the right firmware. Better stop here before something goes wrong.\n");
-            debugError("This device has firmware 0x%x while we only know about version 0x%x.\n", tmp[0], 0x10004);
+            debugError("This device has firmware 0x%x while we only know about versions 0x%x and 0x%x.\n", tmp[0], 0x10004, 0x10008);
             return false;
         }
         //getEAP()->readRegBlock(Dice::EAP::eRT_Command, 0x00, tmp, 2*sizeof(fb_quadlet_t)); // DEBUG
