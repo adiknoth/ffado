@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
+from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt, QTimer
 from PyQt4.QtGui import QWidget, QHBoxLayout, QVBoxLayout, \
                         QGroupBox, QTabWidget, QLabel, \
                         QPushButton, QToolButton, QSpacerItem, QSizePolicy
@@ -283,6 +283,19 @@ class AudioFire(QWidget):
         self.SPDIFmodeControls[settings.radioConsumer] = ["/SpdifMode", 0]
         self.SPDIFmodeControls[settings.radioProfessional] = ["/SpdifMode", 1]
 
+    def polledUpdate(self):
+        ss = self.streamingstatus.selected()
+
+        # Only alter controls sensitive to the streaming state when the
+        # streaming state has changed.
+        if (ss != self.streaming_state):
+            ss_txt = self.streamingstatus.getEnumLabel(ss)
+            # The device doesn't cope very well if "save settings" is done
+            # while streaming is active
+            settings.btnSaveSettings.setEnabled(ss_txt=='Idle')
+
+        self.streaming_state = ss
+
     def initValues(self):
         log.debug("Init values")
 
@@ -358,5 +371,10 @@ class AudioFire(QWidget):
 
             # connect the UI element
             QObject.connect(ctrl,SIGNAL('toggled(bool)'),self.updateSPDIFmodeControl)
+
+        self.update_timer = QTimer(self)
+        QObject.connect(self.update_timer, SIGNAL('timeout()'), self.polledUpdate)
+        self.update_timer.start(1000)
+        self.streaming_state = -1
 
 # vim: et
