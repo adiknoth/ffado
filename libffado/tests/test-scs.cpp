@@ -2,6 +2,8 @@
  * Copyright (C) 2005-2009 by Pieter Palmers
  * Copyright (C) 2005-2008 by Daniel Wagner
  *
+ * sysex-buffering: Copyright (C) 2012 by Rob Bothof
+ *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
  *
@@ -75,12 +77,13 @@ static void sighandler(int sig)
 ////////////////////////////////////////////////
 const char *argp_program_version = "test-scs 0.1";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
-static char doc[] = "test-avccmd -- test program to test the Stanton SCS code.";
+static char doc[] = "test-scs -- test program to test the Stanton SCS code.";
 static char args_doc[] = "NODE_ID";
 static struct argp_option options[] = {
     {"verbose",   'v', "LEVEL",     0,  "Produce verbose output" },
     {"port",      'p', "PORT",      0,  "Set port" },
     {"node",      'n', "NODE",      0,  "Set node" },
+    {"sysexbuf",  's', "1",         0,  "Enable Sysex Buffering of 1byte messages" },
    { 0 }
 };
 
@@ -92,6 +95,7 @@ struct arguments
         , test( false )
         , port( -1 )
         , node( -1 )
+        , sysexbuf ( 0 )
         {
             args[0] = 0;
         }
@@ -102,6 +106,7 @@ struct arguments
     bool  test;
     int   port;
     int   node;
+    int   sysexbuf;
 } arguments;
 
 // Parse a single option.
@@ -134,6 +139,9 @@ parse_opt( int key, char* arg, struct argp_state* state )
             perror("argument parsing failed:");
             return errno;
         }
+        break;
+    case 's':
+        arguments->sysexbuf = strtol(arg, &tail, 0);
         break;
     case ARGP_KEY_ARG:
         if (state->arg_num >= MAX_ARGS) {
@@ -193,6 +201,7 @@ public:
     bool init() {
         // need local copy as the nickname can change
         m_name = m_device.getNickname();
+        //m_name="SCS-plug";
 
         // create the output port
         m_out_port_nr = snd_seq_create_simple_port(m_seq_handle, m_name.c_str(),
@@ -240,8 +249,44 @@ public:
                 debugError(" Error decoding event for port %d (errcode=%d)", ev->dest.port, bytes_to_send);
                 return false;
         } else {
-            if(!m_device.writeHSS1394Message(GenericAVC::Stanton::ScsDevice::eMT_UserData,
-                                                    m_work_buffer, bytes_to_send)) {
+            if (bytes_to_send == 1 && arguments.sysexbuf==1) {
+                    switch(m_work_buffer[0]) {
+                        case 0xF0:
+                            sysex_buffer_count=1;
+                            m_sysex_buffer[sysex_buffer_count-1]=m_work_buffer[0];
+                            debugOutput(DEBUG_LEVEL_VERBOSE, "Sysexstart-Buffering\n");
+                            break;
+                        case 0xf7:
+                            sysex_buffer_count++;
+                            m_sysex_buffer[sysex_buffer_count-1]=m_work_buffer[0];
+                            debugOutput(DEBUG_LEVEL_VERBOSE,"SysexEnd-SendBuffer...length: %d\n",sysex_buffer_count);
+                            if(!m_device.writeHSS1394Message(GenericAVC::Stanton::ScsDevice::eMT_UserData, m_sysex_buffer, sysex_buffer_count+1)) {
+                                debugError("Failed to send message\n");
+                                return false;
+                            }
+                            sysex_buffer_count=0;
+                            break;
+                        case 0xF9:
+                        case 0xFA:
+                        case 0xFB:
+                        case 0xFC:
+                        case 0xFD:
+                        case 0xFE:
+                        case 0xFF:
+                            debugOutput(DEBUG_LEVEL_VERBOSE,"Clock or other 1byte message received, send without buffering\n");
+                                if(!m_device.writeHSS1394Message(GenericAVC::Stanton::ScsDevice::eMT_UserData, m_work_buffer,bytes_to_send )) {
+                                debugError("Failed to send message\n");
+                                return false;
+                            }
+                            break;                
+                        default:
+                            if (sysex_buffer_count > 0) { //yes we are buffering
+                                    sysex_buffer_count++;
+                                    m_sysex_buffer[sysex_buffer_count-1]=m_work_buffer[0];
+                                }                    
+                        }
+            } else
+            if(!m_device.writeHSS1394Message(GenericAVC::Stanton::ScsDevice::eMT_UserData, m_work_buffer,bytes_to_send )) {
                 debugError("Failed to send message\n");
                 return false;
             }
@@ -275,6 +320,8 @@ private:
     HSS1394UserDataHandler *m_input_handler;
 
     unsigned char m_work_buffer[MIDI_TRANSMIT_BUFFER_SIZE];
+    unsigned char m_sysex_buffer[MIDI_TRANSMIT_BUFFER_SIZE];
+    int sysex_buffer_count;
 
     DECLARE_DEBUG_MODULE;
 
@@ -447,7 +494,7 @@ main(int argc, char **argv)
         return -1;
     }
 
-    snd_seq_set_client_name(m_seq_handle, "SCS MIDI");
+    snd_seq_set_client_name(m_seq_handle, "STANTON-SCS1");
 
     // this maps the alsa sequencer ports to the corresponding bridges
     typedef std::map<int, HSS1394AlsaSeqMidiBridge*> BridgeMap;
