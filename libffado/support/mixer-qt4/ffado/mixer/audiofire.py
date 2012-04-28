@@ -283,6 +283,9 @@ class AudioFire(QWidget):
         self.SPDIFmodeControls[settings.radioConsumer] = ["/SpdifMode", 0]
         self.SPDIFmodeControls[settings.radioProfessional] = ["/SpdifMode", 1]
 
+        # Store a reference to the "save" button for later manipulation
+        self.btnSaveSettings = settings.btnSaveSettings
+
     def polledUpdate(self):
         ss = self.streamingstatus.selected()
 
@@ -292,7 +295,7 @@ class AudioFire(QWidget):
             ss_txt = self.streamingstatus.getEnumLabel(ss)
             # The device doesn't cope very well if "save settings" is done
             # while streaming is active
-            settings.btnSaveSettings.setEnabled(ss_txt=='Idle')
+            self.btnSaveSettings.setEnabled(ss_txt=='Idle')
 
         self.streaming_state = ss
 
