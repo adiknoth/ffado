@@ -267,7 +267,7 @@ device_definitions = (
     modelname = "AudioFire4";
     driver = 2;
     mixer = "AudioFire";
-    xmit_max_cycles_early_transmit = 2;
+    xmit_max_cycles_early_transmit = 4;
 }, 
 {
     vendorid = 0x1486;
