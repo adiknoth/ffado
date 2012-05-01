@@ -244,8 +244,17 @@ Device::getSupportedSamplingFrequencies()
     DICE_CHECK_AND_ADD_SR(frequencies, 48000, DICE_CLOCKCAP_RATE_48K);
     DICE_CHECK_AND_ADD_SR(frequencies, 88200, DICE_CLOCKCAP_RATE_88K2);
     DICE_CHECK_AND_ADD_SR(frequencies, 96000, DICE_CLOCKCAP_RATE_96K);
-    DICE_CHECK_AND_ADD_SR(frequencies, 176400, DICE_CLOCKCAP_RATE_176K4);
-    DICE_CHECK_AND_ADD_SR(frequencies, 192000, DICE_CLOCKCAP_RATE_192K);
+
+    // In order to run at 4x rates on the DICE platform, one needs to
+    // implement support for "dual-wire" mode within the FFADO streaming
+    // engine.  Until this is done there's no point advertising 4x rate
+    // capabilities.  While theoretically devices based on newer DICE
+    // versions don't require dual-wire mode at these rates, as of 1 May
+    // 2012 no such devices are known.  See also ticket #343.
+    //
+    // DICE_CHECK_AND_ADD_SR(frequencies, 176400, DICE_CLOCKCAP_RATE_176K4);
+    // DICE_CHECK_AND_ADD_SR(frequencies, 192000, DICE_CLOCKCAP_RATE_192K);
+
     return frequencies;
 }
 
@@ -313,6 +322,10 @@ Device::setSamplingFrequency( int samplingFrequency )
                         DICE_CLOCKCAP_RATE_96K);
             select=DICE_RATE_96K;
             break;
+
+// We currently can't support 4x rates on these devices.  See note
+// in getSupportedSamplingFrequencies().
+#if 0
         case 176400:
             supported=maskedCheckNotZeroGlobalReg(
                         DICE_REGISTER_GLOBAL_CLOCKCAPABILITIES,
@@ -325,6 +338,7 @@ Device::setSamplingFrequency( int samplingFrequency )
                         DICE_CLOCKCAP_RATE_192K);
             select=DICE_RATE_192K;
             break;
+#endif
         }
     
         if (!supported) {
