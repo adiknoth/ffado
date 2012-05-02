@@ -550,6 +550,18 @@ EAP::updateCurrentRouterConfig(RouterConfig& rcfg) {
 }
 
 /**
+ * Add (create) a route from source to destination
+ */
+bool
+EAP::addRoute(enum eRouteSource srcid, unsigned int base_src, enum eRouteDestination dstid,
+              unsigned int base_dst)
+{
+    RouterConfig *rcfg = getActiveRouterConfig();
+    return rcfg->createRoute((srcid<<4) + base_src, (dstid<<4) + base_dst);
+}
+
+
+/**
  * Uploads a new stream configuration to the device
  * @param scfg The new StreamConfig
  * @param low store as config for the low rates

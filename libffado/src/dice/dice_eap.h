@@ -601,6 +601,9 @@ private:
     bool loadStreamConfig(bool low, bool mid, bool high);
     bool loadRouterAndStreamConfig(bool low, bool mid, bool high);
 
+    bool addRoute(enum eRouteSource srcid, unsigned int base_src, enum eRouteDestination dstid,
+                  unsigned int base_dst);
+
 private:
     bool     m_router_exposed;
     bool     m_router_readonly;
