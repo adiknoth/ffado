@@ -550,6 +550,103 @@ EAP::updateCurrentRouterConfig(RouterConfig& rcfg) {
 }
 
 /**
+ * Set a default configuration for the router.
+ *  This is necessary for somes devices for hardware coherence, in which case the next
+ *  has to be customized
+ * @param  rcfg The new RouterConfig
+ * @return true if successful, false otherwise
+ */
+void
+EAP::setupDefaultRouterConfig_low() {
+    unsigned int i;
+    // add the routing destinations for a DICE chip
+    switch(m_general_chip) {
+        case DICE_EAP_CAP_GENERAL_CHIP_DICEII:
+            // router/EAP currently not supported
+            break;
+        case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
+            // second audio port (unique to the junior)
+            addDestination("InS1", 0, 8, eRD_InS1);
+        case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
+            // the 1394 stream receivers
+            for (i=0; i<8; i++) {
+              addRoute(eRS_InS0, i, eRD_ATX0, i);
+            }
+            for (i=0; i<8; i++) {
+              addRoute(eRS_InS1, i, eRD_ATX0, i+8);
+            }
+            for (i=0; i<8; i++) {
+              addRoute(eRS_ADAT, i, eRD_ATX1, i);
+            }
+            for (i=0; i<8; i++) {
+              addRoute(eRS_AES, i, eRD_ATX1, i+8);
+            }
+            // The audio ports
+            // Ensure that audio port are not muted
+            for (i=0; i<8; i++) {
+              addRoute(eRS_ARX0, i, eRD_InS0, i);
+            }
+            // the AES receiver
+            for (i=0; i<8; i++) {
+              addRoute(eRS_Muted, 0, eRD_AES, i);
+            }
+            // the ADAT receiver
+            for (i=0; i<8; i++) {
+              addRoute(eRS_Muted, 0, eRD_ADAT, i);
+            }
+            // the Mixer outputs
+            for (i=0; i<8; i++) {
+              addRoute(eRS_InS0, i, eRD_Mixer0, i);
+            }
+            for (i=0; i<8; i++) {
+              addRoute(eRS_ADAT, i, eRD_Mixer0, i+8);
+            }
+            for (i=0; i<2; i++) {
+              addRoute(eRS_Muted, 0, eRD_Mixer0, i+16);
+            }
+            // the ARM audio port
+            for (i=0; i<0; i++) {
+              addRoute(eRS_Muted, 0, eRD_ARM, i);
+            }
+            // mute
+            addRoute(eRS_Muted, 0, eRD_Muted, 0);
+            break;
+        default:
+            // this is an unsupported chip
+            break;
+    }
+}
+
+void
+EAP::setupDefaultRouterConfig_mid() {
+    setupDefaultRouterConfig_low();
+}
+
+void
+EAP::setupDefaultRouterConfig_high() {
+    setupDefaultRouterConfig_low();
+}
+
+void
+EAP::setupDefaultRouterConfig() {
+    // First clear routes
+    RouterConfig *rcfg = getActiveRouterConfig();
+    rcfg->clearRoutes();
+
+    // Then define the configuration depending on the samplerate
+    switch(m_device.getCurrentConfig()) {
+        case Device::eDC_Low: setupDefaultRouterConfig_low(); break;
+        case Device::eDC_Mid: setupDefaultRouterConfig_mid(); break;
+        case Device::eDC_High: setupDefaultRouterConfig_high(); break;
+        default:
+            debugError("Unsupported configuration mode\n");
+            return;
+    }
+
+    updateCurrentRouterConfig(*rcfg);
+}
+
+/**
  * Add (create) a route from source to destination
  */
 bool

@@ -570,6 +570,16 @@ protected:
     virtual void setupDestinations_high();
 
     /**
+      @brief Set up a default configuration for the router
+
+      To ease custom device support, these functions are not in EAP::RouterConfig but here.
+      */
+    virtual void setupDefaultRouterConfig_low();
+    virtual void setupDefaultRouterConfig_mid();
+    virtual void setupDefaultRouterConfig_high();
+    void setupDefaultRouterConfig();  
+
+    /**
       @brief Actually add the source
       */
     void addSource(const std::string name, unsigned int base, unsigned int count,
@@ -596,7 +606,7 @@ private:
     bool updateStreamConfig(StreamConfig&, bool low, bool mid, bool high);
     /// Write a new stream configuration to the device
     bool updateStreamConfig(RouterConfig&, StreamConfig&, bool low, bool mid, bool high);
-
+ 
     bool loadRouterConfig(bool low, bool mid, bool high);
     bool loadStreamConfig(bool low, bool mid, bool high);
     bool loadRouterAndStreamConfig(bool low, bool mid, bool high);
