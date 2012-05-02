@@ -540,6 +540,9 @@ public:
     stringlist getCptrNameString(unsigned int);
     stringlist getPbckNameString(unsigned int);
 
+    /** @brief Utility function to reset router config at hardware default */
+    void setupDefaultRouterConfig();  
+
 protected:
     /**
       @brief Setup all the available sources
@@ -577,7 +580,6 @@ protected:
     virtual void setupDefaultRouterConfig_low();
     virtual void setupDefaultRouterConfig_mid();
     virtual void setupDefaultRouterConfig_high();
-    void setupDefaultRouterConfig();  
     bool addRoute(enum eRouteSource srcid, unsigned int base_src, enum eRouteDestination dstid,
                   unsigned int base_dst);
 
