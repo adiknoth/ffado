@@ -566,7 +566,10 @@ EAP::setupDefaultRouterConfig_low() {
             break;
         case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
             // second audio port (unique to the junior)
-            addDestination("InS1", 0, 8, eRD_InS1);
+            // Ensure it is not muted
+            for (i=0; i<8; i++) {
+              addRoute(eRS_ARX0, i+8, eRD_InS1, i);
+            }
         case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
             // the 1394 stream receivers
             for (i=0; i<8; i++) {
