@@ -1664,7 +1664,7 @@ bool
 EAP::RouterConfig::read(enum eRegBase base, unsigned offset)
 {
     // first clear the current route vector
-    m_routes2.clear();
+    clearRoutes();
 
     uint32_t nb_routes;
     if(!m_eap.readRegBlock(base, offset, &nb_routes, 4)) {
@@ -1730,6 +1730,14 @@ EAP::RouterConfig::write(enum eRegBase base, unsigned offset)
     return true;
 }
 
+// Clear the route vector;
+bool
+EAP::RouterConfig::clearRoutes() {
+    m_routes2.clear();
+    return true;
+}
+
+// Create a destination with a prescribed source
 bool
 EAP::RouterConfig::createRoute(unsigned char src, unsigned char dest) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::createRoute( 0x%02x, 0x%02x )\n", src, dest);

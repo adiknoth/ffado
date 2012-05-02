@@ -215,8 +215,16 @@ private:
         /**
           @brief Create a route between src and dest
 
+          Clear the route vector
+          To be used with many care !
+          */
+        bool clearRoutes();
+
+        /**
+          @brief Create a route between src and dest
+
           This will effectively create a new destination.
-          If destination exists or its status unknown,
+          If a destination exists or its status is unknown,
           rather use the next setupRoute function
           */
         bool createRoute(unsigned char src, unsigned char dest);
