@@ -60,7 +60,7 @@ FocusriteEAP::Poti* SaffirePro40::SaffirePro40EAP::getDimPoti(std::string name) 
 void SaffirePro40::SaffirePro40EAP::setupSources_low() {
     addSource("SPDIF",  0,  2, eRS_AES, 1);
     addSource("ADAT",   0,  8, eRS_ADAT, 1);
-    addSource("Mic/Lin", 16,  8, eRS_InS0, 1);
+    addSource("Mic/Lin", 0,  8, eRS_InS1, 1);
     addSource("Mixer",  0, 16, eRS_Mixer, 1);
     addSource("1394",   0, 12, eRS_ARX0, 1);
     addSource("1394",   0,  8, eRS_ARX1, 13);
@@ -98,7 +98,7 @@ void SaffirePro40::SaffirePro40EAP::setupDestinations_low() {
 void SaffirePro40::SaffirePro40EAP::setupSources_mid() {
     addSource("SPDIF",  0,  2, eRS_AES, 1);
     addSource("ADAT",   0,  4, eRS_ADAT, 1);
-    addSource("Mic/Lin", 16,  8, eRS_InS0, 1);
+    addSource("Mic/Lin", 0,  8, eRS_InS1, 1);
     addSource("Mixer",  0, 16, eRS_Mixer, 1);
     addSource("1394",   0, 16, eRS_ARX0, 1);
     addSource("Mute",   0,  1, eRS_Muted);
@@ -147,16 +147,13 @@ SaffirePro40::SaffirePro40EAP::setupDefaultRouterConfig_low() {
     unsigned int i;
     // the 1394 stream receivers except the two "loops" one
     for (i=0; i<8; i++) {
-        addRoute(eRS_InS0, i, eRD_ATX0, i);
+        addRoute(eRS_InS1, i, eRD_ATX0, i);
     }
     for (i=0; i<2; i++) {
-        addRoute(eRS_ADAT, i, eRD_ATX0, i+8);
+        addRoute(eRS_AES, i, eRD_ATX0, i+8);
     }
-    for (i=0; i<6; i++) {
-        addRoute(eRS_ADAT, i+2, eRD_ATX1, i);
-    }
-    for (i=0; i<2; i++) {
-        addRoute(eRS_AES, i, eRD_ATX1, i+6);
+    for (i=0; i<8; i++) {
+        addRoute(eRS_ADAT, i, eRD_ATX1, i);
     }
     // The audio ports
     // Ensure that audio port are not muted
@@ -176,11 +173,11 @@ SaffirePro40::SaffirePro40EAP::setupDefaultRouterConfig_low() {
     }
     // the "loops" 1394 stream receivers
     for (i=0; i<2; i++) {
-        addRoute(eRS_Muted, i, eRD_ATX1, i+8);
+        addRoute(eRS_Muted, 0, eRD_ATX1, i+8);
     }
     // the Mixer inputs
     for (i=0; i<8; i++) {
-        addRoute(eRS_InS0, i, eRD_Mixer0, i);
+        addRoute(eRS_InS1, i, eRD_Mixer0, i);
     }
     for (i=0; i<8; i++) {
         addRoute(eRS_ADAT, i, eRD_Mixer0, i+8);
@@ -203,13 +200,13 @@ SaffirePro40::SaffirePro40EAP::setupDefaultRouterConfig_mid() {
     unsigned int i;
     // the 1394 stream receivers except the two "loops" one
     for (i=0; i<8; i++) {
-        addRoute(eRS_InS0, i, eRD_ATX0, i);
-    }
-    for (i=0; i<4; i++) {
-        addRoute(eRS_ADAT, i, eRD_ATX0, i+8);
+        addRoute(eRS_InS1, i, eRD_ATX0, i);
     }
     for (i=0; i<2; i++) {
-        addRoute(eRS_AES, i, eRD_ATX0, i+12);
+        addRoute(eRS_AES, i, eRD_ATX0, i+8);
+    }
+    for (i=0; i<4; i++) {
+        addRoute(eRS_ADAT, i, eRD_ATX0, i+10);
     }
     // The audio ports
     // Ensure that audio port are not muted
@@ -229,11 +226,11 @@ SaffirePro40::SaffirePro40EAP::setupDefaultRouterConfig_mid() {
     }
     // the "loops" 1394 stream receivers
     for (i=0; i<2; i++) {
-        addRoute(eRS_Muted, i, eRD_ATX0, i+14);
+        addRoute(eRS_Muted, 0, eRD_ATX0, i+14);
     }
     // the Mixer inputs
     for (i=0; i<8; i++) {
-        addRoute(eRS_InS0, i, eRD_Mixer0, i);
+        addRoute(eRS_InS1, i, eRD_Mixer0, i);
     }
     for (i=0; i<4; i++) {
         addRoute(eRS_ADAT, i, eRD_Mixer0, i+8);
