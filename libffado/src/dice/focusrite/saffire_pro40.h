@@ -66,6 +66,9 @@ private:
         void setupDestinations_mid();
         void setupSources_high();
         void setupDestinations_high();
+        void setupDefaultRouterConfig_low();
+        void setupDefaultRouterConfig_mid();
+        void setupDefaultRouterConfig_high();
     };
     Dice::EAP* createEAP();
 

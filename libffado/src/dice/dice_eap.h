@@ -578,6 +578,8 @@ protected:
     virtual void setupDefaultRouterConfig_mid();
     virtual void setupDefaultRouterConfig_high();
     void setupDefaultRouterConfig();  
+    bool addRoute(enum eRouteSource srcid, unsigned int base_src, enum eRouteDestination dstid,
+                  unsigned int base_dst);
 
     /**
       @brief Actually add the source
@@ -610,9 +612,6 @@ private:
     bool loadRouterConfig(bool low, bool mid, bool high);
     bool loadStreamConfig(bool low, bool mid, bool high);
     bool loadRouterAndStreamConfig(bool low, bool mid, bool high);
-
-    bool addRoute(enum eRouteSource srcid, unsigned int base_src, enum eRouteDestination dstid,
-                  unsigned int base_dst);
 
 private:
     bool     m_router_exposed;
