@@ -136,7 +136,7 @@ SaffirePro24::SaffirePro24EAP::setupDefaultRouterConfig_low() {
     }
     // the "loops" 1394 stream receivers
     for (i=0; i<2; i++) {
-        addRoute(eRS_Muted, i, eRD_ATX0, i+14);
+        addRoute(eRS_Muted, 0, eRD_ATX0, i+14);
     }
     // the Mixer inputs
     for (i=0; i<4; i++) {
@@ -188,7 +188,7 @@ SaffirePro24::SaffirePro24EAP::setupDefaultRouterConfig_mid() {
     }
     // the "loops" 1394 stream receivers
     for (i=0; i<2; i++) {
-        addRoute(eRS_Muted, i, eRD_ATX0, i+10);
+        addRoute(eRS_Muted, 0, eRD_ATX0, i+10);
     }
     // the Mixer inputs
     for (i=0; i<4; i++) {
