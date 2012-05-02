@@ -1731,16 +1731,24 @@ EAP::RouterConfig::write(enum eRegBase base, unsigned offset)
 }
 
 bool
+EAP::RouterConfig::createRoute(unsigned char src, unsigned char dest) {
+    debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::createRoute( 0x%02x, 0x%02x )\n", src, dest);
+    m_routes2.push_back(std::make_pair(dest, src));
+    return true;
+}
+
+bool
 EAP::RouterConfig::setupRoute(unsigned char src, unsigned char dest) {
     debugOutput(DEBUG_LEVEL_VERBOSE,"RouterConfig::setupRoute( 0x%02x, 0x%02x )\n", src, dest);
+    // modify exisiting routing
     for (RouteVectorV2::iterator it=m_routes2.begin(); it!=m_routes2.end(); ++it) {
         if (it->first == dest) {
           it->second = src;
           return true;
         }
     }
-    m_routes2.push_back(std::make_pair(dest, src));
-    return false;
+    // destination does not yet exist; create it
+    return createRoute(src, dest);
 }
 
 

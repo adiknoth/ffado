@@ -213,6 +213,15 @@ private:
         void show();
 
         /**
+          @brief Create a route between src and dest
+
+          This will effectively create a new destination.
+          If destination exists or its status unknown,
+          rather use the next setupRoute function
+          */
+        bool createRoute(unsigned char src, unsigned char dest);
+
+        /**
           @brief Set up a route between src and dest
 
           If a route with that destination exists, it will be replaced. If no route to that
