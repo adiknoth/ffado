@@ -106,6 +106,123 @@ void SaffirePro24::SaffirePro24EAP::setupDestinations_high() {
     printMessage("High (192 kHz) sample rate not supported by Saffire Pro 24\n");
 }
 
+/**
+ * The default configurations for the Saffire Pro 24 router.
+ *  For coherence with hardware, destinations must follow a specific ordering
+ *  There must be 44 destinations at low samplerate
+ *  Front LEDs are connected to the first four router entries
+ */
+void
+SaffirePro24::SaffirePro24EAP::setupDefaultRouterConfig_low() {
+    unsigned int i;
+    // the 1394 stream receivers except the two "loops" one
+    for (i=0; i<4; i++) {
+        addRoute(eRS_InS0, i, eRD_ATX0, i);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_AES, i+6, eRD_ATX0, i+4);
+    }
+    for (i=0; i<8; i++) {
+        addRoute(eRS_ADAT, i, eRD_ATX0, i+6);
+    }
+    // The audio ports
+    // Ensure that audio port are not muted
+    for (i=0; i<6; i++) {
+        addRoute(eRS_ARX0, i%2, eRD_InS0, i);
+    }
+    // the SPDIF receiver
+    for (i=0; i<2; i++) {
+        addRoute(eRS_Muted, 0, eRD_AES, i+6);
+    }
+    // the "loops" 1394 stream receivers
+    for (i=0; i<2; i++) {
+        addRoute(eRS_Muted, i, eRD_ATX0, i+14);
+    }
+    // the Mixer inputs
+    for (i=0; i<4; i++) {
+        addRoute(eRS_InS0, i, eRD_Mixer0, i);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_AES, i+6, eRD_Mixer0, i+4);
+    }
+    for (i=0; i<8; i++) {
+        addRoute(eRS_ADAT, i, eRD_Mixer0, i+6);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_ARX0, i, eRD_Mixer0, i+14);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_Muted, 0, eRD_Mixer1, i);
+    }
+    // The two mute destinations
+    for (i=0; i<2; i++) {
+        addRoute(eRS_Mixer, i, eRD_Muted, 0);
+    }
+}
+
+/**
+ *  There must be 40 (?) destinations at mid samplerate
+ *  Front LEDs are connected to the first four router entries
+ */
+void
+SaffirePro24::SaffirePro24EAP::setupDefaultRouterConfig_mid() {
+    unsigned int i;
+    // the 1394 stream receivers except the two "loops" one
+    for (i=0; i<4; i++) {
+        addRoute(eRS_InS0, i, eRD_ATX0, i);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_AES, i+6, eRD_ATX0, i+4);
+    }
+    for (i=0; i<4; i++) {
+        addRoute(eRS_ADAT, i, eRD_ATX0, i+6);
+    }
+    // The audio ports
+    // Ensure that audio port are not muted
+    for (i=0; i<6; i++) {
+        addRoute(eRS_ARX0, i%2, eRD_InS0, i);
+    }
+    // the SPDIF receiver
+    for (i=0; i<2; i++) {
+        addRoute(eRS_Muted, 0, eRD_AES, i+6);
+    }
+    // the "loops" 1394 stream receivers
+    for (i=0; i<2; i++) {
+        addRoute(eRS_Muted, i, eRD_ATX0, i+10);
+    }
+    // the Mixer inputs
+    for (i=0; i<4; i++) {
+        addRoute(eRS_InS0, i, eRD_Mixer0, i);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_AES, i+6, eRD_Mixer0, i+4);
+    }
+    for (i=0; i<4; i++) {
+        addRoute(eRS_ADAT, i, eRD_Mixer0, i+6);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_ARX0, i, eRD_Mixer0, i+10);
+    }
+    for (i=0; i<4; i++) {
+        addRoute(eRS_Muted, 0, eRD_Mixer0, i+12);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_Muted, 0, eRD_Mixer1, i);
+    }
+    // The two mute destinations
+    for (i=0; i<2; i++) {
+        addRoute(eRS_Mixer, i, eRD_Muted, 0);
+    }
+}
+
+/**
+ *  High rate not supported
+ */
+void
+SaffirePro24::SaffirePro24EAP::setupDefaultRouterConfig_high() {
+    printMessage("High (192 kHz) sample rate not supported by Saffire Pro 40\n");
+}
+
 class SaffirePro24::LineInstSwitch : public Dice::Focusrite::FocusriteEAP::Switch
 {
 public:
