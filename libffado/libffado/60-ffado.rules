@@ -1,6 +1,5 @@
 SUBSYSTEM!="firewire", GOTO="ffado_end"
 
-ATTR{vendor}=="0x00000a", GROUP="audio", ENV{ID_FFADO}="1" # CME
 ATTR{vendor}=="0x000166", GROUP="audio", ENV{ID_FFADO}="1" # TC GROUP A/S
 ATTR{vendor}=="0x0001f2", GROUP="audio", ENV{ID_FFADO}="1" # Mark of the Unicorn, Inc. (aka MOTU)
 ATTR{vendor}=="0x0003db", GROUP="audio", ENV{ID_FFADO}="1" # Apogee Electronics Corp.
