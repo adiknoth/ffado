@@ -36,7 +36,15 @@ def get_kernel_version():
     return run_command('uname -r')
 
 def get_kernel_rt_patched():
-    print "FIXME: implement test for RT kernel"
+    l = run_command('uname -v')
+    if l.find("PREEMPT RT") > -1:
+        return True
+    return False
+
+def get_kernel_preempt():
+    l = run_command('uname -v')
+    if l.find(" PREEMPT ") > -1 and l.find(" RT ") == -1:
+        return True
     return False
 
 # modules

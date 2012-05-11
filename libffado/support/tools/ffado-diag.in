@@ -73,10 +73,12 @@ if __name__== '__main__':
     # check kernel
     kernel_version = get_kernel_version()
     print "  kernel version............ " + str(kernel_version)
+    kernel_is_preempt = get_kernel_preempt()
+    print "    Preempt (low latency)... " + str(kernel_is_preempt)
     # Hint: The main parts of the rt patches are in mainline-kernels nowadays. Performance with stock kernels is sufficient...
-    #kernel_is_rt_patched = get_kernel_rt_patched()
-    #print "   RT patched............... " + str(kernel_is_rt_patched)
-    
+    kernel_is_rt_patched = get_kernel_rt_patched()
+    print "    RT patched.............. " + str(kernel_is_rt_patched)
+
     # check modules
     oldstack_present = check_1394oldstack_present()
     oldstack_loaded = check_1394oldstack_loaded()
@@ -141,6 +143,9 @@ if __name__== '__main__':
     f.close()
 
     # libraw
+
+    print " uname -a..." 
+    print "   " + run_command("uname -a")
     
     print " Hardware..."
     # check host controller
