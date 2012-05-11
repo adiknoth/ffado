@@ -140,7 +140,7 @@ def get_package_flags(name):
     return run_command(cmd)
 
 def get_command_path(name):
-    cmd = "which %s" % name
+    cmd = "which %s 2> /dev/null" % name
     return run_command(cmd)
 
 def get_version_first_line(cmd):
@@ -151,14 +151,17 @@ def get_version_first_line(cmd):
 
 
 def list_host_controllers():
-    cmd = "lspci | grep 1394"
+    lspci_cmd = get_command_path("lspci")
+    if lspci_cmd == "":
+        lspci_cmd = "/sbin/lspci"
+    cmd = lspci_cmd + " | grep 1394"
     controllers = run_command(cmd).split("\n")
-    log.debug("lspci | grep 1394: %s" % controllers)
+    log.debug(lspci_cmd + " | grep 1394: %s" % controllers)
     for c in controllers:
         tmp = c.split()
         if len(tmp) > 0:
             tmp
-            cmd = "lspci -vv -nn -s %s" % tmp[0]
+            cmd = lspci_cmd + " -vv -nn -s %s" % tmp[0]
             print run_command(cmd)
 
 def get_juju_permissions():
