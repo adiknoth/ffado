@@ -127,7 +127,7 @@ class IRQInfo:
                 irq = IRQs[irq_number]
                 cpu_counts = []
                 for i in range(nb_cpus):
-                    cpu_counts.append(int(match_obj.group(1 + 1)))
+                    cpu_counts.append(int(match_obj.group(i + 2)))
                 irq.cpu_counts = cpu_counts
                 irq.type = match_obj.group(nb_cpus + 2)
                 drivers = match_obj.group(nb_cpus + 3).split(',')
