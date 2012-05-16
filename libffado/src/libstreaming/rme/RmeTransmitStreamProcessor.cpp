@@ -93,7 +93,12 @@ RmeTransmitStreamProcessor::RmeTransmitStreamProcessor(FFADODevice &parent,
 unsigned int
 RmeTransmitStreamProcessor::getMaxPacketSize() {
     Rme::Device *dev = static_cast<Rme::Device *>(&m_Parent);
-    /* Each channel comprises a single 32-bit quadlet.  Note return value is in bytes. */
+    // Each channel comprises a single 32-bit quadlet.  Note that the return 
+    // value is in bytes.
+    // FIXME: getFramesPerPacket() is fixed by the sample rate class.  It
+    // needs to be confirmed that the values in use are still ok even
+    // when the DDS is set to run 4% fast (something that's not presently
+    // implemented by FFADO, but should be at some point).
     return dev->getFramesPerPacket() * dev->getNumChannels() * 4;
 }
 

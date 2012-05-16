@@ -76,10 +76,18 @@ RmeReceiveStreamProcessor::getMaxPacketSize() {
     // FIXME: the additional 8 bytes is not needed.
     // FIXME: the upper bounds of the 1x and 2x rates need to account for the
     //   DDS capability to run fast by 4%.
-    if (m_rme_model == Rme::RME_MODEL_FIREFACE800)
-        return 8 + (framerate<=48000?784:(framerate<=96000?1200:1200));
-    else
-        return 8 + (framerate<=48000?504:(framerate<=96000?840:1000));
+    //if (m_rme_model == Rme::RME_MODEL_FIREFACE800)
+    //    return 8 + (framerate<=48000?784:(framerate<=96000?1200:1200));
+    //else
+    //    return 8 + (framerate<=48000?504:(framerate<=96000?840:1000));
+
+    // Each channel comprises a single 32-bit quadlet.  Note that the return
+    // value is in bytes.
+    // FIXME: getFramesPerPacket() is fixed by the sample rate class.  It
+    // needs to be confirmed that the values in use are still ok even
+    // when the DDS is set to run 4% fast (something that's not presently
+    // implemented by FFADO, but should be at some point).
+    return dev->getFramesPerPacket() * dev->getNumChannels() * 4;
 }
 
 unsigned int
