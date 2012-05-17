@@ -72,7 +72,9 @@ RmeReceiveStreamProcessor::RmeReceiveStreamProcessor(FFADODevice &parent,
 
 unsigned int
 RmeReceiveStreamProcessor::getMaxPacketSize() {
-    int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
+    Rme::Device *dev = static_cast<Rme::Device *>(&m_Parent);
+
+    // int framerate = m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate();
     // FIXME: the additional 8 bytes is not needed.
     // FIXME: the upper bounds of the 1x and 2x rates need to account for the
     //   DDS capability to run fast by 4%.
