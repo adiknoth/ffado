@@ -58,7 +58,7 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
     BoolVariable( "ENABLE_MOTU", "Enable/Disable support for the MOTU platform.", True ),
     BoolVariable( "ENABLE_DICE", "Enable/Disable support for the TCAT DICE platform.", True ),
     BoolVariable( "ENABLE_METRIC_HALO", "Enable/Disable support for the Metric Halo platform.", False ),
-    BoolVariable( "ENABLE_RME", "Enable/Disable support for the RME platform.", False ),
+    BoolVariable( "ENABLE_RME", "Enable/Disable support for the RME platform.", True ),
     BoolVariable( "ENABLE_DIGIDESIGN", "Enable/Disable support for Digidesign interfaces.", False ),
     BoolVariable( "ENABLE_MAUDIO", "Enable/Disable support for the M-Audio custom BeBoB devices.", False ),
     BoolVariable( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE device.", False ),
