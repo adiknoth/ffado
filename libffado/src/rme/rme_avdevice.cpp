@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2011 by Jonathan Woithe
+ * Copyright (C) 2005-2012 by Jonathan Woithe
  * Copyright (C) 2005-2008 by Pieter Palmers
  *
  * This file is part of FFADO
@@ -22,7 +22,7 @@
  *
  */
 
-#warning RME support is at an early development stage and is not functional
+#warning RME support is reasonably functional but some bugs undoubtedly remain.  Please report experiences on the ffado-devel mailing list.
 
 #include "config.h"
 
