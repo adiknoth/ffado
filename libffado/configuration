@@ -572,5 +572,14 @@ device_definitions = (
    modelname   = "HB 24U";
    driver      = 1; # BeBoB
    xmit_max_cycles_early_transmit = 4;
+},
+{ # Yamaha GO46, provided by Luis Pablo Gasparotto
+   vendorid = 0x0000A0DE;
+   modelid = 0x0010000C;
+   vendorname = "YAMAHA;
+   modelname = "GO46";
+   driver = 1; # BeBoB
+   mixer = "Phase24Control";
+   xmit_max_cycles_early_transmit = 4;
 }
 );
