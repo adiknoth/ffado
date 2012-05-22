@@ -576,7 +576,7 @@ device_definitions = (
 { # Yamaha GO46, provided by Luis Pablo Gasparotto
    vendorid = 0x0000A0DE;
    modelid = 0x0010000C;
-   vendorname = "YAMAHA;
+   vendorname = "YAMAHA";
    modelname = "GO46";
    driver = 1; # BeBoB
    mixer = "Phase24Control";
