@@ -581,5 +581,13 @@ device_definitions = (
    driver = 1; # BeBoB
    mixer = "Phase24Control";
    xmit_max_cycles_early_transmit = 4;
+},
+{ # Lexicon Onix-FW810S, provided by gerradblock
+    vendorid    = 0x00000FD7;
+    modelid     = 0x00000001;
+    vendorname  = "Lexicon";
+    modelname   = "I-ONIX_FW810S";
+    driver      = 20;
+    mixer       = "Generic_Dice_EAP";
 }
 );
