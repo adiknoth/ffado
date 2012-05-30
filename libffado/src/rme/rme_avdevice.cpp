@@ -43,6 +43,7 @@
 #include <string>
 #include <stdint.h>
 #include <assert.h>
+#include <unistd.h>
 #include "libutil/ByteSwap.h"
 
 #include <iostream>
