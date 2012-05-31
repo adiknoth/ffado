@@ -23,6 +23,7 @@
 
 /* This file implements the flash memory methods of the Device object */
 
+#include <unistd.h>
 #include "rme/rme_avdevice.h"
 #include "rme/fireface_def.h"
 
