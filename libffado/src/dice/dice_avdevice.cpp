@@ -1613,6 +1613,7 @@ Device::initIoFunctions() {
         }
     }
 
+#if USE_OLD_DEFENSIVE_STREAMING_PROTECTION
     // FIXME: after a crash, the device might still be streaming. We
     // simply force a stop now (unless in snoopMode) to return to a
     // clean state.
@@ -1624,6 +1625,7 @@ Device::initIoFunctions() {
     if (!snoopMode) {
         disableIsoStreaming();
     }
+#endif
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"DICE Parameter Space info:\n");
     debugOutput(DEBUG_LEVEL_VERBOSE," Global  : offset=%04X size=%04d\n", m_global_reg_offset, m_global_reg_size);
