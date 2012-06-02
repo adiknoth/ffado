@@ -346,10 +346,12 @@ Device::setSamplingFrequency( int samplingFrequency )
             return false;
         }
     
+#if USE_OLD_DEFENSIVE_STREAMING_PROTECTION
         if (isIsoStreamingEnabled()) {
             debugError("Cannot change samplerate while streaming is enabled\n");
             return false;
         }
+#endif
     
         fb_quadlet_t clockreg;
         if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
@@ -1245,10 +1247,12 @@ Device::startstopStreamByIndex(int i, const bool start) {
         debugWarning("Could not retrieve snoopMode parameter, defauling to false\n");
     }
 
+#if USE_OLD_DEFENSIVE_STREAMING_PROTECTION
     if (!snoopMode && isIsoStreamingEnabled()) {
         debugError("Cannot start streams while streaming is enabled\n");
         return false;
     }
+#endif
 
     if (i<(int)m_receiveProcessors.size()) {
         n=i;
