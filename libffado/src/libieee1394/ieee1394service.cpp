@@ -29,6 +29,7 @@
 #include "IsoHandlerManager.h"
 #include "CycleTimerHelper.h"
 
+#include <unistd.h>
 #include <libraw1394/csr.h>
 #include <libiec61883/iec61883.h>
 
@@ -401,6 +402,13 @@ Ieee1394Service::initialize( int port )
         debugFatal("Could not initialize IsoHandlerManager\n");
         return false;
     }
+
+    // Give time for all threads to start.  Otherwise it can happen that
+    // some FFADO threads are ready to run before others.  If the former
+    // then go ahead and use the latter on the assumption that they're
+    // running, race conditions can occur.  The delay here has been 
+    // determined experimentally.
+    usleep(500);
 
     // make sure that the thread parameters of all our helper threads are OK
     if(!setThreadParameters(m_realtime, m_base_priority)) {
