@@ -53,10 +53,13 @@ ScsDevice::~ScsDevice()
 bool
 ScsDevice::discover()
 {
-    if(!initMessageHandler()) {
-        debugError("Could not initialize HSS1394 message handler\n");
-        return false;
-    }
+// HSS1394 is now being handled by an ALSA MIDI driver.  It is therefore
+// not appropriate that FFADO install an ARM to receive these messages;
+// doing so will clearly interfere with the other driver.
+//    if(!initMessageHandler()) {
+//        debugError("Could not initialize HSS1394 message handler\n");
+//        return false;
+//    }
     return Device::discover();
 }
 
