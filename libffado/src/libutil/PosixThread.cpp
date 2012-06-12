@@ -66,6 +66,12 @@ void* PosixThread::ThreadHandler(void* arg)
 
     obj->m_lock.Lock();
 
+    // Signal that ThreadHandler has acquired its initial lock
+    pthread_mutex_lock(&obj->handler_active_lock);
+    obj->handler_active = 1;
+    pthread_cond_signal(&obj->handler_active_cond);
+    pthread_mutex_unlock(&obj->handler_active_lock);
+
     if ((err = pthread_setcanceltype(obj->fCancellation, NULL)) != 0) {
         debugError("pthread_setcanceltype err = %s\n", strerror(err));
     }
@@ -73,6 +79,7 @@ void* PosixThread::ThreadHandler(void* arg)
     // Call Init method
     if (!runnable->Init()) {
         debugError("Thread init fails: thread quits\n");
+        obj->m_lock.Unlock();
         return 0;
     }
 
@@ -155,8 +162,6 @@ int PosixThread::Start()
             debugError(" priority: %d\n", fPriority);
             return -1;
         }
-
-        return 0;
     } else {
         debugOutput( DEBUG_LEVEL_VERBOSE, "(%s) Create non RT thread %p\n", m_id.c_str(), this);
 
@@ -167,9 +172,17 @@ int PosixThread::Start()
             debugError("Cannot create thread %d %s\n", res, strerror(res));
             return -1;
         }
-
-        return 0;
     }
+
+    // Wait for ThreadHandler() to acquire the thread lock (m_lock) before
+    // continuing, thereby ensuring that ThreadHandler() acquires a lock on
+    // m_lock before anything else tries.
+    pthread_mutex_lock(&handler_active_lock);
+    while (handler_active == 0)
+        pthread_cond_wait(&handler_active_cond, &handler_active_lock);
+    pthread_mutex_unlock(&handler_active_lock);
+
+    return 0;
 }
 
 int PosixThread::Kill()

@@ -73,38 +73,63 @@ class PosixThread : public Thread
         volatile bool fRunning;
         int fCancellation;
 
+        pthread_mutex_t handler_active_lock;
+        pthread_cond_t handler_active_cond;
+        int handler_active;
+
         static void* ThreadHandler(void* arg);
         Util::Mutex &m_lock;
     public:
 
         PosixThread(RunnableInterface* runnable, bool real_time, int priority, int cancellation)
                 : Thread(runnable), fThread((pthread_t)NULL), fPriority(priority), fRealTime(real_time), fRunning(false), fCancellation(cancellation)
+                , handler_active(0)
                 , m_lock(*(new Util::PosixMutex("THREAD")))
-        {}
+        { pthread_mutex_init(&handler_active_lock, NULL); 
+          pthread_cond_init(&handler_active_cond, NULL);
+        }
         PosixThread(RunnableInterface* runnable)
                 : Thread(runnable), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(PTHREAD_CANCEL_DEFERRED)
+                , handler_active(0)
                 , m_lock(*(new Util::PosixMutex("THREAD")))
-        {}
+        { pthread_mutex_init(&handler_active_lock, NULL); 
+          pthread_cond_init(&handler_active_cond, NULL);
+        }
         PosixThread(RunnableInterface* runnable, int cancellation)
                 : Thread(runnable), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(cancellation)
+                , handler_active(0)
                 , m_lock(*(new Util::PosixMutex("THREAD")))
-        {}
+        { pthread_mutex_init(&handler_active_lock, NULL); 
+          pthread_cond_init(&handler_active_cond, NULL);
+        }
 
         PosixThread(RunnableInterface* runnable, std::string id, bool real_time, int priority, int cancellation)
                 : Thread(runnable, id), fThread((pthread_t)NULL), fPriority(priority), fRealTime(real_time), fRunning(false), fCancellation(cancellation)
+                , handler_active(0)
                 , m_lock(*(new Util::PosixMutex(id)))
-        {}
+        { pthread_mutex_init(&handler_active_lock, NULL); 
+          pthread_cond_init(&handler_active_cond, NULL);
+        }
         PosixThread(RunnableInterface* runnable, std::string id)
                 : Thread(runnable, id), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(PTHREAD_CANCEL_DEFERRED)
+                , handler_active(0)
                 , m_lock(*(new Util::PosixMutex(id)))
-        {}
+        { pthread_mutex_init(&handler_active_lock, NULL); 
+          pthread_cond_init(&handler_active_cond, NULL);
+        }
         PosixThread(RunnableInterface* runnable, std::string id, int cancellation)
                 : Thread(runnable, id), fThread((pthread_t)NULL), fPriority(0), fRealTime(false), fRunning(false), fCancellation(cancellation)
+                , handler_active(0)
                 , m_lock(*(new Util::PosixMutex(id)))
-        {}
+        { pthread_mutex_init(&handler_active_lock, NULL); 
+          pthread_cond_init(&handler_active_cond, NULL);
+        }
 
         virtual ~PosixThread()
-        { delete &m_lock; }
+        { delete &m_lock; 
+          pthread_mutex_destroy(&handler_active_lock); 
+          pthread_cond_destroy(&handler_active_cond);
+        }
 
         virtual int Start();
         virtual int Kill();
