@@ -1719,8 +1719,12 @@ EAP::Router::getPeakValues()
     m_peak.read();
     std::map<std::string, double> ret;
     std::map<unsigned char, int> peaks = m_peak.getPeaks();
+    std::string name;
     for (std::map<unsigned char, int>::iterator it=peaks.begin(); it!=peaks.end(); ++it) {
-        ret[getDestinationName(it->first)] = it->second;
+        name = getDestinationName(it->first);
+        if (name.size() != 0) {
+          ret[name] = it->second;
+        }
     }
     return ret;
 }
