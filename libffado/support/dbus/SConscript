@@ -34,7 +34,7 @@ env = env.Clone()
 
 env.AppendUnique( CPPPATH=["#/", "#/src"] )
 env.PrependUnique( LIBPATH=[env['build_base']+"src"] )
-env.PrependUnique( LIBS=["ffado"] )
+env.PrependUnique( LIBS=["ffado", "pthread"] )
 
 if not env.GetOption( "clean" ):
     env.MergeFlags( env["DBUS1_FLAGS"] )
