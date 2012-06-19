@@ -47,6 +47,19 @@
 #include <iostream>
 #include <iomanip>
 
+// Permit linking against older libraw1394 which didn't include this
+// function.
+#ifdef __GNUC__
+  #ifdef __APPLE__
+  #define WEAK_ATTRIBUTE weak_import
+  #else
+  #define WEAK_ATTRIBUTE __weak__
+  #endif
+  int raw1394_read_cycle_timer_and_clock(raw1394handle_t handle,
+      u_int32_t *cycle_timer, u_int64_t *local_time, clockid_t clk_id)
+      __attribute__((WEAK_ATTRIBUTE));
+#endif
+
 using namespace std;
 
 IMPL_DEBUG_MODULE( Ieee1394Service, Ieee1394Service, DEBUG_LEVEL_NORMAL );
@@ -317,6 +330,7 @@ Ieee1394Service::initialize( int port )
     int err;
     uint32_t cycle_timer;
     uint64_t local_time;
+    m_have_read_ctr_and_clock = false;
     err = raw1394_read_cycle_timer(m_util_handle, &cycle_timer, &local_time);
     if(err) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "raw1394_read_cycle_timer failed.\n");
@@ -329,8 +343,26 @@ Ieee1394Service::initialize( int port )
         debugWarning("==================================================================\n");
         m_have_new_ctr_read = false;
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer call, using it.\n");
         m_have_new_ctr_read = true;
+
+        // Only if raw1394_read_cycle_timer() is present is it worth even
+        // considering the option that raw1394_read_cycle_timer_and_clock()
+        // might be available.
+        if (raw1394_read_cycle_timer_and_clock != NULL) {
+            err = raw1394_read_cycle_timer_and_clock(m_util_handle, &cycle_timer, &local_time, CLOCK_MONOTONIC_RAW);
+            if (!err)
+                m_have_read_ctr_and_clock = true;
+        }
+
+        if (m_have_read_ctr_and_clock)
+            debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer_and_clock call, using it.\n");
+        else {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer call, using it.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "The raw1394_read_cycle_timer_and_clock call is not available.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "Fallback to raw1394_read_cycle_timer.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "FFADO may be susceptible to NTP-induced clock discontinuities.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "Upgrade libraw1394 to version 2.1.0 or later if this is an issue.\n");
+        }
     }
 
     // obtain port name
@@ -503,6 +535,15 @@ Ieee1394Service::getSystemTimeForCycleTimer(uint32_t ctr) {
 bool
 Ieee1394Service::readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time)
 {
+    if (m_have_read_ctr_and_clock) {
+        int err;
+        err = raw1394_read_cycle_timer_and_clock(m_util_handle, cycle_timer, local_time, CLOCK_MONOTONIC_RAW);
+        if(err) {
+            debugWarning("raw1394_read_cycle_timer_and_clock: %s\n", strerror(err));
+            return false;
+        }
+        return true;
+    } else
     if(m_have_new_ctr_read) {
         int err;
         err = raw1394_read_cycle_timer(m_util_handle, cycle_timer, local_time);

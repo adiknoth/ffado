@@ -460,6 +460,7 @@ private: // unsorted
     IsoHandlerManager*      m_pIsoManager;
     CycleTimerHelper*       m_pCTRHelper;
     bool                    m_have_new_ctr_read;
+    bool                    m_have_read_ctr_and_clock;
 
     bool            m_filterFCPResponse;
 
