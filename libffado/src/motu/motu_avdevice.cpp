@@ -65,7 +65,13 @@
 
 namespace Motu {
 
-// Define the supported devices.  Device ordering is arbitary here.
+// Define the supported devices.  Device ordering is arbitary here.  To include a MOTU
+// device which cannot yet be used (for identification purposes only), set the model
+// field to MOTU_MODEL_NONE.
+//
+// The V4HD device includes 4 sub-devices.  Include all in the definition as a way
+// of documenting it.  It's likely that only one of these is of interest for audio
+// but that's still to be determined.
 static VendorModelEntry supportedDeviceList[] =
 {
 //  {vendor_id, model_id, unit_version, unit_specifier_id, model, vendor_name,model_name}
@@ -79,6 +85,10 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_MOTU, 0, 0x00000017, 0x000001f2, MOTU_MODEL_896mk3, "MOTU", "896Mk3"},
     {FW_VENDORID_MOTU, 0, 0x00000019, 0x000001f2, MOTU_MODEL_ULTRALITEmk3, "MOTU", "UltraLiteMk3"},
     {FW_VENDORID_MOTU, 0, 0x0000001b, 0x000001f2, MOTU_MODEL_TRAVELERmk3, "MOTU", "TravelerMk3"},
+    {FW_VENDORID_MOTU, 0, 0x00000021, 0x000001f2, MOTU_MODEL_NONE, "MOTU", "V4HD subdevice 0"},
+    {FW_VENDORID_MOTU, 0, 0x00000022, 0x000001f2, MOTU_MODEL_NONE, "MOTU", "V4HD subdevice 1"},
+    {FW_VENDORID_MOTU, 0, 0x00000023, 0x000001f2, MOTU_MODEL_NONE, "MOTU", "V4HD subdevice 2"},
+    {FW_VENDORID_MOTU, 0, 0x00000024, 0x000001f2, MOTU_MODEL_NONE, "MOTU", "V4HD subdevice 3"},
     {FW_VENDORID_MOTU, 0, 0x00000030, 0x000001f2, MOTU_MODEL_ULTRALITEmk3_HYB, "MOTU", "UltraLiteMk3-hybrid"},
 };
 
@@ -799,6 +809,13 @@ MotuDevice::probe( Util::Configuration& c, ConfigRom& configRom, bool generic)
              && ( supportedDeviceList[i].unit_specifier_id == unitSpecifierId )
            )
         {
+            if (supportedDeviceList[i].model == MOTU_MODEL_NONE) {
+                debugOutput( DEBUG_LEVEL_VERBOSE, "%s %s found but is not currently supported by FFADO\n",
+                    supportedDeviceList[i].vendor_name, supportedDeviceList[i].model_name);
+                debugOutput( DEBUG_LEVEL_VERBOSE, "  unitVersion=0x%08x\n", unitVersion);
+                return false;
+            }
+
             return true;
         }
     }
@@ -839,6 +856,11 @@ MotuDevice::discover()
 
     debugOutput( DEBUG_LEVEL_VERBOSE, "found %s %s\n",
         m_model->vendor_name, m_model->model_name);
+
+    if (m_motu_model == MOTU_MODEL_NONE) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "This MOTU device is not currently supported by FFADO\n");
+        return false;
+    }
 
     if (!buildMixer()) {
         debugWarning("Could not build mixer\n");
