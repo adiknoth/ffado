@@ -61,27 +61,21 @@ namespace Rme {
 // opposed to bus order, which is big endian).  Therefore define our own
 // 32-bit byteswap function to do this.
 #if __BYTE_ORDER == __BIG_ENDIAN
-static inline uint32_t
-ByteSwapToDevice32(uint32_t d)
-{
-    return byteswap_32(d);
-}
-ByteSwapFromDevice32(uint32_t d)
-{
-    return byteswap_32(d);
-}
+#define RME_BYTESWAP32(x)	ByteSwap32(x)
 #else
+#define RME_BYTESWAP32(x)	(x)
+#endif
+
 static inline uint32_t
 ByteSwapToDevice32(uint32_t d)
 {
-    return d;
+    return RME_BYTESWAP32(d);
 }
 static inline uint32_t
 ByteSwapFromDevice32(uint32_t d)
 {
-    return d;
+    return RME_BYTESWAP32(d);
 }
-#endif
 
 Device::Device( DeviceManager& d,
                       std::auto_ptr<ConfigRom>( configRom ))
