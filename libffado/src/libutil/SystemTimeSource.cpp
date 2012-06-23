@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2005-2008 by Pieter Palmers
+ * Copytight (C) 2012 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -36,6 +37,33 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 
 namespace Util {
 
+static clockid_t clock_id = CLOCK_REALTIME;
+
+bool
+SystemTimeSource::setSource(clockid_t id)
+{
+    struct timespec tp;
+    // Determine at runtime whether the kernel has support for the
+    // requested clock source.
+    if (clock_gettime(id, &tp) == 0) {
+        clock_id = id;
+        return true;
+    }
+    return false;
+}
+
+clockid_t
+SystemTimeSource::getSource(void)
+{
+    return clock_id;
+}
+
+int
+SystemTimeSource::clockGettime(struct timespec *tp)
+{
+    return clock_gettime(clock_id, tp);
+}
+
 void
 SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs)
 {
@@ -43,7 +71,7 @@ SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs)
     struct timespec ts;
     ts.tv_sec = usecs / (1000000LL);
     ts.tv_nsec = (usecs % (1000000LL)) * 1000LL;
-    clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
+    clock_nanosleep(clock_id, 0, &ts, NULL);
 }
 
 void
@@ -56,7 +84,7 @@ SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec)
     debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                        "clock_nanosleep until %"PRId64" sec, %"PRId64" nanosec\n",
                        (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
-    int err = clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &ts, NULL);
+    int err = clock_nanosleep(clock_id, TIMER_ABSTIME, &ts, NULL);
     if(err) {
         // maybe signal occurred, but we're going to ignore that
     }
@@ -94,7 +122,7 @@ ffado_microsecs_t
 SystemTimeSource::getCurrentTimeAsUsecs()
 {
     struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
+    clock_gettime(clock_id, &ts);
     return (ffado_microsecs_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
 }
 

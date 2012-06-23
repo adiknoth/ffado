@@ -397,7 +397,7 @@ IsoHandlerManager::IsoTask::waitForActivity()
     struct timespec ts;
     int result;
 
-    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+    if (Util::SystemTimeSource::clockGettime(&ts) == -1) {
         debugError("clock_gettime failed\n");
         return eAR_Error;
     }

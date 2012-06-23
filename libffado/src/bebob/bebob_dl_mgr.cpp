@@ -574,7 +574,7 @@ BeBoB::BootloaderManager::waitForBusReset()
 {
     struct timespec timeout;
     int retcode;
-    clock_gettime(CLOCK_REALTIME, &timeout);
+    Util::SystemTimeSource::clockGettime(&timeout);
     do {
         printf(".");
         fflush(stdout);

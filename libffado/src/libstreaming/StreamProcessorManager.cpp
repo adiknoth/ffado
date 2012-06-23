@@ -163,7 +163,7 @@ StreamProcessorManager::waitForActivity()
 
     if (m_activity_wait_timeout_nsec >= 0) {
 
-        if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
+        if (Util::SystemTimeSource::clockGettime(&ts) == -1) {
             debugError("clock_gettime failed\n");
             return eAR_Error;
         }

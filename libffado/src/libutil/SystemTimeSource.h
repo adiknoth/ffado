@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2005-2008 by Pieter Palmers
+ * Copyright (C) 2012 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -30,6 +31,12 @@
 
 typedef uint64_t ffado_microsecs_t;
 
+// Ensure this is defined even for kernels/glib versions which don't include
+// it.  This allows compile-time testing for the feature.
+#ifndef CLOCK_MONOTONIC_RAW
+#define CLOCK_MONOTONIC_RAW 4
+#endif
+
 namespace Util {
 
 class SystemTimeSource
@@ -39,6 +46,10 @@ private: // don't allow objects to be created
     virtual ~SystemTimeSource() {};
 
 public:
+    static bool setSource(clockid_t id);
+    static clockid_t getSource(void);
+    static int clockGettime(struct timespec *tp);
+
     static ffado_microsecs_t getCurrentTime();
     static ffado_microsecs_t getCurrentTimeAsUsecs();
 

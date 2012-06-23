@@ -25,6 +25,7 @@
 
 #include "Functors.h"
 #include "PosixMutex.h"
+#include "Time.h"
 
 #include <errno.h>
 #include <string.h>
@@ -196,7 +197,7 @@ PosixMessageQueue::Clear()
     MutexLockHelper lock(m_notifyHandlerLock);
     while(countMessages()) {
         struct timespec timeout;
-        clock_gettime(CLOCK_REALTIME, &timeout);
+        Util::SystemTimeSource::clockGettime(&timeout);
         timeout.tv_sec += m_timeout.tv_sec;
         timeout.tv_nsec += m_timeout.tv_nsec;
         if(timeout.tv_nsec >= 1000000000LL) {
@@ -246,7 +247,7 @@ PosixMessageQueue::Send(PosixMessageQueue::Message &m)
     }
 
     struct timespec timeout;
-    clock_gettime(CLOCK_REALTIME, &timeout);
+    Util::SystemTimeSource::clockGettime(&timeout);
     timeout.tv_sec += m_timeout.tv_sec;
     timeout.tv_nsec += m_timeout.tv_nsec;
     if(timeout.tv_nsec >= 1000000000LL) {
@@ -292,7 +293,7 @@ PosixMessageQueue::Receive(PosixMessageQueue::Message &m)
     }
 
     struct timespec timeout;
-    clock_gettime(CLOCK_REALTIME, &timeout);
+    Util::SystemTimeSource::clockGettime(&timeout);
     timeout.tv_sec += m_timeout.tv_sec;
     timeout.tv_nsec += m_timeout.tv_nsec;
     if(timeout.tv_nsec >= 1000000000LL) {

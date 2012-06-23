@@ -26,6 +26,7 @@
 
 #include <stdarg.h>
 #include "libutil/ByteSwap.h"
+#include "libutil/Time.h"
 
 #include <iostream>
 
@@ -179,7 +180,7 @@ DebugModule::print( debug_level_t level,
 
     // add a timing timestamp
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
+    Util::SystemTimeSource::clockGettime(&ts);
     uint64_t ts_usec=(uint64_t)(ts.tv_sec * 1000000LL + ts.tv_nsec / 1000LL);
 
     // format the message such that it remains together

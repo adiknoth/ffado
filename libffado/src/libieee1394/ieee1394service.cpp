@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2005-2008 by Daniel Wagner
  * Copyright (C) 2005-2008 by Pieter Palmers
+ * Copyright (C) 2012 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -350,18 +351,21 @@ Ieee1394Service::initialize( int port )
         // might be available.
         if (raw1394_read_cycle_timer_and_clock != NULL) {
             err = raw1394_read_cycle_timer_and_clock(m_util_handle, &cycle_timer, &local_time, CLOCK_MONOTONIC_RAW);
-            if (!err)
+            if (!err && Util::SystemTimeSource::setSource(CLOCK_MONOTONIC_RAW)==true)
                 m_have_read_ctr_and_clock = true;
         }
 
-        if (m_have_read_ctr_and_clock)
-            debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer_and_clock call, using it.\n");
-        else {
+        if (m_have_read_ctr_and_clock) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer_and_clock call and the\n");
+            debugOutput(DEBUG_LEVEL_VERBOSE, "CLOCK_MONOTONIC_RAW clock source; using them.\n");
+        } else {
             debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer call, using it.\n");
-            debugOutput(DEBUG_LEVEL_NORMAL, "The raw1394_read_cycle_timer_and_clock call is not available.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "The raw1394_read_cycle_timer_and_clock call and/or the CLOCK_MONOTONIC_RAW\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "clock source is not available.\n");
             debugOutput(DEBUG_LEVEL_NORMAL, "Fallback to raw1394_read_cycle_timer.\n");
             debugOutput(DEBUG_LEVEL_NORMAL, "FFADO may be susceptible to NTP-induced clock discontinuities.\n");
-            debugOutput(DEBUG_LEVEL_NORMAL, "Upgrade libraw1394 to version 2.1.0 or later if this is an issue.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "If this is an issue, upgrade libraw1394 to version 2.1.0 or later and/or\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "kernel 2.6.28 or later.\n");
         }
     }
 
@@ -537,7 +541,8 @@ Ieee1394Service::readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time)
 {
     if (m_have_read_ctr_and_clock) {
         int err;
-        err = raw1394_read_cycle_timer_and_clock(m_util_handle, cycle_timer, local_time, CLOCK_MONOTONIC_RAW);
+        err = raw1394_read_cycle_timer_and_clock(m_util_handle, cycle_timer, local_time, 
+                  Util::SystemTimeSource::getSource());
         if(err) {
             debugWarning("raw1394_read_cycle_timer_and_clock: %s\n", strerror(err));
             return false;
