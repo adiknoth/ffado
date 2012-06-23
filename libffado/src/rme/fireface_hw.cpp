@@ -886,7 +886,11 @@ Device::set_hardware_mixergain(unsigned int ctype, unsigned int src_channel,
                  ram_addr += ram_output_block_size;
             break;
         case RME_FF_MM_OUTPUT:
-            ram_addr += 0x0f80 + 4*src_channel;
+            if (m_rme_model == RME_MODEL_FIREFACE400)
+                ram_addr += 0x0f80;
+            else
+                ram_addr += 0x1f80;
+            ram_addr += 4*src_channel;
             break;
     }
 
