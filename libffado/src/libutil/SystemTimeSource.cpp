@@ -83,7 +83,14 @@ SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs)
 void
 SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec)
 {
-#if USE_ABSOLUTE_NANOSLEEP
+// If the system time is based on CLOCK_MONOTONIC_RAW we can't use
+// TIMER_ABSTIME because wake_at_usec will be in terms of
+// CLOCK_MONOTONIC_RAW while clock_nanosleep() can at best use only
+// CLOCK_MONOTONIC.  There is, AFAIK, no guarantee that the two are even
+// remotely related.  For now, resolve this problem by unconditionally
+// disabling the use of TIMER_ABSTIME here, regardless of the setting of
+// USE_ABSOLUTE_NANOSLEEP.  Jonathan Woithe, 25 June 2012.
+#if USE_ABSOLUTE_NANOSLEEP && 0
     // CLOCK_MONOTONIC_RAW isn't supported by clock_nanosleep()
     clockid_t clk = (clock_id==CLOCK_MONOTONIC_RAW)?CLOCK_MONOTONIC:clock_id;
     struct timespec ts;
