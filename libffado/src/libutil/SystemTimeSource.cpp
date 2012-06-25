@@ -71,20 +71,28 @@ SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs)
     struct timespec ts;
     ts.tv_sec = usecs / (1000000LL);
     ts.tv_nsec = (usecs % (1000000LL)) * 1000LL;
-    clock_nanosleep(clock_id, 0, &ts, NULL);
+
+    // clock_nanosleep() is not implemented for CLOCK_MONOTONIC_RAW.
+    // If the clock source is CLOCK_MONOTONIC_RAW, use CLOCK_MONOTONIC
+    // as an approximation for the purposes of sleep timing.
+    clockid_t clk = (clock_id==CLOCK_MONOTONIC_RAW)?CLOCK_MONOTONIC:clock_id;
+
+    clock_nanosleep(clk, 0, &ts, NULL);
 }
 
 void
 SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec)
 {
 #if USE_ABSOLUTE_NANOSLEEP
+    // CLOCK_MONOTONIC_RAW isn't supported by clock_nanosleep()
+    clockid_t clk = (clock_id==CLOCK_MONOTONIC_RAW)?CLOCK_MONOTONIC:clock_id;
     struct timespec ts;
     ts.tv_sec = wake_at_usec / (1000000LL);
     ts.tv_nsec = (wake_at_usec % (1000000LL)) * 1000LL;
     debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                        "clock_nanosleep until %"PRId64" sec, %"PRId64" nanosec\n",
                        (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
-    int err = clock_nanosleep(clock_id, TIMER_ABSTIME, &ts, NULL);
+    int err = clock_nanosleep(clk, TIMER_ABSTIME, &ts, NULL);
     if(err) {
         // maybe signal occurred, but we're going to ignore that
     }
