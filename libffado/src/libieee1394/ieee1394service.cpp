@@ -365,7 +365,7 @@ Ieee1394Service::initialize( int port )
             debugOutput(DEBUG_LEVEL_NORMAL, "Fallback to raw1394_read_cycle_timer.\n");
             debugOutput(DEBUG_LEVEL_NORMAL, "FFADO may be susceptible to NTP-induced clock discontinuities.\n");
             debugOutput(DEBUG_LEVEL_NORMAL, "If this is an issue, upgrade libraw1394 to version 2.1.0 or later and/or\n");
-            debugOutput(DEBUG_LEVEL_NORMAL, "kernel 2.6.28 or later.\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "kernel 2.6.36 or later.\n");
         }
     }
 
