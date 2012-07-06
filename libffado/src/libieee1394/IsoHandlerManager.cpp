@@ -397,7 +397,12 @@ IsoHandlerManager::IsoTask::waitForActivity()
     struct timespec ts;
     int result;
 
-    if (Util::SystemTimeSource::clockGettime(&ts) == -1) {
+    // sem_timedwait() cannot be set up to use any clock rather than 
+    // CLOCK_REALTIME.  Therefore we get the time from CLOCK_REALTIME here.
+    // Doing this rather than Util::SystemTimeSource::clockGettime() doesn't
+    // pose a problem here because the resulting time is only used with
+    // sem_timedwait() to implement timeout functionality.
+    if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
         debugError("clock_gettime failed\n");
         return eAR_Error;
     }

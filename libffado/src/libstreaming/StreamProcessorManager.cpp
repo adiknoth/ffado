@@ -163,7 +163,11 @@ StreamProcessorManager::waitForActivity()
 
     if (m_activity_wait_timeout_nsec >= 0) {
 
-        if (Util::SystemTimeSource::clockGettime(&ts) == -1) {
+        // CLOCK_REALTIME must be used because that's what sem_timedwait() 
+        // uses.  This is safe - regardless of the clock used by
+        // Util::SystemTimeSource - so long as the resulting time is only
+        // used to implement a timeout in sem_timedwait().
+        if (clock_gettime(CLOCK_REALTIME, &ts) == -1) {
             debugError("clock_gettime failed\n");
             return eAR_Error;
         }
