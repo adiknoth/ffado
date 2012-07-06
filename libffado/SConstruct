@@ -235,26 +235,27 @@ if not env.GetOption('clean'):
     if env['ENABLE_SETBUFFERSIZE_API_VER'] == 'auto':
         if not(have_jack):
             print """
-No jack installed: assuming a FFADO setbuffersize-compatible version will be
-used.
+No Jack Audio Connection Kit (JACK) installed: assuming a FFADO 
+setbuffersize-compatible version will be used.
 """
         elif not(good_jack1 or good_jack2):
             FFADO_API_VERSION="8"
             print """
-Installed jack does not support FFADO setbuffersize API: will report earlier
-API version at runtime.  Consider upgrading to jack1 >=0.122.0 or 
-jack2 >=1.9.9 at some point, and then recompile ffado to gain access to this
-added feature.
+Installed Jack Audio Connection Kit (JACK) jack does not support FFADO 
+setbuffersize API: will report earlier API version at runtime.  Consider 
+upgrading to jack1 >=0.122.0 or jack2 >=1.9.9 at some point, and then 
+recompile ffado to gain access to this added feature.
 """
         else:
-            print "Installed jack supports FFADO setbuffersize API"
+            print "Installed Jack Audio Connection Kit (JACK) supports FFADO setbuffersize API"
     elif env['ENABLE_SETBUFFERSIZE_API_VER'] == 'true':
         if (have_jack and not(good_jack1) and not(good_jack2)):
             print """
-SetBufferSize API version is enabled but no suitable version of jack has been
-found.  The resulting FFADO would cause your jackd to abort with "incompatible
-FFADO version".  Please upgrade to jack1 >=0.122.0 or jack2 >=1.9.9, or set
-ENABLE_SETBUFFERSIZE_API_VER to "auto" or "false".
+SetBufferSize API version is enabled but no suitable version of Jack Audio 
+Connection Kit (JACK) has been found.  The resulting FFADO would cause your 
+jackd to abort with "incompatible FFADO version".  Please upgrade to 
+jack1 >=0.122.0 or jack2 >=1.9.9, or set ENABLE_SETBUFFERSIZE_API_VER to "auto"
+or "false".
 """
             # Although it's not strictly an error, in almost every case that 
             # this occurs the user will want to know about it and fix the

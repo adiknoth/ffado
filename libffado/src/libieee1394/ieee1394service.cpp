@@ -354,6 +354,8 @@ Ieee1394Service::initialize( int port )
             if (!err && Util::SystemTimeSource::setSource(CLOCK_MONOTONIC_RAW)==true)
                 m_have_read_ctr_and_clock = true;
         }
+//if (m_have_read_ctr_and_clock)
+//  Util::SystemTimeSource::setSource(CLOCK_REALTIME);
 
         if (m_have_read_ctr_and_clock) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer_and_clock call and the\n");
