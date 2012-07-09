@@ -355,6 +355,18 @@ CycleTimerHelper::Execute()
         #endif
         Util::SystemTimeSource::SleepUsecAbsolute(m_sleep_until);
         debugOutput( DEBUG_LEVEL_ULTRA_VERBOSE, " (%p) back...\n", this);
+    } else {
+        // Since getCycleTimerTicks() is called below,
+        // m_shadow_vars[m_current_shadow_idx] must contain valid data.  On
+        // the first run through, however, it won't because the contents of
+        // m_shadow_vars[] are only set later on in this function.  Thus
+        // set up some vaguely realistic values to prevent unnecessary
+        // delays when reading the cycle timer for the first time.
+        struct compute_vars new_vars;
+        new_vars.ticks = (uint64_t)(m_current_time_ticks);
+        new_vars.usecs = (uint64_t)m_current_time_usecs;
+        new_vars.rate = getRate();
+        m_shadow_vars[0] = new_vars;
     }
 
     uint32_t cycle_timer;
