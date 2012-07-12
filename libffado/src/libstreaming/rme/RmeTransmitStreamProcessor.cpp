@@ -436,10 +436,8 @@ RmeTransmitStreamProcessor::generateSilentPacketHeader (
     // no audio data.
     *sy = 0x00;
 
-    /* Assume the packet will have audio data.  If it turns out we need an empty packet
-     * the length will be overridden by fillNoDataPacketHeader().
-     */
-    *length = n_events*m_event_size;
+    /* Assume the packet will be empty unless proven otherwise */
+    *length = 0;
 
     uint64_t presentation_time;
     unsigned int presentation_cycle;
@@ -517,6 +515,7 @@ unsigned int RmeTransmitStreamProcessor::fillDataPacketHeader (
     // dependent on the current sample rate.  An 'event' is one sample from
     // all channels plus possibly other midi and control data.
     signed n_events = getNominalFramesPerPacket();
+    *length = n_events*m_event_size;
 
     return n_events;
 }
