@@ -385,7 +385,8 @@ RmeTransmitStreamProcessor::generateEmptyPacketHeader (
 //        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 
         streaming_has_dryrun = 1;
-        if (streaming_start_count < (1)*n_events) {
+//        if (streaming_start_count < (1)*n_events) {
+{
             streaming_start_count += n_events;
             *length = n_events * m_event_size;
 //            generateSilentPacketData(data, length);
