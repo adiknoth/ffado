@@ -342,8 +342,8 @@ dpy=0;
                 }
             }
         }
-}
 #endif
+}
 
         return eCRV_OK;
     }
