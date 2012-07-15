@@ -295,6 +295,10 @@ RmeTransmitStreamProcessor::generatePacketData (
     // Size of a single data frame in quadlets
 //    unsigned dbs = m_event_size / 4;
 
+    // Flag the successful start of streaming so generateEmptyPacketHeader()
+    // knows that true empty packets are now required.
+    streaming_has_run=1;
+
     // The number of events per packet expected by the RME is solely
     // dependent on the current sample rate.  An 'event' is one sample from
     // all channels plus possibly other midi and control data.
@@ -375,31 +379,53 @@ RmeTransmitStreamProcessor::generateEmptyPacketHeader (
     // sending data to the DACs and sending data from the ADCs) 
     // packets once it has received a certain amount of data from the PC.
     // Since the receive stream processor won't register as dry running 
-    // until data is received, we therefore need to send some data during
-    // the dry running state in order to kick the process into gear.
+    // until data is received, we therefore need to send some data while in
+    // the initial states during startup in order to kick the process into
+    // gear.
     //
     // Non-empty "empty" packets are not desired during the dry-running
-    // state encountered during closedown, however, so take steps to ensure
-    // they are only sent during the startup sequence.  This logic is
-    // presently a quick and dirty hack and will be revisited in due course
-    // once a final control method has been established.
-    if (streaming_has_run==0 && isDryRunning()) {
+    // state encountered during any other stage (eg: during streaming or
+    // closedown), however, so take steps to ensure they are only sent
+    // during the startup sequence.
+
+    // Experimentation showed that it was necessary to send "silent" packets
+    // for the duration of the pre-streaming setup.  Otherwise the FF800
+    // especially would give a burst of digital noise out of some or all
+    // outputs during the first FFADO streaming startup following the
+    // powering up of the interface (the duration of the burst was estimated
+    // to be of the order of 250 ms at 48 kHz sampling rate).  Therefore if
+    // streaming has not yet run assume we're in the pre-streaming stages
+    // and send a silent data packet.
+    //
+    // While a single packet was sufficient to get data flowing from the
+    // fireface, the noise bursts would almost always occur in this case.
+    //
+    // Sending during the ePS_DryRunning seemed to reduce the probability
+    // of getting the bursts slightly.
+    //
+    // Sending during the ePS_DryRunning and ePS_WaitingForStreamEnable
+    // states was almost enough to prevent the noise burst: the bursts were
+    // far less frequent and when they did happen they were very short.
+    //
+    // Further notes about the noise burst:
+    //  * it was not due to bad data from readFrames().
+    //  * it seemed to be aligned to the time around the transition to
+    //    the ePS_DryRunning state, although this was never explicitly 
+    //    measured.
+    //  * once streaming had been run once the bursts were very unlikely
+    //    to occur on second and subsequent runs until the Fireface was
+    //    powercycled.  Bursts after the initial run were observed on very
+    //    isolated occasions, but they could have been a side effect of
+    //    testing at the time.
+
+    if (streaming_has_run == 0) {
         signed n_events = getNominalFramesPerPacket();
-//        unsigned int cycle = CYCLE_TIMER_GET_CYCLES(pkt_ctr);
 
         streaming_has_dryrun = 1;
-//        if (streaming_start_count < (1)*n_events) {
-{
-            streaming_start_count += n_events;
-            *length = n_events * m_event_size;
-//            generateSilentPacketData(data, length);
-        }
+
+        streaming_start_count += n_events;
+        *length = n_events * m_event_size;
     }
-
-    if (!isDryRunning() && streaming_has_dryrun==1)
-        streaming_has_run=1;
-
-//    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
 
     return eCRV_OK;
 }
