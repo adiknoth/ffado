@@ -468,18 +468,26 @@ RmeTransmitStreamProcessor::generateSilentPacketHeader (
 
     if (cycles_until_transmit < 0)
     {
-        if (cycles_until_presentation >= RME_MIN_CYCLES_BEFORE_PRESENTATION)
-        {
-            m_last_timestamp = presentation_time;
-            m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
-            if (m_tx_dbc > 0xff)
-                m_tx_dbc -= 0x100;
-            return eCRV_Packet;
-        }
-        else
-        {
-            return eCRV_XRun;
-        }
+        // At this point we've theoretically missed the cycle at which
+        // the data needs to be transmitted.  Technically, if 
+        // cycles_until_presentation is greater than or equal to 
+        // RME_MIN_CYCLES_BEFORE_PRESENTATION we have an xrun.  However,
+        // since this is a silent packet there's no real harm in indicating
+        // that a silent packet can still be sent; it's not as if a silent
+        // packet consumes data.  Furthermore, due to the fact that
+        // presentation time is estimated from m_last_timestamp it's possible
+        // that any xrun indication here is a false trigger.
+        //
+        // In any case, when silent packets are utilised during shutdown
+        // an eCRV_XRun return is "invalid" (see StreamProcessor, function
+        // getPacket().  Since silent packets are usually used during startup 
+        // and/or shutdown there's little to be gained by flagging xruns; all
+        // they seem to do is prevent an otherwise clean shutdown.
+        m_last_timestamp = presentation_time;
+        m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
+        if (m_tx_dbc > 0xff)
+            m_tx_dbc -= 0x100;
+        return eCRV_Packet;
     }
     else if (cycles_until_transmit <= RME_MAX_CYCLES_TO_TRANSMIT_EARLY)
     {
