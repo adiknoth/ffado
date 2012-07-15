@@ -347,6 +347,9 @@ dpy=0;
     {
         // FIXME: debugOutput() for initial testing only
         debugOutput(DEBUG_LEVEL_VERBOSE, "readFrames() failure\n");
+        // If there's an xrun, ensure the data doesn't contain junk just
+        // in case it gets sent to the interface.
+        memset(data, 0, *length);
         return eCRV_XRun;
     }
 }
