@@ -32,7 +32,7 @@
 typedef uint64_t ffado_microsecs_t;
 
 // Ensure this is defined even for kernels/glib versions which don't include
-// it.  This allows compile-time testing for the feature.
+// it.  This allows runtime-time testing for the feature.
 #ifndef CLOCK_MONOTONIC_RAW
 #define CLOCK_MONOTONIC_RAW 4
 #endif

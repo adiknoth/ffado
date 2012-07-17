@@ -84,37 +84,35 @@ SystemTimeSource::SleepUsecRelative(ffado_microsecs_t usecs)
 void
 SystemTimeSource::SleepUsecAbsolute(ffado_microsecs_t wake_at_usec)
 {
-// If the system time is based on CLOCK_MONOTONIC_RAW we can't use
-// TIMER_ABSTIME because wake_at_usec will be in terms of
-// CLOCK_MONOTONIC_RAW while clock_nanosleep() can at best use only
-// CLOCK_MONOTONIC.  There is, AFAIK, no guarantee that the two are even
-// remotely related.  For now, resolve this problem by unconditionally
-// disabling the use of TIMER_ABSTIME here, regardless of the setting of
-// USE_ABSOLUTE_NANOSLEEP.  Jonathan Woithe, 25 June 2012.
-#if USE_ABSOLUTE_NANOSLEEP && 0
-    // CLOCK_MONOTONIC_RAW isn't supported by clock_nanosleep()
-    clockid_t clk = (clock_id==CLOCK_MONOTONIC_RAW)?CLOCK_MONOTONIC:clock_id;
-    struct timespec ts;
-    ts.tv_sec = wake_at_usec / (1000000LL);
-    ts.tv_nsec = (wake_at_usec % (1000000LL)) * 1000LL;
-    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
+#if USE_ABSOLUTE_NANOSLEEP
+    // If the system time is based on CLOCK_MONOTONIC_RAW we can't use
+    // TIMER_ABSTIME even if it is available because wake_at_usec will be in
+    // terms of CLOCK_MONOTONIC_RAW while clock_nanosleep() can at best use
+    // only CLOCK_MONOTONIC.  There is, AFAIK, no guarantee that the two are
+    // even remotely related.  For now, resolve this problem by only using
+    // TIMER_ABSTIME when CLOCK_MONOTONIC_RAW is not in use.
+    if (clock_id != CLOCK_MONOTONIC_RAW) {
+        struct timespec ts;
+        ts.tv_sec = wake_at_usec / (1000000LL);
+        ts.tv_nsec = (wake_at_usec % (1000000LL)) * 1000LL;
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
                        "clock_nanosleep until %"PRId64" sec, %"PRId64" nanosec\n",
                        (int64_t)ts.tv_sec, (int64_t)ts.tv_nsec);
-    int err = clock_nanosleep(clk, TIMER_ABSTIME, &ts, NULL);
-    if(err) {
-        // maybe signal occurred, but we're going to ignore that
-    }
-    debugOutputExtreme(DEBUG_LEVEL_VERBOSE,
-                "back with err=%d\n",
-                err);
-#else
-    // only sleep if needed
-    ffado_microsecs_t now = getCurrentTime();
-    if(wake_at_usec >= now) {
-        ffado_microsecs_t to_sleep = wake_at_usec - now;
-        SleepUsecRelative(to_sleep);
-    }
+        int err = clock_nanosleep(clock_id, TIMER_ABSTIME, &ts, NULL);
+        if(err) {
+            // maybe signal occurred, but we're going to ignore that
+        }
+        debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "back with err=%d\n", err);
+    } else
 #endif
+    {
+        // only sleep if needed
+        ffado_microsecs_t now = getCurrentTime();
+        if(wake_at_usec >= now) {
+            ffado_microsecs_t to_sleep = wake_at_usec - now;
+            SleepUsecRelative(to_sleep);
+        }
+    }
 }
 
 ffado_microsecs_t

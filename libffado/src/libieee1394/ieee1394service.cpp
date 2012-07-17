@@ -350,17 +350,17 @@ Ieee1394Service::initialize( int port )
         // considering the option that raw1394_read_cycle_timer_and_clock()
         // might be available.
         if (raw1394_read_cycle_timer_and_clock != NULL) {
-            err = raw1394_read_cycle_timer_and_clock(m_util_handle, &cycle_timer, &local_time, CLOCK_MONOTONIC_RAW);
-            if (!err && Util::SystemTimeSource::setSource(CLOCK_MONOTONIC_RAW)==true)
+            err = raw1394_read_cycle_timer_and_clock(m_util_handle, &cycle_timer, &local_time, CLOCK_MONOTONIC);
+            if (!err && Util::SystemTimeSource::setSource(CLOCK_MONOTONIC)==true)
                 m_have_read_ctr_and_clock = true;
         }
 
         if (m_have_read_ctr_and_clock) {
             debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer_and_clock call and the\n");
-            debugOutput(DEBUG_LEVEL_VERBOSE, "CLOCK_MONOTONIC_RAW clock source; using them.\n");
+            debugOutput(DEBUG_LEVEL_VERBOSE, "CLOCK_MONOTONIC clock source; using them.\n");
         } else {
             debugOutput(DEBUG_LEVEL_VERBOSE, "This system supports the raw1394_read_cycle_timer call, using it.\n");
-            debugOutput(DEBUG_LEVEL_NORMAL, "The raw1394_read_cycle_timer_and_clock call and/or the CLOCK_MONOTONIC_RAW\n");
+            debugOutput(DEBUG_LEVEL_NORMAL, "The raw1394_read_cycle_timer_and_clock call and/or the CLOCK_MONOTONIC\n");
             debugOutput(DEBUG_LEVEL_NORMAL, "clock source is not available.\n");
             debugOutput(DEBUG_LEVEL_NORMAL, "Fallback to raw1394_read_cycle_timer.\n");
             debugOutput(DEBUG_LEVEL_NORMAL, "FFADO may be susceptible to NTP-induced clock discontinuities.\n");
