@@ -47,10 +47,14 @@ Device::wait_while_busy(unsigned int init_delay_ms)
             status = readRegister(RME_FF400_FLASH_STAT_REG);
             if (status == 0)
                 break;
-        } else {
+        } else 
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
             status = readRegister(RME_FF_STATUS_REG1);
             if (status & 0x40000000)
                 break;
+        } else {
+            debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+            return -1;
         }
     }
 
@@ -138,7 +142,8 @@ Device::erase_flash(unsigned int flags)
                 return -1;
         }
         data = 0;
-    } else {
+    } else 
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
         addr = RME_FF400_FLASH_CMD_REG;
         switch (flags) {
             case RME_FF_FLASH_ERASE_VOLUME:
@@ -151,6 +156,9 @@ Device::erase_flash(unsigned int flags)
                 debugOutput(DEBUG_LEVEL_WARNING, "unknown flag %d\n", flags);
                 return -1;
         }
+    } else {
+        debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+        return -1;
     }
 
     err |= writeRegister(addr, data);
@@ -213,6 +221,7 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
     FF_device_flash_settings_t hw_settings;
     signed int i, err = 0;
     unsigned int rev;
+    long long int addr;
 
     // FIXME: the debug output in this function is mostly for testing at
     // present.
@@ -225,9 +234,18 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
     }
 
     // Read settings flash ram block
-    err = read_flash(m_rme_model==RME_MODEL_FIREFACE800?
-      RME_FF800_FLASH_SETTINGS_ADDR:RME_FF400_FLASH_SETTINGS_ADDR, 
-        (quadlet_t *)&hw_settings, sizeof(hw_settings)/sizeof(uint32_t));
+    if (m_rme_model == RME_MODEL_FIREFACE800)
+        addr = RME_FF800_FLASH_SETTINGS_ADDR;
+    else
+    if (m_rme_model == RME_MODEL_FIREFACE400)
+        addr = RME_FF400_FLASH_SETTINGS_ADDR;
+    else {
+        debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+        return -1;
+    }
+    err = read_flash(addr, 
+            (quadlet_t *)&hw_settings, sizeof(hw_settings)/sizeof(uint32_t));
+
     if (err != 0) {
         debugOutput(DEBUG_LEVEL_WARNING, "Error reading device flash settings: %d\n", i);
     } else {
@@ -254,14 +272,20 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         // appropriate.
         for (i=0; i<2; i++)
             settings->mic_phantom[i] = hw_settings.mic_phantom[i];
+
         if (m_rme_model == RME_MODEL_FIREFACE800) {
             for (i=2; i<4; i++)
                 settings->mic_phantom[i] = hw_settings.mic_phantom[i];
-        } else {
+        } else 
+        if (m_rme_model == RME_MODEL_FIREFACE400) {
             // TODO: confirm this is true
             for (i=2; i<4; i++)
                 settings->ff400_input_pad[i-2] = hw_settings.mic_phantom[i];
+        } else {
+            debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+            return -1;
         }
+
         settings->spdif_input_mode = hw_settings.spdif_input_mode;
         settings->spdif_output_emphasis = hw_settings.spdif_output_emphasis;
         settings->spdif_output_pro = hw_settings.spdif_output_pro;
@@ -277,7 +301,8 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         if (m_rme_model == RME_MODEL_FIREFACE800) {
             settings->filter = hw_settings.filter;
             settings->fuzz = hw_settings.fuzz;
-        } else {
+        } else 
+        if (m_rme_model == RME_MODEL_FIREFACE400) {
             // TODO: confirm this is true
             settings->ff400_instr_input[0] = hw_settings.fuzz;
             settings->ff400_instr_input[1] = hw_settings.filter;
@@ -295,7 +320,8 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         // used in the flash by other operating systems.
         if (m_rme_model == RME_MODEL_FIREFACE400)
             settings->phones_level = hw_settings.mic_plug_select[0] + 1;
-        else {
+        else 
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
             settings->input_opt[0] = hw_settings.instrument_plug_select + 1;
             settings->input_opt[1] = hw_settings.mic_plug_select[0] + 1;
             settings->input_opt[2] = hw_settings.mic_plug_select[1] + 1;
@@ -314,13 +340,20 @@ signed int i;
 {
 // Read mixer volume flash ram block
 quadlet_t buf[0x800];
+quadlet_t addr = 0;
   memset(buf, 0xdb, sizeof(buf));
-  i = read_flash(m_rme_model==RME_MODEL_FIREFACE800?
-        RME_FF800_FLASH_MIXER_VOLUME_ADDR:RME_FF400_FLASH_MIXER_VOLUME_ADDR, buf, 32);
-fprintf(stderr,"result=%d\n", i);
-for (i=0; i<32; i++) {
-  fprintf(stderr, "%d: 0x%08x\n", i, buf[i]);
-}
+  if (m_rme_model == RME_MODEL_FIREFACE400)
+      addr = RME_FF400_FLASH_MIXER_VOLUME_ADDR;
+  else
+  if (m_rme_model == RME_MODEL_FIREFACE800)
+      addr = RME_FF800_FLASH_MIXER_VOLUME_ADDR;
+  if (addr != 0) {
+    i = read_flash(addr, buf, 32);
+    fprintf(stderr,"result=%d\n", i);
+    for (i=0; i<32; i++) {
+      fprintf(stderr, "%d: 0x%08x\n", i, buf[i]);
+    }
+  }
 }
 #endif
 
@@ -377,7 +410,8 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
     // read_device_flash_settings().
     if (m_rme_model == RME_MODEL_FIREFACE400)
         hw_settings.mic_plug_select[0] = settings->phones_level - 1;
-    else {
+    else 
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
         hw_settings.instrument_plug_select = settings->input_opt[0] - 1;
         hw_settings.mic_plug_select[0] = settings->input_opt[1] - 1;
         hw_settings.mic_plug_select[1] = settings->input_opt[2] - 1;
@@ -388,8 +422,17 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
     if (err != 0)
         debugOutput(DEBUG_LEVEL_WARNING, "Error erasing settings flash block: %d\n", i);
     else {
-        err = write_flash(m_rme_model==RME_MODEL_FIREFACE800?
-                  RME_FF800_FLASH_SETTINGS_ADDR:RME_FF400_FLASH_SETTINGS_ADDR,
+        long long int addr;
+        if (m_rme_model == RME_MODEL_FIREFACE800)
+            addr = RME_FF800_FLASH_SETTINGS_ADDR;
+        else
+        if (m_rme_model == RME_MODEL_FIREFACE400)
+            addr = RME_FF400_FLASH_SETTINGS_ADDR;
+        else {
+            debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+            return -1;
+        }
+        err = write_flash(addr, 
                   (quadlet_t *)&hw_settings, sizeof(hw_settings)/sizeof(uint32_t));
 
         if (err != 0)

@@ -60,8 +60,15 @@ Device::init_hardware(void)
 {
     signed int ret = 0;
     signed int src, dest;
-    signed int n_channels = (m_rme_model==RME_MODEL_FIREFACE400)?
-                   RME_FF400_MAX_CHANNELS:RME_FF800_MAX_CHANNELS;
+    signed int n_channels;
+
+    switch (m_rme_model) {
+        case RME_MODEL_FIREFACE400: n_channels = RME_FF400_MAX_CHANNELS; break;
+        case RME_MODEL_FIREFACE800: n_channels = RME_FF800_MAX_CHANNELS; break;
+        default:
+          debugOutput(DEBUG_LEVEL_ERROR, "unknown model %d\n", m_rme_model);
+          return -1;
+    }
 
     // Initialises the device's settings structure to a known state and then
     // sets the hardware to reflect this state.
@@ -328,16 +335,21 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
       data[0] |= CR0_PHANTOM_MIC0;
     if (sw_settings->mic_phantom[1])
       data[0] |= CR0_PHANTOM_MIC1;
-    if (m_rme_model == RME_MODEL_FIREFACE800) {
-        if (sw_settings->mic_phantom[2])
-            data[0] |= CR0_FF800_PHANTOM_MIC9;
-        if (sw_settings->mic_phantom[3])
-            data[0] |= CR0_FF800_PHANTOM_MIC10;
-    } else {
-        if (sw_settings->ff400_input_pad[0])
-            data[0] |= CR0_FF400_CH3_PAD;
-        if (sw_settings->ff400_input_pad[1])
-            data[0] |= CR0_FF400_CH4_PAD;
+    switch (m_rme_model) {
+        case RME_MODEL_FIREFACE800:
+            if (sw_settings->mic_phantom[2])
+                data[0] |= CR0_FF800_PHANTOM_MIC9;
+            if (sw_settings->mic_phantom[3])
+                data[0] |= CR0_FF800_PHANTOM_MIC10;
+            break;
+        case RME_MODEL_FIREFACE400:
+            if (sw_settings->ff400_input_pad[0])
+                data[0] |= CR0_FF400_CH3_PAD;
+            if (sw_settings->ff400_input_pad[1])
+                data[0] |= CR0_FF400_CH4_PAD;
+            break;
+        default:
+            break;
     }
 
     /* Phones level */
@@ -399,7 +411,8 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
     // the same bit controls the channel 4 "instrument" option.
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         data[0] |= (sw_settings->filter) ? CR0_FF800_FILTER_FPGA : 0;
-    } else {
+    } else
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
         data[0] |= (sw_settings->ff400_instr_input[1]) ? CR0_FF400_CH4_INSTR : 0;
     }
 
@@ -431,7 +444,8 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
             data[0] |= CR0_FF800_DRIVE_FPGA; // FPGA LED control
         else
             data[1] |= CR1_INSTR_DRIVE;      // CPLD
-    } else {
+    } else 
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
         data[0] |= (sw_settings->ff400_instr_input[0]) ? CR0_FF400_CH3_INSTR : 0;
     }
 
@@ -477,7 +491,13 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
     debugOutput(DEBUG_LEVEL_VERBOSE, "set hardware registers: 0x%08x 0x%08x 0x%08x\n",
       data[0], data[1], data[2]);
 
-    conf_reg = (m_rme_model==RME_MODEL_FIREFACE800)?RME_FF800_CONF_REG:RME_FF400_CONF_REG;
+    switch (m_rme_model) {
+        case RME_MODEL_FIREFACE800: conf_reg = RME_FF800_CONF_REG; break;
+        case RME_MODEL_FIREFACE400: conf_reg = RME_FF400_CONF_REG; break;
+        default:
+            debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+            return -1;
+    }
     if (writeBlock(conf_reg, data, 3) != 0)
         return -1;
 
@@ -496,8 +516,8 @@ Device::read_tco(quadlet_t *tco_data, signed int size)
     quadlet_t buf[4];
     signed int i;
 
-    // The Fireface 400 can't have the TCO fitted
-    if (m_rme_model==RME_MODEL_FIREFACE400)
+    // Only the Fireface 800 can have the TCO fitted
+    if (m_rme_model != RME_MODEL_FIREFACE800)
         return -1;
 
     if (readBlock(RME_FF_TCO_READ_REG, buf, 4) != 0)
@@ -531,9 +551,9 @@ Device::write_tco(quadlet_t *tco_data, signed int size)
     if (size < 4)
         return -1;
 
-    // Don't bother trying to write if the device is a FF400 since the TCO
-    // can't be fitted to this device.
-    if (m_rme_model==RME_MODEL_FIREFACE400)
+    // Don't bother trying to write if the device is not a FF800 since the
+    // TCO can only be fitted to a FF800.
+    if (m_rme_model != RME_MODEL_FIREFACE800)
         return -1;
 
     if (writeBlock(RME_FF_TCO_WRITE_REG, tco_data, 4) != 0)
@@ -698,11 +718,15 @@ Device::set_hardware_dds_freq(signed int freq)
     if (freq < MIN_SPEED || freq > MAX_SPEED)
         return -1;
 
-    if (m_rme_model == RME_MODEL_FIREFACE400)
-        ret = writeRegister(RME_FF400_STREAM_SRATE, freq);
-    else
-        ret = writeRegister(RME_FF800_STREAM_SRATE, freq);
-
+    switch (m_rme_model) {
+        case RME_MODEL_FIREFACE400:
+            ret = writeRegister(RME_FF400_STREAM_SRATE, freq); break;
+        case RME_MODEL_FIREFACE800:
+            ret = writeRegister(RME_FF800_STREAM_SRATE, freq); break;
+        default:
+            debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+            ret = -1;
+    }
     if (ret == 0)
         dev_config->hardware_freq = freq;
 
@@ -733,9 +757,13 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "*** stream init: %d, %d, %d\n",
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         addr = RME_FF400_STREAM_INIT_REG;
         size = RME_FF400_STREAM_INIT_SIZE;
-    } else {
+    } else 
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
         addr = RME_FF800_STREAM_INIT_REG;
         size = RME_FF800_STREAM_INIT_SIZE;
+    } else {
+        debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+        return -1;
     }
 
     return writeBlock(addr, buf, size);
@@ -756,10 +784,14 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"*** starting: listen=%d, num_ch=%d\n", listen_c
         if (m_rme_model == RME_MODEL_FIREFACE400) {
             addr = RME_FF400_STREAM_START_REG;
             data |= (listen_channel << 5);
-        } else {
+        } else 
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
             addr = RME_FF800_STREAM_START_REG;
             if (speed800)
                 data |= RME_FF800_STREAMING_SPEED_800; // Flag 800 Mbps speed
+        } else {
+            debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+            return -1;
         }
 
 debugOutput(DEBUG_LEVEL_VERBOSE, "start 0x%016llx data: %08x\n", addr, data);
@@ -790,9 +822,13 @@ Device::hardware_stop_streaming(void)
         if (m_rme_model == RME_MODEL_FIREFACE400) {
             addr = RME_FF400_STREAM_END_REG;
             size = RME_FF400_STREAM_END_SIZE;
-        } else {
+        } else 
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
             addr = RME_FF800_STREAM_END_REG;
             size = RME_FF800_STREAM_END_SIZE;
+        } else {
+            debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+            return -1;
         }
 
         ret = writeBlock(addr, buf, size);
@@ -864,18 +900,22 @@ Device::set_hardware_mixergain(unsigned int ctype, unsigned int src_channel,
     signed int ram_output_block_size;
     unsigned int ram_addr;
 
-    n_channels = (m_rme_model==RME_MODEL_FIREFACE400)?
-        RME_FF400_MAX_CHANNELS:RME_FF800_MAX_CHANNELS;
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        n_channels = RME_FF400_MAX_CHANNELS;
+        ram_output_block_size = 0x48;
+    } else
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        n_channels = RME_FF800_MAX_CHANNELS;
+        ram_output_block_size = 0x80;
+    } else {
+        debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+        return -1;
+    }
+
     if (src_channel>n_channels || dest_channel>n_channels)
         return -1;
     if (abs(val)>0x10000)
         return -1;
-
-    if (m_rme_model == RME_MODEL_FIREFACE400) {
-        ram_output_block_size = 0x48;
-    } else {
-        ram_output_block_size = 0x80;
-    }
 
     ram_addr = RME_FF_MIXER_RAM;
     switch (ctype) {
@@ -922,8 +962,17 @@ Device::set_hardware_channel_mute(signed int chan, signed int mute) {
 // this could be extended to allow individual channel control.
     quadlet_t buf[28];
     signed int i;
-    signed int n_channels = (m_rme_model==RME_MODEL_FIREFACE400)?
-        RME_FF400_MAX_CHANNELS:RME_FF800_MAX_CHANNELS;
+    signed int n_channels;
+    
+    if (m_rme_model == RME_MODEL_FIREFACE400)
+        n_channels = RME_FF400_MAX_CHANNELS;
+    else
+    if (m_rme_model == RME_MODEL_FIREFACE800)
+        n_channels = RME_FF800_MAX_CHANNELS;
+    else {
+        debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
+        return -1;
+    }
 
     i = 0;
     if (chan < 0) {
