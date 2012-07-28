@@ -82,6 +82,14 @@ device_definitions = (
     mixer = "Generic_Dice_EAP";
     driver = 20;
 },
+{ # Presonus Firestudio Tube, from Tobi Kraus
+    vendorid = 0x000a92;
+    modelid = 0x0000000c;
+    vendorname = "Presonus";
+    modelname = "Firestudio Tube";
+    mixer = "Generic_Dice_EAP";
+    driver = 20;
+},
 { # Entry for Firestudio mobile provided by "Pule" via the forums.
     vendorid    = 0x000a92;
     modelid     = 0x00000011;
