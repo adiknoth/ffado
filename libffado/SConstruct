@@ -27,6 +27,7 @@
 FFADO_API_VERSION = "9"
 FFADO_VERSION="2.999.0"
 
+from subprocess import Popen, PIPE
 import os
 import re
 from string import Template
@@ -182,6 +183,27 @@ conf = Configure( env,
     conf_dir = "cache/",
     log_file = 'cache/config.log' )
 
+version_re = re.compile(r'^(\d+)\.(\d+)\.(\d+)')
+
+def VersionInt(vers):
+    match = version_re.match(vers)
+    if not match:
+        return -1
+    (maj, min, patch) = match.group(1, 2, 3)
+    # For now allow "min" to run up to 65535.  "maj" and "patch" are 
+    # restricted to 0-255.
+    return (int(maj) << 24) | (int(min) << 8) | int(patch)
+
+def CheckJackdVer():
+    print 'Checking jackd version...',
+    ret = Popen("which jackd >/dev/null 2>&1 && jackd --version | cut -d ' ' -f 3", shell=True, stdout=PIPE).stdout.read()[:-1]
+    if (ret == ""):
+        print "not installed"
+        return -1
+    else:
+        print ret
+    return VersionInt(ret)
+
 if env['SERIALIZE_USE_EXPAT']:
     env['SERIALIZE_USE_EXPAT']=1
 else:
@@ -229,9 +251,21 @@ if not env.GetOption('clean'):
     # Provide a way for users to compile newer libffado which will work 
     # against older jack installations which will not accept the new API
     # version reported at runtime.
-    have_jack = conf.CheckPKG('jack >= 0.0.0')
-    good_jack1 = conf.CheckPKG('jack < 1.9.0') and conf.CheckPKG('jack >= 0.122.0')
-    good_jack2 = conf.CheckPKG('jack >= 1.9.9')
+    jackd_ver = CheckJackdVer()
+    if (jackd_ver != -1):
+        # If jackd is available, use the version number reported by it.  This
+        # means users don't have to have jack development files present on
+        # their system for this to work.
+        have_jack = (jackd_ver >= VersionInt('0.0.0'))
+        good_jack1 = (jackd_ver < VersionInt('1.9.0')) and (jackd_ver >= VersionInt('0.122.0'))
+        good_jack2 = (jackd_ver >= VersionInt('1.9.9'))
+    else:
+        # Jackd is not runnable.  Attempt to identify a version from
+        # pkgconfig on the off-chance jack details are available from there.
+        print "Will retry jack detection using pkg-config"
+        have_jack = conf.CheckPKG('jack >= 0.0.0')
+        good_jack1 = conf.CheckPKG('jack < 1.9.0') and conf.CheckPKG('jack >= 0.122.0')
+        good_jack2 = conf.CheckPKG('jack >= 1.9.9')
     if env['ENABLE_SETBUFFERSIZE_API_VER'] == 'auto':
         if not(have_jack):
             print """
