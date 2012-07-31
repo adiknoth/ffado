@@ -544,7 +544,7 @@ Ieee1394Service::readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time)
         err = raw1394_read_cycle_timer_and_clock(m_util_handle, cycle_timer, local_time, 
                   Util::SystemTimeSource::getSource());
         if(err) {
-            debugWarning("raw1394_read_cycle_timer_and_clock: %s\n", strerror(err));
+            debugWarning("raw1394_read_cycle_timer_and_clock error: %s\n", strerror(errno));
             return false;
         }
         return true;
@@ -553,7 +553,7 @@ Ieee1394Service::readCycleTimerReg(uint32_t *cycle_timer, uint64_t *local_time)
         int err;
         err = raw1394_read_cycle_timer(m_util_handle, cycle_timer, local_time);
         if(err) {
-            debugWarning("raw1394_read_cycle_timer: %s\n", strerror(err));
+            debugWarning("raw1394_read_cycle_timer error: %s\n", strerror(errno));
             return false;
         }
         return true;
