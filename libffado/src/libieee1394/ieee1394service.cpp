@@ -409,11 +409,11 @@ Ieee1394Service::initialize( int port )
     debugOutput(DEBUG_LEVEL_VERBOSE, "Minimum SPLIT_TIMEOUT: %d. Current: %d\n", split_timeout, timeout);
     if (timeout < split_timeout) {
         if(!setSplitTimeoutUsecs(getLocalNodeId(), split_timeout+124)) {
-            debugWarning("Could not set SPLIT_TIMEOUT to min requested (%d)\n", split_timeout);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Could not set SPLIT_TIMEOUT to min requested (%d)\n", split_timeout);
         }
         timeout = getSplitTimeoutUsecs(getLocalNodeId());
         if (timeout < split_timeout) {
-            debugWarning("Set SPLIT_TIMEOUT to min requested (%d) did not succeed\n", split_timeout);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Set SPLIT_TIMEOUT to min requested (%d) did not succeed\n", split_timeout);
         }
     }
 
