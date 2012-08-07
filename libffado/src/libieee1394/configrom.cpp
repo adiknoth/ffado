@@ -423,25 +423,60 @@ ConfigRom::getModelName() const
     switch(m_vendorId) {
         case FW_VENDORID_MOTU:
             switch(m_unit_specifier_id) {
+                case 0x00000001:
+                    return "828MkI";
                 case 0x00000003:
                     return "828MkII";
+                case 0x00000005:
+                    return "896HD";
                 case 0x00000009:
                     return "Traveler";
                 case 0x0000000d:
                     return "UltraLite";
                 case 0x0000000f:
                     return "8pre";
-                case 0x00000001:
-                    return "828MkI";
-                case 0x00000005:
-                    return "896HD";
+                case 0x00000015:
+                    return "828Mk3";
+                case 0x00000017:
+                    return "896Mk3";
+                case 0x00000019:
+                    return "UltraliteMk3";
+                case 0x0000001b:
+                    return "TravelerMk3";
+                case 0x00000021:
+                    return "V4HD subdevice 0";
+                case 0x00000022:
+                    return "V4HD subdevice 1";
+                case 0x00000023:
+                    return "V4HD subdevice 2";
+                case 0x00000024:
+                    return "V4HD subdevice 3";
+                case 0x00000030:
+                    return "UltraLiteMk3-hybrid";
                 default:
                     return "unknown";
             }
             break;
         default:
-            return m_modelName;
+            break;
     }
+    // Note: m_nodeVendorId is not the same as m_vendorId; some devices use
+    // one, others use the other.
+    switch (m_nodeVendorId) {
+        case FW_VENDORID_RME:
+            switch (m_unit_version) {
+                case 0x0001:
+                    return "Fireface 800";
+                case 0x0002:
+                    return "Fireface 400";
+                default:
+                    return "unknown";
+            }
+            break;
+        default:
+            break;
+    }
+    return m_modelName;
 }
 
 const std::string
@@ -453,8 +488,15 @@ ConfigRom::getVendorName() const
         case FW_VENDORID_MOTU:
             return "MOTU";
         default:
-            return m_vendorName;
+            break;
     }
+    switch (m_nodeVendorId) {
+        case FW_VENDORID_RME:
+            return "RME";
+        default:
+            break;
+    }
+    return m_vendorName;
 }
 
 const unsigned int
