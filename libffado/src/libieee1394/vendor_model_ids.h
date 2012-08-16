@@ -40,6 +40,7 @@
 #define FW_VENDORID_ALESIS       0x000595
 #define FW_VENDORID_WEISS        0x001C6A
 #define FW_VENDORID_STANTON      0x001260
+#define FW_VENDORID_DNR          0x000F64
 
 // this is the one we assign ourselves
 // maybe once we can get a real one :)
