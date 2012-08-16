@@ -1640,6 +1640,15 @@ Device::initIoFunctions() {
     debugOutput(DEBUG_LEVEL_VERBOSE," UNUSED1 : offset=%04X size=%04d\n", m_unused1_reg_offset, m_unused1_reg_size);
     debugOutput(DEBUG_LEVEL_VERBOSE," UNUSED2 : offset=%04X size=%04d\n", m_unused2_reg_offset, m_unused2_reg_size);
 
+    /* The DnR Axum only works with the following entry. There is a single
+     * clock in the device that needs to be master.
+     * This code is a hack, we should ideally support easier clock selection,
+     * even in case of broken clock name vectors.
+     */
+    if (FW_VENDORID_DNR == getConfigRom().getNodeVendorId()) {
+        writeGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, (0x01 << 8) | 0x07);
+    }
+
     return true;
 }
 
