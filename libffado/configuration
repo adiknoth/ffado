@@ -468,13 +468,6 @@ device_definitions = (
     modelname = "Multimix16 Firewire";
     driver = 20;
 },
-{
-    vendorid = 0x000a92;
-    modelid = 0x0000000b;
-    vendorname = "Presonus";
-    modelname = "Firestudio Project";
-    driver = 20;
-},
 {   # Studiolive 16.4.2, provided by Johan Landman
     vendorid    = 0x000a92;
     modelid     = 0x00000010;
