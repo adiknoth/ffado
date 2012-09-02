@@ -873,7 +873,7 @@ Device::prepareSP(unsigned int i, const Streaming::Port::E_Direction direction_r
 
         for (unsigned int j=0;j<nb_audio;j++) {
             std::ostringstream newname;
-            newname << "input_" << j;
+            newname << "1394_" << i << ":" << j;
             names_audio.push_back(newname.str());
         }
     }
