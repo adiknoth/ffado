@@ -868,7 +868,7 @@ Device::prepareSP(unsigned int i, const Streaming::Port::E_Direction direction_r
 
     // request the channel names
     if (names_audio.size() != nb_audio) {
-        char *dir_str = (direction == Streaming::Port::E_Capture) ? "input" : "output";
+        const char *dir_str = (direction == Streaming::Port::E_Capture) ? "input" : "output";
         debugWarning("The audio channel name vector is incorrect, using default names\n");
         names_audio.clear();
 
