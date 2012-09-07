@@ -84,11 +84,10 @@ class GlobalMixer(QWidget):
                 QMessageBox.Ok )
             self.samplerate.setCurrentIndex( selected )
 
-    @pyqtSignature("QString")
-    def on_nickname_activated( self, name ):
-        #log.debug("on_nickname_activated( %s )" % name)
+    @pyqtSignature("")
+    def on_txtNickname_returnPressed( self ):
         if self.nickname.canChangeValue():
-            asciiData = name.toAscii()
+            asciiData = self.txtNickname.text().toAscii()
             self.nickname.setText( asciiData.data() )
         else:
             self.txtNickname.setText( self.nickname.text() )
