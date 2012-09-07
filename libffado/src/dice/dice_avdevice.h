@@ -79,6 +79,7 @@ public:
     static int getConfigurationId( );
 
     virtual void showDevice();
+    bool canChangeNickname() { return true; }
 
     virtual bool deleteImgFL(const char*, bool v = true);
     virtual bool flashDiceFL(const char*, const char* image = "dice");
