@@ -237,7 +237,7 @@ if not env.GetOption('clean'):
         allpresent &= conf.CheckLib( 'expat', 'XML_ExpatVersion', '#include <expat.h>' )
 
     pkgs = {
-        'libraw1394' : '1.3.0',
+        'libraw1394' : '2.0.5',
         'libiec61883' : '1.1.0',
         'libconfig++' : '0'
         }
