@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2007-2008 Arnold Krille
 # Copyright (C) 2007-2008 Pieter Palmers
+# Copyright (C) 2012 Jonathan Woithe
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -38,7 +39,10 @@ e.Command( "static_info.txt", "#/SConstruct", "python support/tools/ffado-diag-s
 
 e.ScanReplace( "ffado-diag.in" )
 
+e.Program( target = "ffado-dice-ctl", source = "ffado-dice-ctl.cpp" )
+
 e.Install( "$bindir", "ffado-diag" )
+e.Install( "$bindir", "ffado-dice-ctl" )
 e.Install( "$pythondir", "helpstrings.py" )
 e.Install( "$pythondir", "listirqinfo.py" )
 e.Install( "$pythondir", "static_info.txt" )
