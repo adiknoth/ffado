@@ -53,9 +53,9 @@ DECLARE_GLOBAL_DEBUG_MODULE;
 ////////////////////////////////////////////////
 // arg parsing
 ////////////////////////////////////////////////
-const char *argp_program_version = "ffado-ctl 0.1";
+const char *argp_program_version = "ffado-set-nickname 0.1";
 const char *argp_program_bug_address = "<ffado-devel@lists.sf.net>";
-static char doc[] = "ffado-ctl -- Set device nickname from commandline.";
+static char doc[] = "ffado-set-nickname -- Set device nickname from commandline.";
 static char args_doc[] = "NODE_ID";
 static struct argp_option options[] = {
     {"nickname",  'N', "NICKNAME",  0,  "Set device nickname" },
