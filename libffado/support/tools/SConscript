@@ -29,6 +29,14 @@ Import( 'env' )
 
 e = env.Clone()
 
+# Needed to build ffado-ctl
+e.MergeFlags( "-I#/ -I#/src -L%ssrc -lffado" % env['build_base'] )
+if not e.GetOption( "clean" ):
+        if not env['SERIALIZE_USE_EXPAT']:
+                e.MergeFlags( env['LIBXML26_FLAGS'] )
+        else:
+                e.PrependUnique( LIBS=["expat"] )
+
 #
 # For the the ffado-diag tools
 e['PYTHONDIR'] = Template( os.path.join( e['SHAREDIR'], 'python' ) ).safe_substitute( e )
