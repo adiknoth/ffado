@@ -1014,12 +1014,21 @@ Device::addChannelToProcessor(
     std::string id=std::string("dev?");
     dev_name = getNickname();
     if(!getOption("id", id) && dev_name.size() == 0) {
-        debugWarning("Could not retrieve id parameter, defauling to 'dev?'\n");
+        debugWarning("Could not retrieve id parameter, defaulting to 'dev?'\n");
     }
 
     if (dev_name.size() == 0) dev_name = id; 
     std::ostringstream portname;
-    portname << dev_name << "/" << channelInfo->name;
+    //
+    // In r2059 it was thought that using nicknames here would make for
+    // more readable port numbers.  However, this trips up users who
+    // are aggregating two identical DICE devices unless they have manually
+    // set unique nicknames, something which must be done on each interface
+    // reset or power cycle.  For now, revert to the previous behaviour which
+    // uses the GUID while a better solution is pursued.
+    //
+    // portname << dev_name << "/" << channelInfo->name;
+    portname << id << "_" << channelInfo->name;
 
     Streaming::Port *p=NULL;
     switch(channelInfo->portType) {
