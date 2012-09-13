@@ -41,6 +41,7 @@
 #include <string>
 #include <cstring>
 #include <assert.h>
+#include <unistd.h>
 
 #include "libutil/Configuration.h"
 #include "devicemanager.h"
@@ -271,6 +272,7 @@ Device::setSamplingFrequency( int samplingFrequency )
 
     bool supported=false;
     fb_quadlet_t select=0x0;
+    fb_quadlet_t clockreg;
 
     bool snoopMode = false;
     if(!getOption("snoopMode", snoopMode)) {
@@ -353,7 +355,6 @@ Device::setSamplingFrequency( int samplingFrequency )
         }
 #endif
     
-        fb_quadlet_t clockreg;
         if (!readGlobalReg(DICE_REGISTER_GLOBAL_CLOCK_SELECT, &clockreg)) {
             debugError("Could not read CLOCK_SELECT register\n");
             return false;
@@ -377,6 +378,19 @@ Device::setSamplingFrequency( int samplingFrequency )
             debugError("Samplerate register write failed\n");
             return false;
         }
+    }
+
+    // Wait up to 2s for the device to lock to the desired samplerate
+    fb_quadlet_t statusreg;
+    readGlobalReg(DICE_REGISTER_GLOBAL_STATUS, &statusreg);
+    int n_it = 0;
+    while (((statusreg&0x1) == 0 || ((clockreg>>8) & 0xFF) != ((statusreg>>8) & 0xFF)) && n_it < 20) {
+        usleep(100000);
+        readGlobalReg(DICE_REGISTER_GLOBAL_STATUS, &statusreg);
+        n_it++;
+    }
+    if (n_it == 20) {
+        debugWarning(" Initialization started before device was locked\n");
     }
 
     // Update for the new samplerate
