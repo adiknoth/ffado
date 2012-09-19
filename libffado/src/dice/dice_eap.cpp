@@ -244,22 +244,22 @@ EAP::setupSources_low() {
             break;
         case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
             // second audio port (unique to the junior)
-            addSource("InS1", 0, 8, eRS_InS1);
+            addSource("InS1", 0, 8, eRS_InS1, 1);
         case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
             /// these are common to the mini and junior
             // the AES receiver
-            addSource("AES", 0, 8, eRS_AES);
+            addSource("AES", 0, 8, eRS_AES, 1);
             // the ADAT receiver
-            addSource("ADAT", 0, 8, eRS_ADAT);
+            addSource("ADAT", 0, 8, eRS_ADAT, 1);
             // the Mixer outputs
-            addSource("MixerOut", 0, 16, eRS_Mixer);
+            addSource("MixerOut", 0, 16, eRS_Mixer, 1);
             // the first audio port
-            addSource("InS0", 0, 8, eRS_InS0);
+            addSource("InS0", 0, 8, eRS_InS0, 1);
             // the ARM audio port
-            addSource("ARM", 0, 8, eRS_ARM);
+            addSource("ARM", 0, 8, eRS_ARM, 1);
             // the 1394 stream receivers
-            addSource("1394_0", 0, 16, eRS_ARX0);
-            addSource("1394_1", 0, 16, eRS_ARX1);
+            addSource("1394_0", 0, 16, eRS_ARX0, 1);
+            addSource("1394_1", 0, 16, eRS_ARX1, 1);
             // mute
             addSource("Mute", 0, 1, eRS_Muted);
             break;
@@ -305,25 +305,25 @@ EAP::setupDestinations_low() {
             break;
         case DICE_EAP_CAP_GENERAL_CHIP_DICEJR:
             // second audio port (unique to the junior)
-            addDestination("InS1", 0, 8, eRD_InS1);
+            addDestination("InS1", 0, 8, eRD_InS1, 1);
         case DICE_EAP_CAP_GENERAL_CHIP_DICEMINI:
             /// these are common to the mini and junior
             // the AES receiver
-            addDestination("AES", 0, 8, eRD_AES);
+            addDestination("AES", 0, 8, eRD_AES, 1);
             // the ADAT receiver
-            addDestination("ADAT", 0, 8, eRD_ADAT);
+            addDestination("ADAT", 0, 8, eRD_ADAT, 1);
             // the Mixer outputs
-            addDestination("MixerIn", 0, 16, eRD_Mixer0);
-            addDestination("MixerIn", 0, 2, eRD_Mixer1, 16);
+            addDestination("MixerIn", 0, 16, eRD_Mixer0, 1);
+            addDestination("MixerIn", 0, 2, eRD_Mixer1, 17);
             // the first audio port
-            addDestination("InS0", 0, 8, eRD_InS0);
+            addDestination("InS0", 0, 8, eRD_InS0, 1);
             // the ARM audio port
-            addDestination("ARM", 0, 8, eRD_ARM);
+            addDestination("ARM", 0, 8, eRD_ARM, 1);
             // the 1394 stream receivers
-            addDestination("1394_0", 0, 16, eRD_ATX0);
-            addDestination("1394_1", 0, 16, eRD_ATX1);
+            addDestination("1394_0", 0, 16, eRD_ATX0, 1);
+            addDestination("1394_1", 0, 16, eRD_ATX1, 1);
             // mute
-            addDestination("Mute", 0, 1, eRD_Muted);
+            addDestination("Mute", 0, 1, eRD_Muted, 1);
             break;
         default:
             // this is an unsupported chip
