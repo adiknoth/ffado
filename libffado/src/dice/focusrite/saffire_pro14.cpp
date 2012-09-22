@@ -59,15 +59,15 @@ FocusriteEAP::Poti* SaffirePro14::SaffirePro14EAP::getDimPoti(std::string name) 
 // *** This has mainly to be checked ***
 //
 void SaffirePro14::SaffirePro14EAP::setupSources_low() {
-    addSource("SPDIF",  0,  2, eRS_AES, 1);
-    addSource("Mic/Lin", 0,  4, eRS_InS1, 1);
+    addSource("SPDIF",  6,  2, eRS_AES, 1);
+    addSource("Mic/Lin", 0,  4, eRS_InS0, 1);
     addSource("Mixer",  0, 16, eRS_Mixer, 1);
     addSource("1394",   0, 12, eRS_ARX0, 1);
     addSource("Mute",   0,  1, eRS_Muted);
 }
 
 void SaffirePro14::SaffirePro14EAP::setupDestinations_low() {
-    addDestination("SPDIF",  0,  2, eRD_AES, 1);
+    addDestination("SPDIF",  6,  2, eRD_AES, 1);
     addDestination("Line", 0,  4, eRD_InS0, 1);
     addDestination("Mixer",  0, 16, eRD_Mixer0, 1);
     addDestination("Mixer",  0,  2, eRD_Mixer1, 17);
@@ -194,19 +194,20 @@ Dice::EAP* SaffirePro14::createEAP() {
     return new SaffirePro14EAP(*this);
 }
 
-bool SaffirePro14::setNickname(std::string name) {
-    printMessage("Set Nickname not yet implemented for Pro 14\n");
-    return false;
+// ** TODO (if available for Pro14)
+// bool SaffirePro14::setNickname(std::string name) {
+//    printMessage("Set Nickname not yet implemented for Pro 14\n");
+//    return false;
 //  The following is for Pro40
 //    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
-}
-std::string SaffirePro14::getNickname() {
-    char name[16];
-    snprintf(name, 16, ""); // not yet implemented
+// }
+// std::string SaffirePro14::getNickname() {
+//    char name[16];
+//    snprintf(name, 16, ""); // not yet implemented
 //  The following is for Pro40
 //    getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
-    return std::string(name);
-}
+//    return std::string(name);
+// }
 
 }
 }
