@@ -48,6 +48,7 @@
 
 #include "focusrite/saffire_pro40.h"
 #include "focusrite/saffire_pro24.h"
+#include "focusrite/saffire_pro14.h"
 
 using namespace std;
 
@@ -131,6 +132,8 @@ Device::createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
                 case 0x00000007:
                 case 0x00000008:
                     return new Focusrite::SaffirePro24(d, configRom);
+                case 0x00000009:
+                    return new Focusrite::SaffirePro14(d, configRom);
                 default: // return a plain Dice device
                     return new Device(d, configRom);
            }

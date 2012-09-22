@@ -52,6 +52,7 @@
 
 #include "focusrite/saffire_pro40.h"
 #include "focusrite/saffire_pro24.h"
+#include "focusrite/saffire_pro14.h"
 
 using namespace std;
 
