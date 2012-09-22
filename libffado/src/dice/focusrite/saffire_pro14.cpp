@@ -194,20 +194,17 @@ Dice::EAP* SaffirePro14::createEAP() {
     return new SaffirePro14EAP(*this);
 }
 
-// ** TODO (if available for Pro14)
-// bool SaffirePro14::setNickname(std::string name) {
-//    printMessage("Set Nickname not yet implemented for Pro 14\n");
-//    return false;
-//  The following is for Pro40
+bool SaffirePro14::setNickname(std::string name) {
+// delete these two lines after successfull test for reading 
+   printMessage("Set Nickname will be implemented for Pro 14 after testing\n");
+   return false;
 //    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
-// }
-// std::string SaffirePro14::getNickname() {
-//    char name[16];
-//    snprintf(name, 16, ""); // not yet implemented
-//  The following is for Pro40
-//    getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
-//    return std::string(name);
-// }
+}
+std::string SaffirePro14::getNickname() {
+   char name[16];
+   getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
+   return std::string(name);
+}
 
 }
 }

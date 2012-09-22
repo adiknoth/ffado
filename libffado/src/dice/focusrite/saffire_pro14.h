@@ -44,11 +44,11 @@ public:
 
     virtual void showDevice();
 
-// ** TODO (if available for Pro 14)
+// To be changed after succesfull testing for reading
     bool canChangeNickname() { return false; }
 //    bool canChangeNickname() { return true; }
-//    bool setNickname(std::string);
-//    std::string getNickname();
+    bool setNickname(std::string);
+    std::string getNickname();
 
 private:
 
