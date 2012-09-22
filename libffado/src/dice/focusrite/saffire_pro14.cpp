@@ -37,10 +37,10 @@ int SaffirePro14::SaffirePro14EAP::commandToFix(unsigned offset) {
     if (offset == 0x5C) return 4;
     return 0;
 }
-FocusriteEAP::Poti* SaffirePro40::SaffirePro40EAP::getMonitorPoti(std::string name) {
+FocusriteEAP::Poti* SaffirePro14::SaffirePro14EAP::getMonitorPoti(std::string name) {
     return new FocusriteEAP::Poti(this, name, 0x54);
 }
-FocusriteEAP::Poti* SaffirePro40::SaffirePro40EAP::getDimPoti(std::string name) {
+FocusriteEAP::Poti* SaffirePro14::SaffirePro14EAP::getDimPoti(std::string name) {
     return new FocusriteEAP::Poti(this, name, 0x58);
 }
 
@@ -79,11 +79,11 @@ void SaffirePro14::SaffirePro14EAP::setupDestinations_low() {
 
 // 88.2/96 kHz
 //
-void SaffirePro40::SaffirePro40EAP::setupSources_mid() {
+void SaffirePro14::SaffirePro14EAP::setupSources_mid() {
     setupSources_low();
 }
 
-void SaffirePro40::SaffirePro40EAP::setupDestinations_mid() {
+void SaffirePro14::SaffirePro14EAP::setupDestinations_mid() {
     setupDestinations_low();
 }
 
@@ -165,8 +165,8 @@ SaffirePro14::SaffirePro14EAP::setupDefaultRouterConfig_mid() {
  *  High rate not supported
  */
 void
-SaffirePro40::SaffirePro40EAP::setupDefaultRouterConfig_high() {
-    printMessage("High (192 kHz) sample rate not supported by Saffire Pro 40\n");
+SaffirePro14::SaffirePro14EAP::setupDefaultRouterConfig_high() {
+    printMessage("High (192 kHz) sample rate not supported by Saffire Pro 14\n");
 }
 
 SaffirePro14::~SaffirePro14()
@@ -196,13 +196,13 @@ Dice::EAP* SaffirePro14::createEAP() {
 
 bool SaffirePro14::setNickname(std::string name) {
     printMessage("Set Nickname not yet implemented for Pro 14\n");
-    return;
+    return false;
 //  The following is for Pro40
 //    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
 }
 std::string SaffirePro14::getNickname() {
     char name[16];
-    snprintf(name, 16, "Not implemented");
+    snprintf(name, 16, ""); // not yet implemented
 //  The following is for Pro40
 //    getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
     return std::string(name);
