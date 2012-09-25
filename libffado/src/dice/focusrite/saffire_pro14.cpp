@@ -59,18 +59,18 @@ FocusriteEAP::Poti* SaffirePro14::SaffirePro14EAP::getDimPoti(std::string name) 
 // *** This has mainly to be checked ***
 //
 void SaffirePro14::SaffirePro14EAP::setupSources_low() {
-    addSource("SPDIF",  6,  2, eRS_AES, 1);
+    addSource("SPDIF/In",  6,  2, eRS_AES, 1);
     addSource("Mic/Lin", 0,  4, eRS_InS0, 1);
-    addSource("Mixer",  0, 16, eRS_Mixer, 1);
+    addSource("Mixer/Out",  0, 16, eRS_Mixer, 1);
     addSource("1394",   0, 12, eRS_ARX0, 1);
     addSource("Mute",   0,  1, eRS_Muted);
 }
 
 void SaffirePro14::SaffirePro14EAP::setupDestinations_low() {
-    addDestination("SPDIF",  6,  2, eRD_AES, 1);
+    addDestination("SPDIF/Out",  6,  2, eRD_AES, 1);
     addDestination("Line", 0,  4, eRD_InS0, 1);
-    addDestination("Mixer",  0, 16, eRD_Mixer0, 1);
-    addDestination("Mixer",  0,  2, eRD_Mixer1, 17);
+    addDestination("Mixer/In",  0, 16, eRD_Mixer0, 1);
+    addDestination("Mixer/In",  0,  2, eRD_Mixer1, 17);
     addDestination("1394",   0, 6, eRD_ATX0, 1);
     addDestination("Loop",   6,  2, eRD_ATX0, 1);
 // Is a Mute destination useful ?
