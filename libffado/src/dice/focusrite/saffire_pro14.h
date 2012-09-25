@@ -44,9 +44,7 @@ public:
 
     virtual void showDevice();
 
-// To be changed after succesfull testing for reading
-    bool canChangeNickname() { return false; }
-//    bool canChangeNickname() { return true; }
+    bool canChangeNickname() { return true; }
     bool setNickname(std::string);
     std::string getNickname();
 

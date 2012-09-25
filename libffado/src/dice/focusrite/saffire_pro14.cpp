@@ -195,15 +195,12 @@ Dice::EAP* SaffirePro14::createEAP() {
 }
 
 bool SaffirePro14::setNickname(std::string name) {
-// delete these two lines after successfull test for reading 
-   printMessage("Set Nickname will be implemented for Pro 14 after testing\n");
-   return false;
-//    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
+    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
 }
 std::string SaffirePro14::getNickname() {
-   char name[16];
-   getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
-   return std::string(name);
+    char name[16];
+    getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
+    return std::string(name);
 }
 
 }
