@@ -557,23 +557,17 @@ class Motu(QWidget):
         widget.hide()
         widget.setEnabled(False)
 
-    def initValues(self):
-        # Is the device streaming?
-        self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
-        log.debug("device streaming flag: %d" % (self.is_streaming))
+    def initValues_g1(self):
+        # Set up widgets for generation-1 devices (only the 828mk1 for now). 
+        # For now disable all mix faders and analog controls since we don't
+        # know how to control them (and it's not clear that they are even
+        # present in the hardware).
+        self.disable_hide(self.mixtab)
+        self.disable_hide(self.masterbox)
+        self.disable_hide(self.analog_settings_box)
 
-        # Retrieve other device settings as needed and customise the UI
-        # based on these options.
-        self.model = self.hw.getDiscrete('/Mixer/Info/Model')
-        log.debug("device model identifier: %d" % (self.model))
-        self.sample_rate = self.hw.getDiscrete('/Mixer/Info/SampleRate')
-        log.debug("device sample rate: %d" % (self.sample_rate))
-
-        # For the moment none of the "Mk3" (aka Generation-3) devices are
-        # supported by ffado-mixer.
-        if (self.model==MOTU_MODEL_828mk3 or self.model==MOTU_MODEL_ULTRALITEmk3 or self.model==MOTU_MODEL_ULTRALITEmk3_HYB or self.model==MOTU_MODEL_TRAVELERmk3 or self.model==MOTU_MODEL_896HDmk3):
-            log.debug("Generation-3 MOTU devices are not yet supported by ffado-mixer")
-            return
+    def initValues_g2(self):
+        # Set up widgets for generation-2 devices
 
         # The 828Mk2 has separate Mic inputs but no AES/EBU, so use the
         # AES/EBU mixer controls as "Mic" controls.  If a device comes along
@@ -766,6 +760,28 @@ class Motu(QWidget):
             self.disable_hide(self.spdif2_trimgain);
             self.disable_hide(self.spdif2_trimgain_label);
             self.disable_hide(self.spdif2ctrl);
+
+    def initValues(self):
+        # Is the device streaming?
+        self.is_streaming = self.hw.getDiscrete('/Mixer/Info/IsStreaming')
+        log.debug("device streaming flag: %d" % (self.is_streaming))
+
+        # Retrieve other device settings as needed and customise the UI
+        # based on these options.
+        self.model = self.hw.getDiscrete('/Mixer/Info/Model')
+        log.debug("device model identifier: %d" % (self.model))
+        self.sample_rate = self.hw.getDiscrete('/Mixer/Info/SampleRate')
+        log.debug("device sample rate: %d" % (self.sample_rate))
+
+        # For the moment none of the "Mk3" (aka Generation-3) devices are
+        # supported by ffado-mixer.
+        if (self.model==MOTU_MODEL_828mk3 or self.model==MOTU_MODEL_ULTRALITEmk3 or self.model==MOTU_MODEL_ULTRALITEmk3_HYB or self.model==MOTU_MODEL_TRAVELERmk3 or self.model==MOTU_MODEL_896HDmk3):
+            log.debug("Generation-3 MOTU devices are not yet supported by ffado-mixer")
+            return
+        elif (self.model==MOTU_MODEL_828MkI):
+            self.initValues_g1()
+        else:
+            self.initValues_g2()
 
         # Now fetch the current values into the respective controls.  Don't
         # bother fetching controls which are disabled.

@@ -38,6 +38,7 @@ extern const MotuMixer Mixer_Ultralite;
 extern const MotuMixer Mixer_828Mk2;
 extern const MotuMixer Mixer_896HD;
 extern const MotuMixer Mixer_8pre;
+extern const MotuMixer Mixer_828Mk1;
 
 }
 

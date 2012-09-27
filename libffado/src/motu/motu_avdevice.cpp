@@ -742,7 +742,7 @@ const DevicePropertyEntry DevicesProperty[] = {
     { PORTGROUPS(8PRE),
       Ports_8PRE,         N_ELEMENTS( Ports_8PRE ),          96000, &Mixer_8pre, NULL, },
     { PORTGROUPS(828MKI),
-      Ports_828MKI,       N_ELEMENTS( Ports_828MKI ),        48000 },
+      Ports_828MKI,       N_ELEMENTS( Ports_828MKI ),        48000, &Mixer_828Mk1, NULL, },
     { PORTGROUPS(896HD),
       Ports_896HD,        N_ELEMENTS( Ports_896HD ),        192000, &Mixer_896HD, NULL, },
     { PORTGROUPS(828mk3),

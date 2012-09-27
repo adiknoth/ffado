@@ -45,19 +45,24 @@ MotuDevice::buildMixerAudioControls(void) {
     unsigned int bus, ch, i;
 
     if (DevicesProperty[m_motu_model-1].mixer == NULL) {
-        debugOutput(DEBUG_LEVEL_INFO, "No pre-Mark3 mixer controls defined for model %d\n", m_motu_model);
-        result = false;
+        debugOutput(DEBUG_LEVEL_INFO, "No pre-Mark3 mixer defined for model %d\n", m_motu_model);
+        return true;
     } else {
         buses = DevicesProperty[m_motu_model-1].mixer->mixer_buses;
+        result = false;
         if (buses == NULL) {
-            debugOutput(DEBUG_LEVEL_WARNING, "No buses defined for model %d\n", m_motu_model);
-            result = false;
-        }
+            debugOutput(DEBUG_LEVEL_INFO, "No mixer buses defined for model %d\n", m_motu_model);
+        } else
+            result = true;
         channels = DevicesProperty[m_motu_model-1].mixer->mixer_channels;
         if (channels == NULL) {
-            debugOutput(DEBUG_LEVEL_WARNING, "No channels defined for model %d\n", m_motu_model);
-            result = false;
-        }
+            debugOutput(DEBUG_LEVEL_INFO, "No mixer channels defined for model %d\n", m_motu_model);
+        } else
+            result = true;
+        if (DevicesProperty[m_motu_model-1].mixer->mixer_ctrl == NULL) {
+            debugOutput(DEBUG_LEVEL_INFO, "No mixer device controls defined for model %d\n", m_motu_model);
+        } else
+            result = true;
     }
     if (result == false) {
         return true;

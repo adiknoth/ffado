@@ -304,6 +304,12 @@ const MixerCtrl MixerCtrls_8pre[] = {
     {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
 };
 
+const MixerCtrl MixerCtrls_828Mk1[] = {
+    /* For optical mode controls, the "register" is used to indicate direction */
+    {"Control/OpticalIn_mode", "Optical input mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_IN},
+    {"Control/OpticalOut_mode", "Optical output mode ", "", MOTU_CTRL_OPTICAL_MODE, MOTU_CTRL_DIR_OUT},
+};
+
 const MotuMixer Mixer_Traveler = MOTUMIXER(
     MixerCtrls_Traveler, MixerBuses_Traveler, MixerChannels_Traveler);
 
@@ -318,5 +324,11 @@ const MotuMixer Mixer_896HD = MOTUMIXER(
 
 const MotuMixer Mixer_8pre = MOTUMIXER(
     MixerCtrls_8pre, MixerBuses_8pre, MixerChannels_8pre);
+
+// Since we don't have channel or bus lists yet, the mixer definition for
+// the 828Mk1 must be done without the use of the MOTUMIXER() macro.
+const MotuMixer Mixer_828Mk1 = { 
+  MixerCtrls_828Mk1, N_ELEMENTS(MixerCtrls_828Mk1),
+  NULL, 0, NULL, 0};
 
 }
