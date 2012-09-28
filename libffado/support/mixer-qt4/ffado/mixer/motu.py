@@ -566,6 +566,18 @@ class Motu(QWidget):
         self.disable_hide(self.masterbox)
         self.disable_hide(self.analog_settings_box)
 
+        # The 828mk1 didn't have meter controls
+        self.disable_hide(self.meter_src)
+        self.disable_hide(self.aesebu_meter)
+        self.disable_hide(self.peakhold_time)
+        self.disable_hide(self.cliphold_time)
+
+        # For the moment hide this control too since it's not clear how
+        # it might be used to interact with the 828mk1.  Ultimately we
+        # may be able to reset its items and use it for the monitor source
+        # selector.
+        self.disable_hide(self.phones_src)
+
     def initValues_g2(self):
         # Set up widgets for generation-2 devices
 
