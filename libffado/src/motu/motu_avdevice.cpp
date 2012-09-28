@@ -1359,14 +1359,18 @@ MotuDevice::getSupportedClockSources() {
     r.push_back(s);
     s = clockIdToClockSource(MOTU_CLKSRC_SMPTE);
     r.push_back(s);
-    s = clockIdToClockSource(MOTU_CLKSRC_WORDCLOCK);
-    r.push_back(s);
+
+    /* The 828mk1 didn't have a wordclock sync option */
+    if (device_gen != MOTU_DEVICE_G1) {
+        s = clockIdToClockSource(MOTU_CLKSRC_WORDCLOCK);
+        r.push_back(s);
+    }
 
     /* The 9-pin ADAT sync was only present on selected G2
-     * devices.
+     * devices.  The 828mk1 also offered this.
      */
     if (m_motu_model==MOTU_MODEL_828mkII || m_motu_model==MOTU_MODEL_TRAVELER ||
-        m_motu_model==MOTU_MODEL_896HD) {
+        m_motu_model==MOTU_MODEL_896HD || m_motu_model==MOTU_MODEL_828MkI) {
         s = clockIdToClockSource(MOTU_CLKSRC_ADAT_9PIN);
         r.push_back(s);
     }
