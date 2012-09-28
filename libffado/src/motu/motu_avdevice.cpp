@@ -1715,7 +1715,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: read isoctl: %x\n", isoctrl);
                     MOTU_G1_C1_ISO_RX_ACTIVE | MOTU_G1_C1_ISO_RX_WREN);
         isoctrl |= (m_iso_recv_channel << MOTU_G1_C1_ISO_TX_CH_BIT0);
         isoctrl |= (m_iso_send_channel << MOTU_G1_C1_ISO_RX_CH_BIT0);
-        isoctrl |= (MOTU_G1_IO_ENABLE_0 | MOTU_G1_IO_ENABLE_1);
+        isoctrl |= (MOTU_G1_IO_ENABLE_0);
         WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
 debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: first isoctrl: %x\n", isoctrl);
 

@@ -134,10 +134,10 @@
 #define MOTU_G1_RATE_48000         0x0004
 
 // Clock source control bits in MOTU_G1_REG_CONFIG
-#define MOTU_G1_CLKSRC_MASK        0x0003
-#define MOTU_G1_CLKSRC_INTERNAL    0x0000
+#define MOTU_G1_CLKSRC_MASK        0x0023
+#define MOTU_G1_CLKSRC_INTERNAL    0x0020
 #define MOTU_G1_CLKSRC_ADAT_9PIN   0x0001
-#define MOTU_G1_CLKSRC_SPDIF       0x0002
+#define MOTU_G1_CLKSRC_SPDIF       0x0022
 #define MOTU_G1_CLKSRC_UNCHANGED   MOTU_CLKSRC_UNCHANGED
 
 // Monitor control bits in MOTU_G1_REG_CONFIG
@@ -166,7 +166,6 @@
 
 // Other control bits in MOTU_G1_REG_CONFIG
 #define MOTU_G1_IO_ENABLE_0        0x0008  // To be confirmed
-#define MOTU_G1_IO_ENABLE_1        0x0020  // To be confirmed
 
 /* Mark3 device registers - these don't always have MOTU_BASE_ADDR as the
  * base address so for now we'll define them as absolute addresses.  The
