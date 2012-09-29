@@ -281,11 +281,18 @@ Dice::EAP* SaffirePro40::createEAP() {
 }
 
 bool SaffirePro40::setNickname(std::string name) {
-    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
+    signed int len = name.size();
+    // The device has room for at most 16 characters
+    if (len > 16)
+      len = 16;
+    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), len);
 }
 std::string SaffirePro40::getNickname() {
-    char name[16];
+    char name[20];
     getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
+    // The device supplies at most 16 characters.  Ensure the string is
+    // NULL terminated.
+    name[16] = 0;
     return std::string(name);
 }
 
