@@ -1684,6 +1684,7 @@ bool
 MotuDevice::startStreamByIndex(int i) {
 
 quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
+quadlet_t config2_reg = ReadRegister(MOTU_G1_REG_CONFIG_2);
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         // The 828MkI device does this differently.  In particular it does
@@ -1709,19 +1710,33 @@ quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
         /* First send the iso channels to the control register.  Note that
          * as for other MOTU devices bit 24 enables changes to the MOTU's
          * iso tx settings while bit 31 enables iso rx changes.
-         *
-         * At this point also make sure that two additional bits, which
-         * appear to be I/O enable bits, are set.
          */
 debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: read isoctl: %x\n", isoctrl);
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: read config2: %x\n", config2_reg);
         isoctrl &= ~MOTU_G1_C1_ISO_INFO_MASK;
-        isoctrl |= (MOTU_G1_C1_ISO_TX_ACTIVE | MOTU_G1_C1_ISO_TX_WREN |
-                    MOTU_G1_C1_ISO_RX_ACTIVE | MOTU_G1_C1_ISO_RX_WREN);
+        isoctrl |= (MOTU_G1_C1_ISO_TX_WREN | MOTU_G1_C1_ISO_RX_WREN);
         isoctrl |= (m_iso_recv_channel << MOTU_G1_C1_ISO_TX_CH_BIT0);
         isoctrl |= (m_iso_send_channel << MOTU_G1_C1_ISO_RX_CH_BIT0);
         isoctrl |= (MOTU_G1_IO_ENABLE_0);
         WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
-debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: first isoctrl: %x\n", isoctrl);
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 1: %x\n", isoctrl);
+
+        /* Follow this with a setting of the config2 register.  The purpose
+         * of doing this is unclear, but it's done by other drivers so
+         * we should too, at least until we have something working.
+         */
+        WriteRegister(MOTU_G1_REG_CONFIG_2, config2_reg);
+
+        /* Next up, repeat the setting of MOTU_REG_ISOCTRL but include
+         * two additional bits which appear to be I/O enable bits: that is,
+         * they enable the sending and receiving of audio data by the 
+         * device.  Theoretically this could be done as part of the first
+         * write, but on other systems it's split so until we've go the 
+         * device working we'll keep it that way.
+         */
+        isoctrl |= (MOTU_G1_C1_ISO_TX_ACTIVE | MOTU_G1_C1_ISO_RX_ACTIVE);
+        WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 2: %x\n", isoctrl);
 
         /* With the channel details configured streaming is started.  This
          * could conceivably be done in a single write along with the channel
@@ -1731,9 +1746,9 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: first isoctrl: %x\n", isoctrl);
         isoctrl |= MOTU_G1_C1_ISO_ENABLE;
         WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
 
-debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: final isoctrl: %x\n", isoctrl);
-debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: 0b10 reg: %x\n",
-  ReadRegister(MOTU_G1_REG_CONFIG_2));
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 3: %x\n", isoctrl);
+// debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: 0b10 reg: %x\n",
+//   ReadRegister(MOTU_G1_REG_CONFIG_2));
 
 #else
   WriteRegister(0xb04, 0xffc10001);
