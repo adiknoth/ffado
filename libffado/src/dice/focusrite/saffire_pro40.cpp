@@ -281,19 +281,43 @@ Dice::EAP* SaffirePro40::createEAP() {
 }
 
 bool SaffirePro40::setNickname(std::string name) {
-    signed int len = name.size();
-    // The device has room for at most 16 characters
-    if (len > 16)
-      len = 16;
-    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), len);
+    char nickname[SAFFIRE_PRO40_APP_NICK_NAME_SIZE+1];
+
+    // The device has room for SAFFIRE_PRO40_APP_NICK_NAME_SIZE characters.
+    // Erase supplementary characters or fill-in with NULL character if necessary
+    strncpy(nickname, name.c_str(), SAFFIRE_PRO40_APP_NICK_NAME_SIZE);
+
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)nickname, SAFFIRE_PRO40_APP_NICK_NAME_SIZE/4);
+    #endif
+
+    if (!getEAP()->writeRegBlock(Dice::EAP::eRT_Application, SAFFIRE_PRO40_REGISTER_APP_NICK_NAME, 
+                                 (quadlet_t*)nickname, SAFFIRE_PRO40_APP_NICK_NAME_SIZE)) {
+        debugError("Could not write nickname string \n");
+        return false;
+    }
+    return true;
 }
 std::string SaffirePro40::getNickname() {
-    char name[20];
-    getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
-    // The device supplies at most 16 characters.  Ensure the string is
+    char nickname[SAFFIRE_PRO40_APP_NICK_NAME_SIZE+1];
+    if (!getEAP()->readRegBlock(Dice::EAP::eRT_Application, SAFFIRE_PRO40_REGISTER_APP_NICK_NAME, 
+                                (quadlet_t*)nickname, SAFFIRE_PRO40_APP_NICK_NAME_SIZE)){
+        debugError("Could not read nickname string \n");
+        return std::string("(unknown)");
+    }
+
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)nickname, SAFFIRE_PRO40_APP_NICK_NAME_SIZE/4);
+    #endif
+
+    // The device supplies at most SAFFIRE_PRO40_APP_NICK_NAME_SIZE characters.  Ensure the string is
     // NULL terminated.
-    name[16] = 0;
-    return std::string(name);
+    nickname[SAFFIRE_PRO40_APP_NICK_NAME_SIZE] = 0;
+    return std::string(nickname);
 }
 
 }
