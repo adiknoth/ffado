@@ -31,6 +31,11 @@
 
 #include "focusrite_eap.h"
 
+// Nickname register
+#define SAFFIRE_PRO14_REGISTER_APP_NICK_NAME 0x44
+// NOTE: in bytes
+#define SAFFIRE_PRO14_APP_NICK_NAME_SIZE 16
+
 namespace Dice {
 namespace Focusrite {
 

@@ -56,8 +56,6 @@ FocusriteEAP::Poti* SaffirePro14::SaffirePro14EAP::getDimPoti(std::string name) 
 //  - 12 ieee1394 outputs
 //  - 16 mixer outputs
 //
-// *** This has mainly to be checked ***
-//
 void SaffirePro14::SaffirePro14EAP::setupSources_low() {
     addSource("SPDIF/In",  6,  2, eRS_AES, 1);
     addSource("Mic/Lin", 0,  4, eRS_InS0, 1);
@@ -109,7 +107,6 @@ SaffirePro14::SaffirePro14( DeviceManager& d,
 /**
  * The default configurations for the Saffire Pro 14 router.
  *  For coherence with hardware, destinations must follow a specific ordering
- *** Encode by analogy with Pro40/Pro24: Testing required ***
  */
 void
 SaffirePro14::SaffirePro14EAP::setupDefaultRouterConfig_low() {
@@ -195,12 +192,43 @@ Dice::EAP* SaffirePro14::createEAP() {
 }
 
 bool SaffirePro14::setNickname(std::string name) {
-    return getEAP()->writeRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name.c_str(), name.size());
+    char nickname[SAFFIRE_PRO14_APP_NICK_NAME_SIZE+1];
+
+    // The device has room for SAFFIRE_PRO14_APP_NICK_NAME_SIZE characters.
+    // Erase supplementary characters or fill-in with NULL character if necessary
+    strncpy(nickname, name.c_str(), SAFFIRE_PRO14_APP_NICK_NAME_SIZE);
+
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)nickname, SAFFIRE_PRO14_APP_NICK_NAME_SIZE/4);
+    #endif
+
+    if (!getEAP()->writeRegBlock(Dice::EAP::eRT_Application, SAFFIRE_PRO14_REGISTER_APP_NICK_NAME, 
+                                 (quadlet_t*)nickname, SAFFIRE_PRO14_APP_NICK_NAME_SIZE)) {
+        debugError("Could not write nickname string \n");
+        return false;
+    }
+    return true;
 }
 std::string SaffirePro14::getNickname() {
-    char name[16];
-    getEAP()->readRegBlock(Dice::EAP::eRT_Application, 0x44, (quadlet_t*)name, 16);
-    return std::string(name);
+    char nickname[SAFFIRE_PRO14_APP_NICK_NAME_SIZE+1];
+    if (!getEAP()->readRegBlock(Dice::EAP::eRT_Application, SAFFIRE_PRO14_REGISTER_APP_NICK_NAME, 
+                                (quadlet_t*)nickname, SAFFIRE_PRO14_APP_NICK_NAME_SIZE)){
+        debugError("Could not read nickname string \n");
+        return std::string("(unknown)");
+    }
+
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)nickname, SAFFIRE_PRO14_APP_NICK_NAME_SIZE/4);
+    #endif
+
+    // The device supplies at most SAFFIRE_PRO14_APP_NICK_NAME_SIZE characters.  Ensure the string is
+    // NULL terminated.
+    nickname[SAFFIRE_PRO14_APP_NICK_NAME_SIZE] = 0;
+    return std::string(nickname);
 }
 
 }
