@@ -308,13 +308,44 @@ Dice::EAP* SaffirePro24::createEAP() {
 }
 
 bool SaffirePro24::setNickname( std::string name ) {
-    return getEAP()->writeRegBlock( Dice::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name.c_str(), name.size() );
+    char nickname[SAFFIRE_PRO24_APP_NICK_NAME_SIZE+1];
+
+    // The device has room for SAFFIRE_PRO24_APP_NICK_NAME_SIZE characters.
+    // Erase supplementary characters or fill-in with NULL character if necessary
+    strncpy(nickname, name.c_str(), SAFFIRE_PRO24_APP_NICK_NAME_SIZE);
+
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)nickname, SAFFIRE_PRO24_APP_NICK_NAME_SIZE/4);
+    #endif
+
+    if (!getEAP()->writeRegBlock(Dice::EAP::eRT_Application, SAFFIRE_PRO24_REGISTER_APP_NICK_NAME, 
+                                 (quadlet_t*)nickname, SAFFIRE_PRO24_APP_NICK_NAME_SIZE)) {
+        debugError("Could not write nickname string \n");
+        return false;
+    }
+    return true;
 }
 
 std::string SaffirePro24::getNickname() {
-    char name[16];
-    getEAP()->readRegBlock( Dice::EAP::eRT_Application, 0x40, (fb_quadlet_t*)name, 16 );
-    return std::string( name );
+    char nickname[SAFFIRE_PRO24_APP_NICK_NAME_SIZE+1];
+    if (!getEAP()->readRegBlock(Dice::EAP::eRT_Application, SAFFIRE_PRO24_REGISTER_APP_NICK_NAME, 
+                                (quadlet_t*)nickname, SAFFIRE_PRO24_APP_NICK_NAME_SIZE)){
+        debugError("Could not read nickname string \n");
+        return std::string("(unknown)");
+    }
+
+    // Strings from the device are always little-endian,
+    // so byteswap for big-endian machines
+    #if __BYTE_ORDER == __BIG_ENDIAN
+    byteSwapBlock((quadlet_t *)nickname, SAFFIRE_PRO24_APP_NICK_NAME_SIZE/4);
+    #endif
+
+    // The device supplies at most SAFFIRE_PRO24_APP_NICK_NAME_SIZE characters.  Ensure the string is
+    // NULL terminated.
+    nickname[SAFFIRE_PRO24_APP_NICK_NAME_SIZE] = 0;
+    return std::string(nickname);
 }
 
 }
