@@ -65,17 +65,17 @@ void SaffirePro24::SaffirePro24EAP::setupDestinations() {
 void SaffirePro24::SaffirePro24EAP::setupSources_low() {
     addSource("SPDIF/In",  6,  2, eRS_AES, 1);
     addSource("ADAT/In",   0,  8, eRS_ADAT, 1);
-    addSource("Analog/In", 0,  4, eRS_InS0, 1);
+    addSource("Anlg/In", 0,  4, eRS_InS0, 1);
     addSource("Mixer/Out",  0, 16, eRS_Mixer, 1);
-    addSource("1394",   0,  8, eRS_ARX0, 1);
+    addSource("1394/In",   0,  8, eRS_ARX0, 1);
     addSource("Mute",   0,  1, eRS_Muted);
 }
 void SaffirePro24::SaffirePro24EAP::setupDestinations_low() {
     addDestination("SPDIF/Out",  6,  2, eRD_AES, 1);
-    addDestination("Analog/Out", 0,  6, eRD_InS0, 1);
+    addDestination("Line/Out", 0,  6, eRD_InS0, 1);
     addDestination("Mixer/In",  0, 16, eRD_Mixer0, 1);
     addDestination("Mixer/In",  0,  2, eRD_Mixer1, 17);
-    addDestination("1394",   0, 16, eRD_ATX0, 1);
+    addDestination("1394/Out",   0, 16, eRD_ATX0, 1);
 // Is a Mute destination useful ?
 //    addDestination("Mute",   0,  1, eRD_Muted);
 }
@@ -83,17 +83,17 @@ void SaffirePro24::SaffirePro24EAP::setupDestinations_low() {
 void SaffirePro24::SaffirePro24EAP::setupSources_mid() {
     addSource("SPDIF/In",  6,  2, eRS_AES, 1);
     addSource("ADAT/In",   0,  4, eRS_ADAT, 1);
-    addSource("Analog/In", 0,  4, eRS_InS0, 1);
+    addSource("Anlg/In", 0,  4, eRS_InS0, 1);
     addSource("Mixer/Out",  0, 16, eRS_Mixer, 1);
-    addSource("1394",   0,  8, eRS_ARX0, 1);
+    addSource("1394/In",   0,  8, eRS_ARX0, 1);
     addSource("Mute",   0,  1, eRS_Muted);
 }
 void SaffirePro24::SaffirePro24EAP::setupDestinations_mid() {
     addDestination("SPDIF/Out",  6,  2, eRD_AES, 1);
-    addDestination("Analog/Out", 0,  6, eRD_InS0, 1);
+    addDestination("Line/Out", 0,  6, eRD_InS0, 1);
     addDestination("Mixer/In",  0, 16, eRD_Mixer0, 1);
     addDestination("Mixer/In",  0,  2, eRD_Mixer1, 17);
-    addDestination("1394",   0, 12, eRD_ATX0, 1);
+    addDestination("1394/Out",   0, 12, eRD_ATX0, 1);
 // Is a Mute destination useful ?
 //    addDestination("Mute",   0,  1, eRD_Muted);
 }
