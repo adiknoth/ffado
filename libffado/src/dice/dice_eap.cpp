@@ -1223,7 +1223,8 @@ EAP::Mixer::storeCoefficients()
 void
 EAP::Mixer::updateNameCache()
 {
-    debugWarning("What is this function about?\n");
+//    debugWarning("What is this function about?\n");
+    debugOutput(DEBUG_LEVEL_VERBOSE, "What is this function about?\n");
 #if 0
     // figure out the number of i/o's
     int nb_inputs = m_eap.m_mixer_nb_tx;
