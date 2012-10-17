@@ -660,6 +660,7 @@ debugOutput(DEBUG_LEVEL_NORMAL, "init stat: %08x %08x %08x %08x\n",
         if (stat[2] == 0xffffffff) {
             // Device not ready; wait 5 ms and try again
             usleep(5000);
+            i++;
         } else {
             iso_rx = stat[2] & 63;
             if (iso_rx!=iso_rx_channel && iso_rx_channel!=-1)
@@ -676,8 +677,11 @@ debugOutput(DEBUG_LEVEL_NORMAL, "init stat: %08x %08x %08x %08x\n",
             break;
         }
     }
-    if (i==100 || err)
+    if (i==100 || err) {
+        if (i == 100)
+            debugFatal("timeout waiting for device not busy\n");
         return false;
+    }
 
     return FFADODevice::resetForStreaming();
 }
@@ -753,7 +757,8 @@ Device::prepare() {
     // case of the FF800, obtain the rx iso channel to use.  Having that
     // functionality in resetForStreaming() means it's effectively done
     // twice when FFADO is first started, but this does no harm.
-    resetForStreaming();
+    if (resetForStreaming() == false)
+        return false;
   
     if (err) {
         if (iso_tx_channel >= 0) 
