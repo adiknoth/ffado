@@ -27,184 +27,160 @@
 namespace Dice {
 namespace Focusrite {
 
-const int msgSet = 0x68;
-
-FocusriteEAP::Poti::Poti(Dice::Focusrite::FocusriteEAP* eap, std::string name, size_t offset)
-    : Control::Discrete(eap, name)
-    , m_eap(eap)
-    , m_offset(offset)
-{
-    m_eap->readApplicationReg(m_offset, &m_tmp);
-    //printf("%s: Value: %i\n", name.c_str(), m_tmp);
-    m_value = /*127*/-m_tmp;
-}
-
-int FocusriteEAP::Poti::getValue() {
-    return m_value;
-}
-bool FocusriteEAP::Poti::setValue(int n) {
-    if (n == m_value)
-        return true;
-    m_value = n;
-    return m_eap->writeApplicationReg(m_offset, -n);
-}
-
-
 FocusriteEAP::FocusriteEAP(Dice::Device& dev) : Dice::EAP(dev) {
 }
 
+/**
+ * Application space register read/write
+ */
 bool FocusriteEAP::readApplicationReg(unsigned offset, quadlet_t* quadlet) {
-    return readReg(eRT_Application, offset, quadlet);
+    bool ret = readReg(Dice::EAP::eRT_Application, offset, quadlet);
+    return ret;
 }
+
 bool FocusriteEAP::writeApplicationReg(unsigned offset, quadlet_t quadlet) {
-    bool ret = writeReg(eRT_Application, offset, quadlet);
+    // Do not write beyond the limit
+    if (offset > FOCUSRITE_EAP_REGISTER_APP_MONITORING_LIMIT)
+    {
+      debugWarning(" Writing beyond address 0x%02x prohibited\n",
+                   FOCUSRITE_EAP_REGISTER_APP_MONITORING_LIMIT);
+      return false;
+    }
+    
+    bool ret = writeReg(Dice::EAP::eRT_Application, offset, quadlet);
     if (!ret) {
         debugWarning("Couldn't write %i to register %x!\n", quadlet, offset);
         return false;
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Will sent command %i.\n", commandToFix(offset));
-    return writeReg(eRT_Application, msgSet, commandToFix(offset));
+    return ret;
 }
 
-
-FocusriteEAP::Switch::Switch(Dice::Focusrite::FocusriteEAP* eap, std::string name, size_t offset, int activevalue )
-    : Control::Boolean(eap, name)
-    , m_eap(eap)
-    , m_selected(0)
-    , m_offset(offset)
-    , m_activevalue(activevalue)
-{
-    m_eap->readApplicationReg(m_offset, &m_state_tmp);
-    //printf("%s: %s\n", name.c_str(), (m_state_tmp&m_activevalue)?"true":"false");
-    //debugOutput(DEBUG_LEVEL_VERBOSE, "Probably the initialization is the other way round.\n");
-    m_selected = (m_state_tmp&m_activevalue)?true:false;
-}
-
-bool FocusriteEAP::Switch::selected() {
-    return m_selected;
-}
-
-bool FocusriteEAP::Switch::select(bool n) {
-    if ( n != m_selected ) {
-        m_selected = n;
-        m_eap->readApplicationReg(m_offset, &m_state_tmp);
-        m_eap->writeApplicationReg(m_offset, m_state_tmp^m_activevalue);
+// Message set specific register
+bool FocusriteEAP::messageSet(unsigned offset, quadlet_t quadlet) {
+    // Do not write beyond the limit
+    if (offset > FOCUSRITE_EAP_REGISTER_APP_MONITORING_LIMIT)
+    {
+      debugWarning(" Message set register can not be beyond address 0x%02x\n",
+                   FOCUSRITE_EAP_REGISTER_APP_MONITORING_LIMIT);
+      return false;
     }
+
+    bool ret = writeApplicationReg(offset, quadlet);
+    // Send NO_MESSAGE after any non-zero messages (Focusrite recommandation)
+    writeApplicationReg(offset, (quadlet_t) FOCUSRITE_EAP_MESSAGE_SET_NO_MESSAGE);
+    return ret;
+}
+
+/**
+ *  Potentiometer Class
+ */
+FocusriteEAP::Poti::Poti(Dice::Focusrite::FocusriteEAP* eap, std::string name,
+    size_t offset, size_t msgset_offset, int msgset_value) : Control::Discrete(eap, name)
+    , m_eap(eap)
+    , m_name(name)
+    , m_offset(offset)
+    , m_msgset_offset(msgset_offset)
+    , m_msgset_value(msgset_value)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Create Poti %s)\n", m_name.c_str());    
+}
+
+int FocusriteEAP::Poti::getValue() {
+    int m_value;
+    quadlet_t tmp;
+
+    m_eap->readApplicationReg(m_offset, &tmp);
+    m_value = -tmp;
+    return m_value;
+}
+
+bool FocusriteEAP::Poti::setValue(int n) {
+    // Might be the value has been modified via hardware; better to read the current value
+    int m_value = getValue();
+
+    if (n == m_value)
+        return true;
+    m_value = -n;
+    m_eap->writeApplicationReg(m_offset, (quadlet_t) m_value);
+    m_eap->messageSet(m_msgset_offset, (quadlet_t) m_msgset_value);
     return true;
 }
 
-
-class VolumeControl : public Control::Discrete
-{
-public:
-    VolumeControl(FocusriteEAP* eap, std::string name, size_t offset, int bitshift)
-        : Control::Discrete(eap, name)
-        , m_eap(eap)
-        , m_offset(offset)
-        , m_bitshift(bitshift)
-    {
-        quadlet_t tmp;
-        m_eap->readApplicationReg(m_offset, &tmp);
-        m_value = - ((tmp>>m_bitshift)&0xff);
-    }
-
-    int getValue(int) { return getValue(); }
-    bool setValue(int, int n) { return setValue(n); }
-
-    int getMinimum() { return -255; }
-    int getMaximum() { return 0; }
-
-    int getValue() { return m_value; }
-    bool setValue(int n) {
-        if (n == m_value)
-            return true;
-        m_value = n;
-        quadlet_t tmp;
-        m_eap->readApplicationReg(m_offset, &tmp);
-        tmp &= ~(0xff<<m_bitshift);
-        return m_eap->writeApplicationReg(m_offset, ((-n)<<m_bitshift)|tmp);
-    }
-private:
-    FocusriteEAP* m_eap;
-    size_t m_offset;
-    int m_bitshift;
-    int m_value;
-};
-
-
-FocusriteEAP::MonitorSection::MonitorSection(Dice::Focusrite::FocusriteEAP* eap, std::string name)
-    : Control::Container(eap, name)
+/**
+ * Switch class
+ */
+FocusriteEAP::Switch::Switch(Dice::Focusrite::FocusriteEAP* eap, std::string name,
+    size_t offset, int activevalue, size_t msgset_offset, int msgset_value )
+    : Control::Boolean(eap, name)
     , m_eap(eap)
-    , m_monitorlevel(0)
-    , m_dimlevel(0)
+    , m_name(name)
+    , m_offset(offset)
+    , m_activevalue(activevalue)
+    , m_msgset_offset(msgset_offset)
+    , m_msgset_value(msgset_value)
 {
-    Control::Container* grp_globalmute = new Control::Container(m_eap, "GlobalMute");
-    addElement(grp_globalmute);
-    m_mute = new Switch(m_eap, "State", 0x0C, 1);
-    grp_globalmute->addElement(m_mute);
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Create Switch %s)\n", m_name.c_str());    
+}
 
-    Control::Container* grp_globaldim = new Control::Container(m_eap, "GlobalDim");
-    addElement(grp_globaldim);
-    m_dim = new Switch(m_eap, "State", 0x10, 1);
-    grp_globaldim->addElement(m_dim);
-    m_dimlevel = m_eap->getDimPoti("Level");
-    grp_globaldim->addElement(m_dimlevel);
+bool FocusriteEAP::Switch::selected() {
+    quadlet_t state_tmp;
 
-    Control::Container* grp_mono = new Control::Container(m_eap, "Mono");
-    addElement(grp_mono);
+    m_eap->readApplicationReg(m_offset, &state_tmp);
+    bool is_selected = (state_tmp&m_activevalue)?true:false;
+    return is_selected;
+}
 
-    Control::Container* grp_globalvolume = new Control::Container(m_eap, "GlobalVolume");
-    addElement(grp_globalvolume);
-    m_monitorlevel = m_eap->getMonitorPoti("Level");
-    grp_globalvolume->addElement(m_monitorlevel);
+bool FocusriteEAP::Switch::select(bool n) {
+    quadlet_t state_tmp;
+    m_eap->readApplicationReg(m_offset, &state_tmp);
+    bool is_selected = (state_tmp&m_activevalue)?true:false;
 
-    Control::Container* grp_perchannel = new Control::Container(m_eap, "PerChannel");
-    addElement(grp_perchannel);
-
-    for (int i=0; i<10; ++i) {
-        std::stringstream stream;
-        stream << "AffectsCh" << i;
-        Switch* s = new Switch(m_eap, stream.str(), 0x3C, 1<<i);
-        grp_globalmute->addElement(s);
-        //m_mute_affected.push_back(s);
-        s = new Switch(m_eap, stream.str(), 0x3C, 1<<(10+i));
-        grp_globaldim->addElement(s);
-        //m_dim_affected.push_back(s);
+    // Switch the corresponding bit(s)
+    if ( n != is_selected ) {
+        m_eap->writeApplicationReg(m_offset, state_tmp^m_activevalue);
+        m_eap->messageSet(m_msgset_offset, (quadlet_t) m_msgset_value);
+        is_selected = n;
     }
-    for (int i=0; i<5; ++i) {
-        std::stringstream stream;
-        stream << "Ch" << i*2 << "Ch" << i*2+1;
-        Switch* s = new Switch(m_eap, stream.str(), 0x3C, 1<<(20+i));
-        grp_mono->addElement(s);
-        //m_mono.push_back(s);
+    return is_selected;
+}
 
-        stream.str(std::string());
-        stream << "AffectsCh" << i*2;
-        s = new Switch(m_eap, stream.str(), 0x28+i*4, 1);
-        grp_globalvolume->addElement(s);
-        stream.str(std::string());
-        stream << "AffectsCh" << i*2+1;
-        s = new Switch(m_eap, stream.str(), 0x28+i*4, 2);
-        grp_globalvolume->addElement(s);
+/**
+ * Volume Control Class
+ */
+FocusriteEAP::VolumeControl::VolumeControl(Dice::Focusrite::FocusriteEAP* eap,
+    std::string name, size_t offset, int bitshift, size_t msgset_offset, int msgset_value)
+    : Control::Discrete(eap, name)
+    , m_eap(eap)
+    , m_name(name)
+    , m_offset(offset)
+    , m_bitshift(bitshift)
+    , m_msgset_offset(msgset_offset)
+    , m_msgset_value(msgset_value)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Create Volume Control %s)\n", m_name.c_str());    
+}
 
-        stream.str(std::string());
-        stream << "Mute" << i*2;
-        s = new Switch(m_eap, stream.str(), 0x28+i*4, 4);
-        grp_perchannel->addElement(s);
-        stream.str(std::string());
-        stream << "Mute" << i*2+1;
-        s = new Switch(m_eap, stream.str(), 0x28+i*4, 8);
-        grp_perchannel->addElement(s);
+int FocusriteEAP::VolumeControl::getValue() {
+    int m_value;
+    quadlet_t tmp;
+    m_eap->readApplicationReg(m_offset, &tmp);
+    m_value = - ((tmp>>m_bitshift)&0xff);
+    return m_value;
+}
 
-        stream.str(std::string());
-        stream << "Volume" << i*2;
-        VolumeControl* vol = new VolumeControl(m_eap, stream.str(), 0x14+i*4, 0);
-        grp_perchannel->addElement(vol);
-        stream.str(std::string());
-        stream << "Volume" << i*2+1;
-        vol = new VolumeControl(m_eap, stream.str(), 0x14+i*4, 8);
-        grp_perchannel->addElement(vol);
-    }
+bool FocusriteEAP::VolumeControl::setValue(int n) {
+    int m_value;
+    quadlet_t tmp;
+    m_eap->readApplicationReg(m_offset, &tmp);
+    m_value = - ((tmp>>m_bitshift)&0xff);
+    if (n == m_value)
+        return true;
+
+    m_value = n;
+    tmp &= ~(0xff<<m_bitshift);
+    bool ret = m_eap->writeApplicationReg(m_offset, ((-n)<<m_bitshift)|tmp);
+    m_eap->messageSet(m_msgset_offset, (quadlet_t) m_msgset_value);
+    return ret;
 }
 
 }

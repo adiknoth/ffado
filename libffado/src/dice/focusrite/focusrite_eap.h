@@ -75,12 +75,42 @@
 #define FOCUSRITE_EAP_LINEOUT_SWITCH_INST_SHIFT 16
 #define FOCUSRITE_EAP_LINEOUT_SWITCH_GAIN_SHIFT 16
 
+
 namespace Dice {
 namespace Focusrite {
 
 class FocusriteEAP : public Dice::EAP
 {
 public:
+    FocusriteEAP(Dice::Device&);
+
+    bool readApplicationReg(unsigned, quadlet_t*);
+    bool writeApplicationReg(unsigned, quadlet_t);
+    bool messageSet(unsigned, quadlet_t);
+
+public:
+    /**
+     * @brief A quite standard potentiometer.
+    */
+    class Poti : public Control::Discrete
+    {
+    public:
+        Poti(Dice::Focusrite::FocusriteEAP*, std::string, size_t, size_t, int);
+        int getValue(int) { return getValue(); }
+        bool setValue(int, int n) { return setValue(n); }
+
+        int getMinimum() { return -127; }
+        int getMaximum() { return 0; }
+        int getValue();
+        bool setValue(int);
+    private:
+        Dice::Focusrite::FocusriteEAP* m_eap;
+        std::string m_name;
+        size_t m_offset;
+        size_t m_msgset_offset;
+        int m_msgset_value;
+    };
+
     /**
      * @brief A standard-switch for boolean.
      *
@@ -89,65 +119,41 @@ public:
     class Switch : public Control::Boolean
     {
     public:
-        Switch(Dice::Focusrite::FocusriteEAP*, std::string name, size_t offset, int activevalue);
-
+        Switch(Dice::Focusrite::FocusriteEAP*, std::string, size_t, int, size_t, int);
         bool selected();
         bool select(bool);
-
     private:
         Dice::Focusrite::FocusriteEAP* m_eap;
-        bool m_selected;
+        std::string m_name;
         size_t m_offset;
         int m_activevalue;
-        fb_quadlet_t m_state_tmp;
+        size_t m_msgset_offset;
+        int m_msgset_value;
     };
 
-    class Poti : public Control::Discrete
-    {
-        public:
-            Poti(Dice::Focusrite::FocusriteEAP*, std::string name, size_t offset);
-
-            int getValue(int) { return getValue(); }
-            bool setValue(int, int n) { return setValue(n); }
-
-            int getMinimum() { return -127; }
-            int getMaximum() { return 0; }
-
-            int getValue();
-            bool setValue(int n);
-        private:
-            Dice::Focusrite::FocusriteEAP* m_eap;
-            size_t m_offset;
-            int m_value;
-            quadlet_t m_tmp;
-    };
-
-    class MonitorSection : public Control::Container
+    /**
+     * @brief A less standard potentiometer.
+    */
+    class VolumeControl : public Control::Discrete
     {
     public:
-        MonitorSection(Dice::Focusrite::FocusriteEAP*, std::string name);
+        VolumeControl(Dice::Focusrite::FocusriteEAP*, std::string, size_t, int, size_t, int);
+        int getValue(int) { return getValue(); }
+        bool setValue(int, int n) { return setValue(n); }
 
+        int getMinimum() { return -255; }
+        int getMaximum() { return 0; }
+
+        int getValue();
+        bool setValue(int n);
     private:
         Dice::Focusrite::FocusriteEAP* m_eap;
-        Switch *m_mute, *m_dim;
-        std::vector<Switch*> m_mute_affected;
-        std::vector<Switch*> m_dim_affected;
-        std::vector<Switch*> m_mono;
-        Poti* m_monitorlevel;
-        Poti* m_dimlevel;
+        std::string m_name;
+        size_t m_offset;
+        int m_bitshift;
+        size_t m_msgset_offset;
+        int m_msgset_value;
     };
-
-
-public:
-    FocusriteEAP(Dice::Device&);
-
-    bool readApplicationReg(unsigned offset, quadlet_t*);
-    bool writeApplicationReg(unsigned offset, quadlet_t);
-
-protected:
-    virtual int commandToFix(unsigned offset) =0;
-    virtual Poti* getMonitorPoti(std::string) { return 0; }
-    virtual Poti* getDimPoti(std::string) { return 0; }
 };
 
 }

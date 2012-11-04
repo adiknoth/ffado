@@ -58,145 +58,6 @@ class DiscreteControl:
             self.iface.setValue(v)
             self.value = v
 
-class MonitoringModel(QtCore.QAbstractTableModel):
-    def __init__(self, hw, parent):
-        QtCore.QAbstractTableModel.__init__(self, parent)
-
-        self.hw = hw
-
-        self.mutestates = ("Global", "True", "False")
-
-        self.globaldims = []
-        self.globalmutes = []
-        self.perchannelmutes = []
-        self.globalvolumes = []
-        self.perchannelvolumes = []
-        for i in range(10):
-            self.globaldims.append(BooleanControl(self.hw, self.hw.basepath + ("/EAP/Monitoring/GlobalDim/AffectsCh%i" % i)))
-            self.globalmutes.append(BooleanControl(self.hw, self.hw.basepath + ("/EAP/Monitoring/GlobalMute/AffectsCh%i" % i)))
-            self.perchannelmutes.append(BooleanControl(self.hw, self.hw.basepath + ("/EAP/Monitoring/PerChannel/Mute%i" % i)))
-            self.globalvolumes.append(BooleanControl(self.hw, self.hw.basepath + ("/EAP/Monitoring/GlobalVolume/AffectsCh%i" % i)))
-            self.perchannelvolumes.append(DiscreteControl(self.hw, self.hw.basepath + ("/EAP/Monitoring/PerChannel/Volume%i" % i)))
-
-    def rowCount(self, parent):
-        return 3
-
-    def columnCount(self, parent):
-        return 10
-
-    def headerData(self, section, orientation, role=Qt.Qt.DisplayRole):
-        if role != Qt.Qt.DisplayRole:
-            #print "headerData will return nothing"
-            return None
-        #print "headerData() Will return a label"
-        if orientation == Qt.Qt.Horizontal:
-            return "Ch. %i" % section
-        if orientation == Qt.Qt.Vertical:
-            return ("Mute", "Dim", "Volume")[section]
-        return None
-
-    def data(self, index, role):
-        if not role in (Qt.Qt.DisplayRole, Qt.Qt.EditRole):
-            return None
-        row = index.row()
-        col = index.column()
-        if role == Qt.Qt.DisplayRole:
-            if row is 0:
-                if self.perchannelmutes[col].selected():
-                    return self.mutestates[1]
-                else:
-                    if self.globalmutes[col].selected():
-                        return self.mutestates[0]
-                return self.mutestates[2]
-            if row is 1:
-                if self.globaldims[col].selected():
-                    return "Enabled"
-                else:
-                    return "Disabled"
-            if row is 2:
-                if self.globalvolumes[col].selected():
-                    return "Global"
-                else:
-                    return self.perchannelvolumes[col].getvalue()
-        if role == Qt.Qt.EditRole:
-            if row is 0:
-                return QtCore.QStringList(self.mutestates)
-            if row is 1:
-                return QtCore.QStringList(("Enabled","Disabled"))
-            if row is 2:
-                if self.globalvolumes[col].selected():
-                    return 1
-                return self.perchannelvolumes[col].getvalue()
-        return "%i,%i" % (row,col)
-
-    def setData(self, index, value, role=Qt.Qt.EditRole):
-        col = index.column()
-        row = index.row()
-        if row == 0:
-            if value == "Global":
-                self.globalmutes[col].select(True)
-                self.perchannelmutes[col].select(False)
-            else:
-                self.globalmutes[col].select(False)
-                if value == "True": value = True
-                if value == "False": value = False
-                self.perchannelmutes[col].select(value)
-            return True
-        if row == 1:
-            if value == "Enabled": value = True
-            if value == "Disabled": value = False
-            return self.globaldims[col].select(value)
-        if row == 2:
-            #print "setData() value=%s" % value.toString()
-            v = int(value.toString())
-            #print " integer is %i" % v
-            if v > 0:
-                return self.globalvolumes[col].select(True)
-            else:
-                self.globalvolumes[col].select(False)
-                self.perchannelvolumes[col].setvalue(v)
-        return False
-
-    def flags(self, index):
-        ret = QtCore.QAbstractTableModel.flags(self, index)
-        if index.row() in (0,1,2):
-            ret |= Qt.Qt.ItemIsEditable
-        return ret
-
-
-
-class MonitoringDelegate(QtGui.QItemDelegate):
-    def __init__(self, parent):
-        QtGui.QItemDelegate.__init__(self, parent)
-
-    def createEditor(self, parent, option, index):
-        if index.data(Qt.Qt.EditRole).type() == QtCore.QVariant.StringList:
-            combo = QtGui.QComboBox(parent)
-            self.connect(combo, QtCore.SIGNAL("activated(int)"), self.currentChanged)
-            return combo
-        else:
-            return QtGui.QItemDelegate.createEditor(self, parent, option, index)
-
-    def setEditorData(self, editor, index):
-        if isinstance(editor, QtGui.QComboBox):
-            list = index.data(Qt.Qt.EditRole).toStringList()
-            editor.addItems(list)
-            editor.setCurrentIndex(list.indexOf(index.data(Qt.Qt.DisplayRole).toString()))
-        else:
-            QtGui.QItemDelegate.setEditorData(self, editor, index)
-
-    def setModelData(self, editor, model, index):
-        if isinstance(editor, QtGui.QComboBox):
-            model.setData(index, editor.currentText(), Qt.Qt.EditRole)
-        else:
-            QtGui.QItemDelegate.setModelData(self, editor, model, index)
-
-    def currentChanged(self):
-        #print "currentChanged() sender=%s" % (str(self.sender()))
-        editor = self.sender()
-        self.emit(QtCore.SIGNAL("commitData(QWidget*)"), editor)
-        self.emit(QtCore.SIGNAL("closeEditor(QWidget*)"), editor)
-
 class Saffire_Dice(Generic_Dice_EAP):
     def __init__(self, parent=None):
         Generic_Dice_EAP.__init__(self, parent)
@@ -206,58 +67,255 @@ class Saffire_Dice(Generic_Dice_EAP):
         #print self.hw.getText("/Generic/Nickname")
         Generic_Dice_EAP.buildMixer(self)
 
-        model = MonitoringModel(self.hw, self)
-
         widget = QtGui.QWidget()
-        uicLoad("ffado/mixer/saffire_dice_monitoring.ui", widget)
-        widget.monitoringView.setModel(model)
-        widget.monitoringView.setItemDelegate(MonitoringDelegate(self))
+
+        ModelName = self.configrom.getModelName()
+        if  ModelName == "SAFFIRE_PRO_14":
+            uicLoad("ffado/mixer/Saffire_Pro14_monitoring.ui", widget)
+        elif ModelName == "SAFFIRE_PRO_24" or self.configrom.getModelName() == "SAFFIRE_PRO_24DSP":
+            uicLoad("ffado/mixer/Saffire_Pro24_monitoring.ui", widget)
+        elif ModelName == "SAFFIRE_PRO_40":
+            uicLoad("ffado/mixer/Saffire_Pro40_monitoring.ui", widget)
+
+        # Add Monitoring to ffado-mixer panels
         self.tabs.addTab(widget, "Monitoring")
 
+        # Global settings
         self.muteInterface = BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/GlobalMute/State")
-        widget.btnMute.setChecked(self.muteInterface.selected())
-        self.connect(widget.btnMute, QtCore.SIGNAL("toggled(bool)"), self.muteToggle)
+        widget.GlobalMute.setChecked(self.muteInterface.selected())
+        self.connect(widget.GlobalMute, QtCore.SIGNAL("toggled(bool)"), self.muteToggle)
+
         self.dimInterface = BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/GlobalDim/State")
-        widget.btnDim.setChecked(self.dimInterface.selected())
-        self.connect(widget.btnDim, QtCore.SIGNAL("toggled(bool)"), self.dimToggle)
-
+        widget.GlobalDim.setChecked(self.dimInterface.selected())
+        self.connect(widget.GlobalDim, QtCore.SIGNAL("toggled(bool)"), self.dimToggle)
         self.dimLevelInterface = DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/GlobalDim/Level")
-        widget.dimLevel.setValue(self.dimLevelInterface.getvalue())
-        self.connect(widget.dimLevel, QtCore.SIGNAL("valueChanged(int)"), self.dimLevelChanged)
-        self.volumeInterface = DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/GlobalVolume/Level")
-        widget.volumeKnob.setValue(self.volumeInterface.getvalue())
-        self.connect(widget.volumeKnob, QtCore.SIGNAL("valueChanged(int)"), self.volumeChanged)
+        widget.DimLevel.setValue(self.dimLevelInterface.getvalue())
+        self.connect(widget.DimLevel, QtCore.SIGNAL("valueChanged(int)"), self.dimLevelChanged)
+        self.DimLevel = widget.DimLevel
+        widget.DimLevel.setEnabled(self.dimInterface.selected())
 
-        if self.configrom.getModelName() == "SAFFIRE_PRO_24" or self.configrom.getModelName() == "SAFFIRE_PRO_24DSP":
-            widget.stacked.setCurrentWidget(widget.pagePro24)
-            self.ch1inst = BooleanControl(self.hw, self.hw.basepath + "/EAP/Ch1LineInst")
-            widget.chkInst1.setChecked(self.ch1inst.selected())
-            self.connect(widget.chkInst1, QtCore.SIGNAL("toggled(bool)"), self.ch1inst.select)
-            self.ch2inst = BooleanControl(self.hw, self.hw.basepath + "/EAP/Ch2LineInst")
-            widget.chkInst2.setChecked(self.ch2inst.selected())
-            self.connect(widget.chkInst2, QtCore.SIGNAL("toggled(bool)"), self.ch2inst.select)
-            self.ch3level = BooleanControl(self.hw, self.hw.basepath + "/EAP/Ch3Level")
-            widget.chkLevel3.setChecked(self.ch3level.selected())
-            self.connect(widget.chkLevel3, QtCore.SIGNAL("toggled(bool)"), self.ch3level.select)
-            self.ch4level = BooleanControl(self.hw, self.hw.basepath + "/EAP/Ch4Level")
-            widget.chkLevel4.setChecked(self.ch4level.selected())
-            self.connect(widget.chkLevel4, QtCore.SIGNAL("toggled(bool)"), self.ch4level.select)
-            #widget.chkSpdif.deleteLater()
-            #widget.btnPad.deleteLater()
-        elif self.configrom.getModelName() == "SAFFIRE_PRO_40":
-            widget.stacked.setCurrentWidget(widget.pagePro40)
-            #widget.chkInst1.deleteLater()
-            #widget.chkInst2.deleteLater()
-            #widget.chkLevel3.deleteLater()
-            #widget.chkLevel4.deleteLater()
+        # Per line monitoring
+        from collections import namedtuple
+        LineInfo = namedtuple('LineInfo', ['widget','Interface'])
+        self.nbLines = 4
+
+        # Mono/Stereo Switch
+        self.LineMonos = []
+        p = LineInfo(widget.Mono_12, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line1Line2"))
+        self.LineMonos.append(p)
+        p = LineInfo(widget.Mono_34, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line3Line4"))
+        self.LineMonos.append(p)
+
+        # Volume Unactivating
+        self.LineUnActivates = []
+        p = LineInfo(widget.LineUnActivate_1, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate1"))
+        self.LineUnActivates.append(p)
+        p = LineInfo(widget.LineUnActivate_2, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate2"))
+        self.LineUnActivates.append(p)
+        p = LineInfo(widget.LineUnActivate_3, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate3"))
+        self.LineUnActivates.append(p)
+        p = LineInfo(widget.LineUnActivate_4, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate4"))
+        self.LineUnActivates.append(p)
+
+        # Mute
+        self.LineMutes = []
+        p = LineInfo(widget.LineMute_1, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute1"))
+        self.LineMutes.append(p)
+        p = LineInfo(widget.LineMute_2, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute2"))
+        self.LineMutes.append(p)
+        p = LineInfo(widget.LineMute_3, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute3"))
+        self.LineMutes.append(p)
+        p = LineInfo(widget.LineMute_4, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute4"))
+        self.LineMutes.append(p)
+
+        # per line Global Mute switch
+        self.LineGMutes = []
+        p = LineInfo(widget.LineGMute_1, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute1"))
+        self.LineGMutes.append(p)
+        p = LineInfo(widget.LineGMute_2, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute2"))
+        self.LineGMutes.append(p)
+        p = LineInfo(widget.LineGMute_3, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute3"))
+        self.LineGMutes.append(p)
+        p = LineInfo(widget.LineGMute_4, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute4"))
+        self.LineGMutes.append(p)
+
+        # per line Global Dim switch
+        self.LineGDims = []
+        p = LineInfo(widget.LineGDim_1, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim1"))
+        self.LineGDims.append(p)
+        p = LineInfo(widget.LineGDim_2, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim2"))
+        self.LineGDims.append(p)
+        p = LineInfo(widget.LineGDim_3, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim3"))
+        self.LineGDims.append(p)
+        p = LineInfo(widget.LineGDim_4, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim4"))
+        self.LineGDims.append(p)
+
+        # Volume
+        self.LineVolumes = []
+        p = LineInfo(widget.LineVolume_1, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume1"))
+        self.LineVolumes.append(p)
+        p = LineInfo(widget.LineVolume_2, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume2"))
+        self.LineVolumes.append(p)
+        p = LineInfo(widget.LineVolume_3, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume3"))
+        self.LineVolumes.append(p)
+        p = LineInfo(widget.LineVolume_4, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume4"))
+        self.LineVolumes.append(p)
+  
+        if ModelName != "SAFFIRE_PRO_14":
+            self.nbLines = 6
+            # Mono/Stereo Switch
+            p = LineInfo(widget.Mono_56, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line5Line6"))
+            self.LineMonos.append(p)
+            # Volume Unactivating
+            p = LineInfo(widget.LineUnActivate_5, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate5"))
+            self.LineUnActivates.append(p)
+            p = LineInfo(widget.LineUnActivate_6, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate6"))
+            self.LineUnActivates.append(p)
+            # Mute
+            p = LineInfo(widget.LineMute_5, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute5"))
+            self.LineMutes.append(p)
+            p = LineInfo(widget.LineMute_6, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute6"))
+            self.LineMutes.append(p)
+            # per line Global Mute switch
+            p = LineInfo(widget.LineGMute_5, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute5"))
+            self.LineGMutes.append(p)
+            p = LineInfo(widget.LineGMute_6, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute6"))
+            self.LineGMutes.append(p)
+            # per line Global Dim switch
+            p = LineInfo(widget.LineGDim_5, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim5"))
+            self.LineGDims.append(p)
+            p = LineInfo(widget.LineGDim_6, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim6"))
+            self.LineGDims.append(p)
+            # Volume
+            p = LineInfo(widget.LineVolume_5, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume5"))
+            self.LineVolumes.append(p)
+            p = LineInfo(widget.LineVolume_6, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume6"))
+            self.LineVolumes.append(p)
+
+        if ModelName == "SAFFIRE_PRO_40":
+            self.nbLines = 10
+            # Mono/Stereo Switch
+            p = LineInfo(widget.Mono_78, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line7Line8"))
+            self.LineMonos.append(p)
+            p = LineInfo(widget.Mono_910, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line9Line10"))
+            self.LineMonos.append(p)
+            # Volume Unactivating
+            p = LineInfo(widget.LineUnActivate_7, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate7"))
+            self.LineUnActivates.append(p)
+            p = LineInfo(widget.LineUnActivate_8, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate8"))
+            self.LineUnActivates.append(p)
+            p = LineInfo(widget.LineUnActivate_9, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate9"))
+            self.LineUnActivates.append(p)
+            p = LineInfo(widget.LineUnActivate_10, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate10"))
+            self.LineUnActivates.append(p)
+            # Mute
+            p = LineInfo(widget.LineMute_7, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute7"))
+            self.LineMutes.append(p)
+            p = LineInfo(widget.LineMute_8, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute8"))
+            self.LineMutes.append(p)
+            p = LineInfo(widget.LineMute_9, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute9"))
+            self.LineMutes.append(p)
+            p = LineInfo(widget.LineMute_10, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Mute10"))
+            self.LineMutes.append(p)
+            # per line Global Mute switch
+            p = LineInfo(widget.LineGMute_7, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute7"))
+            self.LineGMutes.append(p)
+            p = LineInfo(widget.LineGMute_8, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute8"))
+            self.LineGMutes.append(p)
+            p = LineInfo(widget.LineGMute_9, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute9"))
+            self.LineGMutes.append(p)
+            p = LineInfo(widget.LineGMute_10, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GMute10"))
+            self.LineGMutes.append(p)
+            # per line Global Dim switch
+            p = LineInfo(widget.LineGDim_7, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim7"))
+            self.LineGDims.append(p)
+            p = LineInfo(widget.LineGDim_8, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim8"))
+            self.LineGDims.append(p)
+            p = LineInfo(widget.LineGDim_9, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim9"))
+            self.LineGDims.append(p)
+            p = LineInfo(widget.LineGDim_10, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/GDim10"))
+            self.LineGDims.append(p)
+            # Volume
+            p = LineInfo(widget.LineVolume_7, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume7"))
+            self.LineVolumes.append(p)
+            p = LineInfo(widget.LineVolume_8, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume8"))
+            self.LineVolumes.append(p)
+            p = LineInfo(widget.LineVolume_9, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume9"))
+            self.LineVolumes.append(p)
+            p = LineInfo(widget.LineVolume_10, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume10"))
+            self.LineVolumes.append(p)
+
+            # No Line/Inst switch control from interface for Pro40
+            widget.LineInSwitches.setVisible(False)
+
         else:
-            self.stacked.deleteLater()
+            # Line/Inst and Hi/Lo switches for Pro14 and 24
+            widget.LineInSwitches.setVisible(True)
+            self.LineInSwitches = []
+            p = LineInfo(widget.LineInSwitchInst_1, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineInstGain/LineInst1"))
+            self.LineInSwitches.append(p)
+            p = LineInfo(widget.LineInSwitchInst_2, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineInstGain/LineInst2"))
+            self.LineInSwitches.append(p)
+            p = LineInfo(widget.LineInSwitchHi_3, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineInstGain/LineGain3"))
+            self.LineInSwitches.append(p)
+            p = LineInfo(widget.LineInSwitchHi_4, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineInstGain/LineGain4"))
+            self.LineInSwitches.append(p)
+            for i in range(4):
+                self.LineInSwitches[i].widget.setChecked(self.LineInSwitches[i].Interface.selected())
+                self.connect(self.LineInSwitches[i].widget, QtCore.SIGNAL("toggled(bool)"), self.LineInSwitches[i].Interface.select)
+            
+        # Mono/Stereo Switch
+        for i in range(self.nbLines/2):
+            self.LineMonos[i].widget.setChecked(self.LineMonos[i].Interface.selected())
+            self.connect(self.LineMonos[i].widget, QtCore.SIGNAL("toggled(bool)"), self.LineMonos[i].Interface.select)
 
+
+
+        for i in range(self.nbLines):
+            self.LineUnActivates[i].widget.setChecked(self.LineUnActivates[i].Interface.selected())
+            self.connect(self.LineUnActivates[i].widget, QtCore.SIGNAL("toggled(bool)"), self.LineUnActivates[i].Interface.select)
+            self.LineMutes[i].widget.setChecked(self.LineMutes[i].Interface.selected())
+            self.connect(self.LineMutes[i].widget, QtCore.SIGNAL("toggled(bool)"), self.LineMutes[i].Interface.select)
+            self.LineGMutes[i].widget.setChecked(self.LineGMutes[i].Interface.selected())
+            self.connect(self.LineGMutes[i].widget, QtCore.SIGNAL("toggled(bool)"), self.LineGMutes[i].Interface.select)
+            self.LineGDims[i].widget.setChecked(self.LineGDims[i].Interface.selected())
+            self.connect(self.LineGDims[i].widget, QtCore.SIGNAL("toggled(bool)"), self.LineGDims[i].Interface.select)
+            self.LineVolumes[i].widget.setValue(self.LineVolumes[i].Interface.getvalue())
+            self.connect(self.LineVolumes[i].widget, QtCore.SIGNAL("valueChanged(int)"), self.LineVolumes[i].Interface.setvalue)
+ 
+        # HW switch controls the possibility of monitoring each output separatly 
+        widget.HWSwitch.setChecked(self.HWselected())
+        self.connect(widget.HWSwitch, QtCore.SIGNAL("toggled(bool)"), self.HWToggle)
+
+        # Line Out monitoring enabling depends on H/W switch
+        self.LineOut = widget.LineOut
+        self.LineOut.setEnabled(self.HWselected())
 
     def muteToggle(self, mute):
         self.muteInterface.select(mute)
-    def dimToggle(self, mute):
-        self.dimInterface.select(mute)
+    def dimToggle(self, dim):
+        self.dimInterface.select(dim)
+        self.DimLevel.setEnabled(dim)
+
+    def HWToggle(self, HW):
+        for i in range(self.nbLines):
+            self.LineUnActivates[i].widget.setChecked(not HW)
+            self.LineMutes[i].widget.setChecked(False)
+            self.LineGMutes[i].widget.setChecked(True)
+            self.LineGDims[i].widget.setChecked(True)
+            self.LineVolumes[i].widget.setValue(0)
+        for i in range(self.nbLines/2):
+            self.LineMonos[i].widget.setChecked(False)
+        self.LineOut.setEnabled(HW)
+
+    def HWselected(self):
+        selected = False
+        for i in range(self.nbLines):
+            if (not self.LineUnActivates[i].Interface.selected()):
+                 selected = True
+            if (self.LineMutes[i].Interface.selected()):
+                 selected = True
+        return selected
 
     def dimLevelChanged(self, value):
         self.dimLevelInterface.setvalue(value)
@@ -265,7 +323,7 @@ class Saffire_Dice(Generic_Dice_EAP):
         self.volumeInterface.setvalue(value)
 
     def getDisplayTitle(self):
-        return "Saffire PRO40/PRO24 Mixer"
+        return "Saffire PRO40/PRO24/PRO14 Mixer"
 
 #
 # vim: et ts=4 sw=4

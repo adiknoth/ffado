@@ -28,21 +28,6 @@
 namespace Dice {
 namespace Focusrite {
 
-int SaffirePro40::SaffirePro40EAP::commandToFix(unsigned offset) {
-    if (offset<0x14) return 2;
-    if (offset<0x3C && offset>=0x14) return 1;
-    if (offset<0x5C && offset>=0x54) return 1;
-    if (offset<0x44 && offset>=0x3C) return 3;
-    if (offset == 0x5C) return 4;
-    return 0;
-}
-FocusriteEAP::Poti* SaffirePro40::SaffirePro40EAP::getMonitorPoti(std::string name) {
-    return new FocusriteEAP::Poti(this, name, 0x54);
-}
-FocusriteEAP::Poti* SaffirePro40::SaffirePro40EAP::getDimPoti(std::string name) {
-    return new FocusriteEAP::Poti(this, name, 0x58);
-}
-
 //
 // Under 48kHz Saffire pro 40 has
 //  - 8 analogic inputs (mic/line)
@@ -128,14 +113,6 @@ void SaffirePro40::SaffirePro40EAP::setupSources_high() {
 
 void SaffirePro40::SaffirePro40EAP::setupDestinations_high() {
     printMessage("High (192 kHz) sample rate not supported by Saffire Pro 40\n");
-}
-
-SaffirePro40::SaffirePro40( DeviceManager& d,
-                                        std::auto_ptr<ConfigRom>( configRom ))
-    : Dice::Device( d , configRom)
-{
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Dice::Focusrite::SaffirePro40 (NodeID %d)\n",
-                 getConfigRom().getNodeId() );
 }
 
 /**
@@ -257,6 +234,189 @@ SaffirePro40::SaffirePro40EAP::setupDefaultRouterConfig_high() {
     printMessage("High (192 kHz) sample rate not supported by Saffire Pro 40\n");
 }
 
+/**
+ *  Pro 40 Monitor section
+ */ 
+SaffirePro40::SaffirePro40EAP::MonitorSection::MonitorSection(Dice::Focusrite::FocusriteEAP* eap, 
+    std::string name) : Control::Container(eap, name)
+    , m_eap(eap)
+{
+    // Global Mute control
+    Control::Container* grp_globalmute = new Control::Container(m_eap, "GlobalMute");
+    addElement(grp_globalmute);
+    FocusriteEAP::Switch* m_mute =
+        new FocusriteEAP::Switch(m_eap, "State",
+                                 SAFFIRE_PRO40_REGISTER_APP_GLOBAL_MUTE_SWITCH,
+                                 FOCUSRITE_EAP_GLOBAL_MUTE_SWITCH_VALUE,
+                                 SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                 SAFFIRE_PRO40_MESSAGE_SET_GLOBAL_DIM_MUTE_SWITCH);
+    grp_globalmute->addElement(m_mute);
+
+
+    // Global Dim control
+    Control::Container* grp_globaldim = new Control::Container(m_eap, "GlobalDim");
+    addElement(grp_globaldim);
+    FocusriteEAP::Switch* m_dim =
+        new FocusriteEAP::Switch(m_eap, "State",
+                                 SAFFIRE_PRO40_REGISTER_APP_GLOBAL_DIM_SWITCH,
+                                 FOCUSRITE_EAP_GLOBAL_DIM_SWITCH_VALUE, 
+                                 SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                 SAFFIRE_PRO40_MESSAGE_SET_GLOBAL_DIM_MUTE_SWITCH);
+    grp_globaldim->addElement(m_dim);
+    FocusriteEAP::Poti* m_dimlevel =
+        new FocusriteEAP::Poti(m_eap, "Level",
+                               SAFFIRE_PRO40_REGISTER_APP_GLOBAL_DIM_VOLUME,
+                               SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                               SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_MONITOR_VOLUME);
+    grp_globaldim->addElement(m_dimlevel);
+
+    FocusriteEAP::Switch* s;
+    // Mono/stereo switch
+    Control::Container* grp_mono = new Control::Container(m_eap, "Mono");
+    addElement(grp_mono);
+    for (unsigned int i=0; i<SAFFIRE_PRO40_APP_STEREO_LINEOUT_SIZE; ++i) {
+        std::stringstream stream;
+        stream << "Line" << i*2+1 << "Line" << i*2+2;
+        s = 
+          new FocusriteEAP::Switch(m_eap, stream.str(), 
+                                   SAFFIRE_PRO40_REGISTER_APP_LINEOUT_SWITCH_CONTROL,
+                                   FOCUSRITE_EAP_SWITCH_CONTROL_VALUE
+                                      <<(FOCUSRITE_EAP_SWITCH_CONTROL_MONO_SHIFT+i),
+                                   SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                   SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_SWITCH_CONTROL);
+        grp_mono->addElement(s);
+    }
+
+    // Independent control of each line/out
+    Control::Container* grp_perchannel = new Control::Container(m_eap, "LineOut");
+    addElement(grp_perchannel);
+    FocusriteEAP::VolumeControl* vol;
+
+    // per Line/Out monitoring
+    for (unsigned int i=0; i<SAFFIRE_PRO40_APP_STEREO_LINEOUT_SIZE; ++i) {
+        std::stringstream stream;
+
+        // Activate/Unactivate per Line/Out volume monitoring
+        stream.str(std::string());
+        stream << "UnActivate" << i*2+1;
+        s =
+          new FocusriteEAP::Switch(m_eap, stream.str(), 
+                                   SAFFIRE_PRO40_REGISTER_APP_LINEOUT_MONITOR_SWITCH+i*sizeof(quadlet_t),
+                                   FOCUSRITE_EAP_SWITCH_BIT_1, 
+                                   SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                   SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_MONITOR_VOLUME);
+        grp_perchannel->addElement(s);
+        stream.str(std::string());
+        stream << "UnActivate" << i*2+2;
+        s =
+          new FocusriteEAP::Switch(m_eap, stream.str(),
+                                   SAFFIRE_PRO40_REGISTER_APP_LINEOUT_MONITOR_SWITCH+i*sizeof(quadlet_t),
+                                   FOCUSRITE_EAP_SWITCH_BIT_2,
+                                   SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                   SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_MONITOR_VOLUME);
+        grp_perchannel->addElement(s);
+
+        // per Line/Out mute/unmute
+        stream.str(std::string());
+        stream << "Mute" << i*2+1;
+        s =
+          new FocusriteEAP::Switch(m_eap, stream.str(), 
+                                   SAFFIRE_PRO40_REGISTER_APP_LINEOUT_MONITOR_SWITCH+i*sizeof(quadlet_t),
+                                   FOCUSRITE_EAP_SWITCH_BIT_3, 
+                                   SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                   SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_MONITOR_VOLUME);
+        grp_perchannel->addElement(s);
+        stream.str(std::string());
+        stream << "Mute" << i*2+2;
+        s = 
+          new FocusriteEAP::Switch(m_eap, stream.str(),
+                                   SAFFIRE_PRO40_REGISTER_APP_LINEOUT_MONITOR_SWITCH+i*sizeof(quadlet_t),
+                                   FOCUSRITE_EAP_SWITCH_BIT_4, 
+                                   SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                   SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_MONITOR_VOLUME);
+        grp_perchannel->addElement(s);
+
+        // per Line/Out global mute activation/unactivation
+        stream.str(std::string());
+        stream << "GMute" << 2*i+1;
+        s =
+          new FocusriteEAP::Switch(m_eap, stream.str(),
+                                   SAFFIRE_PRO40_REGISTER_APP_LINEOUT_SWITCH_CONTROL,
+                                   FOCUSRITE_EAP_SWITCH_CONTROL_VALUE
+                                        <<(FOCUSRITE_EAP_SWITCH_CONTROL_MUTE_SHIFT+2*i),
+                                   SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                   SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_SWITCH_CONTROL);
+        grp_perchannel->addElement(s);
+
+        stream.str(std::string());
+        stream << "GMute" << 2*i+2;
+        s =
+          new FocusriteEAP::Switch(m_eap, stream.str(),
+                                   SAFFIRE_PRO40_REGISTER_APP_LINEOUT_SWITCH_CONTROL,
+                                   FOCUSRITE_EAP_SWITCH_CONTROL_VALUE
+                                        <<(FOCUSRITE_EAP_SWITCH_CONTROL_MUTE_SHIFT+2*i+1),
+                                   SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                   SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_SWITCH_CONTROL);
+        grp_perchannel->addElement(s);
+
+        // per Line/Out global dim activation/unactivation
+        stream.str(std::string());
+        stream << "GDim" << 2*i+1;
+        s =
+          new FocusriteEAP::Switch(m_eap, stream.str(), 
+                                   SAFFIRE_PRO40_REGISTER_APP_LINEOUT_SWITCH_CONTROL,
+                                   FOCUSRITE_EAP_SWITCH_CONTROL_VALUE
+                                        <<(FOCUSRITE_EAP_SWITCH_CONTROL_DIM_SHIFT+2*i),
+                                   SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                   SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_SWITCH_CONTROL);
+        grp_perchannel->addElement(s);
+
+        stream.str(std::string());
+        stream << "GDim" << 2*i+2;
+        s =
+          new FocusriteEAP::Switch(m_eap, stream.str(), 
+                                   SAFFIRE_PRO40_REGISTER_APP_LINEOUT_SWITCH_CONTROL,
+                                   FOCUSRITE_EAP_SWITCH_CONTROL_VALUE
+                                        <<(FOCUSRITE_EAP_SWITCH_CONTROL_DIM_SHIFT+2*i+1),
+                                   SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                   SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_SWITCH_CONTROL);
+        grp_perchannel->addElement(s);
+
+        // per Line/Out volume control
+        stream.str(std::string());
+        stream << "Volume" << i*2+1;
+        vol =
+          new FocusriteEAP::VolumeControl(m_eap, stream.str(),
+                                          SAFFIRE_PRO40_REGISTER_APP_LINEOUT_MONITOR_VOLUME
+                                              +i*sizeof(quadlet_t),
+                                          FOCUSRITE_EAP_LINEOUT_VOLUME_SET_1,
+                                          SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                          SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_MONITOR_VOLUME);
+        grp_perchannel->addElement(vol);
+        stream.str(std::string());
+        stream << "Volume" << i*2+2;
+        vol =
+          new FocusriteEAP::VolumeControl(m_eap, stream.str(), 
+                                          SAFFIRE_PRO40_REGISTER_APP_LINEOUT_MONITOR_VOLUME
+                                              +i*sizeof(quadlet_t),
+                                          FOCUSRITE_EAP_LINEOUT_VOLUME_SET_2,
+                                          SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                          SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_MONITOR_VOLUME);
+        grp_perchannel->addElement(vol);
+    }
+}
+
+/**
+  Device
+*/
+SaffirePro40::SaffirePro40( DeviceManager& d,
+                                        std::auto_ptr<ConfigRom>( configRom ))
+    : Dice::Device( d , configRom)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created Dice::Focusrite::SaffirePro40 (NodeID %d)\n",
+                 getConfigRom().getNodeId() );
+}
+
 SaffirePro40::~SaffirePro40()
 {
     getEAP()->storeFlashConfig();
@@ -264,8 +424,9 @@ SaffirePro40::~SaffirePro40()
 
 bool SaffirePro40::discover() {
     if (Dice::Device::discover()) {
-        m_monitor = new FocusriteEAP::MonitorSection(dynamic_cast<FocusriteEAP*>(getEAP()), "Monitoring");
-        getEAP()->addElement(m_monitor);
+        FocusriteEAP* eap = dynamic_cast<FocusriteEAP*>(getEAP());
+        m_monitor = new SaffirePro40EAP::MonitorSection(eap, "Monitoring");
+        eap->addElement(m_monitor);
         return true;
     }
     return false;
@@ -282,6 +443,9 @@ Dice::EAP* SaffirePro40::createEAP() {
     return new SaffirePro40EAP(*this);
 }
 
+/**
+ *  Nickname
+ */
 bool SaffirePro40::setNickname(std::string name) {
     char nickname[SAFFIRE_PRO40_APP_NICK_NAME_SIZE+1];
 

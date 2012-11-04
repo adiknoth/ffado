@@ -32,7 +32,7 @@
 #include "focusrite_eap.h"
 
 /**
- *  Saffire Pro 24 EAP application space
+ *  Saffire Pro24 application space
  */
 // Versioning registers
 #define SAFFIRE_PRO24_REGISTER_APP_VERSION 0x00
@@ -110,11 +110,6 @@ private:
         SaffirePro24EAP(Dice::Device& dev) : FocusriteEAP(dev) {
         }
 
-        int commandToFix(unsigned offset);
-
-        Poti* getMonitorPoti(std::string);
-        Poti* getDimPoti(std::string);
-
         void setupSources_low();
         void setupDestinations_low();
         void setupSources_mid();
@@ -124,14 +119,18 @@ private:
         void setupDefaultRouterConfig_low();
         void setupDefaultRouterConfig_mid();
         void setupDefaultRouterConfig_high();
+
+        class MonitorSection : public Control::Container
+        {
+        public:
+          MonitorSection(Dice::Focusrite::FocusriteEAP*, std::string);
+        private:
+          Dice::Focusrite::FocusriteEAP* m_eap;
+        };
     };
     Dice::EAP* createEAP();
 
-    class LineInstSwitch;
-    LineInstSwitch *m_ch1, *m_ch2;
-    class LevelSwitch;
-    LevelSwitch *m_ch3, *m_ch4;
-    Dice::Focusrite::FocusriteEAP::MonitorSection *m_monitor;
+    SaffirePro24EAP::MonitorSection *m_monitor;
 };
 
 }
