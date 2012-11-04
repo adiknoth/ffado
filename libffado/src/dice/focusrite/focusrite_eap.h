@@ -29,6 +29,52 @@
 
 #include "libieee1394/configrom.h"
 
+/**
+ *  Focusrite EAP application space
+ *    Prescribed values common to all devices
+ */
+// The limit of the monitoring setting register space in the EAP application space
+// (included)
+// All subsequent addresses can not be beyond this limit
+#define FOCUSRITE_EAP_REGISTER_APP_MONITORING_LIMIT 0x68
+
+// To be sent after any message set 
+#define FOCUSRITE_EAP_MESSAGE_SET_NO_MESSAGE 0
+
+// Global switches
+// One register for each
+#define FOCUSRITE_EAP_GLOBAL_MUTE_SWITCH_VALUE 1
+#define FOCUSRITE_EAP_GLOBAL_DIM_SWITCH_VALUE 1
+
+// Per Line/Out switch monitor registers; bit encoding
+//   Each register controls two (left and rigth) Line/Out
+#define FOCUSRITE_EAP_SWITCH_BIT_1   1 // Activate left Line/Out
+#define FOCUSRITE_EAP_SWITCH_BIT_2   2 // Activate right Line/Out
+#define FOCUSRITE_EAP_SWITCH_BIT_1_2 3 // Activate both
+#define FOCUSRITE_EAP_SWITCH_BIT_3   4 // Mute left Line/Out
+#define FOCUSRITE_EAP_SWITCH_BIT_4   8 // Mute right Line/Out
+
+// Per Line/Out mute, dim and mono register; bit encoding
+//   One register controls all Line/Out
+#define FOCUSRITE_EAP_SWITCH_CONTROL_MUTE_SHIFT 0
+#define FOCUSRITE_EAP_SWITCH_CONTROL_DIM_SHIFT 10
+#define FOCUSRITE_EAP_SWITCH_CONTROL_MONO_SHIFT 20
+#define FOCUSRITE_EAP_GLOBAL_MUTE_SWITCH_VALUE 1
+#define FOCUSRITE_EAP_GLOBAL_DIM_SWITCH_VALUE 1
+#define FOCUSRITE_EAP_SWITCH_CONTROL_VALUE 1
+
+// Per Line/Out volume monitor registers
+// Each register controls two (left and rigth) Line/Out
+// The two last bytes (little endian) of each Line/Out volume register
+//   control the right and line line respectively 
+#define FOCUSRITE_EAP_LINEOUT_VOLUME_SET_1   0
+#define FOCUSRITE_EAP_LINEOUT_VOLUME_SET_2   8
+
+// Per Line/Out Instrument/Line and Hi/Lo gain switches
+//   Each register controls two (left and rigth) Line/Out
+#define FOCUSRITE_EAP_LINEOUT_SWITCH_INST_SHIFT 16
+#define FOCUSRITE_EAP_LINEOUT_SWITCH_GAIN_SHIFT 16
+
 namespace Dice {
 namespace Focusrite {
 
