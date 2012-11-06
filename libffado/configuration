@@ -506,8 +506,7 @@ device_definitions = (
     vendorname = "Focusrite";
     modelname = "Saffire PRO 14";
     driver = 20;
-    mixer = "Generic_Dice_EAP";
-    #mixer = "Saffire_Dice";
+    mixer = "Saffire_Dice";
 },
 {
     vendorid = 0x001C6A;
