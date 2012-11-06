@@ -263,6 +263,10 @@ class Saffire_Dice(Generic_Dice_EAP):
             for i in range(4):
                 self.LineInSwitches[i].widget.setChecked(self.LineInSwitches[i].Interface.selected())
                 self.connect(self.LineInSwitches[i].widget, QtCore.SIGNAL("toggled(bool)"), self.LineInSwitches[i].Interface.select)
+            widget.LineInSwitchLine_1.setChecked(not self.LineInSwitches[0].Interface.selected())
+            widget.LineInSwitchLine_2.setChecked(not self.LineInSwitches[1].Interface.selected())
+            widget.LineInSwitchLo_3.setChecked(not self.LineInSwitches[2].Interface.selected())
+            widget.LineInSwitchLo_4.setChecked(not self.LineInSwitches[3].Interface.selected())
             
         # Mono/Stereo Switch
         for i in range(self.nbLines/2):

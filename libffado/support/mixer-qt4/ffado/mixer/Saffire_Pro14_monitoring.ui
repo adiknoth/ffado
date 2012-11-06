@@ -1045,7 +1045,7 @@
        <property name="title">
         <string>1</string>
        </property>
-       <widget class="QRadioButton" name="LineIn1SwitchLine_1">
+       <widget class="QRadioButton" name="LineInSwitchLine_1">
         <property name="geometry">
          <rect>
           <x>20</x>
