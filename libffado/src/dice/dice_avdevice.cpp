@@ -49,6 +49,7 @@
 #include "focusrite/saffire_pro40.h"
 #include "focusrite/saffire_pro24.h"
 #include "focusrite/saffire_pro14.h"
+#include "presonus/firestudio_tube.h"
 
 using namespace std;
 
@@ -137,6 +138,13 @@ Device::createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
                 default: // return a plain Dice device
                     return new Device(d, configRom);
            }
+        case FW_VENDORID_PRESONUS:
+            switch(modelId) {
+                case 0x0000000c:
+                    return new Presonus::FirestudioTube(d, configRom);
+                default: // return a plain Dice device
+                    return new Device(d, configRom);
+            }
         default:
             return new Device(d, configRom);
     }
