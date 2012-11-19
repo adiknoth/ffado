@@ -47,8 +47,8 @@
 // Global monitor registers (application space)
 #define SAFFIRE_PRO24_REGISTER_APP_GLOBAL_MUTE_SWITCH 0x0C
 #define SAFFIRE_PRO24_REGISTER_APP_GLOBAL_DIM_SWITCH  0x10
-#define SAFFIRE_PRO24_REGISTER_APP_GLOBAL_DIM_VOLUME 0x58
-#define SAFFIRE_PRO24_REGISTER_APP_GLOBAL_MONITOR_VOLUME 0x54
+#define SAFFIRE_PRO24_REGISTER_APP_GLOBAL_DIM_VOLUME 0x54
+#define SAFFIRE_PRO24_REGISTER_APP_GLOBAL_MONITOR_VOLUME 0x50
 
 // Per line/out monitor volume and switches: registers are expected to be one after the other
 //  each register controlling two output lines
