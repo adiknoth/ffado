@@ -821,16 +821,19 @@ void
 EAP::showApplication()
 {
     printMessage("--- Application space ---\n");
+    printMessage(" application space size: %06d\n", m_app_size);
     fb_quadlet_t* tmp = (fb_quadlet_t *)calloc(128, sizeof(fb_quadlet_t));
-    unsigned int appsize = m_app_size; /// m_app_size is rather big. Start with the first four block of 128 quadlets...
+    int appsize = m_app_size/sizeof(fb_quadlet_t);
     unsigned int offset = 0;
+    unsigned int to_read;
     while ( appsize > 0 ) {
-        if ( ! readRegBlock( eRT_Application, offset, tmp, ((appsize<128)?appsize:128)*sizeof(fb_quadlet_t) ) )
+        to_read = (appsize<128)?appsize:128;
+        if ( ! readRegBlock( eRT_Application, offset, tmp, to_read*sizeof(fb_quadlet_t) ) )
             appsize = 0;
         else {
-            hexDumpQuadlets(tmp, 128);
+            hexDumpQuadlets(tmp, to_read);
             offset += 128*sizeof(fb_quadlet_t);
-            appsize -= 128*sizeof(fb_quadlet_t);
+            appsize -= to_read;
         }
     }
 }
