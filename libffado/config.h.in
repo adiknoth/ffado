@@ -215,10 +215,11 @@
 // -- RME options -- //
 
 // the transfer delay is substracted from the ideal presentation
-// time to obtain a corrected presentation time. This values is
+// time to obtain a corrected presentation time. This value is
 // then used to stamp the packet and determine the transmission
-// time instant.
-#define RME_TRANSMIT_TRANSFER_DELAY    (0U)
+// time instant.  This is in ticks, and has been determined 
+// experimentally to provide the most stability.
+#define RME_TRANSMIT_TRANSFER_DELAY    (3U*TICKS_PER_CYCLE)
 
 // the absolute minimum number of cycles we want to transmit
 // a packet ahead of the presentation time. The nominal time
@@ -226,14 +227,19 @@
 // given by RME_TRANSMIT_TRANSFER_DELAY (in ticks), but in case we
 // are too late for that, this constant defines how late we can
 // be.
-#define RME_MIN_CYCLES_BEFORE_PRESENTATION                0
+#define RME_MIN_CYCLES_BEFORE_PRESENTATION                1
 
 // the absolute maximum number of cycles we want to transmit
 // a packet ahead of the ideal transmit time. The nominal time
 // the packet is transmitted ahead of the presentation time is
 // given by RME_TRANSMIT_TRANSFER_DELAY (in ticks), but we can send
 // packets early if we want to.
-#define RME_MAX_CYCLES_TO_TRANSMIT_EARLY                  1
+#define RME_MAX_CYCLES_TO_TRANSMIT_EARLY                  5
+
+// The transfer delay assumed for incoming packets from an RME. 
+// Normally this would be the same as the transmit transfer delay.
+// This value is in ticks.
+#define RME_RECEIVE_TRANSFER_DELAY     RME_TRANSMIT_TRANSFER_DELAY
 
 // ensure that the RME tx SP clips all float values to [-1.0..1.0]
 #define RME_CLIP_FLOATS                                   1

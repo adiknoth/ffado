@@ -173,12 +173,12 @@ if (rep == 0) {
         // this stuffs up the rx DLL since the resulting instantaneous
         // sample rate is extremely high.
         //
-        // Finally the packet timestamp is "future dated" by a set number
-        // of cycles, determined experimentally to give the most reliable
-        // results.
+        // Finally the packet timestamp is "back dated" by a the rx
+        // transfer delay to account for delays between the ADCs and 
+        // reception of the audio data.
 
         pkt_timestamp = CYCLE_TIMER_TO_TICKS(CYCLE_TIMER_SET_OFFSET(pkt_ctr, 
-                          0)) + 3*TICKS_PER_CYCLE;
+                          0)) - RME_RECEIVE_TRANSFER_DELAY;
         if (pkt_timestamp < 0)
           pkt_timestamp += 128LL*TICKS_PER_SECOND;
         else
