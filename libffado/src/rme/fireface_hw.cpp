@@ -94,6 +94,7 @@ Device::init_hardware(void)
         // by default.
         dev_config->software_freq = 44100;
         dev_config->dds_freq = 0;
+        settings->sample_rate = dev_config->software_freq;
 
         // TODO: set input amplifier gains to a value other than 0?
 

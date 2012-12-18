@@ -185,10 +185,16 @@ Device::write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
     quadlet_t ff400_addr = (addr & 0xffffffff);
 
     if (m_rme_model == RME_MODEL_FIREFACE800) {
-        err |= readBlock(addr, buf, n_quads);
-        if (!err)
-            wait_while_busy(5);
+        err |= writeBlock(addr, buf, n_quads);
+        if (!err) {
+            err = wait_while_busy(5) != 0;
+            if (err)
+                debugOutput(DEBUG_LEVEL_WARNING, "device still busy after flash write\n");
+        } else
+            debugOutput(DEBUG_LEVEL_WARNING, "flash writeBlock() failed\n");
+        return err?-1:0;
     }
+
     // FF400 case follows
     do {
         xfer_size = (n_quads > 32)?32:n_quads;
@@ -222,6 +228,7 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
     signed int i, err = 0;
     unsigned int rev;
     long long int addr;
+    quadlet_t status_buf[4];
 
     // FIXME: the debug output in this function is mostly for testing at
     // present.
@@ -328,13 +335,9 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         }
     }
 
-{
-quadlet_t buf[4];
-signed int i;
-  i = readBlock(RME_FF_STATUS_REG0, buf, 4);
-  debugOutput(DEBUG_LEVEL_NORMAL, "Status read: %d: 0x%08x 0x%08x 0x%08x 0x%08x\n", i,
-    buf[0], buf[1], buf[2], buf[3]);
-}
+    i = readBlock(RME_FF_STATUS_REG0, status_buf, 4);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Status read: %d: 0x%08x 0x%08x 0x%08x 0x%08x\n", i,
+        status_buf[0], status_buf[1], status_buf[2], status_buf[3]);
 
 #if 0
 {

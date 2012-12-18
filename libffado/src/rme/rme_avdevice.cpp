@@ -402,7 +402,12 @@ Device::discover()
     }
 
     // This is just for testing
-    read_device_flash_settings(NULL);
+    {
+      FF_software_settings_t fsettings;
+      read_device_flash_settings(&fsettings);
+//fsettings = *settings;
+//      write_device_flash_settings(&fsettings);
+    }
 
     return true;
 }

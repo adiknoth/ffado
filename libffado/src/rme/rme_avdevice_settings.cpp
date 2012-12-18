@@ -60,7 +60,7 @@ Device::getInputLevel(void) {
 signed int
 Device::setInputLevel(unsigned int level) {
 
-    if (level<FF_SWPARAM_ILEVEL_LOGAIN || level>FF_SWPARAM_ILEVEL_m10dBV) {
+    if (level<FF_SWPARAM_ILEVEL_LOGAIN || level>FF_SWPARAM_ILEVEL_4dBU) {
         debugOutput(DEBUG_LEVEL_WARNING, "Invalid input level ID %d\n", level);
         return -1;
     }
@@ -78,7 +78,7 @@ Device::getOutputLevel(void) {
 signed int
 Device::setOutputLevel(unsigned int level) {
 
-    if (level<FF_SWPARAM_OLEVEL_HIGAIN || level>FF_SWPARAM_OLEVEL_m10dBV) {
+    if (level<FF_SWPARAM_OLEVEL_m10dBV || level>FF_SWPARAM_OLEVEL_HIGAIN) {
         debugOutput(DEBUG_LEVEL_WARNING, "Invalid output level ID %d\n", level);
         return -1;
     }

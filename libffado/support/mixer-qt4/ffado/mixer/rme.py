@@ -65,13 +65,13 @@ class Rme(QWidget):
         }
 
         self.Radiobuttons={
-            self.level_in_lo_gain: ['/Control/Input_level', 1],
+            self.level_in_lo_gain: ['/Control/Input_level', 0],
             self.level_in_p4dBu:   ['/Control/Input_level', 2],
-            self.level_in_m10dBV:  ['/Control/Input_level', 3],
+            self.level_in_m10dBV:  ['/Control/Input_level', 1],
 
-            self.level_out_hi_gain: ['/Control/Output_level', 1],
-            self.level_out_p4dBu:   ['/Control/Output_level', 2],
-            self.level_out_m10dBV:  ['/Control/Output_level', 3],
+            self.level_out_hi_gain: ['/Control/Output_level', 2],
+            self.level_out_p4dBu:   ['/Control/Output_level', 1],
+            self.level_out_m10dBV:  ['/Control/Output_level', 0],
 
             self.spdif_input_coax:    ['/Control/SPDIF_input_mode', 0],
             self.spdif_input_optical: ['/Control/SPDIF_input_mode', 1],

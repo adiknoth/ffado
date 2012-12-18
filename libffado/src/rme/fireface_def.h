@@ -417,12 +417,12 @@ typedef struct {
 #define FF_DEV_FLASH_SYNCREF_ADAT2             0x00000003
 #define FF_DEV_FLASH_SYNCREF_SPDIF             0x00000004
 #define FF_DEV_FLASH_SYNCREC_TCO               0x00000005
-#define FF_DEV_FLASH_ILEVEL_LOGAIN             0x00000001
+#define FF_DEV_FLASH_ILEVEL_LOGAIN             0x00000000
 #define FF_DEV_FLASH_ILEVEL_4dBU               0x00000002
-#define FF_DEV_FLASH_ILEVEL_m10dBV             0x00000003
-#define FF_DEV_FLASH_OLEVEL_HIGAIN             0x00000001
-#define FF_DEV_FLASH_OLEVEL_4dBU               0x00000002
-#define FF_DEV_FLASH_OLEVEL_m10dBV             0x00000003
+#define FF_DEV_FLASH_ILEVEL_m10dBV             0x00000001
+#define FF_DEV_FLASH_OLEVEL_HIGAIN             0x00000002
+#define FF_DEV_FLASH_OLEVEL_4dBU               0x00000001
+#define FF_DEV_FLASH_OLEVEL_m10dBV             0x00000000
 #define FF_DEV_FLASH_MIC_PHANTOM_ON            0x00000001
 #define FF_DEV_FLASH_SRATE_DDS_INACTIVE        0x00000000
 #define FF_DEV_FLASH_WORD_CLOCK_1x             0x00000001
