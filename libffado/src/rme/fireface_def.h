@@ -390,18 +390,16 @@ typedef struct {
     uint32_t p12db_an[10];
 } FF_device_flash_settings_t;
 
-// Defines used to interpret device flash settings.  These appear to be
-// arbitary from the device's perspective since the device doesn't appear to
-// directly use these stored settings.  The driver loads the flash settings
-// and then uses them to infer the appropriate values for the configuration
-// registers.  The actual values used here appear to correspond more or less
-// to the "value" returns from the GUI elements used to represent the
-// controls under other systems.
+// Defines used to interpret device flash settings.  The driver can read 
+// these and use them to infer the appropriate values for the configuration
+// registers.  The flash settings are also used directly by the device
+// at power up to define its initial state.  Therefore it's important that
+// these settings correspond to the values expected by the device.
 #define FF_DEV_FLASH_INVALID                   0xffffffff
 #define FF_DEV_FLASH_SPDIF_INPUT_COAX          0x00000002   // To be confirmed
 #define FF_DEV_FLASH_SPDIF_INPUT_OPTICAL       0x00000001   // To be confirmed
-#define FF_DEV_FLASH_SPDIF_OUTPUT_COAX         0x00000000   // To be confirmed
-#define FF_DEV_FLASH_SPDIF_OUTPUT_OPTICAL      0x00000001   // To be confirmed
+#define FF_DEV_FLASH_SPDIF_OUTPUT_COAX         0x00000000
+#define FF_DEV_FLASH_SPDIF_OUTPUT_OPTICAL      0x00000001
 #define FF_DEV_FLASH_SPDIF_OUTPUT_EMPHASIS_ON  0x00000001
 #define FF_DEV_FLASH_SPDIF_OUTPUT_PRO_ON       0x00000001
 #define FF_DEV_FLASH_SPDIF_OUTPUT_NONAUDIO_ON  0x00000001
@@ -409,7 +407,7 @@ typedef struct {
 #define FF_DEV_FLASH_BWLIMIT_NO_ADAT2          0x00000002  // FF800 only
 #define FF_DEV_FLASH_BWLIMIT_ANALOG_SPDIF_ONLY 0x00000003
 #define FF_DEV_FLASH_BWLIMIT_ANALOG_ONLY       0x00000004
-#define FF_DEV_FLASH_CLOCK_MODE_MASTER         0x00000002
+#define FF_DEV_FLASH_CLOCK_MODE_MASTER         0x00000000
 #define FF_DEV_FLASH_CLOCK_MODE_AUTOSYNC       0x00000001
 #define FF_DEV_FLASH_CLOCK_MODE_SLAVE          0x00000001
 #define FF_DEV_FLASH_SYNCREF_WORDCLOCK         0x00000001
