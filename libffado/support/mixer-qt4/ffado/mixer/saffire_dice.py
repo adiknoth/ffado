@@ -78,7 +78,10 @@ class Saffire_Dice(Generic_Dice_EAP):
             uicLoad("ffado/mixer/Saffire_Pro40_monitoring.ui", widget)
 
         # Add Monitoring to ffado-mixer panels
-        self.tabs.addTab(widget, "Monitoring")
+        scrollarea = QtGui.QScrollArea(self.tabs)
+        scrollarea.setWidgetResizable(False)
+        scrollarea.setWidget(widget)
+        self.tabs.addTab(scrollarea, "Monitoring")
 
         # Global settings
         self.muteInterface = BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/GlobalMute/State")
