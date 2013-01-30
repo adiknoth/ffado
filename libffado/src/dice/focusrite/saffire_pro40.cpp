@@ -25,6 +25,8 @@
 
 #include "focusrite_eap.h"
 
+#include "libutil/ByteSwap.h"
+
 namespace Dice {
 namespace Focusrite {
 
