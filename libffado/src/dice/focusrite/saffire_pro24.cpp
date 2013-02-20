@@ -84,8 +84,13 @@ void
 SaffirePro24::SaffirePro24EAP::setupDefaultRouterConfig_low() {
     unsigned int i;
     // the 1394 stream receivers except the two "loops" one
-    for (i=0; i<4; i++) {
-        addRoute(eRS_InS0, i, eRD_ATX0, i);
+    //  Looks like analogic inputs are curiously ordered
+    //  (required for coherent front LEDs)
+    for (i=0; i<2; i++) {
+        addRoute(eRS_InS0, i+2, eRD_ATX0, i);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_InS0, i, eRD_ATX0, i+2);
     }
     for (i=0; i<2; i++) {
         addRoute(eRS_AES, i+6, eRD_ATX0, i+4);
@@ -136,8 +141,13 @@ void
 SaffirePro24::SaffirePro24EAP::setupDefaultRouterConfig_mid() {
     unsigned int i;
     // the 1394 stream receivers except the two "loops" one
-    for (i=0; i<4; i++) {
-        addRoute(eRS_InS0, i, eRD_ATX0, i);
+    //  Looks like analogic inputs are curiously ordered
+    //  (required for coherent front LEDs)
+    for (i=0; i<2; i++) {
+        addRoute(eRS_InS0, i+2, eRD_ATX0, i);
+    }
+    for (i=0; i<2; i++) {
+        addRoute(eRS_InS0, i, eRD_ATX0, i+2);
     }
     for (i=0; i<2; i++) {
         addRoute(eRS_AES, i+6, eRD_ATX0, i+4);
