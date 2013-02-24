@@ -729,7 +729,8 @@ Device::prepare() {
         num_channels = 8;
     if (settings->limit_bandwidth != FF_SWPARAM_BWLIMIT_ANALOG_ONLY)
         num_channels += 2;
-    if (settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS)
+    if (settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS ||
+        settings->limit_bandwidth==FF_DEV_FLASH_BWLIMIT_NO_ADAT2)
         num_channels += (mult==4?0:(mult==2?4:8));
     if (m_rme_model==RME_MODEL_FIREFACE800 &&
         settings->limit_bandwidth==FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS)
