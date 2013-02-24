@@ -396,8 +396,8 @@ typedef struct {
 // at power up to define its initial state.  Therefore it's important that
 // these settings correspond to the values expected by the device.
 #define FF_DEV_FLASH_INVALID                   0xffffffff
-#define FF_DEV_FLASH_SPDIF_INPUT_COAX          0x00000002   // To be confirmed
-#define FF_DEV_FLASH_SPDIF_INPUT_OPTICAL       0x00000001   // To be confirmed
+#define FF_DEV_FLASH_SPDIF_INPUT_COAX          0x00000001
+#define FF_DEV_FLASH_SPDIF_INPUT_OPTICAL       0x00000000
 #define FF_DEV_FLASH_SPDIF_OUTPUT_COAX         0x00000000
 #define FF_DEV_FLASH_SPDIF_OUTPUT_OPTICAL      0x00000001
 #define FF_DEV_FLASH_SPDIF_OUTPUT_EMPHASIS_ON  0x00000001
@@ -424,8 +424,9 @@ typedef struct {
 #define FF_DEV_FLASH_MIC_PHANTOM_ON            0x00000001
 #define FF_DEV_FLASH_SRATE_DDS_INACTIVE        0x00000000
 #define FF_DEV_FLASH_WORD_CLOCK_1x             0x00000001
-#define FF_DEV_FLASH_PLUG_SELECT_FRONT         0x00000001  // To be confirmed
-#define FF_DEV_FLASH_PLUG_SELECT_REAR          0x00000000  // To be confirmed
+#define FF_DEV_FLASH_PLUG_SELECT_FRONT_REAR    0x00000002
+#define FF_DEV_FLASH_PLUG_SELECT_FRONT         0x00000001
+#define FF_DEV_FLASH_PLUG_SELECT_REAR          0x00000000
 
 #define FF_MATRIXMIXER_SIZE (RME_FF800_MAX_CHANNELS*RME_FF800_MAX_CHANNELS)
 
@@ -450,7 +451,7 @@ typedef struct {
     uint32_t output_level;
     uint32_t filter;
     uint32_t fuzz;
-    uint32_t limiter_disable;
+    uint32_t limiter;
     uint32_t sample_rate;
     uint32_t word_clock_single_speed;
     uint32_t ff400_input_pad[2];       // Channels 3/4, FF400 only
@@ -505,9 +506,9 @@ typedef struct {
 //
 // The following defines refer to fields in the software parameter record
 // which are derived from one or more fields in device flash.
-#define FF_SWPARAM_PHONESLEVEL_HIGAIN          0x00000001
-#define FF_SWPARAM_PHONESLEVEL_4dBU            0x00000002
-#define FF_SWPARAM_PHONESLEVEL_m10dBV          0x00000003
+#define FF_SWPARAM_PHONESLEVEL_HIGAIN          0x00000000
+#define FF_SWPARAM_PHONESLEVEL_4dBU            0x00000001
+#define FF_SWPARAM_PHONESLEVEL_m10dBV          0x00000002
 #define FF_SWPARAM_INPUT_OPT_B                 0x00000001
 #define FF_SWPARAM_INPUT_OPT_A                 0x00000002
 

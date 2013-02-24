@@ -102,11 +102,12 @@ Device::init_hardware(void)
         // TODO: store and manipulate channel mute/rec flags
 
         // The FF800 needs the input source set via the input options.
-        // Start with the channel 1 limiter disabled too.
+        // The device's default has the limiter enabled so we'll follow
+        // that convention.
         if (m_rme_model == RME_MODEL_FIREFACE800) {
             settings->input_opt[0] = settings->input_opt[1] = 
               settings->input_opt[2] = FF_SWPARAM_FF800_INPUT_OPT_FRONT;
-            settings->limiter_disable = 1;
+            settings->limiter = 1;
         }
 
         // Configure the hardware to match the current software status. 
@@ -478,10 +479,11 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
     // This is hardwired in other drivers
     data[2] |= (CR2_FREQ0 + CR2_FREQ1 + CR2_DSPEED + CR2_QSSPEED);
 
-    // The FF800 limiter applies to the front panel instrument input, so it
-    // only makes sense that it is disabled when that input is in use.
-    data[2] |= (sw_settings->limiter_disable && 
-                (sw_settings->input_opt[0] & FF_SWPARAM_FF800_INPUT_OPT_FRONT)) ? 
+    // The FF800 limiter can only be disabled if the front panel instrument
+    // input is in use, so it only makes sense that it is disabled when that
+    // input is in use.
+    data[2] |= (sw_settings->limiter==0 && 
+                (sw_settings->input_opt[0]==FF_SWPARAM_FF800_INPUT_OPT_FRONT)) ? 
                 CR2_DISABLE_LIMITER : 0;
 
 //This is just for testing - it's a known consistent configuration

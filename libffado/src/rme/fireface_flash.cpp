@@ -314,7 +314,7 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
             settings->ff400_instr_input[0] = hw_settings.fuzz;
             settings->ff400_instr_input[1] = hw_settings.filter;
         }
-        settings->limiter_disable = (hw_settings.p12db_an[0] == 0)?1:0;
+        settings->limiter = (hw_settings.p12db_an[0] == 0)?1:0;
         settings->sample_rate = hw_settings.sample_rate;
         settings->word_clock_single_speed = hw_settings.word_clock_single_speed;
 
@@ -323,12 +323,16 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         // The FF400 does not.  The FF400 borrows the mic0 selector field 
         // in the flash configuration structure to use for the "phones"
         // level which the FF800 doesn't have.
-        // The offset of 1 here is to maintain consistency with the values
-        // used in the flash by other operating systems.
         if (m_rme_model == RME_MODEL_FIREFACE400)
-            settings->phones_level = hw_settings.mic_plug_select[0] + 1;
+            settings->phones_level = hw_settings.mic_plug_select[0];
         else 
         if (m_rme_model == RME_MODEL_FIREFACE800) {
+            // The value for the front/rear selectors coming from the flash
+            // is an indexed value: 0=rear, 1=front, 2=front and rear.  By
+            // adding one to this we can treat input_opt as a bitmask with
+            // bit 0 being "rear" and bit 1 being "front".  This follows the
+            // approach used in drivers for other operating systems and
+            // simplifies certain logic expressions within the driver.
             settings->input_opt[0] = hw_settings.instrument_plug_select + 1;
             settings->input_opt[1] = hw_settings.mic_plug_select[0] + 1;
             settings->input_opt[2] = hw_settings.mic_plug_select[1] + 1;
@@ -369,7 +373,7 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 0: %d\n", settings->ff400_instr_input[0]);
         debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 1: %d\n", settings->ff400_instr_input[1]);
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  limiter disable: %d\n", settings->limiter_disable);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  limiter: %d\n", settings->limiter);
     debugOutput(DEBUG_LEVEL_VERBOSE, "  sample rate: %d\n", settings->sample_rate);
     debugOutput(DEBUG_LEVEL_VERBOSE, "  word clock single speed: %d\n", settings->word_clock_single_speed);
     if (m_rme_model == RME_MODEL_FIREFACE400) {
@@ -441,7 +445,10 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
     hw_settings.output_level = settings->output_level;
     hw_settings.filter = settings->filter;
     hw_settings.fuzz = settings->fuzz;
-    if (m_rme_model==RME_MODEL_FIREFACE800 && settings->limiter_disable==1 && 
+    // The limiter can only be disabled if channel 1 uses the "front" input.
+    // Note that p12db_an (as passed to the flash) seems to be a "limiter
+    // disabled" flag.
+    if (m_rme_model==RME_MODEL_FIREFACE800 && settings->limiter==0 && 
             settings->input_opt[0]==FF_SWPARAM_FF800_INPUT_OPT_FRONT)
         hw_settings.p12db_an[0] = 1;
     else
@@ -454,13 +461,16 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
     // The FF400 does not.  The FF400 borrows the mic0 selector field 
     // in the flash configuration structure to use for the "phones"
     // level which the FF800 doesn't have.
-    // The offset of 1 here is to maintain consistency with the values
-    // used in the flash by other operating systems.  See related section of
-    // read_device_flash_settings().
     if (m_rme_model == RME_MODEL_FIREFACE400)
-        hw_settings.mic_plug_select[0] = settings->phones_level - 1;
+        hw_settings.mic_plug_select[0] = settings->phones_level;
     else 
     if (m_rme_model == RME_MODEL_FIREFACE800) {
+        // The offset of 1 follows the convention used internally in drivers
+        // for other operating systems.  It permits input_opt to be treated
+        // as a bitmask with bit 0 being "rear" and bit 1 being "front".
+        // In the flash, the corresponding value is the index of the active
+        // option in the list rear, front, front and rear.  See also the
+        // related section of read_device_flash_settings().
         hw_settings.instrument_plug_select = settings->input_opt[0] - 1;
         hw_settings.mic_plug_select[0] = settings->input_opt[1] - 1;
         hw_settings.mic_plug_select[1] = settings->input_opt[2] - 1;

@@ -162,7 +162,7 @@ Device::getInputInstrOpt(unsigned int channel) {
             }
             return (settings->filter?FF800_INSTR_OPT_FILTER:0) |
                    (settings->fuzz?FF800_INSTR_OPT_FUZZ:0) |
-                   (settings->limiter_disable?0:FF800_INSTR_OPT_LIMITER);
+                   (settings->limiter?FF800_INSTR_OPT_LIMITER:0);
             break;
         default:
             debugOutput(DEBUG_LEVEL_WARNING, "unimplemented for model %d\n", m_rme_model);
@@ -188,7 +188,7 @@ Device::setInputInstrOpt(unsigned int channel, unsigned int status) {
             }
             settings->filter = (status & FF800_INSTR_OPT_FILTER)!=0;
             settings->fuzz = (status & FF800_INSTR_OPT_FUZZ)!=0;
-            settings->limiter_disable = (status & FF800_INSTR_OPT_LIMITER)==0;
+            settings->limiter = (status & FF800_INSTR_OPT_LIMITER)!=0;
             break;
         default:
             debugOutput(DEBUG_LEVEL_WARNING, "unimplemented for model %d\n", m_rme_model);

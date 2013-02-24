@@ -488,7 +488,7 @@
              <item>
               <widget class="QRadioButton" name="spdif_input_optical">
                <property name="text">
-                <string>Optical</string>
+                <string>ADAT2 Optical</string>
                </property>
               </widget>
              </item>
@@ -527,7 +527,7 @@
              <item row="0" column="0">
               <widget class="QCheckBox" name="spdif_output_optical">
                <property name="text">
-                <string>Optical</string>
+                <string>ADAT2 Optical</string>
                </property>
               </widget>
              </item>

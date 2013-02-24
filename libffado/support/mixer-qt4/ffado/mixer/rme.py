@@ -76,9 +76,9 @@ class Rme(QWidget):
             self.spdif_input_coax:    ['/Control/SPDIF_input_mode', 0],
             self.spdif_input_optical: ['/Control/SPDIF_input_mode', 1],
 
-            self.phones_hi_gain: ['/Control/Phones_level', 1],
-            self.phones_p4dBu:   ['/Control/Phones_level', 2],
-            self.phones_m10dBV:  ['/Control/Phones_level', 3],
+            self.phones_hi_gain: ['/Control/Phones_level', 0],
+            self.phones_p4dBu:   ['/Control/Phones_level', 1],
+            self.phones_m10dBV:  ['/Control/Phones_level', 2],
 
             self.clock_mode_autosync: ['/Control/Clock_mode', 1],
             self.clock_mode_master: ['/Control/Clock_mode', 0],

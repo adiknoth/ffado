@@ -93,12 +93,22 @@ signed int err = 0;
             }
             break;
         case RME_CTRL_INPUT_LEVEL:
-            if (m_parent.setInputLevel(v) == 0) {
+            switch (v) {
+              case 0: i = FF_SWPARAM_ILEVEL_LOGAIN; break;
+              case 1: i = FF_DEV_FLASH_ILEVEL_m10dBV; break;
+              default: i = FF_DEV_FLASH_ILEVEL_4dBU;
+            }
+            if (m_parent.setInputLevel(i) == 0) {
                 m_value = v;
             }
             break;
         case RME_CTRL_OUTPUT_LEVEL:
-            if (m_parent.setOutputLevel(v) == 0) {
+            switch (v) {
+              case 0: i = FF_DEV_FLASH_OLEVEL_m10dBV; break;
+              case 1: i = FF_DEV_FLASH_OLEVEL_4dBU; break;
+              default: i = FF_DEV_FLASH_OLEVEL_HIGAIN; break;
+            }
+            if (m_parent.setOutputLevel(i) == 0) {
                 m_value = v;
             }
             break;
@@ -126,7 +136,8 @@ signed int err = 0;
             break;
         }
         case RME_CTRL_INSTRUMENT_OPTIONS:
-            // m_info is the channel number
+            // m_info is the channel number, v is expected to be a bitmap
+            // comprised of the FF800_INSTR_OPT_* values.
             if (m_parent.setInputInstrOpt(m_info, v) == 0)
                 m_value = v;
             break;
@@ -156,7 +167,12 @@ signed int err = 0;
             }
             break;
         case RME_CTRL_PHONES_LEVEL:
-            if (m_parent.setPhonesLevel(v) == 0) {
+            switch (v) {
+              case 0: i = FF_SWPARAM_PHONESLEVEL_HIGAIN; break;
+              case 1: i = FF_SWPARAM_PHONESLEVEL_4dBU; break;
+              default: i = FF_SWPARAM_PHONESLEVEL_m10dBV;
+            }
+            if (m_parent.setPhonesLevel(i) == 0) {
                 m_value = v;
             }
             break;
