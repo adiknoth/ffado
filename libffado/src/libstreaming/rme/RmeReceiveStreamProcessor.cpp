@@ -178,7 +178,8 @@ if (rep == 0) {
         // reception of the audio data.
 
         pkt_timestamp = CYCLE_TIMER_TO_TICKS(CYCLE_TIMER_SET_OFFSET(pkt_ctr, 
-                          0)) - RME_RECEIVE_TRANSFER_DELAY;
+                          0));
+        pkt_timestamp -= (int64_t)RME_RECEIVE_TRANSFER_DELAY;
         if (pkt_timestamp < 0)
           pkt_timestamp += 128LL*TICKS_PER_SECOND;
         else
