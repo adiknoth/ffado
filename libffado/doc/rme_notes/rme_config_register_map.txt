@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.19
+Version: 0.20
 Author: Jonathan Woithe
-Date: 11 June 2010
+Date: 8 March 2013
 
 
 Definitions
@@ -261,23 +261,9 @@ initialisation to ensure the driver's status agrees with that of the device.
 
 There are several classes of things stored in flash: operational settings,
 volumes (ie: the mixer status) and configuration/firmware.  Device settings
-start at address 0x3000f0000 on the FF800 and 0x00060000 on the FF400.
-
-Mixer (volume) data starts at 0x3000e0000 on the FF800 and 0x00060000 on the
-FF400.  Mixer volumes are written in 64-quadlet (256-byte) blocks, one per
-hardware channel.  There are 28 hardware channels for the FF800 and 18 for
-the FF400.
-
-There are several control groups in the mixer:
-  0xe0000 (FF800): "mixer shadow", FF800 only, meaning unclear
-  0xe2000 (FF800) / 0x70000 (FF400), 0x0800 bytes: 16-bit volume array
-  0xe2800 (FF800) / 0x70800 (FF400), 0x0800 bytes: 16-bit pan array
-  0xe3000 (FF800) / 0x71000 (FF400), 0x0040 bytes: 16-bit "vol3" array + 
-    "enable MIDI" + "submix" + zero padding to 64 bytes
-The third row are the "hardware output volumes".
-
-The meaning of the "mixer shadow" section of the mixer flash is not
-understood at present.
+start at address 0x3000f0000 on the FF800 and 0x00060000 on the FF400; mixer
+data starts at 0x3000e0000 on the FF800 and 0x00070000 on the
+FF400.
 
 
 Reading blocks from the flash (flash command 0x2)
@@ -376,13 +362,13 @@ integers.  These are:
   1 - Device revision (FF400=0x004af3d8)
   2 - ASIO latency (FF400=0x00000001)
   3 - Samples per frame (FF400 default is 0x30)
-  4 SPDIF input mode (2=coax?, 1=optical?)
+  4 SPDIF input mode (1=coax, 0=optical)
   5 SPDIF output emphasis active
   6 SPDIF output is "professional" (ie: AES/EBU)
-  7 Clock mode (2=master?, 1=autosync?)
+  7 Clock mode (0=master, 1=autosync)
   8 SPDIF output is non-audio (eg: AC3 passthrough)
   9 Sync reference
- 10 SPDIF output mode (0=coax?, 1=optical?)
+ 10 SPDIF output mode (0=coax only, 1=coax+optical)
  11 - Check input
  12 - Status (FF400 idle=0x77e691d0)
  13 - Register[4] (FF400 = 0x004adbc8,0x001377c0,0x000301ee,0x00000001)
@@ -395,18 +381,22 @@ integers.  These are:
  23 - Speed (FF400=0x00000000)
  24 - Channels available (high) (FF400=0x0012f2e4)
  25 - Channels available (low) (FF400=0x00000000)
- 26 Limit bandwidth setting (0=full bandwidth)
+ 26 Limit bandwidth setting (0=all channels on, 1=no adat2, 2=analog+spdif
+      only, 3=analog only)
  27 - Bandwidth allocated (FF400=0x00000000)
  28 Stop on dropout (FF400=0x00000000)
- 29 Input level (0=default, 1=lo-gain, 2=+4dBU, 3=-10dBV ???)
- 30 Output level (0=default, 1=hi-gain, 2=+4dBU, 3=-10dBV ???)
+ 29 Input level (0=lo-gain, 2=+4dBU, 1=-10dBV)
+ 30 Output level (2=hi-gain, 1=+4dBU, 0=-10dBV)
  31 Mic level [0] - FF400: Phoneslevel-1 
-                    FF800: Channel 7 front/rear select (0=rear, 1=front [TBC])
+                    FF800: Channel 7 front/rear select (0=rear, 1=front,
+                           2=front+rear)
  32 Mic level [1] - FF400: unused
-                    FF800: Channel 8 front/rear select (0=rear, 1=front [TBC])
+                    FF800: Channel 8 front/rear select (0=rear, 1=front,
+                           2=front+rear)
  33 Mic phantom power [4]
  37 Instrument - FF400: unused
-                 FF800: Channel 1 front/rear selector (0=rear, 1=font [TBC])
+                 FF800: Channel 1 front/rear selector (0=rear, 1=front,
+                        2=front+rear)
  38 Filter (aka speaker emulation)
  39 Fuzz (aka drive)
  40 - Sync align
@@ -431,6 +421,69 @@ turn causes the driver to assume its own default value.  While these
 settings can be changed in real time by writing to the relevant control
 registers, these are not persistent across device power cycles.  To make
 them persistent it is necessary to store them into the flash.
+
+
+Flash mixer settings layout
+---------------------------
+
+Mixer (volume) data starts at 0x3000e0000 on the FF800 and 0x00070000 on the
+FF400.  There are several control groups in the mixer:
+  0xe0000 (FF800): "mixer shadow", FF800 only
+  0xe2000 (FF800) / 0x70000 (FF400), 0x0800 bytes: 16-bit volume array
+  0xe2800 (FF800) / 0x70800 (FF400), 0x0800 bytes: 16-bit pan array
+  0xe3000 (FF800) / 0x71000 (FF400), 0x0040 bytes: 16-bit "vol3" array + 
+    "enable MIDI control" + "submix" + zero padding to 64 quadlets
+
+All group allocations are written in their entirety (that is, 0x0800 bytes),
+with zero padding on the end as needed.  Each write is grouped in sectors,
+with each sector being 256 bytes (64 quadlets).
+
+It is not known why the "mixer shadow" is stored in the case of the FF800. 
+It comprises a copy of the 32-bit matrix mixer settings (see "Fireface-800
+mixer controls" below), and the information is essentially a duplicate of
+what's in the "volume" and "pan" arrays.  In any case, what's done is done.
+
+The "mixer shadow" values are written in 64-quadlet (256-byte) blocks, one
+per hardware output channel.  There are 28 hardware input/output channels on
+the FF800 and 18 for the FF400 (although the FF400 doesn't write a "mixer
+shadow" group).
+
+The "volume" and "pan" arrays are arranged in blocks of N (32 for FF800, 18
+for FF400) 16-bit elements.  Each block contains the volume/pan value for
+each of the N physical inputs or playbacks when sent to one of the N/2
+physical outputs.  Elements are ordered in the standard Fireface channel
+index order.  The arrangement of the blocks are as follows:
+
+  Inputs to output 1
+  Playbacks to output 1
+  Inputs to output 2
+  Playbacks to output 2
+  :
+  Inputs to output N/2
+  Playbacks to output N/2
+
+The "vol3" array represents the hardware output volume settings.  The 16-bit
+volume data for each of the N hardware output channels is included in the
+standard Fireface channel index order.  In addition, a boolean indicating 
+whether MIDI control is enabled is stored in zero-based array index 30 while 
+a submix index is stored in array index 31.  The meaning of the submix index
+isn't known; it's thought that the GUI mixer applications in other systems
+use this as a convenient place to store the submix index that the user was
+last editting (assuming they were editting in submix mode).
+
+All 16-bit values are written in little endian byte order.
+
+The "volume" and "vol3" values are unsigned 16-bit values:
+  0x0000 = -inf  (minimum)
+  0x0255 = -6 dB
+  0x0323 =  0 dB
+  0x03ff =  6 dB (maximum)
+
+The mapping between gain values and what's written to the flash is yet to be
+deduced.
+
+The "pan" values are unsigned 16-bit values.  0x0000 is hard left, 0x0080 is
+centre and 0x0100 is hard right.
 
 
 TCO (TimeCode Option)
@@ -774,8 +827,7 @@ Conversely, solo is synthesised by muting all sends to the selected bus
 except the send being soloed.
 
 Note that a different scale is used when writing mixer settings into flash.
-Fader values are stored as 16 bit numbers, with 803 (0x0323) seemingly
-representing 0 dB.  Other details of the scale used are still to be deduced.
+Refer to the "Flash mixer settings layout" section for further details.
 
 
 Metering values
