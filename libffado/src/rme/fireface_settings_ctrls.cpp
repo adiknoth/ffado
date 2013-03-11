@@ -541,14 +541,20 @@ double RmeSettingsMatrixCtrl::setValue(const int row, const int col, const doubl
             else
                 ret = -1;
             break;
+
+        // For values originating from the input, playback or output faders,
+        // the MatrixMixer widget uses a value of 0x004000 for 0 dB gain. 
+        // The RME hardware (via setMixerGain()) uses 0x008000 as the 0 dB
+        // reference point.  Correct for this mismatch when calling
+        // setMixerGain().
         case RME_MATRIXCTRL_INPUT_FADER:
-          return m_parent.setMixerGain(RME_FF_MM_INPUT, col, row, val);
+          return m_parent.setMixerGain(RME_FF_MM_INPUT, col, row, val*2);
           break;
         case RME_MATRIXCTRL_PLAYBACK_FADER:
-          return m_parent.setMixerGain(RME_FF_MM_PLAYBACK, col, row, val);
+          return m_parent.setMixerGain(RME_FF_MM_PLAYBACK, col, row, val*2);
           break;
         case RME_MATRIXCTRL_OUTPUT_FADER:
-          return m_parent.setMixerGain(RME_FF_MM_OUTPUT, col, row, val);
+          return m_parent.setMixerGain(RME_FF_MM_OUTPUT, col, row, val*2);
           break;
 
         case RME_MATRIXCTRL_INPUT_MUTE:
@@ -579,14 +585,20 @@ double RmeSettingsMatrixCtrl::getValue(const int row, const int col)
         case RME_MATRIXCTRL_GAINS:
             val = m_parent.getAmpGain(col);
             break;
+
+        // The MatrixMixer widget (as used for the input, playback and
+        // output faders) uses a value of 0x004000 for 0 dB gain, but the
+        // gain value from the RME hardware (received getMixerGain()) uses
+        // 0x008000 as the 0 dB reference point.  Correct for this mismatch
+        // as the value is obtained.
         case RME_MATRIXCTRL_INPUT_FADER:
-            val = m_parent.getMixerGain(RME_FF_MM_INPUT, col, row);
+            val = m_parent.getMixerGain(RME_FF_MM_INPUT, col, row) / 2;
             break;
         case RME_MATRIXCTRL_PLAYBACK_FADER:
-            val = m_parent.getMixerGain(RME_FF_MM_PLAYBACK, col, row);
+            val = m_parent.getMixerGain(RME_FF_MM_PLAYBACK, col, row) / 2;
             break;
         case RME_MATRIXCTRL_OUTPUT_FADER:
-            val = m_parent.getMixerGain(RME_FF_MM_OUTPUT, col, row);
+            val = m_parent.getMixerGain(RME_FF_MM_OUTPUT, col, row) / 2;
             break;
 
         case RME_MATRIXCTRL_INPUT_MUTE:
