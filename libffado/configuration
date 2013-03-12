@@ -596,5 +596,14 @@ device_definitions = (
     modelname   = "I-ONIX_FW810S";
     driver      = 20;
     mixer       = "Generic_Dice_EAP";
+},
+{ # Avid Mbox Pro, information provided by Niels Dettenbach.
+  # Note: this entry is for future reference only.  FFADO does NOT have a
+  # driver for this device: as of March 2013 no Avid/Digidesign interfaces
+  # are supported or usable with FFADO.
+    vendorid    = 0x0000A07E;
+    modelid     = 0x00000004;
+    vendorname  = "Avid";
+    modelname   = "Mbox Pro";
 }
 );
