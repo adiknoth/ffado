@@ -604,6 +604,6 @@ device_definitions = (
     vendorid    = 0x0000A07E;
     modelid     = 0x00000004;
     vendorname  = "Avid";
-    modelname   = "Mbox Pro";
+    modelname   = "Mbox 3 Pro";
 }
 );
