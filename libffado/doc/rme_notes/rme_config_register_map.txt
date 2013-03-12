@@ -451,16 +451,16 @@ shadow" group).
 The "volume" and "pan" arrays are arranged in blocks of N (32 for FF800, 18
 for FF400) 16-bit elements.  Each block contains the volume/pan value for
 each of the N physical inputs or playbacks when sent to one of the N/2
-physical outputs.  Elements are ordered in the standard Fireface channel
-index order.  The arrangement of the blocks are as follows:
+physical stereo output pairs.  Elements are ordered in the standard Fireface
+channel index order.  The arrangement of the blocks are as follows:
 
-  Inputs to output 1
-  Playbacks to output 1
-  Inputs to output 2
-  Playbacks to output 2
+  Inputs to output pair 1+2
+  Playbacks to output pair 1+2
+  Inputs to output pair 3+4
+  Playbacks to output pair 3+4
   :
-  Inputs to output N/2
-  Playbacks to output N/2
+  Inputs to output pair N/2-1 and N/2
+  Playbacks to output pair N/2-1 and N/2
 
 The "vol3" array represents the hardware output volume settings.  The 16-bit
 volume data for each of the N hardware output channels is included in the
@@ -479,11 +479,17 @@ The "volume" and "vol3" values are unsigned 16-bit values:
   0x0323 =  0 dB
   0x03ff =  6 dB (maximum)
 
-The mapping between gain values and what's written to the flash is yet to be
-deduced.
+When panned hard left or right, the value F written to the flash as a
+channel's volume given a fader value of V (0..0x10000) appears to be:
+
+  F = (1023.0/3) * ln( V*(exp(3)-1)/65536 + 1)
+
+F is rounded to the nearest integer value.
 
 The "pan" values are unsigned 16-bit values.  0x0000 is hard left, 0x0080 is
-centre and 0x0100 is hard right.
+centre and 0x0100 is hard right.  The rules governing the calculation of the
+effective V and pan value from a set of individual volume fader values is
+still to be determined.
 
 
 TCO (TimeCode Option)
