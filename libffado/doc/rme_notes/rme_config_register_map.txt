@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.20
+Version: 0.21
 Author: Jonathan Woithe
-Date: 8 March 2013
+Date: 16 March 2013
 
 
 Definitions
@@ -490,6 +490,20 @@ The "pan" values are unsigned 16-bit values.  0x0000 is hard left, 0x0080 is
 centre and 0x0100 is hard right.  The rules governing the calculation of the
 effective V and pan value from a set of individual volume fader values is
 still to be determined.
+
+User interfaces under other operating systems include a "pan law" control
+which sets the gain when panned to centre.  This setting is not sent to the
+device at any time; the default in the mixer software is -6 dB.  Other
+options are -4.5 dB, -3 dB and 0 dB.  Changing these affects the values sent
+to the individual mixer registers (and hense the "mixer shadow"), but not
+the values stored in the "volume" and "pan" flash arrays.  In the case of
+the FF400, the power on state obtained from flash is therefore independent
+of the pan law control (the FF800 stores the mixer shadow data and could
+make use of it if it wanted to).  Experimentation shows that when powering
+up, the FF400 assumes a pan law of -6 dB when mapping from the volume/pan
+flash arrays to individual mixer element registers.  Tests are still to be
+done on the FF800 to see if it uses the "mixer shadow" values instead of the
+volume/pan arrays.
 
 
 TCO (TimeCode Option)
