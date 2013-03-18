@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.21
+Version: 0.22
 Author: Jonathan Woithe
-Date: 16 March 2013
+Date: 18 March 2013
 
 
 Definitions
@@ -487,9 +487,43 @@ channel's volume given a fader value of V (0..0x10000) appears to be:
 F is rounded to the nearest integer value.
 
 The "pan" values are unsigned 16-bit values.  0x0000 is hard left, 0x0080 is
-centre and 0x0100 is hard right.  The rules governing the calculation of the
-effective V and pan value from a set of individual volume fader values is
-still to be determined.
+centre and 0x0100 is hard right.  Therefore if the pan value is represented
+as a floating point number Pf from 0.0 (hard left) to 1.0 (hard right), the
+pan value Pv written to flash will be
+
+  Pv = 0x0100 * Pf
+
+In the hardware, each channel of a stereo pair is controlled independently
+the mixer registers.  It is therefore necessary to convert bidirectionally
+between fader value pairs and the volume/pan pair as used in the flash.  Let
+V0 and V1 be the fader value (0..0x10000) for each of the two channels.  The
+volume (V) and pan (P) values can be calculated as follows.
+
+   V = V0 + V1
+
+  Pf = 0x100 * V1 / (V0 + V1)
+
+   P = 0x0100 * Pf
+
+V is then transformed into the equivalent flash value F according to
+the expression given previously:
+
+  F = (1023.0/3) * ln( V*(exp(3)-1)/65536 + 1)
+
+When starting with the volume/pan pair, V is first calculated from F by
+rearranging the above equation.  Pf is then calculated:
+
+  Pf = P / 0x100
+
+This allows V0 and V1 to be found:
+
+  V0 = V * Pf
+
+  V1 = V * (1 - Pf)
+
+Careful attention to round-off is required to ensure that flash and fader
+values remain unchanged through fader-flash-fader and flash-fader-flash
+round trips.
 
 User interfaces under other operating systems include a "pan law" control
 which sets the gain when panned to centre.  This setting is not sent to the
