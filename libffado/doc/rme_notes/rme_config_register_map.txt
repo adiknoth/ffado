@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.22
+Version: 0.23
 Author: Jonathan Woithe
-Date: 18 March 2013
+Date: 21 March 2013
 
 
 Definitions
@@ -268,8 +268,10 @@ FF400.
 
 Reading blocks from the flash (flash command 0x2)
 
-For the FF800 the entire buffer is read directly from flash as a single block.
-Polling for "device not busy" should commence after a wait of 5 ms.
+For the FF800 the entire buffer is read directly from flash as a single
+block if the block is less than a sector (256 bytes, 64 quadlets).  Polling
+for "device not busy" should commence after a wait of 5 ms.  For anything
+larger, writes are split into sector-sized sub-blocks.
 
 For the FF400, the buffer is read in 32-quadlet sub-blocks.  A partial block
 is read at the end if the total buffer size is not a multiple of
@@ -282,8 +284,10 @@ available for reading from 0x80100290.
 
 Writing blocks to the flash (flash command 1)
 
-For the FF800, the entire buffer is written to flash as a single block.
-Polling for "device not busy" should commence after a wait of 5 ms.
+For the FF800, the buffer is written to flash in 256-byte (64 quadlet)
+sectors.  Polling for "device not busy" should commence after a wait of 5
+ms.  A write request for a length less than a sector will be honoured by the
+device (this is done when writing device settings).
 
 For the FF400, the buffer is written in 32-quadlet (128-byte) sub-blocks via
 a bounce buffer.  If the final sub-block is not 32-quadlets the write is
@@ -454,22 +458,23 @@ each of the N physical inputs or playbacks when sent to one of the N/2
 physical stereo output pairs.  Elements are ordered in the standard Fireface
 channel index order.  The arrangement of the blocks are as follows:
 
-  Inputs to output pair 1+2
-  Playbacks to output pair 1+2
-  Inputs to output pair 3+4
-  Playbacks to output pair 3+4
+  Inputs 1..N to output pair 1+2
+  Playbacks 1..N to output pair 1+2
+  Inputs 1..N to output pair 3+4
+  Playbacks 1..N to output pair 3+4
   :
-  Inputs to output pair N/2-1 and N/2
-  Playbacks to output pair N/2-1 and N/2
+  Inputs 1..N to output pair N/2-1 and N/2
+  Playbacks 1..N to output pair N/2-1 and N/2
 
 The "vol3" array represents the hardware output volume settings.  The 16-bit
 volume data for each of the N hardware output channels is included in the
-standard Fireface channel index order.  In addition, a boolean indicating 
-whether MIDI control is enabled is stored in zero-based array index 30 while 
-a submix index is stored in array index 31.  The meaning of the submix index
-isn't known; it's thought that the GUI mixer applications in other systems
-use this as a convenient place to store the submix index that the user was
-last editting (assuming they were editting in submix mode).
+standard Fireface channel index order.  In addition, a boolean indicating
+whether MIDI control is enabled is stored in zero-based array index 30 while
+a submix index is stored in array index 31 (array elements are considered
+16-bit here).  The meaning of the submix index isn't known; it's thought
+that the GUI mixer applications in other systems use this as a convenient
+place to store the submix index that the user was last editting (assuming
+they were editting in submix mode).
 
 All 16-bit values are written in little endian byte order.
 

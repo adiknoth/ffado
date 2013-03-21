@@ -114,6 +114,7 @@
 #define RME_FF800_FLASH_MIXER_PAN_ADDR     0x3000e2800LL
 #define RME_FF800_FLASH_MIXER_HW_ADDR      0x3000e3000LL  /* H/w volume settings, MIDI enable, submix */
 #define RME_FF800_FLASH_SETTINGS_ADDR      0x3000f0000LL
+#define RME_FF_FLASH_MIXER_ARRAY_SIZE       0x00000800    // In bytes
 
 /* Flash control registers */
 #define RME_FF400_FLASH_BLOCK_ADDR_REG      0x80100288
@@ -141,6 +142,9 @@
 #define RME_FF_FLASH_ERASE_VOLUME           1
 #define RME_FF_FLASH_ERASE_SETTINGS         2
 #define RME_FF_FLASH_ERASE_CONFIG           3
+
+#define RME_FF_FLASH_SECTOR_SIZE            256   // In bytes
+#define RME_FF_FLASH_SECTOR_SIZE_QUADS      (RME_FF_FLASH_SECTOR_SIZE/4)
 
 /* Defines for components of the control registers */
 // Configuration register 0

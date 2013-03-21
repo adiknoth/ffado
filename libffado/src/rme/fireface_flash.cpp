@@ -24,6 +24,7 @@
 /* This file implements the flash memory methods of the Device object */
 
 #include <unistd.h>
+#include <math.h>
 #include "rme/rme_avdevice.h"
 #include "rme/fireface_def.h"
 
@@ -499,6 +500,72 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
     }
 
     return err!=0?-1:0;
+}
+
+signed int
+Device::read_device_mixer_settings(FF_software_settings_t *settings)
+{
+    unsigned short int vbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
+    unsigned short int pbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
+    unsigned short int obuf[RME_FF_FLASH_SECTOR_SIZE/2];
+    fb_nodeaddr_t addr = 0;
+    signed int n, i, in, out;
+    signed int nch = 0;
+    float v;
+
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        addr = RME_FF400_FLASH_MIXER_VOLUME_ADDR;
+        nch = 18;
+    } else
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        addr = RME_FF800_FLASH_MIXER_VOLUME_ADDR;
+        nch = 32;
+    }
+    if (addr == 0)
+        return -1;
+
+    for (n=0; n<RME_FF_FLASH_MIXER_ARRAY_SIZE/4; n+=RME_FF_FLASH_SECTOR_SIZE_QUADS) {
+        i = read_flash(addr+n*4, (quadlet_t *)(vbuf+n*2), RME_FF_FLASH_SECTOR_SIZE_QUADS);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr+n*4, i);
+    }
+    addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
+    for (n=0; n<RME_FF_FLASH_MIXER_ARRAY_SIZE/4; n+=RME_FF_FLASH_SECTOR_SIZE_QUADS) {
+        i = read_flash(addr+n*4, (quadlet_t *)(pbuf+n*2), RME_FF_FLASH_SECTOR_SIZE_QUADS);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr+n*4, i);
+    }
+    addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
+    i = read_flash(addr, (quadlet_t *)obuf, RME_FF_FLASH_SECTOR_SIZE_QUADS);
+
+    for (out=0; out<nch/2; out++) {
+        for (in=0; in<nch; in++) {
+            unsigned int flashvol = vbuf[in+out*nch*2];
+            unsigned int flashpan = pbuf[in+out*nch*2];
+            v = 0x10000 * (exp(3.0*flashvol/1023.0)-1) / (exp(3)-1.0);
+            settings->input_faders[getMixerGainIndex(in,out*2)] = v * (flashpan/256.0);
+            settings->input_faders[getMixerGainIndex(in,out*2+1)] = v * (1 - flashpan/256.0);
+        }
+    }
+    for (out=0; out<nch/2; out++) {
+        for (in=0; in<nch; in++) {
+            unsigned int flashvol = vbuf[in+out*nch*2+1];
+            unsigned int flashpan = pbuf[in+out*nch*2+1];
+            v = 0x10000 * (exp(3.0*flashvol/1023.0)-1) / (exp(3)-1.0);
+            settings->playback_faders[getMixerGainIndex(in,out*2)] =  v * (flashpan/256.0);
+            settings->playback_faders[getMixerGainIndex(in,out*2+1)] = v * (1 - flashpan/256.0);
+        }
+    }
+    // Elements 30 and 31 of obuf[] are not output fader values: [30] 
+    // indicates MIDI control is active while [31] is a submix number.
+    // It's suspected that neither of these are used by the device directly,
+    // and that these elements are just a convenient place for computer
+    // control applications to store things.
+    for (out=0; out<30; out++) {
+      unsigned int flashvol = obuf[out];
+      v = 0x10000 * (exp(3.0*flashvol/1023.0)-1) / (exp(3)-1.0);
+      settings->output_faders[out] = v;
+    }
+
+    return 0;
 }
 
 }
