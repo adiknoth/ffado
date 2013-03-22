@@ -96,7 +96,14 @@ Device::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
     quadlet_t ff400_addr = (addr & 0xffffffff);
 
     if (m_rme_model == RME_MODEL_FIREFACE800) {
-        return readBlock(addr, buf, n_quads);
+        do {
+            xfer_size = (n_quads > RME_FF_FLASH_SECTOR_SIZE_QUADS)?RME_FF_FLASH_SECTOR_SIZE_QUADS:n_quads;
+            err |= readBlock(addr, buf, xfer_size);
+            n_quads =- xfer_size;
+            buf += xfer_size;
+            addr += xfer_size*sizeof(quadlet_t);
+        } while (n_quads>0 && !err);
+        return err?-1:0;
     }
     // FF400 case follows
     do {
@@ -186,13 +193,19 @@ Device::write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
     quadlet_t ff400_addr = (addr & 0xffffffff);
 
     if (m_rme_model == RME_MODEL_FIREFACE800) {
-        err |= writeBlock(addr, buf, n_quads);
-        if (!err) {
-            err = wait_while_busy(5) != 0;
-            if (err)
-                debugOutput(DEBUG_LEVEL_WARNING, "device still busy after flash write\n");
-        } else
-            debugOutput(DEBUG_LEVEL_WARNING, "flash writeBlock() failed\n");
+        do {
+            xfer_size = (n_quads > RME_FF_FLASH_SECTOR_SIZE_QUADS)?RME_FF_FLASH_SECTOR_SIZE_QUADS:n_quads;
+            err |= writeBlock(addr, buf, xfer_size);
+            if (!err) {
+                err = wait_while_busy(5) != 0;
+                if (err)
+                    debugOutput(DEBUG_LEVEL_WARNING, "device still busy after flash write\n");
+            } else
+                debugOutput(DEBUG_LEVEL_WARNING, "flash writeBlock() failed\n");
+            n_quads -= xfer_size;
+            buf += xfer_size;
+            addr += xfer_size*sizeof(quadlet_t);
+        } while (n_quads>0 && !err);
         return err?-1:0;
     }
 
@@ -509,7 +522,7 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     unsigned short int pbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
     unsigned short int obuf[RME_FF_FLASH_SECTOR_SIZE/2];
     fb_nodeaddr_t addr = 0;
-    signed int n, i, in, out;
+    signed int i, in, out;
     signed int nch = 0;
     float v;
 
@@ -524,15 +537,13 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     if (addr == 0)
         return -1;
 
-    for (n=0; n<RME_FF_FLASH_MIXER_ARRAY_SIZE/4; n+=RME_FF_FLASH_SECTOR_SIZE_QUADS) {
-        i = read_flash(addr+n*4, (quadlet_t *)(vbuf+n*2), RME_FF_FLASH_SECTOR_SIZE_QUADS);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr+n*4, i);
-    }
+    i = read_flash(addr, (quadlet_t *)(vbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr, i);
+
     addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
-    for (n=0; n<RME_FF_FLASH_MIXER_ARRAY_SIZE/4; n+=RME_FF_FLASH_SECTOR_SIZE_QUADS) {
-        i = read_flash(addr+n*4, (quadlet_t *)(pbuf+n*2), RME_FF_FLASH_SECTOR_SIZE_QUADS);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr+n*4, i);
-    }
+    i = read_flash(addr, (quadlet_t *)(pbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr, i);
+
     addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
     i = read_flash(addr, (quadlet_t *)obuf, RME_FF_FLASH_SECTOR_SIZE_QUADS);
 
