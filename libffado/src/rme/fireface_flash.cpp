@@ -546,6 +546,9 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
 
     addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
     i = read_flash(addr, (quadlet_t *)obuf, RME_FF_FLASH_SECTOR_SIZE_QUADS);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr, i);
+
+    // TODO: byteswap flash values if machine is not little endian
 
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
@@ -558,8 +561,8 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     }
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
-            unsigned int flashvol = vbuf[in+out*nch*2+1];
-            unsigned int flashpan = pbuf[in+out*nch*2+1];
+            unsigned int flashvol = vbuf[in+out*(nch*2+1)];
+            unsigned int flashpan = pbuf[in+out*(nch*2+1)];
             v = 0x10000 * (exp(3.0*flashvol/1023.0)-1) / (exp(3)-1.0);
             settings->playback_faders[getMixerGainIndex(in,out*2)] =  v * (flashpan/256.0);
             settings->playback_faders[getMixerGainIndex(in,out*2+1)] = v * (1 - flashpan/256.0);
@@ -575,6 +578,98 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
       v = 0x10000 * (exp(3.0*flashvol/1023.0)-1) / (exp(3)-1.0);
       settings->output_faders[out] = v;
     }
+
+    return 0;
+}
+
+signed int
+Device::write_device_mixer_settings(FF_software_settings_t *settings)
+{
+    quadlet_t shadow[RME_FF800_FLASH_MIXER_SHADOW_SIZE/4];
+    unsigned short int vbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
+    unsigned short int pbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
+    unsigned short int obuf[RME_FF_FLASH_SECTOR_SIZE/2];
+    fb_nodeaddr_t addr = 0;
+    signed int i, in, out;
+    signed int nch = 0;
+
+    if (m_rme_model == RME_MODEL_FIREFACE400) {
+        addr = RME_FF400_FLASH_MIXER_VOLUME_ADDR;
+        nch = 18;
+    } else
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        addr = RME_FF800_FLASH_MIXER_SHADOW_ADDR;
+        nch = 32;
+    }
+    if (addr == 0)
+        return -1;
+
+    // The mixer flash block must be erased before we can write to it
+    i = erase_flash(RME_FF_FLASH_ERASE_VOLUME) != 0;
+    if (i) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "erase_flash() failed\n");
+        return -1;
+    }
+
+    // TODO: byteswap flash values if machine is not little endian
+
+    /* Write the shadow mixer array if the device is a ff800 */
+    if (m_rme_model == RME_MODEL_FIREFACE800) {
+        memset(shadow, 0, sizeof(shadow));
+        for (out=0; out<nch; out++) {
+            for (in=0; in<nch; in++) {
+                shadow[in+out*0x40] = settings->input_faders[getMixerGainIndex(in,out)];
+                shadow[in+out*0x40+0x20] = settings->playback_faders[getMixerGainIndex(in,out)];
+            }
+        }
+        for (out=0; out<nch; out++) {
+            shadow[0x1f80+out] = settings->output_faders[out];
+        }
+        i = write_flash(addr, shadow, RME_FF800_FLASH_MIXER_SHADOW_SIZE/4);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%lld) returned %d\n", addr, i);
+        addr = RME_FF800_FLASH_MIXER_VOLUME_ADDR;
+    }
+
+    for (out=0; out<nch/2; out++) {
+        for (in=0; in<nch; in++) {
+            signed int v0 = settings->input_faders[getMixerGainIndex(in,out*2)];
+            signed int v1 = settings->input_faders[getMixerGainIndex(in,out*2+1)];
+            signed int v = v0 + v1;
+            pbuf[in+out*nch*2] = 256.0 * v1 / (v0 + v1);
+            vbuf[in+out*nch*2] = (1023/3) * log(v*(exp(3.0)-1.0)/0x10000 + 1);
+        }
+    }
+    for (out=0; out<nch/2; out++) {
+        for (in=0; in<nch; in++) {
+            signed int v0 = settings->playback_faders[getMixerGainIndex(in,out*2)];
+            signed int v1 = settings->playback_faders[getMixerGainIndex(in,out*2+1)];
+            signed int v = v0 + v1;
+            pbuf[in+out*(nch*2+1)] = 256.0 * v1 / (v0 + v1);
+            vbuf[in+out*(nch*2+1)] = (1023/3) * log(v*(exp(3.0)-1.0)/0x10000 + 1);
+        }
+    }
+
+    // Elements 30 and 31 of obuf[] are not output fader values: [30] 
+    // indicates MIDI control is active while [31] is a submix number.
+    // It's suspected that neither of these are used by the device directly,
+    // and that these elements are just a convenient place for computer
+    // control applications to store things.  For now we'll just leave them
+    // set to zero.
+    memset(obuf, 0, sizeof(obuf));
+    for (out=0; out<30; out++) {
+      obuf[out] = (1023.0/3) * log(settings->output_faders[out]*(exp(3.0)-1.0)/0x10000 + 1);
+    }
+
+    i = write_flash(addr, (quadlet_t *)(vbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%lld) returned %d\n", addr, i);
+
+    addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
+    i = write_flash(addr, (quadlet_t *)(pbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%lld) returned %d\n", addr, i);
+
+    addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
+    i = write_flash(addr, (quadlet_t *)obuf, RME_FF_FLASH_SECTOR_SIZE_QUADS);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%lld) returned %d\n", addr, i);
 
     return 0;
 }

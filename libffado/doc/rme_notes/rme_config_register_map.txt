@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.23
+Version: 0.24
 Author: Jonathan Woithe
-Date: 21 March 2013
+Date: 22 March 2013
 
 
 Definitions
@@ -506,7 +506,7 @@ volume (V) and pan (P) values can be calculated as follows.
 
    V = V0 + V1
 
-  Pf = 0x100 * V1 / (V0 + V1)
+  Pf = V1 / (V0 + V1)
 
    P = 0x0100 * Pf
 
