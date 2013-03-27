@@ -57,15 +57,6 @@
 
 namespace Rme {
 
-// The RME devices expect async packet data in little endian format (as
-// opposed to bus order, which is big endian).  Therefore define our own
-// 32-bit byteswap function to do this.
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define RME_BYTESWAP32(x)	ByteSwap32(x)
-#else
-#define RME_BYTESWAP32(x)	(x)
-#endif
-
 static inline uint32_t
 ByteSwapToDevice32(uint32_t d)
 {

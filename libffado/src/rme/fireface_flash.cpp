@@ -103,26 +103,32 @@ Device::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
             buf += xfer_size;
             addr += xfer_size*sizeof(quadlet_t);
         } while (n_quads>0 && !err);
-        return err?-1:0;
-    }
-    // FF400 case follows
-    do {
-        xfer_size = (n_quads > 32)?32:n_quads;
-        block_desc[0] = ff400_addr;
-        block_desc[1] = xfer_size * sizeof(quadlet_t);
-        // Program the read address and size
-        err |= writeBlock(RME_FF400_FLASH_BLOCK_ADDR_REG, block_desc, 2);
-        // Execute the read and wait for its completion
-        err |= writeRegister(RME_FF400_FLASH_CMD_REG, RME_FF400_FLASH_CMD_READ);
-        if (!err)
-            wait_while_busy(2);
-        // Read from bounce buffer into final destination
-        err |= readBlock(RME_FF400_FLASH_READ_BUFFER, buf, xfer_size);
+    } else {
+        // FF400 case follows
+        do {
+            xfer_size = (n_quads > 32)?32:n_quads;
+            block_desc[0] = ff400_addr;
+            block_desc[1] = xfer_size * sizeof(quadlet_t);
+            // Program the read address and size
+            err |= writeBlock(RME_FF400_FLASH_BLOCK_ADDR_REG, block_desc, 2);
+            // Execute the read and wait for its completion
+            err |= writeRegister(RME_FF400_FLASH_CMD_REG, RME_FF400_FLASH_CMD_READ);
+           if (!err)
+               wait_while_busy(2);
+            // Read from bounce buffer into final destination
+            err |= readBlock(RME_FF400_FLASH_READ_BUFFER, buf, xfer_size);
 
-        n_quads -= xfer_size;
-        ff400_addr += xfer_size*sizeof(quadlet_t);
-        buf += xfer_size;
-    } while (n_quads>0 && !err);
+            n_quads -= xfer_size;
+            ff400_addr += xfer_size*sizeof(quadlet_t);
+            buf += xfer_size;
+        } while (n_quads>0 && !err);
+    }
+
+    if (err == 0) {
+        unsigned int i;
+        for (i=0; i<n_quads; i++)
+            buf[i] = RME_BYTESWAP32(buf[i]);
+    }
 
     return err?-1:0;
 }
@@ -191,6 +197,10 @@ Device::write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
     unsigned int err = 0;
     quadlet_t block_desc[2];
     quadlet_t ff400_addr = (addr & 0xffffffff);
+    unsigned int i;
+
+    for (i=0; i<n_quads; i++)
+      buf[i] = RME_BYTESWAP32(buf[i]);
 
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         do {
@@ -515,6 +525,34 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
     return err!=0?-1:0;
 }
 
+static float
+fader2flashvol(signed int fader)
+{
+    return (1023.0/3) * log(fader*(exp(3.0)-1.0)/0x10000 + 1);
+}
+
+static float
+flashvol2fader(signed int flash_vol)
+{
+    return 0x10000 * (exp(3.0*flash_vol/1023.0)-1) / (exp(3)-1.0);
+}
+
+static void
+faders2flash(signed int fader0, signed int fader1, unsigned short int *flash_vol, unsigned short int *flash_pan)
+{
+    signed int v = fader0 + fader1;
+    *flash_pan = 256.0 * fader1 / v;
+    *flash_vol = fader2flashvol(v);
+}
+
+static void
+flash2faders(signed int flash_vol, signed int flash_pan, signed int *fader0, signed int *fader1)
+{
+    float v = flashvol2fader(flash_vol);
+    *fader0 = v * (flash_pan/256.0);
+    *fader1 = v * (1 - flash_pan/256.0);
+}
+
 signed int
 Device::read_device_mixer_settings(FF_software_settings_t *settings)
 {
@@ -524,7 +562,6 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     fb_nodeaddr_t addr = 0;
     signed int i, in, out;
     signed int nch = 0;
-    float v;
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         addr = RME_FF400_FLASH_MIXER_VOLUME_ADDR;
@@ -548,24 +585,18 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     i = read_flash(addr, (quadlet_t *)obuf, RME_FF_FLASH_SECTOR_SIZE_QUADS);
     debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr, i);
 
-    // TODO: byteswap flash values if machine is not little endian
-
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
-            unsigned int flashvol = vbuf[in+out*nch*2];
-            unsigned int flashpan = pbuf[in+out*nch*2];
-            v = 0x10000 * (exp(3.0*flashvol/1023.0)-1) / (exp(3)-1.0);
-            settings->input_faders[getMixerGainIndex(in,out*2)] = v * (flashpan/256.0);
-            settings->input_faders[getMixerGainIndex(in,out*2+1)] = v * (1 - flashpan/256.0);
+            flash2faders(vbuf[in+out*nch*2], pbuf[in+out*nch*2],
+              &settings->input_faders[getMixerGainIndex(in,out*2)],
+              &settings->input_faders[getMixerGainIndex(in,out*2+1)]);
         }
     }
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
-            unsigned int flashvol = vbuf[in+out*(nch*2+1)];
-            unsigned int flashpan = pbuf[in+out*(nch*2+1)];
-            v = 0x10000 * (exp(3.0*flashvol/1023.0)-1) / (exp(3)-1.0);
-            settings->playback_faders[getMixerGainIndex(in,out*2)] =  v * (flashpan/256.0);
-            settings->playback_faders[getMixerGainIndex(in,out*2+1)] = v * (1 - flashpan/256.0);
+            flash2faders(vbuf[in+nch*(out*2+1)], pbuf[in+nch*(out*2+1)],
+              &settings->playback_faders[getMixerGainIndex(in,out*2)],
+              &settings->playback_faders[getMixerGainIndex(in,out*2+1)]);
         }
     }
     // Elements 30 and 31 of obuf[] are not output fader values: [30] 
@@ -574,9 +605,7 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     // and that these elements are just a convenient place for computer
     // control applications to store things.
     for (out=0; out<30; out++) {
-      unsigned int flashvol = obuf[out];
-      v = 0x10000 * (exp(3.0*flashvol/1023.0)-1) / (exp(3)-1.0);
-      settings->output_faders[out] = v;
+      settings->output_faders[out] = flashvol2fader(obuf[out]);
     }
 
     return 0;
@@ -611,8 +640,6 @@ Device::write_device_mixer_settings(FF_software_settings_t *settings)
         return -1;
     }
 
-    // TODO: byteswap flash values if machine is not little endian
-
     /* Write the shadow mixer array if the device is a ff800 */
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         memset(shadow, 0, sizeof(shadow));
@@ -632,32 +659,24 @@ Device::write_device_mixer_settings(FF_software_settings_t *settings)
 
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
-            signed int v0 = settings->input_faders[getMixerGainIndex(in,out*2)];
-            signed int v1 = settings->input_faders[getMixerGainIndex(in,out*2+1)];
-            signed int v = v0 + v1;
-            pbuf[in+out*nch*2] = 256.0 * v1 / (v0 + v1);
-            vbuf[in+out*nch*2] = (1023/3) * log(v*(exp(3.0)-1.0)/0x10000 + 1);
+            faders2flash(settings->input_faders[getMixerGainIndex(in,out*2)],
+              settings->input_faders[getMixerGainIndex(in,out*2+1)],
+              &vbuf[in+out*nch*2], &pbuf[in+out*nch*2]);
         }
     }
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
-            signed int v0 = settings->playback_faders[getMixerGainIndex(in,out*2)];
-            signed int v1 = settings->playback_faders[getMixerGainIndex(in,out*2+1)];
-            signed int v = v0 + v1;
-            pbuf[in+out*(nch*2+1)] = 256.0 * v1 / (v0 + v1);
-            vbuf[in+out*(nch*2+1)] = (1023/3) * log(v*(exp(3.0)-1.0)/0x10000 + 1);
+            faders2flash(settings->playback_faders[getMixerGainIndex(in,out*2)],
+              settings->playback_faders[getMixerGainIndex(in,out*2+1)],
+              &vbuf[in+nch*(out*2+1)], &pbuf[in+nch*(out*2+1)]);
         }
     }
 
-    // Elements 30 and 31 of obuf[] are not output fader values: [30] 
-    // indicates MIDI control is active while [31] is a submix number.
-    // It's suspected that neither of these are used by the device directly,
-    // and that these elements are just a convenient place for computer
-    // control applications to store things.  For now we'll just leave them
-    // set to zero.
+    // Elements 30 and 31 of obuf[] are not output fader values.  See
+    // comments in read_device_mixer_settings().
     memset(obuf, 0, sizeof(obuf));
     for (out=0; out<30; out++) {
-      obuf[out] = (1023.0/3) * log(settings->output_faders[out]*(exp(3.0)-1.0)/0x10000 + 1);
+      obuf[out] = fader2flashvol(settings->output_faders[out]);
     }
 
     i = write_flash(addr, (quadlet_t *)(vbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);
