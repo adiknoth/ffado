@@ -124,12 +124,6 @@ Device::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
         } while (n_quads>0 && !err);
     }
 
-    if (err == 0) {
-        unsigned int i;
-        for (i=0; i<n_quads; i++)
-            buf[i] = RME_BYTESWAP32(buf[i]);
-    }
-
     return err?-1:0;
 }
 
@@ -197,10 +191,6 @@ Device::write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
     unsigned int err = 0;
     quadlet_t block_desc[2];
     quadlet_t ff400_addr = (addr & 0xffffffff);
-    unsigned int i;
-
-    for (i=0; i<n_quads; i++)
-      buf[i] = RME_BYTESWAP32(buf[i]);
 
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         do {
