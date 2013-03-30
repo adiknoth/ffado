@@ -539,8 +539,8 @@ static void
 flash2faders(signed int flash_vol, signed int flash_pan, signed int *fader0, signed int *fader1)
 {
     float v = flashvol2fader(flash_vol);
-    *fader0 = v * (flash_pan/256.0);
-    *fader1 = v * (1 - flash_pan/256.0);
+    *fader0 = v * (1 - flash_pan/256.0);
+    *fader1 = v * (flash_pan/256.0);
 }
 
 signed int
@@ -555,11 +555,11 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         addr = RME_FF400_FLASH_MIXER_VOLUME_ADDR;
-        nch = 18;
+        nch = RME_FF400_MAX_CHANNELS;
     } else
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         addr = RME_FF800_FLASH_MIXER_VOLUME_ADDR;
-        nch = 32;
+        nch = RME_FF800_MAX_CHANNELS;
     }
     if (addr == 0)
         return -1;

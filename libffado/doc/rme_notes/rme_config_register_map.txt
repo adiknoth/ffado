@@ -1,9 +1,9 @@
 RME Fireface-400 / Fireface-800 register map
 ============================================
 
-Version: 0.24
+Version: 0.25
 Author: Jonathan Woithe
-Date: 22 March 2013
+Date: 30 March 2013
 
 
 Definitions
@@ -522,9 +522,9 @@ rearranging the above equation.  Pf is then calculated:
 
 This allows V0 and V1 to be found:
 
-  V0 = V * Pf
+  V0 = V * (1 - Pf)
 
-  V1 = V * (1 - Pf)
+  V1 = V * Pf
 
 Careful attention to round-off is required to ensure that flash and fader
 values remain unchanged through fader-flash-fader and flash-fader-flash
