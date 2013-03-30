@@ -99,7 +99,7 @@ Device::read_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
         do {
             xfer_size = (n_quads > RME_FF_FLASH_SECTOR_SIZE_QUADS)?RME_FF_FLASH_SECTOR_SIZE_QUADS:n_quads;
             err |= readBlock(addr, buf, xfer_size);
-            n_quads =- xfer_size;
+            n_quads -= xfer_size;
             buf += xfer_size;
             addr += xfer_size*sizeof(quadlet_t);
         } while (n_quads>0 && !err);
