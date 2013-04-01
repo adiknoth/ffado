@@ -146,6 +146,7 @@
 
 #define RME_FF_FLASH_SECTOR_SIZE            256   // In bytes
 #define RME_FF_FLASH_SECTOR_SIZE_QUADS      (RME_FF_FLASH_SECTOR_SIZE/4)
+#define RME_FF_FLASH_0DB_VOL_VALUE          0x323
 
 /* Defines for components of the control registers */
 // Configuration register 0

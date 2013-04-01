@@ -524,6 +524,10 @@ fader2flashvol(signed int fader)
 static float
 flashvol2fader(signed int flash_vol)
 {
+    // Map the 0 dB flash volume value explicitly to the corresponding
+    // fader value to avoid round-off effects.
+    if (flash_vol == RME_FF_FLASH_0DB_VOL_VALUE)
+      return 0x8000;
     return 0x10000 * (exp(3.0*flash_vol/1023.0)-1) / (exp(3)-1.0);
 }
 
