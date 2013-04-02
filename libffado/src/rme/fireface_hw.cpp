@@ -144,8 +144,6 @@ Device::init_hardware(void)
             }
         }
 
-        have_mixer_settings = read_device_mixer_settings(settings) == 0;
-
         // Matrix mixer settings
         for (dest=0; dest<n_channels; dest++) {
             for (src=0; src<n_channels; src++) {
