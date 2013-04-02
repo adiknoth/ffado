@@ -246,6 +246,15 @@ class Rme(QWidget):
         self.is_streaming = False
         self.last_streaming_state = False
 
+        # For now, disable the device operation buttons since they are 
+        # not yet implemented.
+        self.device_operations.hide()
+        self.control_load.setEnabled(False)
+        self.control_save.setEnabled(False)
+        self.mixer_load.setEnabled(False)
+        self.mixer_save.setEnabled(False)
+        self.mixer_preset_ffado_default.setEnabled(False)
+
         # Retrieve other device settings as needed and customise the UI
         # based on these options.
         self.model = self.hw.getDiscrete('/Control/Model')
