@@ -61,6 +61,7 @@ Device::init_hardware(void)
     signed int ret = 0;
     signed int src, dest;
     signed int n_channels;
+    signed int have_mixer_settings = 0;
 
     switch (m_rme_model) {
         case RME_MODEL_FIREFACE400: n_channels = RME_FF400_MAX_CHANNELS; break;
@@ -143,21 +144,26 @@ Device::init_hardware(void)
             }
         }
 
+        have_mixer_settings = read_device_mixer_settings(settings) == 0;
+
         // Matrix mixer settings
         for (dest=0; dest<n_channels; dest++) {
             for (src=0; src<n_channels; src++) {
-                settings->input_faders[getMixerGainIndex(src, dest)] = 0;
+                if (!have_mixer_settings)
+                    settings->input_faders[getMixerGainIndex(src, dest)] = 0;
                 set_hardware_mixergain(RME_FF_MM_INPUT, src, dest, 0);
             }
             for (src=0; src<n_channels; src++) {
-                settings->playback_faders[getMixerGainIndex(src, dest)] =
-                  src==dest?0x8000:0;
+                if (!have_mixer_settings)
+                    settings->playback_faders[getMixerGainIndex(src, dest)] =
+                      src==dest?0x8000:0;
                 set_hardware_mixergain(RME_FF_MM_PLAYBACK, src, dest, 
                   src==dest?0x8000:0);
             }
         }
         for (src=0; src<n_channels; src++) {
-            settings->output_faders[src] = 0x8000;
+            if (!have_mixer_settings)
+                settings->output_faders[src] = 0x8000;
             set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, 0x8000);
         }
 
