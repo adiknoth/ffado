@@ -248,7 +248,7 @@ class Rme(QWidget):
 
         # For now, disable the device operation buttons since they are 
         # not yet implemented.
-        self.device_operations.hide()
+        #self.device_operations.hide()
         self.control_load.setEnabled(False)
         self.control_save.setEnabled(False)
         self.mixer_load.setEnabled(False)
