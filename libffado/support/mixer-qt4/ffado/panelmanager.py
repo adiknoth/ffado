@@ -327,9 +327,14 @@ mixerwidget = ffado.mixer.%s.%s( w )
             self.status.show()
             #self.statusBar().showMessage("No supported device found.", 5000)
         else:
+            # Hide the status widget before showing the panel tab to prevent
+            # the panel manager's vertical size including that of the status
+            # widget.  For some reason, hiding the status after showing the
+            # tabs does not cause a recalculation of the panel manager's size,
+            # and the window ends up being larger than it needs to be.
+            self.status.hide()
             self.tabs.show()
             self.tabs.setEnabled(True)
-            self.status.hide()
             #self.statusBar().showMessage("Configured the mixer for %i devices." % self.tabs.count())
             if use_generic:
                 #
