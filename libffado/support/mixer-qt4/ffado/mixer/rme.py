@@ -303,9 +303,9 @@ class Rme(QWidget):
         # Only the FF400 has specific channel 3/4 options, input gain
         # controls and switchable phones level
         if (self.model != RME_MODEL_FF400):
+            # Hide the upper-level frame (and everything in it) to ensure it 
+            # requests no vertical space when its contents aren't needed.
             self.disable_hide(self.igains_chan34_opts_frame)
-            #self.disable_hide(self.input_gains_group)
-            #self.disable_hide(self.channel_3_4_options_group)
             self.phones_level_group.setEnabled(False)
 
         # Add the "No ADAT-2" item to the bandwidth limit control if the
