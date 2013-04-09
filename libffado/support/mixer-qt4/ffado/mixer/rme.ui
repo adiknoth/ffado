@@ -40,7 +40,13 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QFrame" name="frame_5">
+        <widget class="QFrame" name="igains_chan34_opts_frame">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="frameShape">
           <enum>QFrame::NoFrame</enum>
          </property>
@@ -50,12 +56,18 @@
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
            <widget class="QGroupBox" name="input_gains_group">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="title">
              <string>Input gains</string>
             </property>
             <layout class="QGridLayout" name="gridLayout_8">
              <item row="0" column="0">
-              <widget class="QLabel" name="label_9">
+              <widget class="QLabel" name="gain_mic1_label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -81,7 +93,7 @@
               </widget>
              </item>
              <item row="1" column="0">
-              <widget class="QLabel" name="label_10">
+              <widget class="QLabel" name="gain_mic2_label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -104,7 +116,7 @@
               </widget>
              </item>
              <item row="2" column="0">
-              <widget class="QLabel" name="label_24">
+              <widget class="QLabel" name="gain_input3_label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -130,7 +142,7 @@
               </widget>
              </item>
              <item row="3" column="0">
-              <widget class="QLabel" name="label_23">
+              <widget class="QLabel" name="gain_input4_label">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -160,6 +172,12 @@
           </item>
           <item>
            <widget class="QGroupBox" name="channel_3_4_options_group">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="title">
              <string>Channel 3/4 options</string>
             </property>
@@ -214,7 +232,7 @@
                <property name="sizeHint" stdset="0">
                 <size>
                  <width>20</width>
-                 <height>40</height>
+                 <height>0</height>
                 </size>
                </property>
               </spacer>
@@ -1146,7 +1164,7 @@
       <zorder>frame</zorder>
       <zorder>frame_2</zorder>
       <zorder>frame_3</zorder>
-      <zorder>frame_5</zorder>
+      <zorder>igains_chan34_opts_frame</zorder>
      </widget>
      <widget class="QWidget" name="mixer">
       <attribute name="title">

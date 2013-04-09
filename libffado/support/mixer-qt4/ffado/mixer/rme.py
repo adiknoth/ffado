@@ -203,6 +203,10 @@ class Rme(QWidget):
 
     # Hide and disable a control
     def disable_hide(self,widget):
+        for w in widget.children():
+            if isinstance(w, QWidget):
+                w.hide()
+                w.setEnabled(False)
         widget.hide()
         widget.setEnabled(False)
 
@@ -248,12 +252,12 @@ class Rme(QWidget):
 
         # For now, disable the device operation buttons since they are 
         # not yet implemented.
-        #self.device_operations.hide()
-        self.control_load.setEnabled(False)
-        self.control_save.setEnabled(False)
-        self.mixer_load.setEnabled(False)
-        self.mixer_save.setEnabled(False)
-        self.mixer_preset_ffado_default.setEnabled(False)
+        self.disable_hide(self.device_operations)
+        #self.control_load.setEnabled(False)
+        #self.control_save.setEnabled(False)
+        #self.mixer_load.setEnabled(False)
+        #self.mixer_save.setEnabled(False)
+        #self.mixer_preset_ffado_default.setEnabled(False)
 
         # Retrieve other device settings as needed and customise the UI
         # based on these options.
@@ -299,8 +303,9 @@ class Rme(QWidget):
         # Only the FF400 has specific channel 3/4 options, input gain
         # controls and switchable phones level
         if (self.model != RME_MODEL_FF400):
-            self.disable_hide(self.input_gains_group)
-            self.disable_hide(self.channel_3_4_options_group)
+            self.disable_hide(self.igains_chan34_opts_frame)
+            #self.disable_hide(self.input_gains_group)
+            #self.disable_hide(self.channel_3_4_options_group)
             self.phones_level_group.setEnabled(False)
 
         # Add the "No ADAT-2" item to the bandwidth limit control if the
