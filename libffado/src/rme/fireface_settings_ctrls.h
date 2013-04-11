@@ -49,6 +49,9 @@ namespace Rme {
 #define RME_CTRL_FF400_PAD_SW          0x0013
 #define RME_CTRL_FF400_INSTR_SW        0x0014
 
+#define RME_CTRL_FLASH                 0x0050
+#define RME_CTRL_MIXER_PRESET          0x0051
+
 #define RME_CTRL_INFO_MODEL            0x0100
 #define RME_CTRL_INFO_TCO_PRESENT      0x0200
 #define RME_CTRL_INFO_SYSCLOCK_MODE    0x0300
@@ -69,6 +72,12 @@ namespace Rme {
 #define RME_MATRIXCTRL_OUTPUT_MUTE     0x0007
 #define RME_MATRIXCTRL_INPUT_INVERT    0x0008
 #define RME_MATRIXCTRL_PLAYBACK_INVERT 0x0009
+
+/* Commands sent via RME_CTRL_FLASH values */
+#define RME_CTRL_FLASH_SETTINGS_LOAD   0x0000
+#define RME_CTRL_FLASH_SETTINGS_SAVE   0x0001
+#define RME_CTRL_FLASH_MIXER_LOAD      0x0002
+#define RME_CTRL_FLASH_MIXER_SAVE      0x0003
 
 
 class Device;

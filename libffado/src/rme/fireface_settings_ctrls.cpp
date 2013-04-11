@@ -215,6 +215,26 @@ signed int err = 0;
             break;
         }
 
+        case RME_CTRL_FLASH:
+            switch (v) {
+                case RME_CTRL_FLASH_SETTINGS_LOAD:
+                    break;
+                case RME_CTRL_FLASH_SETTINGS_SAVE:
+                    break;
+                case RME_CTRL_FLASH_MIXER_LOAD:
+                    break;
+                case RME_CTRL_FLASH_MIXER_SAVE:
+                    m_parent.write_device_mixer_settings(NULL);
+                    break;
+                default:
+                    debugOutput(DEBUG_LEVEL_ERROR, "unknown command value %d for flash control type 0x%04x\n", v, m_type);
+                    err = 1;
+            }
+            break;
+        case RME_CTRL_MIXER_PRESET:
+            debugOutput(DEBUG_LEVEL_VERBOSE, "mixer presets not implemented yet\n");
+            break;
+
         // All RME_CTRL_INFO_* controls are read-only.  Warn on attempts to
         // set these.
         case RME_CTRL_INFO_MODEL:
@@ -328,6 +348,12 @@ FF_state_t ff_state;
         }
         case RME_CTRL_INFO_MODEL:
             return m_parent.getRmeModel();
+            break;
+
+        case RME_CTRL_FLASH:
+        case RME_CTRL_MIXER_PRESET:
+            debugOutput(DEBUG_LEVEL_ERROR, "read requested for write-only control type 0x%04x\n", m_type);
+            return 0;
             break;
 
         case RME_CTRL_INFO_TCO_PRESENT:

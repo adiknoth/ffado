@@ -556,14 +556,17 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     fb_nodeaddr_t addr = 0;
     signed int i, in, out;
     signed int nch = 0;
+    signed int flash_row_size = 0;
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         addr = RME_FF400_FLASH_MIXER_VOLUME_ADDR;
         nch = RME_FF400_MAX_CHANNELS;
+        flash_row_size = 18;
     } else
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         addr = RME_FF800_FLASH_MIXER_VOLUME_ADDR;
         nch = RME_FF800_MAX_CHANNELS;
+        flash_row_size = 32;
     }
     if (addr == 0)
         return -1;
@@ -581,14 +584,14 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
 
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
-            flash2faders(vbuf[in+out*nch*2], pbuf[in+out*nch*2],
+            flash2faders(vbuf[in+out*2*flash_row_size], pbuf[in+out*2*flash_row_size],
               &settings->input_faders[getMixerGainIndex(in,out*2)],
               &settings->input_faders[getMixerGainIndex(in,out*2+1)]);
         }
     }
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
-            flash2faders(vbuf[in+nch*(out*2+1)], pbuf[in+nch*(out*2+1)],
+            flash2faders(vbuf[in+flash_row_size*(out*2+1)], pbuf[in+flash_row_size*(out*2+1)],
               &settings->playback_faders[getMixerGainIndex(in,out*2)],
               &settings->playback_faders[getMixerGainIndex(in,out*2+1)]);
         }
@@ -606,7 +609,7 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
 }
 
 signed int
-Device::write_device_mixer_settings(FF_software_settings_t *settings)
+Device::write_device_mixer_settings(FF_software_settings_t *dsettings)
 {
     quadlet_t shadow[RME_FF800_FLASH_MIXER_SHADOW_SIZE/4];
     unsigned short int vbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
@@ -615,14 +618,20 @@ Device::write_device_mixer_settings(FF_software_settings_t *settings)
     fb_nodeaddr_t addr = 0;
     signed int i, in, out;
     signed int nch = 0;
+    signed int flash_row_size = 0;
+
+    if (dsettings == NULL)
+        dsettings = settings;
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         addr = RME_FF400_FLASH_MIXER_VOLUME_ADDR;
-        nch = 18;
+        nch = RME_FF400_MAX_CHANNELS;
+        flash_row_size = 18;
     } else
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         addr = RME_FF800_FLASH_MIXER_SHADOW_ADDR;
-        nch = 32;
+        nch = RME_FF800_MAX_CHANNELS;
+        flash_row_size = 32;
     }
     if (addr == 0)
         return -1;
@@ -639,30 +648,32 @@ Device::write_device_mixer_settings(FF_software_settings_t *settings)
         memset(shadow, 0, sizeof(shadow));
         for (out=0; out<nch; out++) {
             for (in=0; in<nch; in++) {
-                shadow[in+out*0x40] = settings->input_faders[getMixerGainIndex(in,out)];
-                shadow[in+out*0x40+0x20] = settings->playback_faders[getMixerGainIndex(in,out)];
+                shadow[in+out*0x40] = dsettings->input_faders[getMixerGainIndex(in,out)];
+                shadow[in+out*0x40+0x20] = dsettings->playback_faders[getMixerGainIndex(in,out)];
             }
         }
         for (out=0; out<nch; out++) {
-            shadow[0x1f80+out] = settings->output_faders[out];
+            shadow[0x1f80/4+out] = dsettings->output_faders[out];
         }
         i = write_flash(addr, shadow, RME_FF800_FLASH_MIXER_SHADOW_SIZE/4);
         debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%lld) returned %d\n", addr, i);
         addr = RME_FF800_FLASH_MIXER_VOLUME_ADDR;
     }
 
+    memset(vbuf, 0, sizeof(vbuf));
+    memset(pbuf, 0, sizeof(pbuf));
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
-            faders2flash(settings->input_faders[getMixerGainIndex(in,out*2)],
-              settings->input_faders[getMixerGainIndex(in,out*2+1)],
-              &vbuf[in+out*nch*2], &pbuf[in+out*nch*2]);
+            faders2flash(dsettings->input_faders[getMixerGainIndex(in,out*2)],
+              dsettings->input_faders[getMixerGainIndex(in,out*2+1)],
+              &vbuf[in+out*2*flash_row_size], &pbuf[in+out*2*flash_row_size]);
         }
     }
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
-            faders2flash(settings->playback_faders[getMixerGainIndex(in,out*2)],
-              settings->playback_faders[getMixerGainIndex(in,out*2+1)],
-              &vbuf[in+nch*(out*2+1)], &pbuf[in+nch*(out*2+1)]);
+            faders2flash(dsettings->playback_faders[getMixerGainIndex(in,out*2)],
+              dsettings->playback_faders[getMixerGainIndex(in,out*2+1)],
+              &vbuf[in+flash_row_size*(out*2+1)], &pbuf[in+flash_row_size*(out*2+1)]);
         }
     }
 
@@ -670,7 +681,7 @@ Device::write_device_mixer_settings(FF_software_settings_t *settings)
     // comments in read_device_mixer_settings().
     memset(obuf, 0, sizeof(obuf));
     for (out=0; out<30; out++) {
-      obuf[out] = fader2flashvol(settings->output_faders[out]);
+      obuf[out] = fader2flashvol(dsettings->output_faders[out]);
     }
 
     i = write_flash(addr, (quadlet_t *)(vbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);

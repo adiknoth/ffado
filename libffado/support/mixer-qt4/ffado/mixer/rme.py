@@ -109,6 +109,14 @@ class Rme(QWidget):
             self.ff800_ch8_src: ['/Control/Chan8_source'],
         }
 
+        self.CommandButtons={
+            self.control_load: ['/Control/Flash_control', 0],
+            self.control_save: ['/Control/Flash_control', 1],
+            self.mixer_load:   ['/Control/Flash_control', 2],
+            self.mixer_save:   ['/Control/Flash_control', 3],
+            self.mixer_preset_ffado_default: ['/Control/Mixer_preset', 0],
+        }
+
         # Other mixer variables
         self.is_streaming = 0
         self.sample_rate = 0
@@ -161,6 +169,12 @@ class Rme(QWidget):
             a0 = a0 + 1
         # log.debug("limit update: %d" % (a0));
         self.hw.setDiscrete('/Control/Bandwidth_limit', a0);
+
+    # Public slot: send command
+    def sendCommand(self, a0):
+        sender = self.sender()
+        log.debug("command %d sent to %s" % (self.CommandButtons[sender][1], self.CommandButtons[sender][0]))
+        self.hw.setDiscrete(self.CommandButtons[sender][0], self.CommandButtons[sender][1])
 
     def updateCombo(self, a0):
         sender = self.sender()
@@ -252,12 +266,18 @@ class Rme(QWidget):
 
         # For now, disable the device operation buttons since they are 
         # not yet implemented.
-        self.disable_hide(self.device_operations)
-        #self.control_load.setEnabled(False)
-        #self.control_save.setEnabled(False)
-        #self.mixer_load.setEnabled(False)
+        #self.disable_hide(self.device_operations)
+        self.control_load.setEnabled(False)
+        self.control_save.setEnabled(False)
+        self.mixer_load.setEnabled(False)
         #self.mixer_save.setEnabled(False)
-        #self.mixer_preset_ffado_default.setEnabled(False)
+        self.mixer_preset_ffado_default.setEnabled(False)
+
+        # Connect signal handlers for all command buttons
+        for ctrl, info in self.CommandButtons.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            QObject.connect(ctrl, SIGNAL('clicked(bool)'), self.sendCommand)
 
         # Retrieve other device settings as needed and customise the UI
         # based on these options.

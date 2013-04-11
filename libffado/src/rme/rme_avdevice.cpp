@@ -203,6 +203,13 @@ Device::buildMixer() {
         new RmeSettingsCtrl(*this, RME_CTRL_LIMIT_BANDWIDTH, 0,
             "Bandwidth_limit", "Bandwidth limit", ""));
 
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_FLASH, 0,
+            "Flash_control", "Flash control", ""));
+    result &= m_ControlContainer->addElement(
+        new RmeSettingsCtrl(*this, RME_CTRL_MIXER_PRESET, 0,
+            "Mixer_preset", "Mixer preset", ""));
+
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         result &= m_ControlContainer->addElement(
             new RmeSettingsCtrl(*this, RME_CTRL_INPUT_SOURCE, 1,
