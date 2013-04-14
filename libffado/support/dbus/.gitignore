@@ -1,0 +1,6 @@
+controlclient-glue.h
+controlserver-glue.h
+ffado-dbus-server
+org.ffado.Control.service
+test-dbus
+test-dbus-server

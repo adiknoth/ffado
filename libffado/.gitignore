@@ -1,0 +1,10 @@
+cache/
+.sconsign.dblite
+config.h
+config_debug.h
+libffado.pc
+version.h
+*.pyc
+*.o
+*.os
+*.so

@@ -1,0 +1,5 @@
+ffado-test-isorecv
+ffado-test-isoxmit
+gen-loadpulses
+test-clock_nanosleep
+test-sysload
