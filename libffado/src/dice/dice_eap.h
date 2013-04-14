@@ -361,6 +361,36 @@ private:
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
 
+    /**
+      @brief Description of the standalone mode configuration
+      */
+    class StandaloneConfig {
+    private:
+        friend class Dice::EAP;
+        StandaloneConfig(EAP &p) : m_eap(p), m_base(eRT_Standalone), m_offset(0), m_debugModule(p.m_debugModule) {};
+        ~StandaloneConfig() {};
+
+    public:
+        bool read() {return read(m_base, m_offset);};
+        bool write() {return write(m_base, m_offset);};
+        bool read(enum eRegBase b, unsigned offset);
+        bool write(enum eRegBase b, unsigned offset);
+
+        void show();
+    private:
+        EAP &m_eap;
+        enum eRegBase m_base;
+        unsigned int m_offset;
+
+        uint32_t m_clk_src;
+        uint32_t m_aes_ext;
+        uint32_t m_adat_ext;
+        uint32_t m_wc_ext;
+        uint32_t m_int_ext;
+
+        DECLARE_DEBUG_MODULE_REFERENCE;
+    };
+
 public:
 
     /**
@@ -473,6 +503,7 @@ public:
 
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
+
 
 public:
     /** constructor */
@@ -637,6 +668,7 @@ private:
     bool     m_general_stream_cfg_stored;
     uint16_t m_general_chip;
 
+
     bool commandHelper(fb_quadlet_t cmd);
 
     /// Calculate the real offset for the different spaces
@@ -646,6 +678,8 @@ private:
     Device & m_device;
     Mixer*   m_mixer;
     Router*  m_router;
+    StandaloneConfig *m_standalone;
+
     RouterConfig m_current_cfg_routing_low;
     RouterConfig m_current_cfg_routing_mid;
     RouterConfig m_current_cfg_routing_high;

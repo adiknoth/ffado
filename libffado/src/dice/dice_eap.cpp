@@ -79,6 +79,7 @@ EAP::EAP(Device &d)
 , m_device(d)
 , m_mixer( NULL )
 , m_router( NULL )
+, m_standalone( NULL )
 , m_current_cfg_routing_low ( RouterConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_LOW_ROUTER ) )
 , m_current_cfg_routing_mid ( RouterConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_MID_ROUTER ) )
 , m_current_cfg_routing_high( RouterConfig(*this, eRT_CurrentCfg, DICE_EAP_CURRCFG_HIGH_ROUTER) )
@@ -96,6 +97,7 @@ EAP::~EAP()
     // delete the helper classes
     if(m_mixer) delete m_mixer;
     if(m_router) delete m_router;
+    if(m_standalone) delete m_standalone;
 }
 
 // offsets and sizes are returned in quadlets, but we use byte values, hence the *= 4
@@ -206,6 +208,12 @@ EAP::init() {
         if(!addElement(m_router)) {
             debugWarning("Failed to add router to control tree\n");
         }
+
+       m_standalone = new EAP::StandaloneConfig(*this);
+       if(m_standalone == NULL) {
+           debugError("Could not allocate memory for standalone config\n");
+           return false;
+       }
     }
 
     return true;
@@ -380,6 +388,7 @@ EAP::updateConfigurationCache()
         return false;
     }
     if(m_mixer) m_mixer->updateNameCache();
+
     return true;
 }
 
@@ -805,6 +814,10 @@ EAP::show()
     StreamConfig *scfg = getActiveStreamConfig();
     if(scfg) {
         scfg->show();
+    }
+    printMessage("--- Standalone configuration ---\n");
+    if(m_standalone) {
+        m_standalone->show();
     }
 
 // fixme
@@ -2009,7 +2022,10 @@ EAP::PeakSpace::getPeaks() {
     return ret;
 }
 
+//
 // ----------- stream config block -------------
+//
+
 EAP::StreamConfig::StreamConfig(EAP &p, enum eRegBase b, unsigned int o)
 : m_eap(p)
 , m_base(b), m_offset(o)
@@ -2164,6 +2180,47 @@ EAP::StreamConfig::show()
         printMessage("RX Config block %d\n", i);
         showConfigBlock(m_rx_configs[i]);
     }
+}
+
+//
+// ----------- standalone config -------------
+//
+
+bool
+EAP::StandaloneConfig::read(enum eRegBase base, unsigned offset)
+{
+    uint32_t tmp_entries[m_eap.m_standalone_size / sizeof(uint32_t)];
+
+    if(!m_eap.readRegBlock(base, offset, tmp_entries, m_eap.m_standalone_size)) {
+        debugError("Failed to read standalone configuration\n");
+        return false;
+    }
+
+    m_clk_src = tmp_entries[0];
+    m_aes_ext = tmp_entries[1];
+    m_adat_ext = tmp_entries[2];
+    m_wc_ext = tmp_entries[3];
+    m_int_ext = tmp_entries[4];
+
+    return true;
+}
+
+bool
+EAP::StandaloneConfig::write(enum eRegBase b, unsigned offset)
+{
+    return false;
+}
+
+void
+EAP::StandaloneConfig::show()
+{
+    printMessage("Standalone configuration:\n");
+    read();
+    printMessage("  Clock source: %08X\n", m_clk_src);
+    printMessage("  AES EXT:  %08X\n", m_aes_ext);
+    printMessage("  ADAT EXT: %08X\n", m_adat_ext);
+    printMessage("  WC EXT:   %08X\n", m_wc_ext);
+    printMessage("  INT EXT:  %08X\n", m_int_ext);
 }
 
 } // namespace Dice
