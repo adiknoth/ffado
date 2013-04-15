@@ -673,7 +673,7 @@ PortGroupEntry PortGroups_ULTRALITEmk3[] =
     {"Phones-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 4, },
     {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 5, },
     {"Reverb-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 7, },
-    {"Padding%d", 4, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 8, },
+    {"Padding%d", 4, MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ANY|MOTU_PA_PADDING, 8, },
 };
 
 PortGroupEntry PortGroups_ULTRALITEmk3_hybrid[] =
