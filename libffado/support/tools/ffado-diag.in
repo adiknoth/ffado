@@ -32,7 +32,7 @@ from helpstrings import HelpStrings
 from ffado_diag_helpers import *
 
 ## message strings
-FFADODIAG_VERSION = "$VERSION-$REVISION"
+FFADODIAG_VERSION = "$VERSION$REVISIONSTRING"
 
 welcome_msg = """
 
