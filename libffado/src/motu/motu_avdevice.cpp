@@ -864,6 +864,17 @@ MotuDevice::discover()
         return false;
     }
 
+    // The MOTU 8pre seems to power up in "converter" mode.  To toggle it
+    // into "interface" mode it is necessary to do a write to the clock 
+    // control register.  Since setClockCtrlRegister() will only do a write
+    // if something is explicitly set it isn't sufficient to do something like
+    //   setClockCtrlRegister(-1, MOTU_CLKSRC_UNCHANGED)
+    // Instead, we request that the clock source be set to its present value;
+    // effectively this preserves the interface's current clock settings.
+    if (m_motu_model == MOTU_MODEL_8PRE) {
+        setClockCtrlRegister(-1, getHwClockSource());
+    }
+
     if (!buildMixer()) {
         debugWarning("Could not build mixer\n");
     }
