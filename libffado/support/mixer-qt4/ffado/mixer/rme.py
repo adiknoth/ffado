@@ -224,6 +224,127 @@ class Rme(QWidget):
         widget.hide()
         widget.setEnabled(False)
 
+    def setupSignals(self):
+
+        # Connect signal handlers for all command buttons
+        for ctrl, info in self.CommandButtons.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            QObject.connect(ctrl, SIGNAL('clicked(bool)'), self.sendCommand)
+
+        for ctrl, info in self.Combos.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue;
+            QObject.connect(ctrl, SIGNAL('currentIndexChanged(int)'), self.updateCombo)
+
+        QObject.connect(self.bandwidth_limit, SIGNAL('currentIndexChanged(int)'), self.updateBandwidthLimit)
+
+        # Get current hardware values and connect GUI element signals to 
+        # their respective slots
+        for ctrl, info in self.PhantomSwitches.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updatePhantomSwitch)
+
+        for ctrl, info in self.Switches.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateSwitch)
+
+        for ctrl, info in self.Radiobuttons.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue;
+            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateRadiobutton)
+
+        for ctrl, info in self.Checkboxes.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue;
+            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateCheckboxes)
+
+        for ctrl, info in self.Gains.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateGain)
+
+    # Obtain control values from the Fireface and make the GUI reflect these
+    def getValuesFromFF(self):
+        for ctrl, info in self.Combos.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue;
+            val = self.hw.getDiscrete(info[0])
+            log.debug("combo %s is %d" % (info[0], val));
+            ctrl.setCurrentIndex(val);
+
+        # Set the bandwidth limit control to reflect the current device
+        # setting, allowing for the additional "No ADAT-2" item which is
+        # present on the FF800.
+        val = self.hw.getDiscrete('/Control/Bandwidth_limit')
+        if (self.model==RME_MODEL_FF400 and val>1):
+            val = val - 1
+        self.bandwidth_limit.setCurrentIndex(val);
+
+        # Get current hardware values
+        for ctrl, info in self.PhantomSwitches.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            val = (self.hw.getDiscrete(info[0]) >> info[1]) & 0x01
+            log.debug("phantom switch %d is %d" % (info[1], val))
+            if val:
+                ctrl.setChecked(True)
+            else:
+                ctrl.setChecked(False)
+
+        for ctrl, info in self.Switches.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            val = self.hw.getDiscrete(info[0])
+            log.debug("switch %s is %d" % (info[0], val))
+            if val:
+                ctrl.setChecked(True)
+            else:
+                ctrl.setChecked(False)
+
+        for ctrl, info in self.Radiobuttons.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue;
+            # This is a touch wasteful since it means we retrieve the control
+            # value once per radio button rather than once per radio button
+            # group.  In time we might introduce radiobutton groupings in the
+            # self.* datastructures to avoid this, but for the moment this is
+            # easy and it works.
+            val = self.hw.getDiscrete(info[0])
+            if (val == info[1]):
+                val = 1
+            else:
+                val = 0
+            ctrl.setChecked(val)
+            log.debug("Radiobutton %s[%d] is %d" % (info[0], info[1], val))
+
+        for ctrl, info in self.Checkboxes.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue;
+            # This is a touch wasteful since it means we retrieve the control
+            # value once per checkbox button rather than once per checkbox
+            # group.  In time we might introduce checkbox groupings in the
+            # self.* datastructures to avoid this, but for the moment this is
+            # easy and it works.
+            val = self.hw.getDiscrete(info[0])
+            if (val & info[1]):
+                val = 1
+            else:
+                val = 0
+            ctrl.setChecked(val)
+            log.debug("Checkbox %s[%d] is %d" % (info[0], info[1], val))
+
+        for ctrl, info in self.Gains.iteritems():
+            if (not(ctrl.isEnabled())):
+                continue
+            val = self.hw.getMatrixMixerValue(info[0], 0, info[1])
+            log.debug("gain %s[%d] is %d" % (info[0], info[1], val))
+            ctrl.setValue(val);
+
+
+
     def initValues(self):
 
         # print self.hw.servername
@@ -273,12 +394,6 @@ class Rme(QWidget):
         #self.mixer_save.setEnabled(False)
         self.mixer_preset_ffado_default.setEnabled(False)
 
-        # Connect signal handlers for all command buttons
-        for ctrl, info in self.CommandButtons.iteritems():
-            if (not(ctrl.isEnabled())):
-                continue
-            QObject.connect(ctrl, SIGNAL('clicked(bool)'), self.sendCommand)
-
         # Retrieve other device settings as needed and customise the UI
         # based on these options.
         self.model = self.hw.getDiscrete('/Control/Model')
@@ -307,14 +422,6 @@ class Rme(QWidget):
             self.sync_check_adat2_label.setEnabled(False)
             self.sync_check_adat2_status.setEnabled(False)
 
-        for ctrl, info in self.Combos.iteritems():
-            if (not(ctrl.isEnabled())):
-                continue;
-            val = self.hw.getDiscrete(info[0])
-            log.debug("combo %s is %d" % (info[0], val));
-            ctrl.setCurrentIndex(val);
-            QObject.connect(ctrl, SIGNAL('currentIndexChanged(int)'), self.updateCombo)
-
         if (not(self.tco_present)):
             self.sync_check_tco_label.setEnabled(False)
             self.sync_check_tco_status.setEnabled(False)
@@ -329,81 +436,12 @@ class Rme(QWidget):
             self.phones_level_group.setEnabled(False)
 
         # Add the "No ADAT-2" item to the bandwidth limit control if the
-        # device is not a FF400.  Set the control to reflect the current
-        # device setting and connect an update signal.
+        # device is not a FF400.
         if (self.model != RME_MODEL_FF400):
             self.bandwidth_limit.insertItem(1, "No ADAT-2")
-        val = self.hw.getDiscrete('/Control/Bandwidth_limit')
-        if (self.model==RME_MODEL_FF400 and val>1):
-            val = val - 1
-        self.bandwidth_limit.setCurrentIndex(val);
-        QObject.connect(self.bandwidth_limit, SIGNAL('currentIndexChanged(int)'), self.updateBandwidthLimit)
 
-        # Get current hardware values and connect GUI element signals to 
-        # their respective slots
-        for ctrl, info in self.PhantomSwitches.iteritems():
-            if (not(ctrl.isEnabled())):
-                continue
-            val = (self.hw.getDiscrete(info[0]) >> info[1]) & 0x01
-            log.debug("phantom switch %d is %d" % (info[1], val))
-            if val:
-                ctrl.setChecked(True)
-            else:
-                ctrl.setChecked(False)
-            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updatePhantomSwitch)
-
-        for ctrl, info in self.Switches.iteritems():
-            if (not(ctrl.isEnabled())):
-                continue
-            val = self.hw.getDiscrete(info[0])
-            log.debug("switch %s is %d" % (info[0], val))
-            if val:
-                ctrl.setChecked(True)
-            else:
-                ctrl.setChecked(False)
-            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateSwitch)
-
-        for ctrl, info in self.Radiobuttons.iteritems():
-            if (not(ctrl.isEnabled())):
-                continue;
-            # This is a touch wasteful since it means we retrieve the control
-            # value once per radio button rather than once per radio button
-            # group.  In time we might introduce radiobutton groupings in the
-            # self.* datastructures to avoid this, but for the moment this is
-            # easy and it works.
-            val = self.hw.getDiscrete(info[0])
-            if (val == info[1]):
-                val = 1
-            else:
-                val = 0
-            ctrl.setChecked(val)
-            log.debug("Radiobutton %s[%d] is %d" % (info[0], info[1], val))
-            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateRadiobutton)
-
-        for ctrl, info in self.Checkboxes.iteritems():
-            if (not(ctrl.isEnabled())):
-                continue;
-            # This is a touch wasteful since it means we retrieve the control
-            # value once per checkbox button rather than once per checkbox
-            # group.  In time we might introduce checkbox groupings in the
-            # self.* datastructures to avoid this, but for the moment this is
-            # easy and it works.
-            val = self.hw.getDiscrete(info[0])
-            if (val & info[1]):
-                val = 1
-            else:
-                val = 0
-            ctrl.setChecked(val)
-            log.debug("Checkbox %s[%d] is %d" % (info[0], info[1], val))
-            QObject.connect(ctrl, SIGNAL('toggled(bool)'), self.updateCheckboxes)
-
-        for ctrl, info in self.Gains.iteritems():
-            if (not(ctrl.isEnabled())):
-                continue
-            val = self.hw.getMatrixMixerValue(info[0], 0, info[1])
-            log.debug("gain %s[%d] is %d" % (info[0], info[1], val))
-            ctrl.setValue(val);
-            QObject.connect(ctrl, SIGNAL('valueChanged(int)'), self.updateGain)
+        self.getValuesFromFF()
+        self.setupSignals()
 
         self.updateStreamingState()
         #log.debug("device streaming flag: %d" % (self.is_streaming))
