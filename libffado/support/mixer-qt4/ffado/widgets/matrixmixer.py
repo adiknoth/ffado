@@ -192,8 +192,8 @@ class MixerNode(QtGui.QAbstractSlider):
             p.drawText(rect, Qt.Qt.AlignLeft|Qt.Qt.AlignTop, QtCore.QString.fromUtf8(" ϕ"))
 
     def internalValueChanged(self, value):
-        log.debug("MixerNode.internalValueChanged( %i )" % value)
-        if value is not 0:
+        #log.debug("MixerNode.internalValueChanged( %i )" % value)
+        if value != 0:
             dB = 20 * math.log10(value / math.pow(2,14))
             if self.spinbox.value() is not dB:
                 self.spinbox.setValue(dB)
