@@ -548,7 +548,7 @@ flash2faders(signed int flash_vol, signed int flash_pan, signed int *fader0, sig
 }
 
 signed int
-Device::read_device_mixer_settings(FF_software_settings_t *settings)
+Device::read_device_mixer_settings(FF_software_settings_t *dsettings)
 {
     unsigned short int vbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
     unsigned short int pbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
@@ -557,6 +557,9 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     signed int i, in, out;
     signed int nch = 0;
     signed int flash_row_size = 0;
+
+    if (dsettings == NULL)
+        dsettings = settings;
 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         addr = RME_FF400_FLASH_MIXER_VOLUME_ADDR;
@@ -585,15 +588,15 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
             flash2faders(vbuf[in+out*2*flash_row_size], pbuf[in+out*2*flash_row_size],
-              &settings->input_faders[getMixerGainIndex(in,out*2)],
-              &settings->input_faders[getMixerGainIndex(in,out*2+1)]);
+              &dsettings->input_faders[getMixerGainIndex(in,out*2)],
+              &dsettings->input_faders[getMixerGainIndex(in,out*2+1)]);
         }
     }
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
             flash2faders(vbuf[in+flash_row_size*(out*2+1)], pbuf[in+flash_row_size*(out*2+1)],
-              &settings->playback_faders[getMixerGainIndex(in,out*2)],
-              &settings->playback_faders[getMixerGainIndex(in,out*2+1)]);
+              &dsettings->playback_faders[getMixerGainIndex(in,out*2)],
+              &dsettings->playback_faders[getMixerGainIndex(in,out*2+1)]);
         }
     }
     // Elements 30 and 31 of obuf[] are not output fader values: [30] 
@@ -602,7 +605,7 @@ Device::read_device_mixer_settings(FF_software_settings_t *settings)
     // and that these elements are just a convenient place for computer
     // control applications to store things.
     for (out=0; out<30; out++) {
-      settings->output_faders[out] = flashvol2fader(obuf[out]);
+      dsettings->output_faders[out] = flashvol2fader(obuf[out]);
     }
 
     return 0;

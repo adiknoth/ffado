@@ -176,6 +176,12 @@ class Rme(QWidget):
         log.debug("command %d sent to %s" % (self.CommandButtons[sender][1], self.CommandButtons[sender][0]))
         self.hw.setDiscrete(self.CommandButtons[sender][0], self.CommandButtons[sender][1])
 
+        # If mixer values have been reloaded, refresh the mixer GUI
+        if (self.CommandButtons[sender][1] == 2):
+            self.inputmatrix.refreshValues()
+            self.outputmatrix.refreshValues()
+            self.playbackmatrix.refreshValues()
+
     def updateCombo(self, a0):
         sender = self.sender()
         log.debug("combo %s set to %d" % (self.Combos[sender][0], a0))
@@ -390,7 +396,7 @@ class Rme(QWidget):
         #self.disable_hide(self.device_operations)
         self.control_load.setEnabled(False)
         self.control_save.setEnabled(False)
-        self.mixer_load.setEnabled(False)
+        #self.mixer_load.setEnabled(False)
         #self.mixer_save.setEnabled(False)
         self.mixer_preset_ffado_default.setEnabled(False)
 
