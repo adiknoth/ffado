@@ -192,7 +192,7 @@ class MixerNode(QtGui.QAbstractSlider):
             p.drawText(rect, Qt.Qt.AlignLeft|Qt.Qt.AlignTop, QtCore.QString.fromUtf8(" ϕ"))
 
     def internalValueChanged(self, value):
-        #log.debug("MixerNode.internalValueChanged( %i )" % value)
+        log.debug("MixerNode.internalValueChanged( %i )" % value)
         if value is not 0:
             dB = 20 * math.log10(value / math.pow(2,14))
             if self.spinbox.value() is not dB:
@@ -344,5 +344,11 @@ class MatrixMixer(QtGui.QWidget):
         #log.debug("MatrixNode.valueChanged( %s )" % str(n))
         self.interface.setValue(n[1], n[0], n[2])
 
+    def refreshValues(self):
+        for x in range(len(self.items)):
+            for y in range(len(self.items[x])):
+                val = self.interface.getValue(x,y)
+                self.items[x][y].setValue(val)
+                self.items[x][y].internalValueChanged(val)
 #
 # vim: et ts=4 sw=4 fileencoding=utf8
