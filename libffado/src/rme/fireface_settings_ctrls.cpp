@@ -95,8 +95,8 @@ signed int err = 0;
         case RME_CTRL_INPUT_LEVEL:
             switch (v) {
               case 0: i = FF_SWPARAM_ILEVEL_LOGAIN; break;
-              case 1: i = FF_DEV_FLASH_ILEVEL_m10dBV; break;
-              default: i = FF_DEV_FLASH_ILEVEL_4dBU;
+              case 1: i = FF_SWPARAM_ILEVEL_m10dBV; break;
+              default: i = FF_SWPARAM_ILEVEL_4dBU;
             }
             if (m_parent.setInputLevel(i) == 0) {
                 m_value = v;
@@ -104,9 +104,9 @@ signed int err = 0;
             break;
         case RME_CTRL_OUTPUT_LEVEL:
             switch (v) {
-              case 0: i = FF_DEV_FLASH_OLEVEL_m10dBV; break;
-              case 1: i = FF_DEV_FLASH_OLEVEL_4dBU; break;
-              default: i = FF_DEV_FLASH_OLEVEL_HIGAIN; break;
+              case 0: i = FF_SWPARAM_OLEVEL_m10dBV; break;
+              case 1: i = FF_SWPARAM_OLEVEL_4dBU; break;
+              default: i = FF_SWPARAM_OLEVEL_HIGAIN; break;
             }
             if (m_parent.setOutputLevel(i) == 0) {
                 m_value = v;
@@ -276,10 +276,18 @@ FF_state_t ff_state;
             return val;
             break;
         case RME_CTRL_INPUT_LEVEL:
-            return m_parent.getInputLevel();
+            switch (m_parent.getInputLevel()) {
+                case FF_SWPARAM_ILEVEL_LOGAIN: return 0;
+                case FF_SWPARAM_ILEVEL_m10dBV: return 1;
+                default: return 2;
+            }
             break;
         case RME_CTRL_OUTPUT_LEVEL:
-            return m_parent.getOutputLevel();
+            switch (m_parent.getOutputLevel()) {
+                case FF_SWPARAM_OLEVEL_m10dBV: return 0;
+                case FF_SWPARAM_OLEVEL_4dBU: return 1;
+                default: return 2;
+            }
             break;
         case RME_CTRL_FF400_PAD_SW:
             return m_parent.getInputPadOpt(m_info);
