@@ -408,14 +408,6 @@ Device::discover()
         debugWarning("Could not build mixer\n");
     }
 
-    // This is just for testing
-    {
-      FF_software_settings_t fsettings;
-      read_device_flash_settings(&fsettings);
-//fsettings = *settings;
-//      write_device_flash_settings(&fsettings);
-    }
-
     return true;
 }
 
