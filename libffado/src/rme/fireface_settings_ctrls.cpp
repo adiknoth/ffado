@@ -218,6 +218,7 @@ signed int err = 0;
         case RME_CTRL_FLASH:
             switch (v) {
                 case RME_CTRL_FLASH_SETTINGS_LOAD:
+                    m_parent.read_device_flash_settings(NULL);
                     break;
                 case RME_CTRL_FLASH_SETTINGS_SAVE:
                     break;

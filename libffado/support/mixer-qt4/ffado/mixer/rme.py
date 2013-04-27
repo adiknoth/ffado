@@ -182,6 +182,10 @@ class Rme(QWidget):
             self.outputmatrix.refreshValues()
             self.playbackmatrix.refreshValues()
 
+        # If settings have been reloaded from flash, refresh the GUI
+        if (self.CommandButtons[sender][1] == 0):
+            self.getValuesFromFF()
+
     def updateCombo(self, a0):
         sender = self.sender()
         log.debug("combo %s set to %d" % (self.Combos[sender][0], a0))
@@ -196,6 +200,7 @@ class Rme(QWidget):
             self.is_streaming = False
         if (self.last_streaming_state != self.is_streaming):
             self.bandwidth_limit.setEnabled(not(self.is_streaming));
+            self.control_load.setEnabled(not(self.is_streaming));
         self.last_streaming_state = self.is_streaming
 
     def status_update(self):
@@ -391,13 +396,12 @@ class Rme(QWidget):
         self.is_streaming = False
         self.last_streaming_state = False
 
-        # For now, disable the device operation buttons since they are 
-        # not yet implemented.
-        #self.disable_hide(self.device_operations)
-        self.control_load.setEnabled(False)
+        # Disable the "load settings" button if streaming is active.  Its
+        # enable state will be kept up to date by updateStreamingState().
+        self.control_load.setEnabled(not(self.is_streaming))
+
+        # Also disable other controls which are not yet implemented.
         self.control_save.setEnabled(False)
-        #self.mixer_load.setEnabled(False)
-        #self.mixer_save.setEnabled(False)
         self.mixer_preset_ffado_default.setEnabled(False)
 
         # Retrieve other device settings as needed and customise the UI
