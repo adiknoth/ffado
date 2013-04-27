@@ -76,11 +76,25 @@ Device::init_hardware(void)
 
     config_lock();
 
-    // In time this function may read a cached device setup and initialise
-    // based on that.  It may also read the device configuration from the
-    // device flash and adopt that.  For now (for initial testing purposes)
-    // we'll go with a static state.
-    if (dev_config->settings_valid==0) {
+    // If the software state is not yet valid, attempt to obtain settings
+    // from the device flash.  If that fails for some reason, initialise
+    // with a static setup.
+    if (dev_config->settings_valid == 0) {
+        dev_config->settings_valid = read_device_flash_settings(settings) == 0;
+        // If valid settings were read, write them to the device so we can
+        // be sure that this mirrors how the device is currently configured.
+        // This is also needed so the "host" LED is extinguished on first
+        // use after power up.  Also use the stored sample rate as the
+        // operational rate.
+        if (dev_config->settings_valid) {
+            dev_config->software_freq = settings->sample_rate;
+            dev_config->dds_freq = settings->sample_rate;
+            set_hardware_params(settings);
+        }
+    }
+
+    // If no valid flash settings, configure with a static setup.
+    if (dev_config->settings_valid == 0) {
         memset(settings, 0, sizeof(*settings));
         settings->spdif_input_mode = FF_SWPARAM_SPDIF_INPUT_COAX;
         settings->spdif_output_mode = FF_SWPARAM_SPDIF_OUTPUT_COAX;
@@ -99,7 +113,6 @@ Device::init_hardware(void)
 
         // TODO: set input amplifier gains to a value other than 0?
 
-        // TODO: store and set matrix mixer values
         // TODO: store and manipulate channel mute/rec flags
 
         // The FF800 needs the input source set via the input options.
@@ -119,16 +132,6 @@ Device::init_hardware(void)
         if (set_hardware_params(settings) != 0)
             ret = -1;
 
-        if (ret==0 && m_rme_model==RME_MODEL_FIREFACE400) {
-            unsigned int node_id = getConfigRom().getNodeId();
-            unsigned int midi_hi_addr;
-            // For now we'll fix this since that's what's done under other
-            // systems.
-            midi_hi_addr = 0x01;
-            if (writeRegister(RME_FF400_MIDI_HIGH_ADDR, (node_id<<16) | midi_hi_addr) != 0)
-                ret = -1;
-        }
-
         if (ret==0) {
             signed freq = dev_config->software_freq;
             if (dev_config->dds_freq > 0)
@@ -144,34 +147,43 @@ Device::init_hardware(void)
             }
         }
 
-        have_mixer_settings = read_device_mixer_settings(settings) == 0;
-
-        // Matrix mixer settings
-        for (dest=0; dest<n_channels; dest++) {
-            for (src=0; src<n_channels; src++) {
-                if (!have_mixer_settings)
-                    settings->input_faders[getMixerGainIndex(src, dest)] = 0;
-                set_hardware_mixergain(RME_FF_MM_INPUT, src, dest, 0);
-            }
-            for (src=0; src<n_channels; src++) {
-                if (!have_mixer_settings)
-                    settings->playback_faders[getMixerGainIndex(src, dest)] =
-                      src==dest?0x8000:0;
-                set_hardware_mixergain(RME_FF_MM_PLAYBACK, src, dest, 
-                  src==dest?0x8000:0);
-            }
-        }
-        for (src=0; src<n_channels; src++) {
-            if (!have_mixer_settings)
-                settings->output_faders[src] = 0x8000;
-            set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, 0x8000);
-        }
-
-        set_hardware_output_rec(0);
-
         dev_config->settings_valid = 1;
     }
 
+    have_mixer_settings = read_device_mixer_settings(settings) == 0;
+
+    // Matrix mixer settings
+    for (dest=0; dest<n_channels; dest++) {
+        for (src=0; src<n_channels; src++) {
+            if (!have_mixer_settings)
+                settings->input_faders[getMixerGainIndex(src, dest)] = 0;
+            set_hardware_mixergain(RME_FF_MM_INPUT, src, dest, 0);
+        }
+        for (src=0; src<n_channels; src++) {
+            if (!have_mixer_settings)
+                settings->playback_faders[getMixerGainIndex(src, dest)] =
+                  src==dest?0x8000:0;
+            set_hardware_mixergain(RME_FF_MM_PLAYBACK, src, dest, 
+              src==dest?0x8000:0);
+        }
+    }
+    for (src=0; src<n_channels; src++) {
+        if (!have_mixer_settings)
+            settings->output_faders[src] = 0x8000;
+        set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, 0x8000);
+    }
+
+    set_hardware_output_rec(0);
+
+    if (ret==0 && m_rme_model==RME_MODEL_FIREFACE400) {
+        unsigned int node_id = getConfigRom().getNodeId();
+        unsigned int midi_hi_addr;
+        // For now we'll fix this since that's what's done under other
+        // systems.
+        midi_hi_addr = 0x01;
+        if (writeRegister(RME_FF400_MIDI_HIGH_ADDR, (node_id<<16) | midi_hi_addr) != 0)
+            ret = -1;
+    }
 
     // Also configure the TCO (Time Code Option) settings for those devices
     // which have a TCO.
