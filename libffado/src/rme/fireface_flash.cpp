@@ -233,8 +233,11 @@ Device::write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
 
 
 signed int 
-Device::read_device_flash_settings(FF_software_settings_t *settings) 
+Device::read_device_flash_settings(FF_software_settings_t *dsettings) 
 {
+    if (dsettings == NULL)
+        dsettings = settings;
+
     // Read the device's configuration flash RAM and use this to set up 
     // the given settings structure.
 
@@ -288,49 +291,49 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
     }
 
     if (settings != NULL) {
-        memset(settings, 0, sizeof(*settings));
+        memset(dsettings, 0, sizeof(*dsettings));
         // Copy hardware details to the software settings structure as
         // appropriate.
         for (i=0; i<2; i++)
-            settings->mic_phantom[i] = hw_settings.mic_phantom[i];
+            dsettings->mic_phantom[i] = hw_settings.mic_phantom[i];
 
         if (m_rme_model == RME_MODEL_FIREFACE800) {
             for (i=2; i<4; i++)
-                settings->mic_phantom[i] = hw_settings.mic_phantom[i];
+                dsettings->mic_phantom[i] = hw_settings.mic_phantom[i];
         } else 
         if (m_rme_model == RME_MODEL_FIREFACE400) {
             // TODO: confirm this is true
             for (i=2; i<4; i++)
-                settings->ff400_input_pad[i-2] = hw_settings.mic_phantom[i];
+                dsettings->ff400_input_pad[i-2] = hw_settings.mic_phantom[i];
         } else {
             debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
             return -1;
         }
 
-        settings->spdif_input_mode = hw_settings.spdif_input_mode;
-        settings->spdif_output_emphasis = hw_settings.spdif_output_emphasis;
-        settings->spdif_output_pro = hw_settings.spdif_output_pro;
-        settings->spdif_output_nonaudio = hw_settings.spdif_output_nonaudio;
-        settings->spdif_output_mode = hw_settings.spdif_output_mode;
-        settings->clock_mode = hw_settings.clock_mode;
-        settings->sync_ref = hw_settings.sync_ref;
-        settings->tms = hw_settings.tms;
-        settings->limit_bandwidth = hw_settings.limit_bandwidth;
-        settings->stop_on_dropout = hw_settings.stop_on_dropout;
-        settings->input_level = hw_settings.input_level;
-        settings->output_level = hw_settings.output_level;
+        dsettings->spdif_input_mode = hw_settings.spdif_input_mode;
+        dsettings->spdif_output_emphasis = hw_settings.spdif_output_emphasis;
+        dsettings->spdif_output_pro = hw_settings.spdif_output_pro;
+        dsettings->spdif_output_nonaudio = hw_settings.spdif_output_nonaudio;
+        dsettings->spdif_output_mode = hw_settings.spdif_output_mode;
+        dsettings->clock_mode = hw_settings.clock_mode;
+        dsettings->sync_ref = hw_settings.sync_ref;
+        dsettings->tms = hw_settings.tms;
+        dsettings->limit_bandwidth = hw_settings.limit_bandwidth;
+        dsettings->stop_on_dropout = hw_settings.stop_on_dropout;
+        dsettings->input_level = hw_settings.input_level;
+        dsettings->output_level = hw_settings.output_level;
         if (m_rme_model == RME_MODEL_FIREFACE800) {
-            settings->filter = hw_settings.filter;
-            settings->fuzz = hw_settings.fuzz;
+            dsettings->filter = hw_settings.filter;
+            dsettings->fuzz = hw_settings.fuzz;
         } else 
         if (m_rme_model == RME_MODEL_FIREFACE400) {
             // TODO: confirm this is true
-            settings->ff400_instr_input[0] = hw_settings.fuzz;
-            settings->ff400_instr_input[1] = hw_settings.filter;
+            dsettings->ff400_instr_input[0] = hw_settings.fuzz;
+            dsettings->ff400_instr_input[1] = hw_settings.filter;
         }
-        settings->limiter = (hw_settings.p12db_an[0] == 0)?1:0;
-        settings->sample_rate = hw_settings.sample_rate;
-        settings->word_clock_single_speed = hw_settings.word_clock_single_speed;
+        dsettings->limiter = (hw_settings.p12db_an[0] == 0)?1:0;
+        dsettings->sample_rate = hw_settings.sample_rate;
+        dsettings->word_clock_single_speed = hw_settings.word_clock_single_speed;
 
         // The FF800 has front/rear selectors for the "instrument" input 
         // (aka channel 1) and the two "mic" channels (aka channels 7 and 8).
@@ -338,7 +341,7 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
         // in the flash configuration structure to use for the "phones"
         // level which the FF800 doesn't have.
         if (m_rme_model == RME_MODEL_FIREFACE400)
-            settings->phones_level = hw_settings.mic_plug_select[0];
+            dsettings->phones_level = hw_settings.mic_plug_select[0];
         else 
         if (m_rme_model == RME_MODEL_FIREFACE800) {
             // The value for the front/rear selectors coming from the flash
@@ -347,9 +350,9 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
             // bit 0 being "rear" and bit 1 being "front".  This follows the
             // approach used in drivers for other operating systems and
             // simplifies certain logic expressions within the driver.
-            settings->input_opt[0] = hw_settings.instrument_plug_select + 1;
-            settings->input_opt[1] = hw_settings.mic_plug_select[0] + 1;
-            settings->input_opt[2] = hw_settings.mic_plug_select[1] + 1;
+            dsettings->input_opt[0] = hw_settings.instrument_plug_select + 1;
+            dsettings->input_opt[1] = hw_settings.mic_plug_select[0] + 1;
+            dsettings->input_opt[2] = hw_settings.mic_plug_select[1] + 1;
         }
     }
 
@@ -357,46 +360,46 @@ Device::read_device_flash_settings(FF_software_settings_t *settings)
     debugOutput(DEBUG_LEVEL_VERBOSE, "Settings read from flash:\n");
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "  Phantom: %d %d %d %d\n",
-            settings->mic_phantom[0], settings->mic_phantom[1],
-            settings->mic_phantom[2], settings->mic_phantom[2]);
+            dsettings->mic_phantom[0], dsettings->mic_phantom[1],
+            dsettings->mic_phantom[2], dsettings->mic_phantom[2]);
 
     } else 
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "  Phantom: %d %d\n",
-            settings->mic_phantom[0], settings->mic_phantom[1]);
+            dsettings->mic_phantom[0], dsettings->mic_phantom[1]);
         debugOutput(DEBUG_LEVEL_VERBOSE, "  Input pad: %d %d\n",
-            settings->ff400_input_pad[0], settings->ff400_input_pad[1]);
+            dsettings->ff400_input_pad[0], dsettings->ff400_input_pad[1]);
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif input mode: %d\n", settings->spdif_input_mode);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output emphasis: %d\n", settings->spdif_output_emphasis);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output pro: %d\n", settings->spdif_output_pro);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output nonaudio: %d\n", settings->spdif_output_nonaudio);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output mode: %d\n", settings->spdif_output_mode);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  clock mode: %d\n", settings->clock_mode);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  sync ref: %d\n", settings->sync_ref);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  tms: %d\n", settings->tms);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  limit bandwidth: %d\n", settings->limit_bandwidth);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  stop on dropout: %d\n", settings->stop_on_dropout);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  input level: %d\n", settings->input_level);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  output level: %d\n", settings->output_level);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif input mode: %d\n", dsettings->spdif_input_mode);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output emphasis: %d\n", dsettings->spdif_output_emphasis);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output pro: %d\n", dsettings->spdif_output_pro);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output nonaudio: %d\n", dsettings->spdif_output_nonaudio);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output mode: %d\n", dsettings->spdif_output_mode);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  clock mode: %d\n", dsettings->clock_mode);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  sync ref: %d\n", dsettings->sync_ref);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  tms: %d\n", dsettings->tms);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  limit bandwidth: %d\n", dsettings->limit_bandwidth);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  stop on dropout: %d\n", dsettings->stop_on_dropout);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  input level: %d\n", dsettings->input_level);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  output level: %d\n", dsettings->output_level);
     if (m_rme_model == RME_MODEL_FIREFACE800) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  filter: %d\n", settings->filter);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  fuzz: %d\n", settings->fuzz);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  filter: %d\n", dsettings->filter);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  fuzz: %d\n", dsettings->fuzz);
     } else
     if (m_rme_model == RME_MODEL_FIREFACE400) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 0: %d\n", settings->ff400_instr_input[0]);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 1: %d\n", settings->ff400_instr_input[1]);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 0: %d\n", dsettings->ff400_instr_input[0]);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 1: %d\n", dsettings->ff400_instr_input[1]);
     }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  limiter: %d\n", settings->limiter);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  sample rate: %d\n", settings->sample_rate);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  word clock single speed: %d\n", settings->word_clock_single_speed);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  limiter: %d\n", dsettings->limiter);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  sample rate: %d\n", dsettings->sample_rate);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "  word clock single speed: %d\n", dsettings->word_clock_single_speed);
     if (m_rme_model == RME_MODEL_FIREFACE400) {
-      debugOutput(DEBUG_LEVEL_VERBOSE, "  phones level: %d\n", settings->phones_level);
+      debugOutput(DEBUG_LEVEL_VERBOSE, "  phones level: %d\n", dsettings->phones_level);
     } else
     if (m_rme_model == RME_MODEL_FIREFACE800) {
       debugOutput(DEBUG_LEVEL_VERBOSE, "  input opts: %d %d %d\n",
-        settings->input_opt[0], settings->input_opt[1],
-        settings->input_opt[2]);
+        dsettings->input_opt[0], dsettings->input_opt[1],
+        dsettings->input_opt[2]);
     }
 
     i = readBlock(RME_FF_STATUS_REG0, status_buf, 4);
@@ -428,8 +431,11 @@ quadlet_t addr = 0;
 }
 
 signed int 
-Device::write_device_flash_settings(FF_software_settings_t *settings) 
+Device::write_device_flash_settings(FF_software_settings_t *dsettings) 
 {
+    if (dsettings == NULL)
+        dsettings = settings;
+
     // Write the given device settings to the device's configuration flash.
 
     FF_device_flash_settings_t hw_settings;
@@ -444,31 +450,31 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
 
     // Copy software settings to the hardware structure as appropriate.
     for (i=0; i<4; i++)
-        hw_settings.mic_phantom[i] = settings->mic_phantom[i];
-    hw_settings.spdif_input_mode = settings->spdif_input_mode;
-    hw_settings.spdif_output_emphasis = settings->spdif_output_emphasis;
-    hw_settings.spdif_output_pro = settings->spdif_output_pro;
-    hw_settings.spdif_output_nonaudio = settings->spdif_output_nonaudio;
-    hw_settings.spdif_output_mode = settings->spdif_output_mode;
-    hw_settings.clock_mode = settings->clock_mode;
-    hw_settings.sync_ref = settings->sync_ref;
-    hw_settings.tms = settings->tms;
-    hw_settings.limit_bandwidth = settings->limit_bandwidth;
-    hw_settings.stop_on_dropout = settings->stop_on_dropout;
-    hw_settings.input_level = settings->input_level;
-    hw_settings.output_level = settings->output_level;
-    hw_settings.filter = settings->filter;
-    hw_settings.fuzz = settings->fuzz;
+        hw_settings.mic_phantom[i] = dsettings->mic_phantom[i];
+    hw_settings.spdif_input_mode = dsettings->spdif_input_mode;
+    hw_settings.spdif_output_emphasis = dsettings->spdif_output_emphasis;
+    hw_settings.spdif_output_pro = dsettings->spdif_output_pro;
+    hw_settings.spdif_output_nonaudio = dsettings->spdif_output_nonaudio;
+    hw_settings.spdif_output_mode = dsettings->spdif_output_mode;
+    hw_settings.clock_mode = dsettings->clock_mode;
+    hw_settings.sync_ref = dsettings->sync_ref;
+    hw_settings.tms = dsettings->tms;
+    hw_settings.limit_bandwidth = dsettings->limit_bandwidth;
+    hw_settings.stop_on_dropout = dsettings->stop_on_dropout;
+    hw_settings.input_level = dsettings->input_level;
+    hw_settings.output_level = dsettings->output_level;
+    hw_settings.filter = dsettings->filter;
+    hw_settings.fuzz = dsettings->fuzz;
     // The limiter can only be disabled if channel 1 uses the "front" input.
     // Note that p12db_an (as passed to the flash) seems to be a "limiter
     // disabled" flag.
-    if (m_rme_model==RME_MODEL_FIREFACE800 && settings->limiter==0 && 
-            settings->input_opt[0]==FF_SWPARAM_FF800_INPUT_OPT_FRONT)
+    if (m_rme_model==RME_MODEL_FIREFACE800 && dsettings->limiter==0 && 
+            dsettings->input_opt[0]==FF_SWPARAM_FF800_INPUT_OPT_FRONT)
         hw_settings.p12db_an[0] = 1;
     else
         hw_settings.p12db_an[0] = 0;
-    hw_settings.sample_rate = settings->sample_rate;
-    hw_settings.word_clock_single_speed = settings->word_clock_single_speed;
+    hw_settings.sample_rate = dsettings->sample_rate;
+    hw_settings.word_clock_single_speed = dsettings->word_clock_single_speed;
 
     // The FF800 has front/rear selectors for the "instrument" input 
     // (aka channel 1) and the two "mic" channels (aka channels 7 and 8).
@@ -476,7 +482,7 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
     // in the flash configuration structure to use for the "phones"
     // level which the FF800 doesn't have.
     if (m_rme_model == RME_MODEL_FIREFACE400)
-        hw_settings.mic_plug_select[0] = settings->phones_level;
+        hw_settings.mic_plug_select[0] = dsettings->phones_level;
     else 
     if (m_rme_model == RME_MODEL_FIREFACE800) {
         // The offset of 1 follows the convention used internally in drivers
@@ -485,9 +491,9 @@ Device::write_device_flash_settings(FF_software_settings_t *settings)
         // In the flash, the corresponding value is the index of the active
         // option in the list rear, front, front and rear.  See also the
         // related section of read_device_flash_settings().
-        hw_settings.instrument_plug_select = settings->input_opt[0] - 1;
-        hw_settings.mic_plug_select[0] = settings->input_opt[1] - 1;
-        hw_settings.mic_plug_select[1] = settings->input_opt[2] - 1;
+        hw_settings.instrument_plug_select = dsettings->input_opt[0] - 1;
+        hw_settings.mic_plug_select[0] = dsettings->input_opt[1] - 1;
+        hw_settings.mic_plug_select[1] = dsettings->input_opt[2] - 1;
     }
 
     // The configuration flash block must be erased before we can write to it

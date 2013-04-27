@@ -188,8 +188,8 @@ private:
 
     /* Upper level flash memory functions */
 public:
-    signed int read_device_flash_settings(FF_software_settings_t *settings);
-    signed int write_device_flash_settings(FF_software_settings_t *settings);
+    signed int read_device_flash_settings(FF_software_settings_t *dsettings);
+    signed int write_device_flash_settings(FF_software_settings_t *dsettings);
     signed int read_device_mixer_settings(FF_software_settings_t *dsettings);
     signed int write_device_mixer_settings(FF_software_settings_t *dsettings);
 
