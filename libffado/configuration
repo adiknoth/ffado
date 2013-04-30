@@ -74,6 +74,14 @@ device_definitions = (
     mixer       = "Presonus_Experimental";
     xmit_max_cycles_early_transmit = 4;
 },
+{ # Presonus Firestudio 26x26, Bob Hamil via jaimes on the forums
+    vendorid = 0x000a92;
+    modelid = 0x00000008;
+    vendorname = "Presonus";
+    modelname = "Firestudio 26x26";
+    mixer = "Generic_Dice_EAP";
+    driver = 20;
+},
 { # Presonus Firestudio Project, from Walt Baldwin
     vendorid = 0x000a92;
     modelid = 0x0000000b;
