@@ -557,6 +557,16 @@ class Motu(QWidget):
         widget.hide()
         widget.setEnabled(False)
 
+    # Set destination lists for the 8pre.  MainOut is index 2 and for the
+    # moment we assume the ADAT options follow that.
+    def set_8pre_dest_list(self, list):
+        list.setItemText(2, "MainOut")
+        list.setItemText(3, "ADAT 1-2")
+        list.setItemText(4, "ADAT 3-4")
+        list.setItemText(5, "ADAT 5-6")
+        list.setItemText(6, "ADAT 7-8")
+        list.setMaxCount(7)
+
     def initValues_g1(self):
         # Set up widgets for generation-1 devices (only the 828mk1 for now). 
         # For now disable all mix faders and analog controls since we don't
@@ -653,6 +663,16 @@ class Motu(QWidget):
         if (self.model==MOTU_MODEL_8PRE):
             self.disable_hide(self.mainout_fader)
             self.disable_hide(self.phones_fader)
+            self.disable_hide(self.masterbox)
+
+        # The 8pre's destination list is rather different to all other 
+        # models.
+        if (self.model==MOTU_MODEL_8PRE):
+            self.set_8pre_dest_list(self.mix1_dest)
+            self.set_8pre_dest_list(self.mix2_dest)
+            self.set_8pre_dest_list(self.mix3_dest)
+            self.set_8pre_dest_list(self.mix4_dest)
+            self.set_8pre_dest_list(self.phones_src)
 
         # Only the 896HD has meter controls
         if (self.model != MOTU_MODEL_896HD):
@@ -766,12 +786,17 @@ class Motu(QWidget):
             self.disable_hide(self.ana7_trimgain_label)
             self.disable_hide(self.ana8_trimgain)
             self.disable_hide(self.ana8_trimgain_label)
-            self.disable_hide(self.spdif1_trimgain);
-            self.disable_hide(self.spdif1_trimgain_label);
-            self.disable_hide(self.spdif1ctrl);
-            self.disable_hide(self.spdif2_trimgain);
-            self.disable_hide(self.spdif2_trimgain_label);
-            self.disable_hide(self.spdif2ctrl);
+            self.disable_hide(self.spdif1_trimgain)
+            self.disable_hide(self.spdif1_trimgain_label)
+            self.disable_hide(self.spdif1ctrl)
+            self.disable_hide(self.spdif2_trimgain)
+            self.disable_hide(self.spdif2_trimgain_label)
+            self.disable_hide(self.spdif2ctrl)
+
+        # The 8pre has no digital controls for the analog inputs, so there's
+        # no point in showing the frame which would normally contain them.
+        if (self.model == MOTU_MODEL_8PRE):
+            self.disable_hide(self.analog_settings_box)
 
     def initValues(self):
         # Is the device streaming?
