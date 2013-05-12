@@ -309,7 +309,8 @@ main( int argc, char **argv )
     }
 
     signal (SIGINT, sighandler);
-    
+    signal (SIGTERM, sighandler);
+
     DBus::_init_threading();
 
     // set up DBUS stuff
@@ -347,6 +348,7 @@ main( int argc, char **argv )
     delete container;
 
     signal (SIGINT, SIG_DFL);
+    signal (SIGTERM, SIG_DFL);
 
     printMessage("server stopped\n");
     delete m_deviceManager;
