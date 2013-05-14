@@ -441,7 +441,7 @@ Device::write_device_flash_settings(FF_software_settings_t *dsettings)
     FF_device_flash_settings_t hw_settings;
     signed int i, err = 0;
 
-    if (settings == NULL) {
+    if (dsettings == NULL) {
         debugOutput(DEBUG_LEVEL_WARNING, "NULL settings parameter\n");
         return -1;
     }
