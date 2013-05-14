@@ -247,9 +247,6 @@ Device::read_device_flash_settings(FF_software_settings_t *dsettings)
     long long int addr;
     quadlet_t status_buf[4];
 
-    // FIXME: the debug output in this function is mostly for testing at
-    // present.
-
     i = get_revision(&rev);
     if (i != 0) {
         debugOutput(DEBUG_LEVEL_WARNING, "Error reading hardware revision: %d\n", i);
@@ -405,27 +402,6 @@ Device::read_device_flash_settings(FF_software_settings_t *dsettings)
     i = readBlock(RME_FF_STATUS_REG0, status_buf, 4);
     debugOutput(DEBUG_LEVEL_VERBOSE, "Status read: %d: 0x%08x 0x%08x 0x%08x 0x%08x\n", i,
         status_buf[0], status_buf[1], status_buf[2], status_buf[3]);
-
-#if 0
-{
-// Read mixer volume flash ram block
-quadlet_t buf[0x800];
-quadlet_t addr = 0;
-  memset(buf, 0xdb, sizeof(buf));
-  if (m_rme_model == RME_MODEL_FIREFACE400)
-      addr = RME_FF400_FLASH_MIXER_VOLUME_ADDR;
-  else
-  if (m_rme_model == RME_MODEL_FIREFACE800)
-      addr = RME_FF800_FLASH_MIXER_VOLUME_ADDR;
-  if (addr != 0) {
-    i = read_flash(addr, buf, 32);
-    fprintf(stderr,"result=%d\n", i);
-    for (i=0; i<32; i++) {
-      fprintf(stderr, "%d: 0x%08x\n", i, buf[i]);
-    }
-  }
-}
-#endif
 
     return err!=0?-1:0;
 }

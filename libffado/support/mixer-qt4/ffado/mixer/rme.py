@@ -401,7 +401,6 @@ class Rme(QWidget):
         self.control_load.setEnabled(not(self.is_streaming))
 
         # Also disable other controls which are not yet implemented.
-        #self.control_save.setEnabled(False)
         self.mixer_preset_ffado_default.setEnabled(False)
 
         # Retrieve other device settings as needed and customise the UI

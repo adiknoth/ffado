@@ -650,9 +650,8 @@ signed int i;
             break;
         }
 
-// FIXME: this can probably go once the driver matures.
-debugOutput(DEBUG_LEVEL_NORMAL, "init stat: %08x %08x %08x %08x\n",
-  stat[0], stat[1], stat[2], stat[3]);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "rme init stat: %08x %08x %08x %08x\n",
+            stat[0], stat[1], stat[2], stat[3]);
 
         if (m_rme_model == RME_MODEL_FIREFACE400) {
             break;
