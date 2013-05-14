@@ -221,6 +221,7 @@ signed int err = 0;
                     m_parent.read_device_flash_settings(NULL);
                     break;
                 case RME_CTRL_FLASH_SETTINGS_SAVE:
+                    m_parent.write_device_flash_settings(NULL);
                     break;
                 case RME_CTRL_FLASH_MIXER_LOAD:
                     m_parent.read_device_mixer_settings(NULL);
