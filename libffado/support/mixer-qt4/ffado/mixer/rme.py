@@ -176,13 +176,17 @@ class Rme(QWidget):
         log.debug("command %d sent to %s" % (self.CommandButtons[sender][1], self.CommandButtons[sender][0]))
         self.hw.setDiscrete(self.CommandButtons[sender][0], self.CommandButtons[sender][1])
 
-        # If mixer values have been reloaded, refresh the mixer GUI
+        # If mixer values have been reloaded, refresh the mixer GUI.  This
+        # will also commit the new values to the hardware via the "changed"
+        # signal handlers of the mixer elements.
         if (self.CommandButtons[sender][1] == 2):
             self.inputmatrix.refreshValues()
             self.outputmatrix.refreshValues()
             self.playbackmatrix.refreshValues()
 
-        # If settings have been reloaded from flash, refresh the GUI
+        # If settings have been reloaded from flash, refresh the GUI.  The
+        # settings will be made active in the hardware via the "changed"
+        # signal handlers of the respective GUI control widgets.
         if (self.CommandButtons[sender][1] == 0):
             self.getValuesFromFF()
 

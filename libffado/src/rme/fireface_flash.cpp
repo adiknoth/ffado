@@ -235,6 +235,12 @@ Device::write_flash(fb_nodeaddr_t addr, quadlet_t *buf, unsigned int n_quads)
 signed int 
 Device::read_device_flash_settings(FF_software_settings_t *dsettings) 
 {
+    // Note: this function does NOT copy the newly read settings into
+    // the hardware registers even if reading into the device's master
+    // settings structure (ie: when dsettings is NULL).  If the settings
+    // read from flash are to be made active the caller must take 
+    // care of this (by calling set_hardware_params() for instance).
+
     if (dsettings == NULL)
         dsettings = settings;
 
@@ -532,6 +538,12 @@ flash2faders(signed int flash_vol, signed int flash_pan, signed int *fader0, sig
 signed int
 Device::read_device_mixer_settings(FF_software_settings_t *dsettings)
 {
+    // Note: this function does NOT send the mixer configuration read from
+    // flash to the mixer control registers.  If the newly read state is
+    // to become active, the caller must arrange for this to happen (perhaps
+    // by calling set_hardware_mixergain(), or relying on "changed" widget
+    // callbacks like the rme.py ffado-mixer module does).
+
     unsigned short int vbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
     unsigned short int pbuf[RME_FF_FLASH_MIXER_ARRAY_SIZE/2];
     unsigned short int obuf[RME_FF_FLASH_SECTOR_SIZE/2];
