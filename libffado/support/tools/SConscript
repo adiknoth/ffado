@@ -47,14 +47,15 @@ e.Command( "static_info.txt", "#/SConstruct", "python support/tools/ffado-diag-s
 
 e.ScanReplace( "ffado-diag.in" )
 
-e.Program( target = "ffado-set-nickname", source = "ffado-set-nickname.cpp" )
-
 e.Install( "$bindir", "ffado-diag" )
-e.Install( "$bindir", "ffado-set-nickname" )
 e.Install( "$pythondir", "helpstrings.py" )
 e.Install( "$pythondir", "listirqinfo.py" )
 e.Install( "$pythondir", "static_info.txt" )
 e.Install( "$pythondir", "ffado_diag_helpers.py" )
+
+if env['ENABLE_DICE']:
+        e.Program( target = "ffado-set-nickname", source = "ffado-set-nickname.cpp" )
+        e.Install( "$bindir", "ffado-set-nickname" )
 
 # Install manpages in section 1
 dest = os.path.join("$mandir", "man1", "ffado-diag.1")
