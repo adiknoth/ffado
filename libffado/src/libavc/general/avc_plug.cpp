@@ -567,7 +567,7 @@ Plug::discoverSupportedStreamFormats()
                       ++j )
                 {
                     switch ( compoundStream->m_streamFormatInfos[j]->m_streamFormat ) {
-                    case AVC1394_STREAM_FORMAT_AM824_IEC60968_3:
+                    case AVC1394_STREAM_FORMAT_AM824_IEC60958_3:
                         formatInfo.m_audioChannels +=
                             compoundStream->m_streamFormatInfos[j]->m_numberOfChannels;
                         break;
