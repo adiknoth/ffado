@@ -187,7 +187,8 @@ class MixerNode(QtGui.QAbstractSlider):
             #log.debug("new value is %g dB" % lv)
         text = "%.2g dB" % lv
         if v == 0:
-            text = "-ꝏ dB"
+            symb_inf = u"\u221E"
+            text = "-" + symb_inf + " dB"
         p.drawText(rect, Qt.Qt.AlignCenter, QtCore.QString.fromUtf8(text))
         if (self.inv_action!=None and self.inv_action.isChecked()):
             p.drawText(rect, Qt.Qt.AlignLeft|Qt.Qt.AlignTop, QtCore.QString.fromUtf8(" ϕ"))
@@ -270,7 +271,10 @@ class ChannelSlider(QtGui.QSlider):
                 return -40
 
     def fromDBvalue(self, value):
-        return math.pow(10, (value/20.0)) * math.pow(2,14)
+        if (value > -40):
+            return math.pow(10, (value/20.0)) * math.pow(2,14)
+        else:
+            return 0
 
     def slider_set_value(self, value):
         value = self.toDBvalue(value)
@@ -585,7 +589,7 @@ class MatrixMixer(QtGui.QWidget):
 
     # "per Out" view
     def valueChanged_slider(self, n):
-        #log.debug("MatrixNode.valueChanged( %s )" % str(n))
+        #log.debug("MatrixSlider.valueChanged( %s )" % str(n))
         self.setValue(n[0], n[1], n[2])
         # Update value needed for matrix view
         if (self.rule == "Columns_are_inputs"):
