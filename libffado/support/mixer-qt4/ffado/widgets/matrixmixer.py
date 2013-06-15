@@ -590,8 +590,10 @@ class MatrixMixer(QtGui.QWidget):
         # Update value needed for matrix view
         if (self.rule == "Columns_are_inputs"):
             self.matrix.items[n[1]][n[0]].setValue(n[2])
+            self.matrix.items[n[1]][n[0]].internalValueChanged(n[2])
         else:
             self.matrix.items[n[0]][n[1]].setValue(n[2])
+            self.matrix.items[n[0]][n[1]].internalValueChanged(n[2])
 
     def refreshValues(self):
         for x in range(len(self.matrix.items)):
@@ -599,6 +601,10 @@ class MatrixMixer(QtGui.QWidget):
                 val = self.interface.getValue(x,y)
                 self.matrix.items[x][y].setValue(val)
                 self.matrix.items[x][y].internalValueChanged(val)
+                if (self.rule == "Columns_are_inputs"):
+                    self.out[x].slider[y].slider_set_value(val)
+                else:
+                    self.out[y].slider[x].slider_set_value(val)
 
     def getNbIn(self):
         if (self.rule == "Columns_are_inputs"):
