@@ -578,14 +578,20 @@ class MatrixMixer(QtGui.QWidget):
         #log.debug("MatrixNode.valueChanged( %s )" % str(n))
         self.interface.setValue(n[1], n[0], n[2])
         # Update value needed for "per Out" view
-        self.out[n[0]].slider[n[1]].slider_set_value(n[2])
+        if (self.rule == "Columns_are_inputs"):
+            self.out[n[1]].slider[n[0]].slider_set_value(n[2])
+        else:
+            self.out[n[0]].slider[n[1]].slider_set_value(n[2])
 
     # "per Out" view
     def valueChanged_slider(self, n):
         #log.debug("MatrixNode.valueChanged( %s )" % str(n))
         self.setValue(n[0], n[1], n[2])
         # Update value needed for matrix view
-        self.matrix.items[n[0]][n[1]].setValue(n[2])
+        if (self.rule == "Columns_are_inputs"):
+            self.matrix.items[n[1]][n[0]].setValue(n[2])
+        else:
+            self.matrix.items[n[0]][n[1]].setValue(n[2])
 
     def refreshValues(self):
         for x in range(len(self.items)):
