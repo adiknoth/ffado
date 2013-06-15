@@ -84,6 +84,7 @@ of the mixer is an available output from the routers point.
         self.combo.addItem("Disconnected")
         self.combo.addItems(sources)
         src = self.interface.getSourceForDestination(self.outname)
+        self.lastin = str(src)
         if src != "":
             self.combo.setCurrentIndex(self.combo.findText(src))
         else:
@@ -104,6 +105,8 @@ of the mixer is an available output from the routers point.
 
         if inname != "Disconnected":
             if self.interface.setConnectionState(str(inname), self.outname, True):
+                if self.outname[:5] == "Mixer" or self.lastin[:5] == "Mixer" or str(inname)[:5] == "Mixer":
+                    self.emit(QtCore.SIGNAL("MixerRoutingChanged"))
                 self.lastin = str(inname)
             else:
                 log.warning(" Failed to connect %s to %s" % (inname, self.outname))
@@ -146,6 +149,7 @@ class CrossbarRouter(QtGui.QWidget):
             btn = OutputSwitcher(self.interface, out, self)
             self.layout.addWidget(btn, int(out.split(":")[-1]) + 1, self.outgroups.index(out.split(":")[0]))
             self.switchers[out] = btn
+            self.connect(btn, QtCore.SIGNAL("MixerRoutingChanged"), self.updateMixerRouting)
 
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(200)
@@ -175,5 +179,7 @@ class CrossbarRouter(QtGui.QWidget):
             if peak[0] >= 0:
                 self.switchers[peak[0]].peakValue(peak[1])
 
+    def updateMixerRouting(self):
+        self.emit(QtCore.SIGNAL("MixerRoutingChanged"))
 #
 # vim: sw=4 ts=4 et

@@ -630,5 +630,40 @@ class MatrixMixer(QtGui.QWidget):
         else:
             return self.matrix.rowHeaders[j].name            
 
+    # Update when routing is modified
+    def updateRouting(self):
+        cols = self.interface.getColCount()
+        rows = self.interface.getRowCount()
+        if (cols > 1):
+            for i in range(cols):
+                last_name = self.matrix.columnHeaders[i].lbl.text()
+                col_name = self.getColName(i)
+                if last_name != col_name:
+                    self.matrix.columnHeaders[i].name = col_name
+                    self.matrix.columnHeaders[i].lbl.setText(col_name)
+      
+        if (rows > 1):
+            for j in range(rows):
+                last_name = self.matrix.rowHeaders[j].lbl.text()
+                row_name = self.getRowName(j)
+                if last_name != row_name:
+                    self.matrix.rowHeaders[j].name = row_name
+                    self.matrix.rowHeaders[j].lbl.setText(row_name)       
+
+        nbIn = self.getNbIn()
+        nbOut = self.getNbOut()
+        for i in range(nbOut):
+            if (nbOut > 1):
+                last_name = self.out[i].lbl[0].text()
+                out_name = self.getOutName(i)
+                if last_name != out_name:
+                    self.out[i].lbl[0].setText(out_name)
+            if (nbIn > 1):
+                for j in range(nbIn):
+                    last_name = self.out[i].lbl[j+1].text()
+                    in_name = self.getInName(j)
+                    if last_name != in_name:
+                        self.out[i].lbl[j+1].setText(in_name)
+        
 #
 # vim: et ts=4 sw=4 fileencoding=utf8
