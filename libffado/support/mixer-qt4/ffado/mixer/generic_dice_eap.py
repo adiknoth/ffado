@@ -37,11 +37,8 @@ class Generic_Dice_EAP(QtGui.QWidget):
     def buildMixer(self):
         #print self.hw
         #print self.hw.getText("/Generic/Nickname")
-        self.matrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/EAP/MatrixMixer", self, "Columns_are_outputs")
-        scrollarea = QtGui.QScrollArea(self.tabs)
-        scrollarea.setWidgetResizable(True)
-        scrollarea.setWidget(self.matrix)
-        self.tabs.addTab(scrollarea, "Matrix Mixer")
+        self.mixer = MatrixMixer(self.hw.servername, self.hw.basepath+"/EAP/MatrixMixer", self, "Columns_are_outputs")
+        self.tabs.addTab(self.mixer, "Mixer")
 
         self.router = CrossbarRouter(self.hw.servername, self.hw.basepath+"/EAP/Router", self)
         scrollarea = QtGui.QScrollArea(self.tabs)

@@ -366,25 +366,16 @@ class Rme(QWidget):
         # print self.hw.basepath
         self.inputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/InputFaders", self, "Columns_are_inputs", 0x8000, self.hw.basepath+"/Mixer/InputMutes", self.hw.basepath+"/Mixer/InputInverts", True)
         layout = QtGui.QVBoxLayout()
-        scrollarea = QtGui.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        scrollarea.setWidget(self.inputmatrix)
-        layout.addWidget(scrollarea)
+        layout.addWidget(self.inputmatrix)
         self.mixer.setLayout(layout)
 
         self.playbackmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/PlaybackFaders", self, "Columns_are_inputs", 0x8000, self.hw.basepath+"/Mixer/PlaybackMutes", self.hw.basepath+"/Mixer/PlaybackInverts", True)
         layout = QtGui.QVBoxLayout()
-        scrollarea = QtGui.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        scrollarea.setWidget(self.playbackmatrix)
-        layout.addWidget(scrollarea)
+        layout.addWidget(self.playbackmatrix)
         self.playbackmixer.setLayout(layout)
 
         self.outputmatrix = MatrixMixer(self.hw.servername, self.hw.basepath+"/Mixer/OutputFaders", self, "Columns_are_inputs", 0x8000, self.hw.basepath+"/Mixer/OutputMutes", None, True)
         layout = QtGui.QVBoxLayout()
-        scrollarea = QtGui.QScrollArea()
-        scrollarea.setWidget(self.outputmatrix)
-        scrollarea.setWidgetResizable(True)
 
         # This is a bit of a hack, but it works to ensure this single-row
         # matrix mixer doesn't fill the entire screen but also doesn't end
@@ -393,8 +384,8 @@ class Rme(QWidget):
         # fundamental issue here; however, I've already wasted too much time
         # trying to get this to work so if the hack is effective we'll run
         # with it.
-        scrollarea.setMinimumHeight(150)
-        layout.addWidget(scrollarea, 0, Qt.AlignTop)
+        self.outputmatrix.setMinimumHeight(150)
+        layout.addWidget(self.outputmatrix, 0, Qt.AlignTop)
         self.outputmixer.setLayout(layout)
 
         self.is_streaming = False
