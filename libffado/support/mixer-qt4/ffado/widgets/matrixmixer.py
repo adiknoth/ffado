@@ -215,8 +215,6 @@ class MixerChannel(QtGui.QWidget):
         QtGui.QWidget.__init__(self, parent)
         layout = QtGui.QGridLayout(self)
         self.number = number
-        if name != "":
-            name = "\n(%s)" % name
         self.name = name
         self.lbl = QtGui.QLabel(self)
         self.lbl.setAlignment(Qt.Qt.AlignCenter)
@@ -236,16 +234,16 @@ class MixerChannel(QtGui.QWidget):
 
     def hideChannel(self, hide):
         if hide:
-            self.lbl.setText("%i" % self.number);
+            self.lbl.setText("%i" % (self.number+1));
         else:
-            self.lbl.setText("Ch. %i%s" % (self.number+1, self.name))
+            self.lbl.setText(self.name)
         self.emit(QtCore.SIGNAL("hide"), self.number, hide)
         self.update()
 
 
 
 class MatrixMixer(QtGui.QWidget):
-    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False):
+    def __init__(self, servername, basepath, parent=None, rule="Columns_are_inputs", sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False):
         QtGui.QWidget.__init__(self, parent)
         self.bus = dbus.SessionBus()
         self.dev = self.bus.get_object(servername, basepath)
@@ -263,6 +261,9 @@ class MatrixMixer(QtGui.QWidget):
             self.inverts_dev = self.bus.get_object(servername, invertspath)
             self.inverts_interface = dbus.Interface(self.inverts_dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
 
+        # Inputs/Outputs versus rows/columns rule
+        self.rule = rule
+
         #palette = self.palette()
         #palette.setColor(QtGui.QPalette.Window, palette.color(QtGui.QPalette.Window).darker());
         #self.setPalette(palette)
@@ -278,11 +279,22 @@ class MatrixMixer(QtGui.QWidget):
         self.columnHeaders = []
         self.items = []
 
+        # Font resizing: 0 is for hidden names
+        font_switch = QtGui.QComboBox(self)
+        font_switch.setToolTip("Labels font size")
+        font = font_switch.font()
+        for i in range(5):
+            font_switch.addItem("%d" % (font.pointSize()-i))
+        font_switch.addItem("0")
+        font_switch.setCurrentIndex(font_switch.findText("%d" % font.pointSize()))
+        layout.addWidget(font_switch, 0, 0)
+        self.connect(font_switch, QtCore.SIGNAL("activated(QString)"), self.changeFontSize)
+
         # Add row/column headers, but only if there's more than one 
         # row/column
         if (cols > 1):
             for i in range(cols):
-                ch = MixerChannel(i, self, self.interface.getColName(i), smallFont)
+                ch = MixerChannel(i, self, self.getColName(i), smallFont)
                 self.connect(ch, QtCore.SIGNAL("hide"), self.hideColumn)
                 layout.addWidget(ch, 0, i+1)
                 self.columnHeaders.append( ch )
@@ -290,7 +302,7 @@ class MatrixMixer(QtGui.QWidget):
             layout.setRowStretch(1, 10)
         if (rows > 1):
             for i in range(rows):
-                ch = MixerChannel(i, self, self.interface.getRowName(i), smallFont)
+                ch = MixerChannel(i, self, self.getRowName(i), smallFont)
                 self.connect(ch, QtCore.SIGNAL("hide"), self.hideRow)
                 layout.addWidget(ch, i+1, 0)
                 self.rowHeaders.append( ch )
@@ -339,6 +351,99 @@ class MatrixMixer(QtGui.QWidget):
         else:
             self.hiddenRows.remove(row)
         self.checkVisibilities()
+
+    # Columns and rows full names
+    def getColName(self, i):
+        name = self.interface.getColName(i)
+        if (name != ''):
+            if (self.rule == "Columns_are_inputs"):
+                return "Mixer/In:%02d\n(%s)" % (i+1, name)            
+            else:
+                return "Mixer/Out:%02d\n(%s)" % (i+1, name)
+        else:
+            if (self.rule == "Columns_are_inputs"):
+                return "Mixer/In:%02d" % (i+1)            
+            else:
+                return "Mixer/Out:%02d" % (i+1)
+
+    def getRowName(self, j):
+        name = self.interface.getRowName(j)
+        if (name != ''):
+            if (self.rule == "Columns_are_inputs"):
+                return "Mixer/Out:%02d\n(%s)" % (j+1, name)
+            else:
+                return "Mixer/In:%02d\n(%s)" % (j+1, name)
+        else:
+            if (self.rule == "Columns_are_inputs"):
+                return "Mixer/Out:%02d" % (j+1)
+            else:
+                return "Mixer/In:%02d" % (j+1)
+
+    # Columns and rows shortened name
+    def getShortColName(self, i):
+        if (self.rule == "Columns_are_inputs"):
+            return "In %d" % (i+1)            
+        else:
+            return "Out %d" % (i+1)
+
+    # Standart In name
+    def getShortRowName(self, j):
+        if (self.rule == "Columns_are_inputs"):
+            return "Out %d" % (j+1)
+        else:
+            return "In %d" % (j+1)
+
+    # Font size for channel names
+    def changeFontSize(self, size):
+        if (int(size) == 0):
+            self.hideChannelNames(True)
+            font = self.font()
+            size = "%d" % font.pointSize()
+        else:
+            self.hideChannelNames(False)
+            
+        cols = self.interface.getColCount()
+        if (cols > 1):
+            for i in range(cols):
+                font = self.columnHeaders[i].lbl.font()
+                font.setPointSize(int(size))
+                self.columnHeaders[i].setFont(font)
+        rows = self.interface.getRowCount()
+        if (rows > 1):
+            for j in range(rows):
+                font = self.rowHeaders[j].lbl.font()
+                font.setPointSize(int(size))
+                self.rowHeaders[j].setFont(font)
+
+    # Allows long name for Mixer/Out and /In to be hidden 
+    def hideChannelNames(self, checked):
+        cols = self.interface.getColCount()
+        if (cols > 1):
+            if (checked):
+                for i in range(cols):
+                    self.columnHeaders[i].name = self.getShortColName(i)
+                    self.columnHeaders[i].lbl.setText(self.columnHeaders[i].name)
+            else:
+                for i in range(cols):
+                    self.columnHeaders[i].name = self.getColName(i)
+                    self.columnHeaders[i].lbl.setText(self.columnHeaders[i].name)
+                # Care for hidden columns
+                for i in self.hiddenCols:
+                    self.columnHeaders[i].lbl.setText("%d" % (i+1))
+
+        rows = self.interface.getRowCount()
+        if (rows > 1):
+            if (checked):
+                for j in range(rows):
+                    self.rowHeaders[j].name = self.getShortRowName(j)
+                    self.rowHeaders[j].lbl.setText(self.rowHeaders[j].name)       
+            else:
+                for j in range(rows):
+                    self.rowHeaders[j].name = self.getRowName(j)
+                    self.rowHeaders[j].lbl.setText(self.rowHeaders[j].name)
+                # Care for hidden rows
+                for j in self.hiddenRows:
+                    self.rowHeaders[j].lbl.setText("%d" % (j+1))
 
     def valueChanged(self, n):
         #log.debug("MatrixNode.valueChanged( %s )" % str(n))
