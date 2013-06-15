@@ -594,11 +594,11 @@ class MatrixMixer(QtGui.QWidget):
             self.matrix.items[n[0]][n[1]].setValue(n[2])
 
     def refreshValues(self):
-        for x in range(len(self.items)):
-            for y in range(len(self.items[x])):
+        for x in range(len(self.matrix.items)):
+            for y in range(len(self.matrix.items[x])):
                 val = self.interface.getValue(x,y)
-                self.items[x][y].setValue(val)
-                self.items[x][y].internalValueChanged(val)
+                self.matrix.items[x][y].setValue(val)
+                self.matrix.items[x][y].internalValueChanged(val)
 
     def getNbIn(self):
         if (self.rule == "Columns_are_inputs"):
