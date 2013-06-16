@@ -62,7 +62,7 @@
             <locale language="French" country="France"/>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -74,7 +74,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_1">
@@ -189,7 +189,7 @@
             </rect>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -201,7 +201,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_2">
@@ -316,7 +316,7 @@
             </rect>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -328,7 +328,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_3">
@@ -443,7 +443,7 @@
             </rect>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -455,7 +455,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_4">
@@ -570,7 +570,7 @@
             </rect>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -582,7 +582,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_5">
@@ -697,7 +697,7 @@
             </rect>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -709,7 +709,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_6">
@@ -824,7 +824,7 @@
             </rect>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -836,7 +836,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_7">
@@ -951,7 +951,7 @@
             </rect>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -963,7 +963,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_8">
@@ -1078,7 +1078,7 @@
             </rect>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -1090,7 +1090,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_9">
@@ -1208,7 +1208,7 @@
             </rect>
            </property>
            <property name="minimum">
-            <number>-127</number>
+            <number>-40</number>
            </property>
            <property name="maximum">
             <number>0</number>
@@ -1220,7 +1220,7 @@
             <enum>QSlider::TicksBothSides</enum>
            </property>
            <property name="tickInterval">
-            <number>10</number>
+            <number>5</number>
            </property>
           </widget>
           <widget class="QPushButton" name="LineUnActivate_10">
@@ -1515,7 +1515,7 @@
         </rect>
        </property>
        <property name="minimum">
-        <number>-127</number>
+        <number>-87</number>
        </property>
        <property name="maximum">
         <number>0</number>
