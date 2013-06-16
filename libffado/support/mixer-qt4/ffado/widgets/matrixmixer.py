@@ -247,7 +247,7 @@ class ChannelSlider(QtGui.QSlider):
         QtGui.QSlider.__init__(self, QtCore.Qt.Vertical, parent)
 
         self.setTickPosition(QtGui.QSlider.TicksBothSides)
-        v_min = -40.0
+        v_min = self.toDBvalue(0)
         v_max = self.toDBvalue(65536)
         self.setTickInterval((v_max-v_min)/10)
         self.setMinimum(v_min)
@@ -262,7 +262,7 @@ class ChannelSlider(QtGui.QSlider):
     #   Thus it is round-off errors sensitive: care that positive/negative values do not round-off equivalently
     # Note that slider interacts with the slider from matrix view
     def toDBvalue(self, n):
-        if n > math.pow(2,14):
+        if n > 16384:
             return 20 * math.log10( (n+1) / math.pow(2,14) )
         else:
             if n > 164:
@@ -272,7 +272,7 @@ class ChannelSlider(QtGui.QSlider):
 
     def fromDBvalue(self, value):
         if (value > -40):
-            return math.pow(10, (value/20.0)) * math.pow(2,14)
+            return int(math.pow(10, (value/20.0)) * math.pow(2,14))
         else:
             return 0
 
@@ -594,10 +594,8 @@ class MatrixMixer(QtGui.QWidget):
         # Update value needed for matrix view
         if (self.rule == "Columns_are_inputs"):
             self.matrix.items[n[1]][n[0]].setValue(n[2])
-            self.matrix.items[n[1]][n[0]].internalValueChanged(n[2])
         else:
             self.matrix.items[n[0]][n[1]].setValue(n[2])
-            self.matrix.items[n[0]][n[1]].internalValueChanged(n[2])
 
     def refreshValues(self):
         for x in range(len(self.matrix.items)):
