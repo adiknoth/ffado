@@ -61,6 +61,7 @@ static struct argp_option options[] = {
     {"node",      'n', "NODE",      0,  "Set node" },
     {"start",     's', "REG",       0,  "Register to start scan at (default: 0x0b00)" },
     {"length",    'l', "LENGTH",    0,  "Number of bytes of register space to scan (default: 0x0200)" },
+    {"dump",      'd', "DUMP",      0,  "Dump initial register values to stdout" },
    { 0 }
 };
 
@@ -74,6 +75,7 @@ struct arguments
         , node ( -1 )
         , scan_start ( DEFAULT_SCAN_START_REG )
         , scan_length ( DEFAULT_SCAN_LENGTH )
+        , dump ( 0 )
         {
             args[0] = 0;
         }
@@ -86,6 +88,7 @@ struct arguments
     signed int   node;
     signed int   scan_start;
     signed int   scan_length;
+    signed int   dump;
 } arguments;
 
 // Parse a single option.
@@ -133,6 +136,9 @@ parse_opt( int key, char* arg, struct argp_state* state )
             return -1;
         }
         break;
+    case 'd':
+        arguments->dump = 1;
+        break;
     case 'p':
         errno = 0;
         arguments->port = strtol(arg, &tail, 0);
@@ -179,6 +185,7 @@ main(int argc, char **argv)
     signed int port = -1;
     signed int n_ports = -1;
     signed int p1, p2, n1, n2;
+    signed int initial_dump;
 
     // arg parsing
     if ( argp_parse ( &argp, argc, argv, 0, 0, &arguments ) ) {
@@ -271,6 +278,7 @@ main(int argc, char **argv)
            arguments.scan_length);
     printf("Scanning initial register values, please wait\n");
     chr[0] = 0;
+    initial_dump = arguments.dump;
     while(chr[0]!='q') {
         for (signed int reg=arguments.scan_start;
              reg < arguments.scan_start + arguments.scan_length; reg+=4) {
@@ -291,6 +299,9 @@ main(int argc, char **argv)
                 quadlet = CondSwapFromBus32(quadlet);
             }
 
+            if (initial_dump) {
+                    printf("0x%04x is %08X\n", reg,  quadlet);
+            } else
             if (old_vals[reg_index] != quadlet) {
                 if (loop != 0) {
                     printf("0x%04x changed from %08X to %08X\n", reg,  old_vals[reg_index], quadlet);
@@ -298,6 +309,8 @@ main(int argc, char **argv)
                 old_vals[reg_index] = quadlet;
             }
         }
+        initial_dump = 0;
+
         printf("Press <Enter> to scan, \"q<Enter>\" to exit\n");
         fgets(chr, sizeof(chr), stdin);
         loop++;
