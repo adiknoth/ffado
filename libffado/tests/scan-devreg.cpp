@@ -61,7 +61,7 @@ static struct argp_option options[] = {
     {"node",      'n', "NODE",      0,  "Set node" },
     {"start",     's', "REG",       0,  "Register to start scan at (default: 0x0b00)" },
     {"length",    'l', "LENGTH",    0,  "Number of bytes of register space to scan (default: 0x0200)" },
-    {"dump",      'd', "DUMP",      0,  "Dump initial register values to stdout" },
+    {"dump",      'd', NULL,        0,  "Dump initial register values to stdout" },
    { 0 }
 };
 
@@ -301,7 +301,7 @@ main(int argc, char **argv)
 
             if (initial_dump) {
                     printf("0x%04x is %08X\n", reg,  quadlet);
-            } else
+            }
             if (old_vals[reg_index] != quadlet) {
                 if (loop != 0) {
                     printf("0x%04x changed from %08X to %08X\n", reg,  old_vals[reg_index], quadlet);
