@@ -54,6 +54,8 @@
 // Known values for the unit version of RME devices
 #define RME_UNITVERSION_FF800  0x0001
 #define RME_UNITVERSION_FF400  0x0002
+#define RME_UNITVERSION_UFX    0x0003
+#define RME_UNITVERSION_UCX    0x0004
 
 namespace Rme {
 
@@ -81,6 +83,9 @@ Device::Device( DeviceManager& d,
                       std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
     , m_rme_model( RME_MODEL_NONE )
+    , settings( NULL )
+    , tco_settings( NULL )
+    , dev_config ( NULL )
     , num_channels( 0 )
     , frames_per_packet( 0 )
     , speed800( 0 )
@@ -369,14 +374,19 @@ Device::discover()
                      getConfigRom().getVendorName().c_str(), getConfigRom().getModelName().c_str());
     }
 
-    if (unitVersion == RME_UNITVERSION_FF800) {
-        m_rme_model = RME_MODEL_FIREFACE800;
-    } else
-    if (unitVersion == RME_MODEL_FIREFACE400) {
-        m_rme_model = RME_MODEL_FIREFACE400;
-    } else {
+    switch (unitVersion) {
+      case RME_UNITVERSION_FF800: m_rme_model = RME_MODEL_FIREFACE800; break;
+      case RME_UNITVERSION_FF400: m_rme_model = RME_MODEL_FIREFACE400; break;
+      case RME_UNITVERSION_UFX: m_rme_model = RME_MODEL_FIREFACE_UFX; break;
+      case RME_UNITVERSION_UCX: m_rme_model = RME_MODEL_FIREFACE_UCX; break;
+      default:
         debugError("Unsupported model\n");
         return false;
+    }
+
+    if (m_rme_model==RME_MODEL_FIREFACE_UFX || m_rme_model==RME_MODEL_FIREFACE_UCX) {
+      debugError("Fireface UFX/UCX are not currently supported\n");
+      return false;
     }
 
     // Set up the shared data object for configuration data
