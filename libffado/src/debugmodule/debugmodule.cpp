@@ -32,6 +32,7 @@
 
 #include <time.h>
 #include <string.h>
+#include <errno.h>
 
 #if DEBUG_BACKTRACE_SUPPORT
     #include <execinfo.h>
@@ -372,22 +373,22 @@ DebugModuleManager::init()
     struct sched_param rt_param;
     pthread_attr_init(&attributes);
     if ((res = pthread_attr_setinheritsched(&attributes, PTHREAD_EXPLICIT_SCHED))) {
-        fprintf(stderr, "Cannot request explicit scheduling for RT thread  %d %s\n", res, strerror(res));
+        fprintf(stderr, "Cannot request explicit scheduling for messagebuffer thread: %s (%d)\n", strerror(res), res);
         return -1;
     }
     if ((res = pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_JOINABLE))) {
-        fprintf(stderr, "Cannot request joinable thread creation for RT thread  %d %s\n", res, strerror(res));
+        fprintf(stderr, "Cannot request joinable thread creation for messagebuffer thread: %s (%d)\n", strerror(res), res);
         return -1;
     }
     if ((res = pthread_attr_setscope(&attributes, PTHREAD_SCOPE_SYSTEM))) {
-        fprintf(stderr, "Cannot set scheduling scope for RT thread %d %s\n", res, strerror(res));
+        fprintf(stderr, "Cannot set scheduling scope for messagebuffer thread: %s (%d)\n", strerror(res), res);
         return -1;
     }
 
     if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_FIFO))) {
 
     //if ((res = pthread_attr_setschedpolicy(&attributes, SCHED_RR))) {
-        fprintf(stderr, "Cannot set FIFO scheduling class for RT thread  %d %s\n", res, strerror(res));
+        fprintf(stderr, "Cannot set FIFO scheduling class for messagebuffer thread: %s (%d)\n", strerror(res), res);
         return -1;
     }
 
@@ -395,14 +396,30 @@ DebugModuleManager::init()
     rt_param.sched_priority = DEBUG_MESSAGE_BUFFER_REALTIME_PRIO;
 
     if ((res = pthread_attr_setschedparam(&attributes, &rt_param))) {
-        fprintf(stderr, "Cannot set scheduling priority for RT thread %d %s\n", res, strerror(res));
+        fprintf(stderr, "Cannot set scheduling priority for messagebuffer thread: %s (%d)\n", strerror(res), res);
         return -1;
     }
 
     mb_initialized = 1; // set to 1 otherwise the thread might exit (race condition)
     if ((res = pthread_create(&mb_writer_thread, &attributes, mb_thread_func, (void *)this))) {
-        fprintf(stderr, "Cannot create thread %d %s\n", res, strerror(res));
+        fprintf(stderr, "Cannot create RT messagebuffer thread: %s (%d)\n", strerror(res), res);
         mb_initialized = 0;
+    }
+
+    if (res==EPERM && mb_initialized==0) {
+        fprintf(stderr, "Retrying messagebuffer thread without RT scheduling\n");
+        memset(&rt_param, 0, sizeof(rt_param));
+        if ((res=pthread_attr_setschedpolicy(&attributes, SCHED_OTHER)) ||
+            (res=pthread_attr_setschedparam(&attributes, &rt_param))) {
+            fprintf(stderr, "Cannot set standard scheduling for messagebuffer thread: %s (%d)\n", strerror(res), res);
+        } else {
+            mb_initialized = 1; // set to 1 otherwise the thread might exit (race condition)
+            if ((res = pthread_create(&mb_writer_thread, &attributes, mb_thread_func, (void *)this))) {
+                fprintf(stderr, "Cannot create messagebuffer thread: %s (%d)\n", strerror(res), res);
+                mb_initialized = 0;
+            } else
+                fprintf(stderr, "Messagebuffer not realtime; consider enabling RT scheduling for user\n");
+        }
     }
     #else
     mb_initialized = 1; // set to 1 otherwise the thread might exit (race condition)
