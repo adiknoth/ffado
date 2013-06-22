@@ -293,6 +293,16 @@ Device::read_device_flash_settings(FF_software_settings_t *dsettings)
         }
     }
 
+    // Sanity check the "limit_bandwidth" setting since it has been observed
+    // to take on bogus values for some users.  The reason behind the
+    // unexpected values is currently unknown.  Note that limit_bandwidth is
+    // unsigned, so there's no need to check for values less than 0.
+    if (hw_settings.limit_bandwidth > FF_DEV_FLASH_BWLIMIT_ANALOG_ONLY) {
+        debugOutput(DEBUG_LEVEL_WARNING, "bogus firewire bandwidth limit flag 0x%08x reset to 0 (send all channels)\n",
+          hw_settings.limit_bandwidth);
+        hw_settings.limit_bandwidth = FF_DEV_FLASH_BWLIMIT_SEND_ALL_CHANNELS;
+    }
+
     if (dsettings != NULL) {
         memset(dsettings, 0, sizeof(*dsettings));
         // Copy hardware details to the software settings structure as
