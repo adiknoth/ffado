@@ -293,7 +293,7 @@ Device::read_device_flash_settings(FF_software_settings_t *dsettings)
         }
     }
 
-    if (settings != NULL) {
+    if (dsettings != NULL) {
         memset(dsettings, 0, sizeof(*dsettings));
         // Copy hardware details to the software settings structure as
         // appropriate.
