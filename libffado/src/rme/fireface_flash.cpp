@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 by Jonathan Woithe
+ * Copyright (C) 2009-2013 by Jonathan Woithe
  *
  * This file is part of FFADO
  * FFADO = Free Firewire (pro-)audio drivers for linux
@@ -275,22 +275,23 @@ Device::read_device_flash_settings(FF_software_settings_t *dsettings)
 
     if (err != 0) {
         debugOutput(DEBUG_LEVEL_WARNING, "Error reading device flash settings: %d\n", i);
+        return -1;
+    }
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Device flash settings:\n");
+    if (hw_settings.clock_mode == FF_DEV_FLASH_INVALID) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  Clock mode: not set in device flash\n");
     } else {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Device flash settings:\n");
-        if (hw_settings.clock_mode == FF_DEV_FLASH_INVALID) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "  Clock mode: not set in device flash\n");
-        } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "  Clock mode: %s\n",
-              hw_settings.clock_mode==FF_DEV_FLASH_CLOCK_MODE_MASTER?"Master":"Slave");
-        }
-        if (hw_settings.sample_rate == FF_DEV_FLASH_INVALID) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: not set in device flash\n");
-        } else
-        if (hw_settings.sample_rate == FF_DEV_FLASH_SRATE_DDS_INACTIVE) {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: DDS not active\n");
-        } else {
-            debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: %d Hz (DDS active)\n", hw_settings.sample_rate);
-        }
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  Clock mode: %s\n",
+          hw_settings.clock_mode==FF_DEV_FLASH_CLOCK_MODE_MASTER?"Master":"Slave");
+    }
+    if (hw_settings.sample_rate == FF_DEV_FLASH_INVALID) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: not set in device flash\n");
+    } else
+    if (hw_settings.sample_rate == FF_DEV_FLASH_SRATE_DDS_INACTIVE) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: DDS not active\n");
+    } else {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  Sample rate: %d Hz (DDS active)\n", hw_settings.sample_rate);
     }
 
     // Sanity check the "limit_bandwidth" setting since it has been observed
@@ -367,52 +368,52 @@ Device::read_device_flash_settings(FF_software_settings_t *dsettings)
             dsettings->input_opt[1] = hw_settings.mic_plug_select[0] + 1;
             dsettings->input_opt[2] = hw_settings.mic_plug_select[1] + 1;
         }
-    }
 
-    /* If debug is enabled, show what's been read from the flash */
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Settings read from flash:\n");
-    if (m_rme_model == RME_MODEL_FIREFACE800) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  Phantom: %d %d %d %d\n",
-            dsettings->mic_phantom[0], dsettings->mic_phantom[1],
-            dsettings->mic_phantom[2], dsettings->mic_phantom[2]);
+        /* If debug is enabled, show what's been read from the flash */
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Settings acquired from flash:\n");
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  Phantom: %d %d %d %d\n",
+                dsettings->mic_phantom[0], dsettings->mic_phantom[1],
+                dsettings->mic_phantom[2], dsettings->mic_phantom[2]);
 
-    } else 
-    if (m_rme_model == RME_MODEL_FIREFACE400) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  Phantom: %d %d\n",
-            dsettings->mic_phantom[0], dsettings->mic_phantom[1]);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  Input pad: %d %d\n",
-            dsettings->ff400_input_pad[0], dsettings->ff400_input_pad[1]);
-    }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif input mode: %d\n", dsettings->spdif_input_mode);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output emphasis: %d\n", dsettings->spdif_output_emphasis);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output pro: %d\n", dsettings->spdif_output_pro);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output nonaudio: %d\n", dsettings->spdif_output_nonaudio);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output mode: %d\n", dsettings->spdif_output_mode);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  clock mode: %d\n", dsettings->clock_mode);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  sync ref: %d\n", dsettings->sync_ref);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  tms: %d\n", dsettings->tms);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  limit bandwidth: %d\n", dsettings->limit_bandwidth);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  stop on dropout: %d\n", dsettings->stop_on_dropout);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  input level: %d\n", dsettings->input_level);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  output level: %d\n", dsettings->output_level);
-    if (m_rme_model == RME_MODEL_FIREFACE800) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  filter: %d\n", dsettings->filter);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  fuzz: %d\n", dsettings->fuzz);
-    } else
-    if (m_rme_model == RME_MODEL_FIREFACE400) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 0: %d\n", dsettings->ff400_instr_input[0]);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 1: %d\n", dsettings->ff400_instr_input[1]);
-    }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  limiter: %d\n", dsettings->limiter);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  sample rate: %d\n", dsettings->sample_rate);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  word clock single speed: %d\n", dsettings->word_clock_single_speed);
-    if (m_rme_model == RME_MODEL_FIREFACE400) {
-      debugOutput(DEBUG_LEVEL_VERBOSE, "  phones level: %d\n", dsettings->phones_level);
-    } else
-    if (m_rme_model == RME_MODEL_FIREFACE800) {
-      debugOutput(DEBUG_LEVEL_VERBOSE, "  input opts: %d %d %d\n",
-        dsettings->input_opt[0], dsettings->input_opt[1],
-        dsettings->input_opt[2]);
+        } else 
+        if (m_rme_model == RME_MODEL_FIREFACE400) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  Phantom: %d %d\n",
+                dsettings->mic_phantom[0], dsettings->mic_phantom[1]);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  Input pad: %d %d\n",
+                dsettings->ff400_input_pad[0], dsettings->ff400_input_pad[1]);
+        }
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif input mode: %d\n", dsettings->spdif_input_mode);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output emphasis: %d\n", dsettings->spdif_output_emphasis);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output pro: %d\n", dsettings->spdif_output_pro);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output nonaudio: %d\n", dsettings->spdif_output_nonaudio);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif output mode: %d\n", dsettings->spdif_output_mode);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  clock mode: %d\n", dsettings->clock_mode);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  sync ref: %d\n", dsettings->sync_ref);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  tms: %d\n", dsettings->tms);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  limit firewire bandwidth: %d\n", dsettings->limit_bandwidth);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  stop on dropout: %d\n", dsettings->stop_on_dropout);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  input level: %d\n", dsettings->input_level);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  output level: %d\n", dsettings->output_level);
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  filter: %d\n", dsettings->filter);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  fuzz: %d\n", dsettings->fuzz);
+        } else
+        if (m_rme_model == RME_MODEL_FIREFACE400) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 0: %d\n", dsettings->ff400_instr_input[0]);
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  instr input 1: %d\n", dsettings->ff400_instr_input[1]);
+        }
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  limiter: %d\n", dsettings->limiter);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  sample rate: %d\n", dsettings->sample_rate);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  word clock single speed: %d\n", dsettings->word_clock_single_speed);
+        if (m_rme_model == RME_MODEL_FIREFACE400) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  phones level: %d\n", dsettings->phones_level);
+        } else
+        if (m_rme_model == RME_MODEL_FIREFACE800) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "  input opts: %d %d %d\n",
+                dsettings->input_opt[0], dsettings->input_opt[1],
+                dsettings->input_opt[2]);
+        }
     }
 
     i = readBlock(RME_FF_STATUS_REG0, status_buf, 4);
