@@ -31,6 +31,14 @@ device_definitions = (
     driver      = 4; # Oxford
     xmit_transfer_delay = 11776;
 },
+{ # IDs from Geoff Beasley.  Thought to be a BeBoB device: to be confirmed.
+    vendorid    = 0x001564;
+    modelid     = 0x00000006;
+    vendorname  = "Behringer";
+    modelname   = "X32";
+    driver      = 1; # BeBoB
+    xmit_max_cycles_early_transmit = 4;
+},
 {
     vendorid    = 0x0003db;
     modelid     = 0x00010048;
