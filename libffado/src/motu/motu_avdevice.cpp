@@ -2157,7 +2157,7 @@ signed int sample_rate = getSamplingFrequency();
 unsigned int optical_mode_a, optical_mode_b;
 
 unsigned int i;
-unsigned int dir = direction==Streaming::Port::E_Capture?MOTU_PA_IN:MOTU_PA_OUT;
+unsigned int dir = direction==MOTU_DIR_IN?MOTU_PA_IN:MOTU_PA_OUT;
 unsigned int flags = 0;
 unsigned int port_flags;
 
@@ -2217,7 +2217,7 @@ unsigned int port_flags;
         size += 6;
 
 #else
-    if (direction==Streaming::Port::E_Capture)
+    if (direction==MOTU_DIR_IN)
         size = m_rx_event_size;
     else
         size = m_tx_event_size;
