@@ -118,14 +118,13 @@ bool
 DeviceStringParser::DeviceString::isValidString(std::string s)
 {
     std::string prefix = s.substr(0,3);
-    uint64_t tmp;
     if(s.compare(0,3,"hw:")==0) {
         std::string detail = s.substr(3);
         std::string::size_type comma_pos = detail.find_first_of(",");
         if(comma_pos == std::string::npos) {
             std::string port = detail;
             errno = 0;
-            tmp = strtol(port.c_str(), NULL, 0);
+            strtol(port.c_str(), NULL, 0);
             if(errno) {
                 return false;
             }
@@ -133,12 +132,12 @@ DeviceStringParser::DeviceString::isValidString(std::string s)
             std::string port = detail.substr(0, comma_pos);
             std::string node = detail.substr(comma_pos+1);
             errno = 0;
-            tmp = strtol(port.c_str(), NULL, 0);
+            strtol(port.c_str(), NULL, 0);
             if(errno) {
                 return false;
             }
             errno = 0;
-            tmp = strtol(node.c_str(), NULL, 0);
+            strtol(node.c_str(), NULL, 0);
             if(errno) {
                 return false;
             }
@@ -146,7 +145,7 @@ DeviceStringParser::DeviceString::isValidString(std::string s)
     } else if (s.compare(0,5,"guid:")==0) {
         std::string detail = s.substr(5);
         errno = 0;
-        tmp = strtoll(detail.c_str(), NULL, 0);
+        strtoll(detail.c_str(), NULL, 0);
         if(errno) {
             return false;
         }
