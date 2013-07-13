@@ -745,7 +745,7 @@ Ieee1394Service::transactionBlock( fb_nodeid_t nodeId,
     // FIXME: simplify semantics
     if (nodeId == INVALID_NODE_ID) {
         debugWarning("operation on invalid node\n");
-        return false;
+        return NULL;
     }
     // NOTE: this expects a call to transactionBlockClose to unlock
     m_handle_lock->Lock();
