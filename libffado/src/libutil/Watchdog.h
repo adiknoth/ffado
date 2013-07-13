@@ -37,7 +37,23 @@ class IsoHandlerManager;
 class Watchdog
 {
 private:
-    class WatchdogCheckTask : public Util::RunnableInterface
+    class WatchdogTask : public Util::RunnableInterface
+    {
+    public:
+        WatchdogTask(Watchdog& parent, unsigned int interval_usecs);
+        virtual ~WatchdogTask();
+
+        bool Init();
+        bool Execute();
+        void ReqStop();
+        Watchdog& m_parent;
+    private:
+        unsigned int m_interval;
+        int stop_msg_pipe[2];
+        DECLARE_DEBUG_MODULE_REFERENCE;
+    };
+
+    class WatchdogCheckTask : public WatchdogTask
     {
     public:
         WatchdogCheckTask(Watchdog& parent, unsigned int interval_usecs);
@@ -46,8 +62,6 @@ private:
         bool Init();
         bool Execute();
     private:
-        Watchdog& m_parent;
-        unsigned int m_interval;
         // debug stuff
         #ifdef DEBUG
             uint64_t m_last_loop_entry;
@@ -56,7 +70,7 @@ private:
         DECLARE_DEBUG_MODULE_REFERENCE;
     };
 
-    class WatchdogHartbeatTask : public Util::RunnableInterface
+    class WatchdogHartbeatTask : public WatchdogTask
     {
     public:
         WatchdogHartbeatTask(Watchdog& parent, unsigned int interval_usecs);
@@ -65,8 +79,6 @@ private:
         bool Init();
         bool Execute();
     private:
-        Watchdog& m_parent;
-        unsigned int m_interval;
         // debug stuff
         #ifdef DEBUG
             uint64_t m_last_loop_entry;

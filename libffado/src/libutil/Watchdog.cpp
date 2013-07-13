@@ -33,15 +33,70 @@
 #endif
 
 #include <time.h>
+#include <unistd.h>
+#include <poll.h>
 
 namespace Util {
 
 IMPL_DEBUG_MODULE( Watchdog, Watchdog, DEBUG_LEVEL_NORMAL );
 
-// --- liveness check Thread --- //
-Watchdog::WatchdogCheckTask::WatchdogCheckTask(Watchdog& parent, unsigned int interval_usecs)
+// --- Watchdog thread common ancestor --- ///
+Watchdog::WatchdogTask::WatchdogTask(Watchdog& parent, unsigned int interval_usecs)
     : m_parent( parent )
     , m_interval( interval_usecs )
+    , m_debugModule( parent.m_debugModule )
+{
+}
+
+Watchdog::WatchdogTask::~WatchdogTask() 
+{
+    close(stop_msg_pipe[0]);
+    close(stop_msg_pipe[1]);
+}
+
+bool
+Watchdog::WatchdogTask::Init()
+{
+    if (pipe(stop_msg_pipe) == -1) {
+        return false;
+    }
+    return true;
+}
+
+bool
+Watchdog::WatchdogTask::Execute()
+{
+    // All watchdog threads share the need to sleep for m_interval usec, with
+    // the ability for this to be interrupted early to speed up program exit.
+    //
+    // Use ppoll() rather than SystemTimeSource::SleepUsecRelative(m_interval)
+    // so the stop message pipe can be monitored, permitting the interruption
+    // of long timing intervals to facilitate program shutdown.
+    struct pollfd fds;
+    struct timespec ts;
+    fds.fd = stop_msg_pipe[0];
+    fds.events = POLLIN;
+    ts.tv_sec = (m_interval / 1000000);
+    ts.tv_nsec = (m_interval % 1000000) * 1000;
+    if (ppoll(&fds, 1, &ts, NULL)==1 && fds.revents!=0) {
+        debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) watchdog %p received request to stop\n", this, &m_parent);
+        return false;
+    }
+    return true;
+}
+
+void Watchdog::WatchdogTask::ReqStop()
+{
+    // Signal to the task that it should shop via the message pipe.  All
+    // that's needed is to make stop_msg_pipe[0] readable.
+    signed int data = 0;
+    debugOutput( DEBUG_LEVEL_VERBOSE, "(%p) watchdog %p requested to stop\n", this, &m_parent);
+    write(stop_msg_pipe[1], &data, sizeof(data));
+}
+
+// --- liveness check Thread --- //
+Watchdog::WatchdogCheckTask::WatchdogCheckTask(Watchdog& parent, unsigned int interval_usecs)
+    : WatchdogTask( parent, interval_usecs )
     , m_debugModule( parent.m_debugModule )
 {
 }
@@ -53,13 +108,15 @@ Watchdog::WatchdogCheckTask::Init()
     m_last_loop_entry = 0;
     m_successive_short_loops = 0;
     #endif
-    return true;
+    return Watchdog::WatchdogTask::Init();
 }
 
 bool
 Watchdog::WatchdogCheckTask::Execute()
 {
-    SystemTimeSource::SleepUsecRelative(m_interval);
+    if (Watchdog::WatchdogTask::Execute() == false)
+        return false;
+
     if(m_parent.getHartbeat()) {
         debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                     "(%p) watchdog %p still alive\n", this, &m_parent);
@@ -95,8 +152,7 @@ Watchdog::WatchdogCheckTask::Execute()
 // --- hartbeat Thread --- //
 
 Watchdog::WatchdogHartbeatTask::WatchdogHartbeatTask(Watchdog& parent, unsigned int interval_usecs)
-    : m_parent( parent )
-    , m_interval( interval_usecs )
+    : WatchdogTask( parent, interval_usecs )
     , m_debugModule( parent.m_debugModule )
 {
 }
@@ -108,13 +164,15 @@ Watchdog::WatchdogHartbeatTask::Init()
     m_last_loop_entry = 0;
     m_successive_short_loops = 0;
     #endif
-    return true;
+    return Watchdog::WatchdogTask::Init();
 }
 
 bool
 Watchdog::WatchdogHartbeatTask::Execute()
 {
-    SystemTimeSource::SleepUsecRelative(m_interval);
+    if (Watchdog::WatchdogTask::Execute() == false)
+        return false;
+
     debugOutput(DEBUG_LEVEL_VERY_VERBOSE,
                 "(%p) watchdog %p hartbeat\n", this, &m_parent);
     m_parent.setHartbeat();
@@ -168,16 +226,20 @@ Watchdog::Watchdog(unsigned int interval_usec, bool realtime, unsigned int prior
 
 Watchdog::~Watchdog()
 {
-    // kill threads instead of stoping them since 
-    // they are sleeping
+    // kill threads instead of stoping them since they are sleeping.
+    // Except that the threads call non-cancel-safe functions, so we have to 
+    // use Stop().  Task ReqStop() methods are used to allow the tasks to
+    // prepare for exit by (for example) aborting sleeps.
     if (m_CheckThread) {
-        //m_CheckThread->Stop();
-        m_CheckThread->Kill();
+        m_CheckTask->ReqStop();
+        m_CheckThread->Stop();
+        //m_CheckThread->Kill();
         delete m_CheckThread;
     }
     if (m_HartbeatThread) {
-        //m_HartbeatThread->Stop();
-        m_HartbeatThread->Kill();
+        m_HartbeatTask->ReqStop();
+        m_HartbeatThread->Stop();
+        //m_HartbeatThread->Kill();
         delete m_HartbeatThread;
     }
     if (m_CheckTask) {
