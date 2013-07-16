@@ -423,7 +423,12 @@ Configuration::findDeviceVME( unsigned int vendor_id, unsigned model_id )
                 vme.vendor_name = tmp;
                 tmp = s["modelname"];
                 vme.model_name = tmp;
-                vme.driver = s["driver"];
+
+                if (!s.lookupValue("driver", vme.driver))
+                {
+                    std::string driver = s["driver"];
+                    vme.driver = convertDriver(driver);
+                }
                 return vme;
             } else {
                 debugError("BUG: vendor/model found but not found?\n");
@@ -484,6 +489,33 @@ Configuration::findFileName(std::string s) {
         i++;
     }
     return -1;
+}
+
+unsigned int
+Configuration::convertDriver(const std::string& driver) const {
+    if(driver == "BEBOB")
+        return 1;
+    if(driver == "FIREWORKS")
+        return 2;
+    if(driver == "GENERICAVC")
+        return 3;
+    if(driver == "OXFORD")
+        return 4;
+    if(driver == "MAUDIO")
+        return 5;
+    if(driver == "MOTU")
+        return 10;
+    if(driver == "DICE")
+        return 20;
+    if(driver == "METRICHALO")
+        return 30;
+    if(driver == "RME")
+        return 40;
+    if(driver == "BOUNCE")
+        return 50;
+    if(driver == "DIGIDESIGN")
+        return 60;
+    return 0; // Unknown
 }
 
 void

@@ -4,7 +4,7 @@ device_definitions = (
     modelid     = 0x00010065;
     vendorname  = "Mackie";
     modelname   = "Onyx Firewire";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
 { # Added by arnonym from ffado-mixers list
@@ -12,7 +12,7 @@ device_definitions = (
     modelid     = 0x00010067;
     vendorname  = "Mackie";
     modelname   = "Onyx Firewire";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "MackieOnyx";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -21,14 +21,14 @@ device_definitions = (
     modelid     = 0x10067;  
     vendorname  = "Tascam";  
     modelname   = "IFFWDM";  
-    driver      = 1; # BeBoB  
+    driver      = "BEBOB";
 },
 { # entries provided by Holger Dehnhardt
     vendorid    = 0x000ff2;
     modelid     = 0x081216;
     vendorname  = "Loud Technologies Inc.";
     modelname   = "Onyx-i";
-    driver      = 4; # Oxford
+    driver      = "OXFORD";
     xmit_transfer_delay = 11776;
 },
 { # IDs from Geoff Beasley.  Thought to be a BeBoB device: to be confirmed.
@@ -36,7 +36,7 @@ device_definitions = (
     modelid     = 0x00000006;
     vendorname  = "Behringer";
     modelname   = "X32";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -44,7 +44,7 @@ device_definitions = (
     modelid     = 0x00010048;
     vendorname  = "Apogee Electronics";
     modelname   = "Rosetta 200";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -52,7 +52,7 @@ device_definitions = (
     modelid     = 0x00010048;
     vendorname  = "BridgeCo";
     modelname   = "RD Audio1";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -60,7 +60,7 @@ device_definitions = (
     modelid     = 0x00010049;
     vendorname  = "BridgeCo";
     modelname   = "Audio 5";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "BCoAudio5Control";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -69,7 +69,7 @@ device_definitions = (
     modelid     = 0x00010000;
     vendorname  = "PreSonus";
     modelname   = "FIREBOX";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "Presonus_Experimental";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -78,54 +78,54 @@ device_definitions = (
     modelid     = 0x00010066;
     vendorname  = "PreSonus";
     modelname   = "FirePOD";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "Presonus_Experimental";
     xmit_max_cycles_early_transmit = 4;
 },
 { # Presonus Firestudio 26x26, Bob Hamil via jaimes on the forums
-    vendorid = 0x000a92;
-    modelid = 0x00000008;
-    vendorname = "Presonus";
-    modelname = "Firestudio 26x26";
-    mixer = "Generic_Dice_EAP";
-    driver = 20;
+    vendorid    = 0x000a92;
+    modelid     = 0x00000008;
+    vendorname  = "Presonus";
+    modelname   = "Firestudio 26x26";
+    mixer       = "Generic_Dice_EAP";
+    driver      = "DICE";
 },
 { # Presonus Firestudio Project, from Walt Baldwin
-    vendorid = 0x000a92;
-    modelid = 0x0000000b;
-    vendorname = "Presonus";
-    modelname = "Firestudio Project";
-    mixer = "Generic_Dice_EAP";
-    driver = 20;
+    vendorid    = 0x000a92;
+    modelid     = 0x0000000b;
+    vendorname  = "Presonus";
+    modelname   = "Firestudio Project";
+    mixer       = "Generic_Dice_EAP";
+    driver      = "DICE";
 },
 { # Presonus Firestudio Tube, from Tobi Kraus
-    vendorid = 0x000a92;
-    modelid = 0x0000000c;
-    vendorname = "Presonus";
-    modelname = "Firestudio Tube";
-    mixer = "Generic_Dice_EAP";
-    driver = 20;
+    vendorid    = 0x000a92;
+    modelid     = 0x0000000c;
+    vendorname  = "Presonus";
+    modelname   = "Firestudio Tube";
+    mixer       = "Generic_Dice_EAP";
+    driver      = "DICE";
 },
 { # Entry for Firestudio mobile provided by "Pule" via the forums.
     vendorid    = 0x000a92;
     modelid     = 0x00000011;
     vendorname  = "PreSonus";
     modelname   = "Firestudio Mobile";
-    driver      = 20;
+    driver = "DICE";
 },
 { # Entry for StudioLive 2442, from Walt Baldwin
-    vendorid = 0x00000A92;
-    modelid = 0x00000012;
-    vendorname = "PreSonus";
-    modelname = "STUDIOLIVE_2442";
-    driver = 20;
+    vendorid    = 0x00000A92;
+    modelid     = 0x00000012;
+    vendorname  = "PreSonus";
+    modelname   = "STUDIOLIVE_2442";
+    driver      = "DICE";
 },
 {
     vendorid    = 0x000aac;
     modelid     = 0x00000003;
     vendorname  = "TerraTec Electronic GmbH";
     modelname   = "Phase 88 FW";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "Phase88Control";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -134,7 +134,7 @@ device_definitions = (
     modelid     = 0x00000004;
     vendorname  = "TerraTec Electronic GmbH";
     modelname   = "Phase X24 FW (model version 4)";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "Phase24Control";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -143,7 +143,7 @@ device_definitions = (
     modelid     = 0x00000007;
     vendorname  = "TerraTec Electronic GmbH";
     modelname   = "Phase X24 FW (model version 7)";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "Phase24Control";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -152,7 +152,7 @@ device_definitions = (
     modelid     = 0x00010064;
     vendorname  = "ESI";
     modelname   = "Quatafire 610";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "QuataFire";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -161,7 +161,7 @@ device_definitions = (
     modelid     = 0x00000003;
     vendorname  = "Focusrite";
     modelname   = "Saffire Pro26IO";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "SaffirePro";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -170,7 +170,7 @@ device_definitions = (
     modelid     = 0x00000006;
     vendorname  = "Focusrite";
     modelname   = "Saffire Pro10IO";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "SaffirePro";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -179,7 +179,7 @@ device_definitions = (
     modelid     = 0x00000000;
     vendorname  = "Focusrite";
     modelname   = "Saffire (LE)";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "Saffire";
     cmd_interval_time = 10000;
     xmit_max_cycles_early_transmit = 4;
@@ -189,7 +189,7 @@ device_definitions = (
     modelid     = 0x00010049;
     vendorname  = "EDIROL";
     modelname   = "FA-66";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "EdirolFa66Control";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -198,7 +198,7 @@ device_definitions = (
     modelid     = 0x00010048;
     vendorname  = "EDIROL";
     modelname   = "FA-101";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "EdirolFa101Control";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -207,7 +207,7 @@ device_definitions = (
     modelid     = 0x0000000a;
     vendorname  = "M-Audio";
     modelname   = "Ozonic";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     mixer       = "Ozonic";
     xmit_max_cycles_early_transmit = 4;
 },
@@ -216,7 +216,7 @@ device_definitions = (
     modelid     = 0x00010062;
     vendorname  = "M-Audio";
     modelname   = "FW Solo";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -224,7 +224,7 @@ device_definitions = (
     modelid     = 0x00010081;
     vendorname  = "M-Audio";
     modelname   = "NRV10";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -232,7 +232,7 @@ device_definitions = (
     modelid     = 0x00010060;
     vendorname  = "M-Audio";
     modelname   = "FW Audiophile";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -240,7 +240,7 @@ device_definitions = (
     modelid     = 0x000100A1;
     vendorname  = "M-Audio";
     modelname   = "ProFire Lightbridge";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -248,7 +248,7 @@ device_definitions = (
     modelid     = 0x00000010;
     vendorname  = "M-Audio";
     modelname   = "ProFire 2626";
-    driver      = 20;
+    driver = "DICE";
     mixer       = "Generic_Dice_EAP";
 },
 {
@@ -256,7 +256,7 @@ device_definitions = (
     modelid     = 0x00000011;
     vendorname  = "M-Audio";
     modelname   = "ProFire 610";
-    driver      = 20;
+    driver = "DICE";
     mixer       = "Generic_Dice_EAP";
 },
 {
@@ -264,376 +264,376 @@ device_definitions = (
     modelid     = 0x00000002;
     vendorname  = "Acoustic Reality";
     modelname   = "eAR Master One";
-    driver      = 1; # BeBoB
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
-    vendorid = 0x0000000A;
-    modelid = 0x00030000;
-    vendorname = "CME";
-    modelname = "Matrix K FW";
-    driver = 1; # BeBoB
+    vendorid    = 0x0000000A;
+    modelid     = 0x00030000;
+    vendorname  = "CME";
+    modelname   = "Matrix K FW";
+    driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 }, 
 {
-    vendorid = 0x1486;
-    modelid = 0xAF2;
-    vendorname = "Echo";
-    modelname = "AudioFire2";
-    driver = 2;
-    mixer = "AudioFire";
+    vendorid    = 0x1486;
+    modelid     = 0xAF2;
+    vendorname  = "Echo";
+    modelname   = "AudioFire2";
+    driver      = "FIREWORKS";
+    mixer       = "AudioFire";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
-    vendorid = 0x1486;
-    modelid = 0xAF4;
-    vendorname = "Echo";
-    modelname = "AudioFire4";
-    driver = 2;
-    mixer = "AudioFire";
+    vendorid    = 0x1486;
+    modelid     = 0xAF4;
+    vendorname  = "Echo";
+    modelname   = "AudioFire4";
+    driver      = "FIREWORKS";
+    mixer       = "AudioFire";
     xmit_max_cycles_early_transmit = 4;
 }, 
 {
-    vendorid = 0x1486;
-    modelid = 0xAF8;
-    vendorname = "Echo";
-    modelname = "AudioFire8";
-    driver = 2;
-    mixer = "AudioFire";
+    vendorid    = 0x1486;
+    modelid     = 0xAF8;
+    vendorname  = "Echo";
+    modelname   = "AudioFire8";
+    driver      = "FIREWORKS";
+    mixer       = "AudioFire";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
-    vendorid = 0x1486;
-    modelid = 0xAF9;
-    vendorname = "Echo";
-    modelname = "AudioFire8a";
-    driver = 2;
-    mixer = "AudioFire";
+    vendorid    = 0x1486;
+    modelid     = 0xAF9;
+    vendorname  = "Echo";
+    modelname   = "AudioFire8a";
+    driver      = "FIREWORKS";
+    mixer       = "AudioFire";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
-    vendorid = 0x1486;
-    modelid = 0xAF12;
-    vendorname = "Echo";
-    modelname = "AudioFire12";
-    driver = 2;
-    mixer = "AudioFire";
+    vendorid    = 0x1486;
+    modelid     = 0xAF12;
+    vendorname  = "Echo";
+    modelname   = "AudioFire12";
+    driver      = "FIREWORKS";
+    mixer       = "AudioFire";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
-    vendorid = 0x1486;
-    modelid = 0xAF12D;
-    vendorname = "Echo";
-    modelname = "AudioFire12HD";
-    driver = 2;
+    vendorid    = 0x1486;
+    modelid     = 0xAF12D;
+    vendorname  = "Echo";
+    modelname   = "AudioFire12HD";
+    driver      = "FIREWORKS";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
-    vendorid = 0x1486;
-    modelid = 0xF8;
-    vendorname = "Echo";
-    modelname = "Fireworks 8";
-    driver = 2;
+    vendorid    = 0x1486;
+    modelid     = 0xF8;
+    vendorname  = "Echo";
+    modelname   = "Fireworks 8";
+    driver      = "FIREWORKS";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
-    vendorid = 0x1486;
-    modelid = 0xAFD1;
-    vendorname = "Echo";
-    modelname = "FW HDMI";
-    driver = 2;
+    vendorid    = 0x1486;
+    modelid     = 0xAFD1;
+    vendorname  = "Echo";
+    modelname   = "FW HDMI";
+    driver      = "FIREWORKS";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
-    vendorid = 0xFF2;
-    modelid = 0x400F;
-    vendorname = "Mackie";
-    modelname = "Onyx 400F";
-    driver = 2;
+    vendorid    = 0xFF2;
+    modelid     = 0x400F;
+    vendorname  = "Mackie";
+    modelname   = "Onyx 400F";
+    driver      = "FIREWORKS";
     xmit_max_cycles_early_transmit = 2;
 }, 
 {
-    vendorid = 0xFF2;
-    modelid = 0x1200F;
-    vendorname = "Mackie";
-    modelname = "Onyx 1200F";
-    driver = 2;
+    vendorid    = 0xFF2;
+    modelid     = 0x1200F;
+    vendorname  = "Mackie";
+    modelname   = "Onyx 1200F";
+    driver      = "FIREWORKS";
     xmit_max_cycles_early_transmit = 2;
 },
 {
-    vendorid = 0x1564;
-    modelid = 0xFC22;
-    vendorname = "Behringer";
-    modelname = "FCA202";
-    driver = 4;
+    vendorid    = 0x1564;
+    modelid     = 0xFC22;
+    vendorname  = "Behringer";
+    modelname   = "FCA202";
+    driver      = "OXFORD";
 },
 {
-    vendorid = 0x00001260;
-    modelid = 0x00001000;
-    vendorname = "Stanton DJ";
-    modelname = "SCS.1m";
-    driver = 3;
+    vendorid    = 0x00001260;
+    modelid     = 0x00001000;
+    vendorname  = "Stanton DJ";
+    modelname   = "SCS.1m";
+    driver      = "GENERICAVC";
     xmit_max_cycles_early_transmit = 4;
     xmit_sp_dll_bw = 1.0;
     recv_sp_dll_bw = 1.0;
 },
 { # added by arnonym from ffado-mixers list
-    vendorid = 0x0001f2;
-    modelid = 0x00000000;
-    vendorname = "Motu";
-    modelname = "All of them";
-    driver = 10;
-    mixer = "Motu";
+    vendorid    = 0x0001f2;
+    modelid     = 0x00000000;
+    vendorname  = "Motu";
+    modelname   = "All of them";
+    driver      = "MOTU";
+    mixer       = "Motu";
+},
+{
+    vendorid    = 0x000a35;
+    # Note: RME detection code compares the modelid field against the
+    # device's unit version since RME seem to use the configrom modelid
+    # for other things not necessarily related to device differentiation.
+    modelid     = 0x0001;
+    vendorname  = "RME";
+    modelname   = "FireFace800";
+    driver      = "RME";
+    mixer       = "Rme";
+},
+{
+    vendorid    = 0x000a35;
+    # Note: RME detection code compares the modelid field against the
+    # device's unit version since RME seem to use the configrom modelid
+    # for other things not necessarily related to device differentiation.
+    modelid     = 0x0002;
+    vendorname  = "RME";
+    modelname   = "FireFace400";
+    driver      = "RME";
+    mixer       = "Rme";
 },
 {
     vendorid = 0x000a35;
     # Note: RME detection code compares the modelid field against the
     # device's unit version since RME seem to use the configrom modelid
     # for other things not necessarily related to device differentiation.
-    modelid = 0x0001;
-    vendorname = "RME";
-    modelname = "FireFace800";
-    driver = 40;
-    mixer = "Rme";
+    modelid     = 0x0003;
+    vendorname  = "RME";
+    modelname   = "FireFace UFX";
+    driver      = "RME";
+    mixer       = "Rme";
 },
 {
-    vendorid = 0x000a35;
-    # Note: RME detection code compares the modelid field against the
-    # device's unit version since RME seem to use the configrom modelid
-    # for other things not necessarily related to device differentiation.
-    modelid = 0x0002;
-    vendorname = "RME";
-    modelname = "FireFace400";
-    driver = 40;
-    mixer = "Rme";
-},
-{
-    vendorid = 0x000a35;
-    # Note: RME detection code compares the modelid field against the
-    # device's unit version since RME seem to use the configrom modelid
-    # for other things not necessarily related to device differentiation.
-    modelid = 0x0003;
-    vendorname = "RME";
-    modelname = "FireFace UFX";
-    driver = 40;
-    mixer = "Rme";
-},
-{
-    vendorid = 0x000a35;
+    vendorid    = 0x000a35;
     # Note: RME detection code compares the modelid field against the
     # device's unit version since RME seem to use the configrom modelid
     # for other things not necessarily related to device differentiation.
     # Unit version (0x04) provided by Florian Hanisch.
     modelid = 0x0004;
-    vendorname = "RME";
-    modelname = "FireFace UCX";
-    driver = 40;
-    mixer = "Rme";
+    vendorname  = "RME";
+    modelname   = "FireFace UCX";
+    driver      = "RME";
+    mixer       = "Rme";
 },
 {
-    vendorid = 0x000166;
-    modelid = 0x0001;
-    vendorname = "TCAT";
-    modelname = "DiceII EVM (1)";
-    driver = 20;
+    vendorid    = 0x000166;
+    modelid     = 0x0001;
+    vendorname  = "TCAT";
+    modelname   = "DiceII EVM (1)";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x000166;
-    modelid = 0x0002;
-    vendorname = "TCAT";
-    modelname = "DiceII EVM (2)";
-    driver = 20;
+    vendorid    = 0x000166;
+    modelid     = 0x0002;
+    vendorname  = "TCAT";
+    modelname   = "DiceII EVM (2)";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x000166;
-    modelid = 0x0004;
-    vendorname = "TCAT";
-    modelname = "DiceII EVM (4)";
-    driver = 20;
+    vendorid    = 0x000166;
+    modelid     = 0x0004;
+    vendorname  = "TCAT";
+    modelname   = "DiceII EVM (4)";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x000166;
-    modelid = 0x00000020;
-    vendorname = "TC Electronic";
-    modelname = "Konnekt 24D";
-    driver = 20;
+    vendorid    = 0x000166;
+    modelid     = 0x00000020;
+    vendorname  = "TC Electronic";
+    modelname   = "Konnekt 24D";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x000166;
-    modelid = 0x00000021;
-    vendorname = "TC Electronic";
-    modelname = "Konnekt 8";
-    driver = 20;
+    vendorid    = 0x000166;
+    modelid     = 0x00000021;
+    vendorname  = "TC Electronic";
+    modelname   = "Konnekt 8";
+    driver      = "DICE";
 },
 { # Details provided by "Juanramon" in a comment post on the website
-    vendorid = 0x000166;
-    modelid = 0x00000022;
-    vendorname = "TC Electronic";
-    modelname = "Studio Konnekt 48";
-    driver = 20;
+    vendorid    = 0x000166;
+    modelid     = 0x00000022;
+    vendorname  = "TC Electronic";
+    modelname   = "Studio Konnekt 48";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x000166;
-    modelid = 0x00000023;
-    vendorname = "TC Electronic";
-    modelname = "Konnekt Live";
-    driver = 20;
+    vendorid    = 0x000166;
+    modelid     = 0x00000023;
+    vendorname  = "TC Electronic";
+    modelname   = "Konnekt Live";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x000166;
-    modelid = 0x00000024;
-    vendorname = "TC Electronic";
-    modelname = "Desktop Konnekt 6";
-    driver = 20;
+    vendorid    = 0x000166;
+    modelid     = 0x00000024;
+    vendorname  = "TC Electronic";
+    modelname   = "Desktop Konnekt 6";
+    driver      = "DICE";
 },
 { 
-    vendorid = 0x000166; 
-    modelid = 0x00000027; 
-    vendorname = "TC Electronic"; 
-    modelname = "ImpactTwin"; 
-    driver = 20; 
+    vendorid    = 0x000166; 
+    modelid     = 0x00000027; 
+    vendorname  = "TC Electronic"; 
+    modelname   = "ImpactTwin"; 
+    driver      = "DICE";
 }, 
 {
-    vendorid = 0x000595;
-    modelid = 0x00000001;
-    vendorname = "Alesis";
-    modelname = "io|14";
-    driver = 20;
+    vendorid    = 0x000595;
+    modelid     = 0x00000001;
+    vendorname  = "Alesis";
+    modelname   = "io|14";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x000595;
-    modelid = 0x00000000;
-    vendorname = "Alesis";
-    modelname = "Multimix16 Firewire";
-    driver = 20;
+    vendorid    = 0x000595;
+    modelid     = 0x00000000;
+    vendorname  = "Alesis";
+    modelname   = "Multimix16 Firewire";
+    driver      = "DICE";
 },
 {   # Studiolive 16.4.2, provided by Johan Landman
     vendorid    = 0x000a92;
     modelid     = 0x00000010;
     vendorname  = "PreSonus";
     modelname   = "STUDIOLIVE_1642";
-    driver      = 20; # DICE
+    driver      = "DICE";
     xmit_transfer_delay = 4;
 },
 {
-    vendorid = 0x00130e;
-    modelid = 0x00000005;
-    vendorname = "Focusrite";
-    modelname = "Saffire PRO 40";
-    driver = 20;
-    mixer = "Saffire_Dice";
+    vendorid    = 0x00130e;
+    modelid     = 0x00000005;
+    vendorname  = "Focusrite";
+    modelname   = "Saffire PRO 40";
+    driver      = "DICE";
+    mixer       = "Saffire_Dice";
 },
 {
-    vendorid = 0x00130e;
-    modelid = 0x00000007;
-    vendorname = "Focusrite";
-    modelname = "Saffire PRO 24";
-    driver = 20;
-    mixer = "Saffire_Dice";
+    vendorid    = 0x00130e;
+    modelid     = 0x00000007;
+    vendorname  = "Focusrite";
+    modelname   = "Saffire PRO 24";
+    driver      = "DICE";
+    mixer       = "Saffire_Dice";
 },
 {
-    vendorid = 0x00130e;
-    modelid = 0x00000008;
-    vendorname = "Focusrite";
-    modelname = "Saffire PRO 24 DSP";
-    driver = 20;
-    mixer = "Saffire_Dice";
+    vendorid    = 0x00130e;
+    modelid     = 0x00000008;
+    vendorname  = "Focusrite";
+    modelname   = "Saffire PRO 24 DSP";
+    driver      = "DICE";
+    mixer       = "Saffire_Dice";
 },
 {
-    vendorid = 0x00130e;
-    modelid = 0x00000009;
-    vendorname = "Focusrite";
-    modelname = "Saffire PRO 14";
-    driver = 20;
-    mixer = "Saffire_Dice";
+    vendorid    = 0x00130e;
+    modelid     = 0x00000009;
+    vendorname  = "Focusrite";
+    modelname   = "Saffire PRO 14";
+    driver      = "DICE";
+    mixer       = "Saffire_Dice";
 },
 {
-    vendorid = 0x001C6A;
-    modelid = 0x00000001;
-    vendorname = "Weiss Engineering Ltd.";
-    modelname = "ADC 2";
-    driver = 20;
+    vendorid    = 0x001C6A;
+    modelid     = 0x00000001;
+    vendorname  = "Weiss Engineering Ltd.";
+    modelname   = "ADC 2";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x001C6A;
-    modelid = 0x00000002;
-    vendorname = "Weiss Engineering Ltd.";
-    modelname = "Vesta";
-    driver = 20;
+    vendorid    = 0x001C6A;
+    modelid     = 0x00000002;
+    vendorname  = "Weiss Engineering Ltd.";
+    modelname   = "Vesta";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x001C6A;
-    modelid = 0x00000003;
-    vendorname = "Weiss Engineering Ltd.";
-    modelname = "Minerva";
-    driver = 20;
+    vendorid    = 0x001C6A;
+    modelid     = 0x00000003;
+    vendorname  = "Weiss Engineering Ltd.";
+    modelname   = "Minerva";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x001C6A;
-    modelid = 0x00000004;
-    vendorname = "Weiss Engineering Ltd.";
-    modelname = "AFI 1";
-    driver = 20;
+    vendorid    = 0x001C6A;
+    modelid     = 0x00000004;
+    vendorname  = "Weiss Engineering Ltd.";
+    modelname   = "AFI 1";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x001C6A;
-    modelid = 0x00000005;
-    vendorname = "Weiss Engineering Ltd.";
-    modelname = "TAG DAC1";
-    driver = 20;
+    vendorid    = 0x001C6A;
+    modelid     = 0x00000005;
+    vendorname  = "Weiss Engineering Ltd.";
+    modelname   = "TAG DAC1";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x001C6A;
-    modelid = 0x00000006;
-    vendorname = "Weiss Engineering Ltd.";
-    modelname = "INT 202";
-    driver = 20;
+    vendorid    = 0x001C6A;
+    modelid     = 0x00000006;
+    vendorname  = "Weiss Engineering Ltd.";
+    modelname   = "INT 202";
+    driver      = "DICE";
 },
 {
-    vendorid = 0x001C6A;
-    modelid = 0x00000007;
-    vendorname = "Weiss Engineering Ltd.";
-    modelname = "DAC 202";
-    driver = 20;
+    vendorid    = 0x001C6A;
+    modelid     = 0x00000007;
+    vendorname  = "Weiss Engineering Ltd.";
+    modelname   = "DAC 202";
+    driver      = "DICE";
 },
 { # Added by david@wwns.com
-   vendorid	= 0x001c2d;
-   modelid	= 0x00000001;
-   vendorname	= "FlexRadio_Systems";
-   modelname	= "Flex-5000";
-   driver	= 20;
-   xmit_max_cycles_early_transmit = 4;
+    vendorid	= 0x001c2d;
+    modelid	= 0x00000001;
+    vendorname	= "FlexRadio_Systems";
+    modelname	= "Flex-5000";
+    driver      = "DICE";
+    xmit_max_cycles_early_transmit = 4;
 },
 { # Phonic HelixBoard 24 Universal (PHHB24U), provided by Steffen Klein
-   vendorid    = 0x001496;
-   modelid     = 0x000000;
-   vendorname  = "Phonic";
-   modelname   = "HB 24U";
-   driver      = 1; # BeBoB
-   xmit_max_cycles_early_transmit = 4;
+    vendorid    = 0x001496;
+    modelid     = 0x000000;
+    vendorname  = "Phonic";
+    modelname   = "HB 24U";
+    driver      = "BEBOB";
+    xmit_max_cycles_early_transmit = 4;
 },
 { # Yamaha GO46, provided by Luis Pablo Gasparotto
-   vendorid = 0x0000A0DE;
-   modelid = 0x0010000C;
-   vendorname = "Yamaha";
-   modelname = "GO46";
-   driver = 1; # BeBoB
-   mixer = "Phase24Control";
-   xmit_max_cycles_early_transmit = 4;
+    vendorid    = 0x0000A0DE;
+    modelid     = 0x0010000C;
+    vendorname  = "Yamaha";
+    modelname   = "GO46";
+    driver      = "BEBOB";
+    mixer       = "Phase24Control";
+    xmit_max_cycles_early_transmit = 4;
 },
 { # DnR - Axum_FireWire_IO_card_16x16
-   vendorid    = 0x00000F64;
-   modelid     = 0x00000003;
-   vendorname  = "DnR";
-   modelname   = "Axum_FireWire_IO_card_16x16";
-   driver      = 20; # DICE
+    vendorid    = 0x00000F64;
+    modelid     = 0x00000003;
+    vendorname  = "DnR";
+    modelname   = "Axum_FireWire_IO_card_16x16";
+    driver      = "DICE";
 },
 { # Lexicon Onix-FW810S, provided by gerradblock
     vendorid    = 0x00000FD7;
     modelid     = 0x00000001;
     vendorname  = "Lexicon";
     modelname   = "I-ONIX_FW810S";
-    driver      = 20;
+    driver      = "DICE";
     mixer       = "Generic_Dice_EAP";
 },
 { # Avid Mbox Pro, information provided by Niels Dettenbach.

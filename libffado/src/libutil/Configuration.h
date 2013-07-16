@@ -41,6 +41,7 @@ namespace Util {
 class Configuration {
 public:
     // driver ID's to be used in the config file
+    // Note: When changing this enum, please update convertDriver code as well!
     enum eDrivers {
         eD_Unknown     = 0,
         eD_BeBoB       = 1,
@@ -159,6 +160,8 @@ private:
 
     int findFileName(std::string s);
 
+    unsigned int convertDriver(const std::string & driver) const;
+    
     // important: keep 1-1 mapping for these two!
     // cannot use map since we need the vector order to
     // provide priorities
