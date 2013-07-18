@@ -587,6 +587,7 @@ class Motu(QWidget):
         # may be able to reset its items and use it for the monitor source
         # selector.
         self.disable_hide(self.phones_src)
+        self.disable_hide(self.phones_src_frame)
 
     def initValues_g2(self):
         # Set up widgets for generation-2 devices

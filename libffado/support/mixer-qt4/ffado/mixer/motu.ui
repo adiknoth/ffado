@@ -127,7 +127,7 @@ GNU General Public License for more details.
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox11">
+       <widget class="QGroupBox" name="phones_src_frame">
         <property name="font">
          <font/>
         </property>
