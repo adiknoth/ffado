@@ -875,6 +875,16 @@ MotuDevice::discover()
         setClockCtrlRegister(-1, getHwClockSource());
     }
 
+    // The MOTU 828mk1 device seems to power up without a valid clock source
+    // configured (the relevant bits don't seem to map to anything sensible).
+    // Deal with this if necessary.
+    if (m_motu_model == MOTU_MODEL_828MkI) {
+        signed int csrc = getHwClockSource();
+        if (csrc == MOTU_CLKSRC_NONE)
+            csrc = MOTU_CLKSRC_INTERNAL;
+        setClockCtrlRegister(-1, csrc);
+    }
+
     if (!buildMixer()) {
         debugWarning("Could not build mixer\n");
     }
@@ -970,6 +980,7 @@ MotuDevice::getHwClockSource()
             case MOTU_G1_CLKSRC_INTERNAL: return MOTU_CLKSRC_INTERNAL;
             case MOTU_G1_CLKSRC_ADAT_9PIN: return MOTU_CLKSRC_ADAT_9PIN;
             case MOTU_G1_CLKSRC_SPDIF: return MOTU_CLKSRC_SPDIF_TOSLINK;
+            case MOTU_G1_CLKSRC_ADAT_OPTICAL: return MOTU_CLKSRC_ADAT_OPTICAL;
         }
         return MOTU_CLKSRC_NONE;
     }
@@ -1049,6 +1060,8 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
                     clock_source = MOTU_G1_CLKSRC_SPDIF; break;
                 case MOTU_CLKSRC_ADAT_9PIN:
                     clock_source = MOTU_G1_CLKSRC_ADAT_9PIN; break;
+                case MOTU_CLKSRC_ADAT_OPTICAL:
+                    clock_source = MOTU_G1_CLKSRC_ADAT_OPTICAL; break;
                 default:
                     // Unsupported clock source
                     return false;
@@ -1363,7 +1376,7 @@ MotuDevice::getSupportedClockSources() {
     s = clockIdToClockSource(MOTU_CLKSRC_INTERNAL);
     r.push_back(s);
 
-    if (device_gen == MOTU_DEVICE_G2) {
+    if (device_gen==MOTU_DEVICE_G2 || device_gen==MOTU_DEVICE_G1) {
         s = clockIdToClockSource(MOTU_CLKSRC_ADAT_OPTICAL);
         r.push_back(s);
     }
@@ -1942,7 +1955,7 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
     }
 
     if (getDeviceGeneration() == MOTU_DEVICE_G3) {
-        unsigned int mask, enable, toslink;
+        unsigned int enable, toslink;
         /* The Ultralite Mk3s don't have any optical ports.  All others have 2. */
         if (m_motu_model==MOTU_MODEL_ULTRALITEmk3 || m_motu_model==MOTU_MODEL_ULTRALITEmk3_HYB) {
             if (port_a_mode != NULL)
@@ -1953,7 +1966,6 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
         }
         reg = ReadRegister(MOTU_G3_REG_OPTICAL_CTRL);
         if (port_a_mode != NULL) {
-            mask = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_A_IN_MASK:MOTU_G3_OPT_A_OUT_MASK;
             enable = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_A_IN_ENABLE:MOTU_G3_OPT_A_OUT_ENABLE;
             toslink = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_A_IN_TOSLINK:MOTU_G3_OPT_A_OUT_TOSLINK;
             if ((reg & enable) == 0)
@@ -1965,7 +1977,6 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
               *port_a_mode = MOTU_OPTICAL_MODE_ADAT;
         }
         if (port_b_mode != NULL) {
-            mask = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_B_IN_MASK:MOTU_G3_OPT_B_OUT_MASK;
             enable = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_B_IN_ENABLE:MOTU_G3_OPT_B_OUT_ENABLE;
             toslink = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_B_IN_TOSLINK:MOTU_G3_OPT_B_OUT_TOSLINK;
             if ((reg & enable) == 0)
