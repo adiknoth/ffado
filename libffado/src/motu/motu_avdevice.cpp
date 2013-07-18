@@ -2427,10 +2427,10 @@ fprintf(stderr, "initDirPortGroups(): flags=0x%08x, opta=0x%x, optb=0x%x\n",
     }
 
     /* The 828mk1 has an additional 6 bytes tacked onto the end of the
-     * packet, which we must account for when using pkt_ofs as a proxy for
-     * size.
+     * packet sent by it, which we must account for when using pkt_ofs as a
+     * proxy for size.
      */
-    if (m_motu_model == MOTU_MODEL_828MkI)
+    if (direction==Streaming::Port::E_Capture && m_motu_model==MOTU_MODEL_828MkI)
         pkt_ofs += 6;
 
     if (direction == Streaming::Port::E_Capture)
