@@ -319,6 +319,26 @@ MotuTransmitStreamProcessor::generatePacketData (
 //  CYCLE_TIMER_GET_OFFSET(fullTicksToSph(ts_frame)));
         }
 
+{
+static signed int pktcx = 0;
+signed int i;
+  if (pktcx==0 && getDebugLevel()>0 ) {
+    fprintf(stderr, "Packet to MOTU: length=%d, eventsize=%d, n_events=%d\n", *length, m_event_size, n_events);
+    for (i=0; i<*length; i++) {
+      if ((i&0x000f) == 0)
+        fprintf(stderr, "%08x  ", i);
+      fprintf(stderr, "%02x ", data[i]);
+      if ((i&0x000f) == 7)
+        fprintf(stderr, "- ");
+      if ((i&0x000f) == 0xf)
+        fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+  }
+  if (++pktcx == 8000)
+    pktcx=0;
+}
+
         return eCRV_OK;
     }
     else return eCRV_XRun;

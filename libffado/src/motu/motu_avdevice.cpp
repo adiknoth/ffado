@@ -1730,7 +1730,8 @@ quadlet_t config2_reg = ReadRegister(MOTU_G1_REG_CONFIG_2);
          * it's important that this be done.
          */
 #if 1
-        WriteRegister(MOTU_G1_REG_UNKNOWN_1, 0xffc10001);
+        WriteRegister(MOTU_G1_REG_UNKNOWN_1, 
+          0xffc00001 | ((get1394Service().getLocalNodeId()&0x3f)<<16));
         WriteRegister(MOTU_G1_REG_UNKNOWN_2, 0x00000000);
 
         /* First send the iso channels to the control register.  Note that
@@ -1745,7 +1746,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: read config2: %x\n", config2_reg);
         isoctrl |= (m_iso_send_channel << MOTU_G1_C1_ISO_RX_CH_BIT0);
         isoctrl |= (MOTU_G1_IO_ENABLE_0);
         WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
-debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 1: %x\n", isoctrl);
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 1: %08x\n", isoctrl);
 
         /* Follow this with a setting of the config2 register.  The purpose
          * of doing this is unclear, but it's done by other drivers so
@@ -1762,7 +1763,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 1: %x\n", isoctrl);
          */
         isoctrl |= (MOTU_G1_C1_ISO_TX_ACTIVE | MOTU_G1_C1_ISO_RX_ACTIVE);
         WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
-debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 2: %x\n", isoctrl);
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 2: %08x\n", isoctrl);
 
         /* With the channel details configured streaming is started.  This
          * could conceivably be done in a single write along with the channel
@@ -1772,7 +1773,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 2: %x\n", isoctrl);
         isoctrl |= MOTU_G1_C1_ISO_ENABLE;
         WriteRegister(MOTU_REG_ISOCTRL, isoctrl);
 
-debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 3: %x\n", isoctrl);
+debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 3: %08x\n", isoctrl);
 // debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: 0b10 reg: %x\n",
 //   ReadRegister(MOTU_G1_REG_CONFIG_2));
 
