@@ -111,6 +111,8 @@ private:
      */
     unsigned int m_event_size;
 
+    signed int m_motu_model;
+
     // Keep track of transmission data block count
     unsigned int m_tx_dbc;
 

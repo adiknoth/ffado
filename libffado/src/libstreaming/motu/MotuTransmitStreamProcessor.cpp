@@ -37,6 +37,8 @@
 
 #include "libutil/ByteSwap.h"
 
+#include "../../motu/motu_avdevice.h"
+
 #include <cstring>
 #include <assert.h>
 
@@ -68,6 +70,7 @@ static inline uint32_t fullTicksToSph(int64_t timestamp) {
 MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(FFADODevice &parent, unsigned int event_size )
         : StreamProcessor(parent, ePT_Transmit )
         , m_event_size( event_size )
+        , m_motu_model( 0 )
         , m_tx_dbc( 0 )
         , mb_head( 0 )
         , mb_tail( 0 )
@@ -81,6 +84,12 @@ MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(FFADODevice &parent, un
    * will be dropped or corrupted in interesting ways.
    */
   midi_tx_period = lrintf(ceil((float)srate / 3125));
+
+  /* As for the receive case, the transmit code requires easy access to the
+   * MOTU model.
+   */
+  Motu::MotuDevice *dev = static_cast<Motu::MotuDevice *>(&parent);
+  m_motu_model = dev->m_motu_model;
 }
 
 unsigned int
@@ -533,7 +542,13 @@ unsigned int MotuTransmitStreamProcessor::fillNoDataPacketHeader (
     *quadlet = CondSwapToBus32(0x8222ffff);
     quadlet++;
     *length = 8;
-    return 0;
+    // All MOTUs except the original 828 expect m_tx_dbc to be unchanged
+    // following an empty packet.  For the original 828 however it is
+    // incremented as if it were a normal packet.  The increment is the
+    // return value from this function.
+    if (m_motu_model != Motu::MOTU_MODEL_828MkI)
+        return 0;
+    return getNominalFramesPerPacket();
 }
 
 bool MotuTransmitStreamProcessor::prepareChild()
