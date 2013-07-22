@@ -362,6 +362,9 @@ MotuTransmitStreamProcessor::generateEmptyPacketHeader (
     *length = 8;
 
     m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
+    if (m_tx_dbc > 0xff)
+      m_tx_dbc -= 0x100;
+                                    
     return eCRV_OK;
 }
 
