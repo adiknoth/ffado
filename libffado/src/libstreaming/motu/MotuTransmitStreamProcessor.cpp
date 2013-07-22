@@ -321,7 +321,7 @@ MotuTransmitStreamProcessor::generatePacketData (
 
 {
 static signed int pktcx = 0;
-signed int i;
+unsigned int i;
   if (pktcx==0 && getDebugLevel()>0 ) {
     fprintf(stderr, "Packet to MOTU: length=%d, eventsize=%d, n_events=%d\n", *length, m_event_size, n_events);
     for (i=0; i<*length; i++) {
