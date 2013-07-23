@@ -1588,16 +1588,18 @@ MotuDevice::prepare() {
         return false;
     }
 #endif
-    // Add MIDI port.  The MOTU only has one MIDI input port, with each
-    // MIDI byte sent using a 3 byte sequence starting at byte 4 of the
-    // event data.
-    asprintf(&buff,"%s_cap_MIDI0",id.c_str());
-    p = new Streaming::MotuMidiPort(*m_receiveProcessor, buff,
-        Streaming::Port::E_Capture, 4);
-    if (!p) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
+    // Add MIDI port.  Every MOTU interface except the original 828 has
+    // exactly one MIDI input port, with each MIDI byte sent using a 3 byte
+    // sequence starting at byte 4 of the event data.
+    if (m_motu_model != MOTU_MODEL_828MkI) {
+        asprintf(&buff,"%s_cap_MIDI0",id.c_str());
+        p = new Streaming::MotuMidiPort(*m_receiveProcessor, buff,
+            Streaming::Port::E_Capture, 4);
+        if (!p) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
+        }
+        free(buff);
     }
-    free(buff);
 
     // example of adding an control port:
 //    asprintf(&buff,"%s_cap_%s",id.c_str(),"myportnamehere");
@@ -1652,16 +1654,18 @@ MotuDevice::prepare() {
     }
 #endif
 
-    // Add MIDI port.  The MOTU only has one output MIDI port, with each
-    // MIDI byte transmitted using a 3 byte sequence starting at byte 4
-    // of the event data.
-    asprintf(&buff,"%s_pbk_MIDI0",id.c_str());
-    p = new Streaming::MotuMidiPort(*m_transmitProcessor, buff,
-        Streaming::Port::E_Playback, 4);
-    if (!p) {
-        debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
+    // Add MIDI port.  Every MOTU interface except the original 828 has
+    // exactly one MIDI input port, with each MIDI byte sent using a 3 byte
+    // sequence starting at byte 4 of the event data.
+    if (m_motu_model != MOTU_MODEL_828MkI) {
+        asprintf(&buff,"%s_pbk_MIDI0",id.c_str());
+        p = new Streaming::MotuMidiPort(*m_transmitProcessor, buff,
+            Streaming::Port::E_Playback, 4);
+        if (!p) {
+            debugOutput(DEBUG_LEVEL_VERBOSE, "Skipped port %s\n", buff);
+        }
+        free(buff);
     }
-    free(buff);
 
     // example of adding an control port:
 //    asprintf(&buff,"%s_pbk_%s",id.c_str(),"myportnamehere");

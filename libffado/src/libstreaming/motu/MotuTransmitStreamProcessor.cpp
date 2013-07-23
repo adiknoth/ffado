@@ -565,8 +565,14 @@ bool MotuTransmitStreamProcessor::processWriteBlock(char *data,
     bool no_problem=true;
     unsigned int i;
 
-    // Start with MIDI and control streams all zeroed.  Due to the sparce nature
-    // of these streams it is best to simply fill them in on an as-needs basis.
+    // Start with MIDI and control streams all zeroed.  Due to the sparce
+    // nature of these streams it is best to simply fill them in on an
+    // as-needs basis.  Note that the 828mk1 does not have MIDI ports or
+    // extra control data - audio data starts at offset 4 instead of 10. 
+    // However, apart from wasting a few cycles in the 828mk1 case no harm
+    // is done in zeroing these bytes - any audio channels in those
+    // positions will overwrite the zeros subsequently.  This saves the need
+    // for a conditional which for most MOTU interfaces would always be taken.
     for (i=0; i<nevents; i++) {
         memset(data+4+i*m_event_size, 0x00, 6);
     }
