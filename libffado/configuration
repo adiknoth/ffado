@@ -501,10 +501,12 @@ device_definitions = (
     driver      = "DICE";
 },
 {
+    # The MultiMix-16 and MultiMix-12 share the same vendor/model IDs.
+    # Thanks to Fourer Dominique for the information about the MultiMix-12.
     vendorid    = 0x000595;
     modelid     = 0x00000000;
     vendorname  = "Alesis";
-    modelname   = "Multimix16 Firewire";
+    modelname   = "MultiMix-12 / MultiMix-16 Firewire";
     driver      = "DICE";
 },
 {   # Studiolive 16.4.2, provided by Johan Landman
