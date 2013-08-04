@@ -494,28 +494,28 @@ Configuration::findFileName(std::string s) {
 unsigned int
 Configuration::convertDriver(const std::string& driver) const {
     if(driver == "BEBOB")
-        return 1;
+        return eD_BeBoB;
     if(driver == "FIREWORKS")
-        return 2;
+        return eD_FireWorks;
     if(driver == "GENERICAVC")
-        return 3;
+        return eD_GenericAVC;
     if(driver == "OXFORD")
-        return 4;
+        return eD_Oxford;
     if(driver == "MAUDIO")
-        return 5;
+        return eD_MAudio;
     if(driver == "MOTU")
-        return 10;
+        return eD_MOTU;
     if(driver == "DICE")
-        return 20;
+        return eD_DICE;
     if(driver == "METRICHALO")
-        return 30;
+        return eD_MetricHalo;
     if(driver == "RME")
-        return 40;
+        return eD_RME;
     if(driver == "BOUNCE")
-        return 50;
+        return eD_Bounce;
     if(driver == "DIGIDESIGN")
-        return 60;
-    return 0; // Unknown
+        return eD_Digidesign;
+    return eD_Unknown; // Unknown
 }
 
 void
