@@ -229,10 +229,8 @@ MotuTransmitStreamProcessor::generatePacketHeader (
             if(cycles_until_presentation >= MOTU_MIN_CYCLES_BEFORE_PRESENTATION)
             {
                 // we are not that late and can still try to transmit the packet
-                m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, presentation_time);
+                fillDataPacketHeader((quadlet_t *)data, length, presentation_time);
                 m_last_timestamp = presentation_time;
-                if (m_tx_dbc > 0xff)
-                    m_tx_dbc -= 0x100;
                 return eCRV_Packet;
             }
             else   // definitely too late
@@ -243,10 +241,8 @@ MotuTransmitStreamProcessor::generatePacketHeader (
         else if(cycles_until_transmit <= MOTU_MAX_CYCLES_TO_TRANSMIT_EARLY)
         {
             // it's time send the packet
-            m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, presentation_time);
+            fillDataPacketHeader((quadlet_t *)data, length, presentation_time);
             m_last_timestamp = presentation_time;
-            if (m_tx_dbc > 0xff)
-                m_tx_dbc -= 0x100;
             return eCRV_Packet;
         }
         else
@@ -370,9 +366,7 @@ MotuTransmitStreamProcessor::generateEmptyPacketHeader (
     *tag = 1;      // All MOTU packets have a CIP-like header
     *length = 8;
 
-    m_tx_dbc += fillNoDataPacketHeader ( (quadlet_t *)data, length );
-    if (m_tx_dbc > 0xff)
-      m_tx_dbc -= 0x100;
+    fillNoDataPacketHeader ( (quadlet_t *)data, length );
                                     
     return eCRV_OK;
 }
@@ -445,9 +439,7 @@ MotuTransmitStreamProcessor::generateSilentPacketHeader (
         if (cycles_until_presentation >= MOTU_MIN_CYCLES_BEFORE_PRESENTATION)
         {
             m_last_timestamp = presentation_time;
-            m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
-            if (m_tx_dbc > 0xff)
-                m_tx_dbc -= 0x100;
+            fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
             return eCRV_Packet;
         }
         else
@@ -458,9 +450,7 @@ MotuTransmitStreamProcessor::generateSilentPacketHeader (
     else if (cycles_until_transmit <= MOTU_MAX_CYCLES_TO_TRANSMIT_EARLY)
     {
         m_last_timestamp = presentation_time;
-        m_tx_dbc += fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
-        if (m_tx_dbc > 0xff)
-            m_tx_dbc -= 0x100;
+        fillDataPacketHeader((quadlet_t *)data, length, m_last_timestamp);
         return eCRV_Packet;
     }
     else
@@ -515,14 +505,20 @@ unsigned int MotuTransmitStreamProcessor::fillDataPacketHeader (
     // all channels plus possibly other midi and control data.
     signed n_events = getNominalFramesPerPacket();
 
-    // construct the packet CIP-like header.  Even if this is a data-less
-    // packet the dbs field is still set as if there were data blocks
-    // present.  For data-less packets the dbc is the same as the previously
-    // transmitted block.
+    // For MOTU ISO packets containing data, the DBC is incremented before 
+    // being stored into the current packet's CIP-like header.
+    m_tx_dbc += n_events;
+    if (m_tx_dbc > 0xff)
+      m_tx_dbc -= 0x100;
+
+    // construct the packet CIP-like header.
     *quadlet = CondSwapToBus32(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
     quadlet++;
     *quadlet = CondSwapToBus32(0x8222ffff);
     quadlet++;
+
+    // Return value is the increment applied to the DBC in case the caller
+    // needs to know this.
     return n_events;
 }
 
@@ -533,22 +529,15 @@ unsigned int MotuTransmitStreamProcessor::fillNoDataPacketHeader (
     // Size of a single data frame in quadlets.  See comment in
     // fillDataPacketHeader() regarding the Ultralite.
     unsigned dbs = m_event_size / 4;
-    // construct the packet CIP-like header.  Even if this is a data-less
-    // packet the dbs field is still set as if there were data blocks
-    // present.  For data-less packets the dbc is the same as the previously
-    // transmitted block.
+    // construct the packet CIP-like header.  Packets without data use
+    // the same DBC as the previous packet, so no DBC increment is needed
+    // here.
     *quadlet = CondSwapToBus32(0x00000400 | ((m_Parent.get1394Service().getLocalNodeId()&0x3f)<<24) | m_tx_dbc | (dbs<<16));
     quadlet++;
     *quadlet = CondSwapToBus32(0x8222ffff);
     quadlet++;
     *length = 8;
-    // All MOTUs except the original 828 expect m_tx_dbc to be unchanged
-    // following an empty packet.  For the original 828 however it is
-    // incremented as if it were a normal packet.  The increment is the
-    // return value from this function.
-    if (m_motu_model != Motu::MOTU_MODEL_828MkI)
-        return 0;
-    return getNominalFramesPerPacket();
+    return 0;
 }
 
 bool MotuTransmitStreamProcessor::prepareChild()
