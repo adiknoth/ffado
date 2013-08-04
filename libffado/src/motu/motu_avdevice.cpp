@@ -1487,6 +1487,17 @@ MotuDevice::prepare() {
     setOpticalMode(MOTU_DIR_IN, optical_in_mode_a, optical_in_mode_b);
     setOpticalMode(MOTU_DIR_OUT, optical_out_mode_a, optical_out_mode_b);
 
+    // The original 828 (aka 828mk1) was seen to write to these two
+    // registers as part of its startup routine.  It's not entirely clear
+    // what these registers control.  The inclusion of the local node ID is
+    // an educated guess on experiments with bus topology when using other
+    // systems.
+    if (m_motu_model == MOTU_MODEL_828MkI) {
+        WriteRegister(MOTU_G1_REG_UNKNOWN_1, 
+          0xffc00001 | ((get1394Service().getLocalNodeId()&0x3f)<<16));
+        WriteRegister(MOTU_G1_REG_UNKNOWN_2, 0x00000000);
+    }
+
     // Allocate bandwidth if not previously done.
     // FIXME: The bandwidth allocation calculation can probably be
     // refined somewhat since this is currently based on a rudimentary
@@ -1728,16 +1739,6 @@ quadlet_t config2_reg = ReadRegister(MOTU_G1_REG_CONFIG_2);
         m_receiveProcessor->setChannel(m_iso_recv_channel);
         m_transmitProcessor->setChannel(m_iso_send_channel);
 
-        /* Prior to setting up the streaming registers, other systems
-         * write seemingly fixed values to two registers of unknown
-         * purpose.  We'll do the same, at least until we know whether
-         * it's important that this be done.
-         */
-#if 1
-        WriteRegister(MOTU_G1_REG_UNKNOWN_1, 
-          0xffc00001 | ((get1394Service().getLocalNodeId()&0x3f)<<16));
-        WriteRegister(MOTU_G1_REG_UNKNOWN_2, 0x00000000);
-
         /* First send the iso channels to the control register.  Note that
          * as for other MOTU devices bit 24 enables changes to the MOTU's
          * iso tx settings while bit 31 enables iso rx changes.
@@ -1780,15 +1781,6 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 2: %08x\n", isoctrl);
 debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: isoctrl 3: %08x\n", isoctrl);
 // debugOutput(DEBUG_LEVEL_VERBOSE, "MOTU g1: 0b10 reg: %x\n",
 //   ReadRegister(MOTU_G1_REG_CONFIG_2));
-
-#else
-  WriteRegister(0xb04, 0xffc10001);
-  WriteRegister(0xb08, 0x00000000);
-  WriteRegister(0xb00, 0x80810828);
-  WriteRegister(0xb10, 0x000000c2);
-  WriteRegister(0xb00, 0xc0c10828);
-  WriteRegister(0xb00, 0x000008a8);
-#endif
 
         return true;
     }
