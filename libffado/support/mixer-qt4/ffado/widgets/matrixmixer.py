@@ -261,12 +261,13 @@ class ChannelSlider(QtGui.QSlider):
         QtGui.QSlider.__init__(self, QtCore.Qt.Vertical, parent)
 
         self.setTickPosition(QtGui.QSlider.TicksBothSides)
-        v_min = toDBvalue(0)
-        v_max = toDBvalue(65536)
+        v_min = 10.0*toDBvalue(0)
+        v_max = 10.0*toDBvalue(65536)
         self.setTickInterval((v_max-v_min)/10)
         self.setMinimum(v_min)
         self.setMaximum(v_max)
-        value = toDBvalue(value)
+        self.setSingleStep(1)
+        value = 10.0*toDBvalue(value)
         self.setValue(value)
         self.In = In
         self.Out = Out
@@ -274,14 +275,14 @@ class ChannelSlider(QtGui.QSlider):
 
     def slider_set_value(self, value):
         #log.debug("Slider value changed( %i )" % value)
-        v = round(toDBvalue(value),2)
-        #log.debug("Slider value changed(dB: %i )" % v)
+        v = round(10.0*toDBvalue(value), 1)
+        #log.debug("Slider value changed(dB: %g )" % (0.1*v))
         self.setValue(v)
 
     # Restore absolute value from DB
     # Emit signal for further use, especially for matrix view
     def slider_read_value(self, value):
-        value = fromDBvalue(value)
+        value = fromDBvalue(0.1*value)
         self.emit(QtCore.SIGNAL("valueChanged"), (self.In, self.Out, value))
         self.update()
 
