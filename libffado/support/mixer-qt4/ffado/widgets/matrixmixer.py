@@ -334,8 +334,50 @@ class MatrixMixer(QtGui.QWidget):
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
 
-        self.layout = QtGui.QGridLayout(self)
+        self.layout = QtGui.QVBoxLayout(self)
         self.setLayout(self.layout)
+
+        # Mixer view Tool bar
+        mxv_set = QtGui.QToolBar("View settings", self)
+
+        transpose_matrix = QtGui.QAction("Transpose", mxv_set)
+        transpose_matrix.setEnabled(False)
+        transpose_matrix.setShortcut('Ctrl+T')
+        transpose_matrix.setToolTip("Invert rows and columns in Matrix view")
+        mxv_set.addAction(transpose_matrix)
+        mxv_set.addSeparator()
+
+        self.hide_matrix = QtGui.QAction("Hide matrix", mxv_set)
+        self.hide_matrix_bool = False
+        mxv_set.addAction(self.hide_matrix)
+        self.hide_matrix.triggered.connect(self.hideMatrixView)
+        mxv_set.addSeparator()
+
+        self.hide_per_output = QtGui.QAction("Hide per Output", mxv_set)
+        self.hide_per_output_bool = False
+        mxv_set.addAction(self.hide_per_output)
+        self.hide_per_output.triggered.connect(self.hidePerOutputView)
+        mxv_set.addSeparator()
+
+        self.use_short_names = QtGui.QAction("Short names", mxv_set)
+        self.short_names_bool = False
+        mxv_set.addAction(self.use_short_names)
+        self.use_short_names.triggered.connect(self.shortChannelNames)
+        mxv_set.addSeparator()
+
+        font_switch_lbl = QtGui.QLabel(mxv_set)
+        font_switch_lbl.setText("Font size")
+        mxv_set.addWidget(font_switch_lbl)
+        font_switch = QtGui.QComboBox(mxv_set)
+        font_switch.setToolTip("Labels font size")
+        font = font_switch.font()
+        for i in range(10):
+            font_switch.addItem("%d" % (font.pointSize()+4-i))
+        font_switch.setCurrentIndex(font_switch.findText("%d" % font.pointSize()))
+        mxv_set.addWidget(font_switch)
+        self.connect(font_switch, QtCore.SIGNAL("activated(QString)"), self.changeFontSize)
+
+        self.layout.addWidget(mxv_set)
 
         # First tab is for matrix view
         # Next are or "per Out" view
@@ -373,17 +415,6 @@ class MatrixMixer(QtGui.QWidget):
         layout = QtGui.QGridLayout(self.matrix)
         layout.setSizeConstraint(QtGui.QLayout.SetNoConstraint);
         self.matrix.setLayout(layout)
-
-        # Font resizing: 0 is for hidden names
-        font_switch = QtGui.QComboBox(self)
-        font_switch.setToolTip("Labels font size")
-        font = font_switch.font()
-        for i in range(5):
-            font_switch.addItem("%d" % (font.pointSize()-i))
-        font_switch.addItem("0")
-        font_switch.setCurrentIndex(font_switch.findText("%d" % font.pointSize()))
-        layout.addWidget(font_switch, 0, 0)
-        self.connect(font_switch, QtCore.SIGNAL("activated(QString)"), self.changeFontSize)
 
         self.matrix.rowHeaders = []
         self.matrix.columnHeaders = []
@@ -426,10 +457,10 @@ class MatrixMixer(QtGui.QWidget):
 
         self.matrix.hiddenRows = []
         self.matrix.hiddenCols = []
-        scrollarea = QtGui.QScrollArea(self.tabs)
-        scrollarea.setWidgetResizable(True)
-        scrollarea.setWidget(self.matrix)
-        self.tabs.addTab(scrollarea, "Matrix")
+        self.scrollarea_matrix = QtGui.QScrollArea(self.tabs)
+        self.scrollarea_matrix.setWidgetResizable(True)
+        self.scrollarea_matrix.setWidget(self.matrix)
+        self.tabs.addTab(self.scrollarea_matrix, "Matrix")
 
         # Per out view
         self.out = []
@@ -492,10 +523,32 @@ class MatrixMixer(QtGui.QWidget):
                 h_v_layout.addWidget(svl)
                 self.out[i].svl.append(svl)
 
-            scrollarea = QtGui.QScrollArea(self.tabs)
-            scrollarea.setWidgetResizable(True)
-            scrollarea.setWidget(widget)
-            self.tabs.addTab(scrollarea, "Out:%02d" % (i+1))
+            self.out[i].scrollarea = QtGui.QScrollArea(self.tabs)
+            self.out[i].scrollarea.setWidgetResizable(True)
+            self.out[i].scrollarea.setWidget(widget)
+            self.tabs.addTab(self.out[i].scrollarea, "Out:%02d" % (i+1))
+
+    def hideMatrixView(self):
+        self.hide_matrix_bool = not(self.hide_matrix_bool)
+        if (self.hide_matrix_bool):
+            self.tabs.removeTab(0)
+            self.hide_matrix.setText("Show Matrix")
+        else:
+            self.tabs.insertTab(0, self.scrollarea_matrix, "Matrix")
+            self.tabs.setCurrentIndex(0)
+            self.hide_matrix.setText("Hide Matrix")
+            
+    def hidePerOutputView(self):
+        self.hide_per_output_bool = not(self.hide_per_output_bool)
+        nbOut = self.getNbOut()
+        if (self.hide_per_output_bool):
+            for i in range(nbOut):
+                self.tabs.removeTab(1)
+            self.hide_per_output.setText("Show per Output")
+        else:
+            for i in range(nbOut):
+                self.tabs.insertTab(i+1, self.out[i].scrollarea, "Out:%02d" % (i+1))
+            self.hide_per_output.setText("Hide per Output")
 
     def checkVisibilities(self):
         for x in range(len(self.matrix.items)):
@@ -562,13 +615,6 @@ class MatrixMixer(QtGui.QWidget):
 
     # Font size for channel names
     def changeFontSize(self, size):
-        if (int(size) == 0):
-            self.hideChannelNames(True)
-            font = self.font()
-            size = "%d" % font.pointSize()
-        else:
-            self.hideChannelNames(False)
-            
         cols = self.interface.getColCount()
         if (cols > 1):
             for i in range(cols):
@@ -591,7 +637,8 @@ class MatrixMixer(QtGui.QWidget):
                     self.out[i].lbl[j+1].setFont(font)
 
     # Allows long name for Mixer/Out and /In to be hidden 
-    def hideChannelNames(self, checked):
+    def shortChannelNames(self):
+        checked = not(self.short_names_bool)
         cols = self.interface.getColCount()
         if (cols > 1):
             if (checked):
@@ -625,6 +672,12 @@ class MatrixMixer(QtGui.QWidget):
             # Care for hidden rows
             for j in self.matrix.hiddenRows:
                 self.matrix.rowHeaders[j].lbl.setText("%d" % (j+1))
+
+        self.short_names_bool = checked
+        if (self.short_names_bool):
+            self.use_short_names.setText("Long names")
+        else:
+            self.use_short_names.setText("Short names")
 
     # Sliders value change
     #   Care that some recursive process is involved and only stop when exactly same values are involved
