@@ -26,6 +26,20 @@ import dbus, math, decimal
 import logging
 log = logging.getLogger("matrixmixer")
 
+def toDBvalue(value):
+    n = int(value)
+    if n > 164:
+        return 20 * math.log10( n / math.pow(2,14) )
+    else:
+        return -40.0
+
+def fromDBvalue(value):
+    v = float(value)
+    if (v > -40):
+        return int(math.pow(10, (value/20.0)) * math.pow(2,14))
+    else:
+        return 0
+
 class ColorForNumber:
     def __init__(self):
         self.colors = dict()
@@ -135,7 +149,7 @@ class MixerNode(QtGui.QAbstractSlider):
             self.parent().inverts_interface.setValue(self.output, self.input, self.inv_action.isChecked())
         else:
             text = text.split(" ")[0].replace(",",".")
-            n = pow(10, (float(text)/20)) * pow(2,14)
+            n = fromDBvalue(float(text))
             #log.debug("%g" % n)
             self.setValue(n)
 
@@ -183,7 +197,7 @@ class MixerNode(QtGui.QAbstractSlider):
             p.setPen(QtGui.QColor(0, 0, 0))
         lv=decimal.Decimal('-Infinity')
         if v != 0:
-            lv = 20 * math.log10(v * 1.0 / math.pow(2,14))
+            lv = toDBvalue(v)
             #log.debug("new value is %g dB" % lv)
         text = "%.2g dB" % lv
         if v == 0:
@@ -196,7 +210,7 @@ class MixerNode(QtGui.QAbstractSlider):
     def internalValueChanged(self, value):
         #log.debug("MixerNode.internalValueChanged( %i )" % value)
         if value != 0:
-            dB = 20 * math.log10(value / math.pow(2,14))
+            dB = toDBvalue(value)
             if self.spinbox.value() is not dB:
                 self.spinbox.setValue(dB)
         self.emit(QtCore.SIGNAL("valueChanged"), (self.input, self.output, value) )
@@ -247,43 +261,27 @@ class ChannelSlider(QtGui.QSlider):
         QtGui.QSlider.__init__(self, QtCore.Qt.Vertical, parent)
 
         self.setTickPosition(QtGui.QSlider.TicksBothSides)
-        v_min = self.toDBvalue(0)
-        v_max = self.toDBvalue(65536)
+        v_min = toDBvalue(0)
+        v_max = toDBvalue(65536)
         self.setTickInterval((v_max-v_min)/10)
         self.setMinimum(v_min)
         self.setMaximum(v_max)
-        value = self.toDBvalue(value)
+        value = toDBvalue(value)
         self.setValue(value)
         self.In = In
         self.Out = Out
         self.connect(self, QtCore.SIGNAL("valueChanged(int)"), self.slider_read_value)
 
-    # Slider will move in the DB (Decibel) space
-    #   Thus it is round-off errors sensitive: care that positive/negative values do not round-off equivalently
-    # Note that slider interacts with the slider from matrix view
-    def toDBvalue(self, n):
-        if n > 16384:
-            return 20 * math.log10( (n+1) / math.pow(2,14) )
-        else:
-            if n > 164:
-                return 20 * math.log10( n / math.pow(2,14) )
-            else:
-                return -40
-
-    def fromDBvalue(self, value):
-        if (value > -40):
-            return int(math.pow(10, (value/20.0)) * math.pow(2,14))
-        else:
-            return 0
-
     def slider_set_value(self, value):
-        value = self.toDBvalue(value)
-        self.setValue(value)
+        #log.debug("Slider value changed( %i )" % value)
+        v = round(toDBvalue(value),0)
+        #log.debug("Slider value changed(dB: %i )" % v)
+        self.setValue(v)
 
     # Restore absolute value from DB
     # Emit signal for further use, especially for matrix view
     def slider_read_value(self, value):
-        value = self.fromDBvalue(value)
+        value = fromDBvalue(value)
         self.emit(QtCore.SIGNAL("valueChanged"), (self.In, self.Out, value))
         self.update()
 
