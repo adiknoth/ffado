@@ -274,7 +274,7 @@ class ChannelSlider(QtGui.QSlider):
 
     def slider_set_value(self, value):
         #log.debug("Slider value changed( %i )" % value)
-        v = round(toDBvalue(value),0)
+        v = round(toDBvalue(value),2)
         #log.debug("Slider value changed(dB: %i )" % v)
         self.setValue(v)
 
