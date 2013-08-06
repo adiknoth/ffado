@@ -68,6 +68,21 @@ class ColorForNumber:
                 (1-f)*lc.green() + f*hc.green(),
                 (1-f)*lc.blue()  + f*hc.blue() )
 
+class BckgrdColorForNumber(ColorForNumber):
+    def __init__(self):
+        ColorForNumber.__init__(self)
+        self.addColor(             0.0, QtGui.QColor(  0,   0,   0))
+        self.addColor(             1.0, QtGui.QColor(  0,   0, 128))
+        self.addColor(   math.pow(2,6), QtGui.QColor(  0, 255,   0))
+        self.addColor(  math.pow(2,14), QtGui.QColor(255, 255,   0))
+        self.addColor(math.pow(2,16)-1, QtGui.QColor(255,   0,   0))
+
+    def getFrgdColor(self, color):
+        if color.valueF() < 0.6:
+            return QtGui.QColor(255, 255, 255)
+        else:
+            return QtGui.QColor(0, 0, 0)
+    
 class MixerNode(QtGui.QAbstractSlider):
     def __init__(self, input, output, value, max, muted, inverted, parent):
         QtGui.QAbstractSlider.__init__(self, parent)
@@ -85,12 +100,7 @@ class MixerNode(QtGui.QAbstractSlider):
 
         self.setSmall(False)
 
-        self.bgcolors = ColorForNumber()
-        self.bgcolors.addColor(             0.0, QtGui.QColor(  0,   0,   0))
-        self.bgcolors.addColor(             1.0, QtGui.QColor(  0,   0, 128))
-        self.bgcolors.addColor(   math.pow(2,6), QtGui.QColor(  0, 255,   0))
-        self.bgcolors.addColor(  math.pow(2,14), QtGui.QColor(255, 255,   0))
-        self.bgcolors.addColor(math.pow(2,16)-1, QtGui.QColor(255,   0,   0))
+        self.bgcolors = BckgrdColorForNumber()
 
         self.setContextMenuPolicy(Qt.Qt.ActionsContextMenu)
         self.mapper = QtCore.QSignalMapper(self)
@@ -191,10 +201,8 @@ class MixerNode(QtGui.QAbstractSlider):
         if self.small:
             return
 
-        if color.valueF() < 0.6:
-            p.setPen(QtGui.QColor(255, 255, 255))
-        else:
-            p.setPen(QtGui.QColor(0, 0, 0))
+        p.setPen(self.bgcolors.getFrgdColor(color))
+
         lv=decimal.Decimal('-Infinity')
         if v != 0:
             lv = toDBvalue(v)
@@ -255,7 +263,6 @@ class MixerChannel(QtGui.QWidget):
         self.emit(QtCore.SIGNAL("hide"), self.number, hide)
         self.update()
 
-
 class ChannelSlider(QtGui.QSlider):
     def __init__(self, In, Out, value, parent):
         QtGui.QSlider.__init__(self, QtCore.Qt.Vertical, parent)
@@ -286,7 +293,35 @@ class ChannelSlider(QtGui.QSlider):
         self.emit(QtCore.SIGNAL("valueChanged"), (self.In, self.Out, value))
         self.update()
 
+class ChannelSliderValueInfo(QtGui.QLineEdit):
+    def __init__(self, In, Out, value, parent):
+        QtGui.QLineEdit.__init__(self, parent)
 
+        self.setReadOnly(True)
+        self.setAlignment(Qt.Qt.AlignCenter)
+        self.setAutoFillBackground(True)
+        self.setFrame(False)
+
+        self.bgcolors = BckgrdColorForNumber()
+
+        self.setValue(value)
+
+    def setValue(self, value):
+        color = self.bgcolors.getColor(value)
+        palette = self.palette()
+        palette.setColor(QtGui.QPalette.Active, QtGui.QPalette.Base, color)
+        palette.setColor(QtGui.QPalette.Active, QtGui.QPalette.Text, self.bgcolors.getFrgdColor(color))
+        self.setPalette(palette)
+
+        v = round(toDBvalue(value),1)
+        if (v > -40):
+            text = "%.1f dB" % v
+        else:
+            symb_inf = u"\u221E"
+            text = "-" + symb_inf + " dB"
+
+        self.setText(text)
+        
 class MatrixMixer(QtGui.QWidget):
     def __init__(self, servername, basepath, parent=None, rule="Columns_are_inputs", sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False):
         QtGui.QWidget.__init__(self, parent)
@@ -419,6 +454,7 @@ class MatrixMixer(QtGui.QWidget):
             h_layout_wid.setLayout(h_layout)
             self.out[i].addWidget(h_layout_wid)
             self.out[i].slider = []
+            self.out[i].svl = []
 
             for j in range(nbIn):
                 h_v_layout_wid = QtGui.QWidget(h_layout_wid)
@@ -435,10 +471,21 @@ class MatrixMixer(QtGui.QWidget):
                     h_v_layout.addWidget(lbl)
                     self.out[i].lbl.append(lbl)
 
-                slider = ChannelSlider(j, i, self.getValue(j,i), h_v_layout_wid)
-                h_v_layout.addWidget(slider)
+                h_v_h_layout_wid = QtGui.QWidget(h_v_layout_wid)
+                h_v_h_layout = QtGui.QHBoxLayout(h_v_h_layout_wid)
+                h_v_h_layout.setAlignment(Qt.Qt.AlignCenter)
+                h_v_h_layout_wid.setLayout(h_v_h_layout)
+                h_v_layout.addWidget(h_v_h_layout_wid)
+
+                slider = ChannelSlider(j, i, self.getValue(j,i), h_v_h_layout_wid)
+                h_v_h_layout.addWidget(slider)
                 self.out[i].slider.append(slider)
                 self.out[i].connect(slider, QtCore.SIGNAL("valueChanged"), self.valueChanged_slider)
+
+                # Slider value info
+                svl = ChannelSliderValueInfo(j, i, self.getValue(j,i), h_v_layout_wid)
+                h_v_layout.addWidget(svl)
+                self.out[i].svl.append(svl)
 
             scrollarea = QtGui.QScrollArea(self.tabs)
             scrollarea.setWidgetResizable(True)
@@ -590,6 +637,7 @@ class MatrixMixer(QtGui.QWidget):
     def valueChanged_slider(self, n):
         #log.debug("MatrixSlider.valueChanged( %s )" % str(n))
         self.setValue(n[0], n[1], n[2])
+        self.out[n[1]].svl[n[0]].setValue(n[2])
         # Update value needed for matrix view
         if (self.rule == "Columns_are_inputs"):
             self.matrix.items[n[1]][n[0]].setValue(n[2])
