@@ -28,15 +28,17 @@ log = logging.getLogger("matrixmixer")
 
 def toDBvalue(value):
     n = int(value)
+    c2p14 = 16384.0
     if n > 164:
-        return 20 * math.log10( n / math.pow(2,14) )
+        return 20 * math.log10( float(n/c2p14) )
     else:
         return -40.0
 
 def fromDBvalue(value):
     v = float(value)
+    c2p14 = 16384.0
     if (v > -40):
-        return int(math.pow(10, (value/20.0)) * math.pow(2,14))
+        return int(round(math.pow(10, (value/20.0)) * c2p14))
     else:
         return 0
 
@@ -163,7 +165,7 @@ class MixerNode(QtGui.QAbstractSlider):
         else:
             text = text.split(" ")[0].replace(",",".")
             n = fromDBvalue(float(text))
-            #log.debug("%g" % n)
+            #log.debug("  linear value: %g" % n)
             self.setValue(n)
 
     def mousePressEvent(self, ev):
@@ -285,7 +287,7 @@ class ChannelSlider(QtGui.QSlider):
 
     def slider_set_value(self, value):
         #log.debug("Slider value changed( %i )" % value)
-        v = round(10.0*toDBvalue(value), 1)
+        v = 10.0*toDBvalue(value)
         #log.debug("Slider value changed(dB: %g )" % (0.1*v))
         self.setValue(v)
 
