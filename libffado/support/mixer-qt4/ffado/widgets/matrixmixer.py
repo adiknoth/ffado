@@ -576,28 +576,22 @@ class MatrixMixer(QtGui.QWidget):
     def getColName(self, i):
         name = self.interface.getColName(i)
         if (name != ''):
-            if (self.rule == "Columns_are_inputs"):
-                return "Mixer/In:%02d\n(%s)" % (i+1, name)            
-            else:
-                return "Mixer/Out:%02d\n(%s)" % (i+1, name)
+            return name
         else:
             if (self.rule == "Columns_are_inputs"):
-                return "Mixer/In:%02d" % (i+1)            
+                return "In %d" % (i+1)            
             else:
-                return "Mixer/Out:%02d" % (i+1)
+                return "Out %d" % (i+1)
 
     def getRowName(self, j):
         name = self.interface.getRowName(j)
         if (name != ''):
-            if (self.rule == "Columns_are_inputs"):
-                return "Mixer/Out:%02d\n(%s)" % (j+1, name)
-            else:
-                return "Mixer/In:%02d\n(%s)" % (j+1, name)
+            return name
         else:
             if (self.rule == "Columns_are_inputs"):
-                return "Mixer/Out:%02d" % (j+1)
+                return "Out %d" % (j+1)
             else:
-                return "Mixer/In:%02d" % (j+1)
+                return "In %d" % (j+1)
 
     # Columns and rows shortened name
     def getShortColName(self, i):
@@ -621,9 +615,6 @@ class MatrixMixer(QtGui.QWidget):
                 font = self.matrix.columnHeaders[i].lbl.font()
                 font.setPointSize(int(size))
                 self.matrix.columnHeaders[i].setFont(font)
-                font = self.out[i].lbl[0].font()
-                font.setPointSize(int(size))
-                self.out[i].lbl[0].setFont(font)
 
         rows = self.interface.getRowCount()
         if (rows > 1):
@@ -631,7 +622,16 @@ class MatrixMixer(QtGui.QWidget):
                 font = self.matrix.rowHeaders[j].lbl.font()
                 font.setPointSize(int(size))
                 self.matrix.rowHeaders[j].setFont(font)
-                for i in range(cols):
+
+        nbIn = self.getNbIn()
+        nbOut = self.getNbOut()
+        for i in range(nbOut):
+            if (nbOut > 1):
+                font = self.out[i].lbl[0].font()
+                font.setPointSize(int(size))
+                self.out[i].lbl[0].setFont(font)
+            if (nbIn > 1):
+                for j in range(nbIn):
                     font = self.out[i].lbl[j+1].font()
                     font.setPointSize(int(size))
                     self.out[i].lbl[j+1].setFont(font)
@@ -651,9 +651,6 @@ class MatrixMixer(QtGui.QWidget):
                     self.matrix.columnHeaders[i].name = self.getColName(i)
                     self.matrix.columnHeaders[i].lbl.setText(self.matrix.columnHeaders[i].name)
                     self.out[i].lbl[0].setText(self.matrix.columnHeaders[i].name)
-            # Care for hidden columns
-            for i in self.matrix.hiddenCols:
-                self.matrix.columnHeaders[i].lbl.setText("%d" % (i+1))
 
         rows = self.interface.getRowCount()
         if (rows > 1):
@@ -669,7 +666,22 @@ class MatrixMixer(QtGui.QWidget):
                     self.matrix.rowHeaders[j].lbl.setText(self.matrix.rowHeaders[j].name)
                     for i in range(cols):
                         self.out[i].lbl[j+1].setText(self.matrix.rowHeaders[j].name)
-            # Care for hidden rows
+
+        nbIn = self.getNbIn()
+        nbOut = self.getNbOut()
+        for i in range(nbOut):
+            if (nbOut > 1):
+                self.out[i].lbl[0].setText(self.getOutName(i))
+            if (nbIn > 1):
+                for j in range(nbIn):
+                    self.out[i].lbl[j+1].setText(self.getInName(j))
+
+        # Care for hidden columns
+        if (cols > 1):
+            for i in self.matrix.hiddenCols:
+                self.matrix.columnHeaders[i].lbl.setText("%d" % (i+1))
+        # Care for hidden rows
+        if (rows > 1):
             for j in self.matrix.hiddenRows:
                 self.matrix.rowHeaders[j].lbl.setText("%d" % (j+1))
 

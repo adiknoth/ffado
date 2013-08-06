@@ -1434,7 +1434,7 @@ EAP::Mixer::storeCoefficientMap(int &) {
 // Names
 std::string
 EAP::Mixer::getRowName(const int row) {
-    std::string mixer_src;
+    std::string mixer_src, row_name;
     if (row < 0 || row > m_eap.m_mixer_nb_tx) return "Invalid";
     unsigned int dstid = (eRD_Mixer0<<4) + row; // Mixer has consecutive ID's
     debugOutput(DEBUG_LEVEL_VERBOSE, "EAP::Mixer::getRowName( %d ): ID's %d\n", row, dstid);
@@ -1443,14 +1443,15 @@ EAP::Mixer::getRowName(const int row) {
       mixer_src = m_eap.m_router->getSourceForDestination(mixer_dst);
       debugOutput(DEBUG_LEVEL_VERBOSE, "EAP::Mixer::found %s as source for %s\n", mixer_src.data(),
                   mixer_dst.data());
+      row_name = mixer_dst + "\n(" + mixer_src + ")";
     }
     else {
       char tmp[32];
       snprintf(tmp, 32, "MixIn:%d", row); 
-      mixer_src = tmp;
+      row_name = tmp;
     }
 
-    return mixer_src;
+    return row_name;
 }
 
 std::string
@@ -1469,6 +1470,7 @@ EAP::Mixer::getColName(const int col) {
     if (m_eap.m_router){ 
       std::string mixer_src = m_eap.m_router->getSourceName(srcid);
       dest_names = m_eap.m_router->getDestinationsForSource(mixer_src);
+      mixer_dst = mixer_src + "\n(";
       if (dest_names.size() > 0) {
         stringlist::iterator it_d = dest_names.begin();
         stringlist::iterator it_d_end_m1 = dest_names.end(); --it_d_end_m1;
@@ -1478,6 +1480,7 @@ EAP::Mixer::getColName(const int col) {
         }
         mixer_dst.append((*it_d).c_str());
       }
+      mixer_dst.append(")");
     } else {
       char tmp[32];
       snprintf(tmp, 32, "MixOut:%d", col); 
