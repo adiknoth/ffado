@@ -109,6 +109,9 @@ class MixerNode(QtGui.QAbstractSlider):
         self.spinbox = QtGui.QDoubleSpinBox(self)
         self.spinbox.setRange(-40, 12)
         self.spinbox.setSuffix(" dB")
+        if value != 0:
+            self.spinbox.setValue(toDBvalue(value))            
+
         self.connect(self.spinbox, QtCore.SIGNAL("valueChanged(const QString&)"), self.directValues)
         action = QtGui.QWidgetAction(self)
         action.setDefaultWidget(self.spinbox)
