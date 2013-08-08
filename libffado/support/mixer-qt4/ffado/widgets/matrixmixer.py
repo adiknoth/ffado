@@ -86,9 +86,15 @@ class BckgrdColorForNumber(ColorForNumber):
             return QtGui.QColor(0, 0, 0)
     
 class MixerNode(QtGui.QAbstractSlider):
-    def __init__(self, input, output, value, max, muted, inverted, parent):
+    def __init__(self, input, output, value, max, muted, inverted, parent, matrix_obj):
         QtGui.QAbstractSlider.__init__(self, parent)
         #log.debug("MixerNode.__init__( %i, %i, %i, %i, %s )" % (input, output, value, max, str(parent)) )
+
+        # Store a direct link back to the underlying matrix object so the mute
+        # and invert interfaces can be easily found.  By the time the matrix 
+        # has been set into the full widget hierarchy, its parent is unlikely
+        # to still be the top-level matrix object.
+        self.matrix_obj = matrix_obj;
 
         self.pos = QtCore.QPointF(0, 0)
         self.input = input
@@ -157,11 +163,11 @@ class MixerNode(QtGui.QAbstractSlider):
         if text == "Mute":
             #log.debug("Mute %d" % self.mute_action.isChecked())
             self.update()
-            self.parent().mutes_interface.setValue(self.output, self.input, self.mute_action.isChecked())
+            self.matrix_obj.mutes_interface.setValue(self.output, self.input, self.mute_action.isChecked())
         elif text == "Invert":
             #log.debug("Invert %d" % self.inv_action.isChecked())
             self.update()
-            self.parent().inverts_interface.setValue(self.output, self.input, self.inv_action.isChecked())
+            self.matrix_obj.inverts_interface.setValue(self.output, self.input, self.inv_action.isChecked())
         else:
             text = text.split(" ")[0].replace(",",".")
             n = fromDBvalue(float(text))
@@ -446,7 +452,7 @@ class MatrixMixer(QtGui.QWidget):
                 inv_value = None
                 if (self.inverts_interface != None):
                     inv_value = self.inverts_interface.getValue(i,j)
-                node = MixerNode(j, i, self.interface.getValue(i,j), sliderMaxValue, mute_value, inv_value, self)
+                node = MixerNode(j, i, self.interface.getValue(i,j), sliderMaxValue, mute_value, inv_value, self, self)
                 if (smallFont):
                     font = node.font()
                     font.setPointSize(font.pointSize()/1.5)
