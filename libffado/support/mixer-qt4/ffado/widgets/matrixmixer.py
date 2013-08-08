@@ -30,7 +30,7 @@ def toDBvalue(value):
     n = int(value)
     c2p14 = 16384.0
     if n > 164:
-        return 20 * math.log10( float(n/c2p14) )
+        return round(20.0*math.log10(float(n)/c2p14), 2)
     else:
         return -40.0
 
@@ -38,7 +38,7 @@ def fromDBvalue(value):
     v = float(value)
     c2p14 = 16384.0
     if (v > -40):
-        return int(round(math.pow(10, (value/20.0)) * c2p14))
+        return int(round(math.pow(10.0, (value/20.0))*c2p14, 0))
     else:
         return 0
 
