@@ -143,7 +143,7 @@
 #define MOTU_G1_CLKSRC_UNCHANGED   MOTU_CLKSRC_UNCHANGED
 
 // Monitor control bits in MOTU_G1_REG_CONFIG
-#define MOTU_G1_MONIN_MUTE         0x0040  // To be confirmed
+#define MOTU_G1_MONIN_MUTE         0x0040
 #define MOTU_G1_MONIN_MASK         0x3f00
 #define MOTU_G1_MONIN_L_SRC_MASK   0x0700
 #define MOTU_G1_MONIN_R_SRC_MASK   0x3800
