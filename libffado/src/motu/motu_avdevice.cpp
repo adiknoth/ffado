@@ -2025,8 +2025,10 @@ signed int MotuDevice::setOpticalMode(unsigned int dir,
         n_adat = (dir==MOTU_DIR_IN)?MOTU_G1_C2_OPT_nADAT_IN:MOTU_G1_C2_OPT_nADAT_OUT;
 
         /* Set registers as needed by the requested mode */
-        g1_conf1 &= ~toslink;
-        g1_conf2 |= n_adat;
+
+        // This bit seems to always be set
+        g1_conf1 |= (MOTU_G1_IO_ENABLE_0);
+
         if (port_a_mode == MOTU_OPTICAL_MODE_TOSLINK) {
           g1_conf1 |= toslink;
         } else {
