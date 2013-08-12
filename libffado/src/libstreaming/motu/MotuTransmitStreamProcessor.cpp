@@ -90,6 +90,17 @@ MotuTransmitStreamProcessor::MotuTransmitStreamProcessor(FFADODevice &parent, un
    */
   Motu::MotuDevice *dev = static_cast<Motu::MotuDevice *>(&parent);
   m_motu_model = dev->m_motu_model;
+
+  /* The MOTU wants events to be sized in multiples of 4 bytes.  Because
+   * the channel data is 24 bit, this sometimes necessitates X pad bytes be 
+   * added where X is not a multiple of 3.  Store the number of such bytes
+   * for use later.
+   *
+   * The 828mk1 starts audio data at byte 4 while all other models start at 
+   * 10.  Since the difference between these is a multiple of 3 it doesn't
+   * matter which we use as the data origin.
+   */
+  m_event_pad_bytes = (event_size - 4) % 3;
 }
 
 unsigned int
@@ -322,6 +333,19 @@ MotuTransmitStreamProcessor::generatePacketData (
 //fprintf(stderr,"tx: %d/%d\n",
 //  CYCLE_TIMER_GET_CYCLES(fullTicksToSph(ts_frame)),
 //  CYCLE_TIMER_GET_OFFSET(fullTicksToSph(ts_frame)));
+        }
+
+        /* Zero any pad bytes which, due to their number not being a multiple
+         * of 3, do not have a port associated with them.  Such bytes will
+         * never be written to in processWriteBlock() when the buffers are
+         * prepared, which means they could contain random data when put
+         * into the transmit packet unless explicitly zeroed here.
+         */
+        if (m_event_pad_bytes != 0) {
+            unsigned char *s = data+8+m_event_size-m_event_pad_bytes;
+            for (int i=0; i<n_events; i++, s+=m_event_size) {
+                *s = *(s+1) = 0;
+            }
         }
 
 {

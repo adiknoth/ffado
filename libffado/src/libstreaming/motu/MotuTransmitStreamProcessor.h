@@ -111,6 +111,10 @@ private:
      */
     unsigned int m_event_size;
 
+    // To save time in the fast path, the number of pad bytes is stored
+    // explicitly.
+    unsigned int m_event_pad_bytes;
+
     signed int m_motu_model;
 
     // Keep track of transmission data block count
