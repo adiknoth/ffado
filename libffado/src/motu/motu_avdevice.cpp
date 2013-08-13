@@ -1468,8 +1468,20 @@ MotuDevice::prepare() {
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing MotuDevice...\n" );
 
-    getOpticalMode(MOTU_DIR_IN, &optical_in_mode_a, &optical_in_mode_b);
-    getOpticalMode(MOTU_DIR_OUT, &optical_out_mode_a, &optical_out_mode_b);
+    /* The 828mk1 powers up without the optical mode register fields set
+     * to anything in particular.  For this interface, hardcode a default
+     * optical mode if it appears that the interface is uninitialised.
+     * On powerup, the unknown-2 register is 0xffffffff and this is reset
+     * by software to 0; this provides a convenient test for the status
+     * of the interface.
+     */
+    if (m_motu_model==MOTU_MODEL_828MkI && ReadRegister(MOTU_G1_REG_UNKNOWN_2)!=0) {
+      optical_in_mode_a = optical_out_mode_a = MOTU_OPTICAL_MODE_OFF;
+      optical_in_mode_b = optical_out_mode_b = MOTU_OPTICAL_MODE_NONE;
+    } else {
+      getOpticalMode(MOTU_DIR_IN, &optical_in_mode_a, &optical_in_mode_b);
+      getOpticalMode(MOTU_DIR_OUT, &optical_out_mode_a, &optical_out_mode_b);
+    }
 
     // Initialise port groups and determine the event sizes based on the
     // current device mode and sample rate.
@@ -2017,17 +2029,30 @@ signed int MotuDevice::setOpticalMode(unsigned int dir,
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         // The earlier MOTUs handle this differently.
+        unsigned int g1_conf1_ref, g1_conf2_ref;
         unsigned int g1_conf1, g1_conf2;
         unsigned int toslink, n_adat;
+        signed int err = 0;
         g1_conf1 = ReadRegister(MOTU_G1_REG_CONFIG);
         g1_conf2 = ReadRegister(MOTU_G1_REG_CONFIG_2);
         toslink = (dir==MOTU_DIR_IN)?MOTU_G1_C1_OPT_TOSLINK_IN:MOTU_G1_C1_OPT_TOSLINK_OUT;
         n_adat = (dir==MOTU_DIR_IN)?MOTU_G1_C2_OPT_nADAT_IN:MOTU_G1_C2_OPT_nADAT_OUT;
 
-        /* Set registers as needed by the requested mode */
+        // Don't send ISO information
+        g1_conf1 &= ~MOTU_G1_C1_ISO_INFO_MASK;
 
         // This bit seems to always be set
         g1_conf1 |= (MOTU_G1_IO_ENABLE_0);
+        
+        /* This bit seems to always be set when this register is set.
+         * It may be a write enable bit.
+         */
+        g1_conf2 |= MOTU_G1_C2_OPT_nADAT_WREN;
+
+        g1_conf1_ref = g1_conf1;
+        g1_conf2_ref = g1_conf2;
+
+        /* Set registers as needed by the requested mode */
 
         if (port_a_mode == MOTU_OPTICAL_MODE_TOSLINK) {
           g1_conf1 |= toslink;
@@ -2039,13 +2064,16 @@ signed int MotuDevice::setOpticalMode(unsigned int dir,
         } else {
           g1_conf2 |= n_adat;
         }
-        /* This bit seems to always be set when the ADAT bits are configured.
-         * It may be a write enable bit.
-         */
-        g1_conf2 |= MOTU_G1_C2_OPT_nADAT_WREN;
 
-        if (WriteRegister(MOTU_G1_REG_CONFIG, g1_conf1)!=0 ||
-            WriteRegister(MOTU_G1_REG_CONFIG_2, g1_conf2)!=0)
+        // Under other systems, MOTU_G1_REG_CONFIG is always written
+        // first, but only if its value has been changed.  Similarly,
+        // MOTU_G1_REG_CONFIG_2 is only written if its value has been
+        // altered.
+        if (!err && g1_conf1!=g1_conf1_ref)
+          err = WriteRegister(MOTU_G1_REG_CONFIG, g1_conf1) != 0;
+        if (!err && g1_conf2!=g1_conf2_ref)
+          err = WriteRegister(MOTU_G1_REG_CONFIG_2, g1_conf2) != 0;
+        if (err)
             return -1;
         return 0;
     }
