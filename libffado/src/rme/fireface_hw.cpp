@@ -88,7 +88,20 @@ Device::init_hardware(void)
         // operational rate.
         if (dev_config->settings_valid) {
             dev_config->software_freq = settings->sample_rate;
-            dev_config->dds_freq = settings->sample_rate;
+            // dds_freq can be used to run the audio clock at a slightly
+            // different frequency to what the software requests (to allow
+            // for drop-frame rates for example).  For the moment FFADO 
+            // provides no explicit support for this, so dds_freq should
+            // always be zero.
+            //
+            // If user access to dds_freq is implemented in future, it may
+            // or may not be desireable to set dds_freq from
+            // settings->sample_rate.  This will probably be determined by
+            // the nature of the user interface to dds_freq.
+            //
+            // See also comments in getSamplingFrequency() and
+            // setDDSFrequency().
+            dev_config->dds_freq = 0;
             set_hardware_params(settings);
         }
     }
@@ -106,7 +119,8 @@ Device::init_hardware(void)
         settings->limit_bandwidth = FF_SWPARAM_BWLIMIT_SEND_ALL_CHANNELS;
 
         // A default sampling rate.  An explicit DDS frequency is not enabled
-        // by default.
+        // by default (FFADO doesn't currently make explicit use of this - see
+        // above).
         dev_config->software_freq = 44100;
         dev_config->dds_freq = 0;
         settings->sample_rate = dev_config->software_freq;

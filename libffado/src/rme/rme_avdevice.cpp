@@ -426,6 +426,15 @@ Device::getSamplingFrequency( ) {
 
     // Retrieve the current sample rate.  For practical purposes this
     // is the software rate currently in use.
+    //
+    // If dds_freq functionality is pursued, some thinking will be required
+    // here because the streaming engine will take its timings from the
+    // value returned by this function.  If the DDS is not running at
+    // software_freq, returning software_freq won't work for the streaming
+    // engine.  User software, on the other hand, would require the
+    // software_freq value.  Ultimately the streaming engine will probably
+    // have to be changed to obtain the "real" sample rate through other
+    // means.
     return dev_config->software_freq;
 }
 
@@ -444,7 +453,15 @@ Device::setDDSFrequency( int dds_freq )
     // changed or streaming is started.
 
     // If the device is streaming, the new DDS rate must have the same
-    // multiplier as the software sample rate
+    // multiplier as the software sample rate.
+    //
+    // Since FFADO doesn't make use of the dds_freq functionality at present
+    // (there being no user access provided for this) the effect of changing
+    // the hardware DDS while streaming is active has not been tested.  A
+    // new DDS value will change the timestamp intervals applicable to the
+    // streaming engine, so an alteration here without at least a restart of
+    // the streaming will almost certainly cause trouble.  Initially it may
+    // be easiest to disallow such changes when streaming is active.
     if (hardware_is_streaming()) {
         if (multiplier_of_freq(dds_freq) != multiplier_of_freq(dev_config->software_freq))
             return false;
@@ -489,13 +506,24 @@ Device::setSamplingFrequency( int samplingFrequency )
     // setting of the DDS or by virtue of streaming being active, get that
     // frequency.
     if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
-        // FIXME: if synced to TCO, is autosync_freq valid?
-        fixed_freq = state.autosync_freq;
+        // The autosync frequency can be retrieved from state.autosync_freq. 
+        // However, we probably don't want to prevent any rate changes based
+        // on the autosync frequency.  Otherwise a user would have to
+        // disconnect the external clock source (or switch to master clock
+        // mode) before a rate change could be made.  An autosync_freq value
+        // of 0 indicates the absence of a valid external clock.
+        //
+        // A further note: if synced to TCO, is autosync_freq valid?
+        if (state.autosync_freq == 0) {
+          debugOutput(DEBUG_LEVEL_WARNING, "slave clock mode active but no valid external clock present\n");
+        }
     } else
     if (dev_config->dds_freq > 0) {
         fixed_freq = dev_config->dds_freq;
     } else
     if (hardware_is_streaming()) {
+        // See comments in getSamplingFrequency() as to why this may not
+        // be successful in the long run.
         fixed_freq = dev_config->software_freq;
     }
 
@@ -505,8 +533,11 @@ Device::setSamplingFrequency( int samplingFrequency )
     // streaming.
     if (fixed_freq > 0) {
         unsigned int fixed_mult = multiplier_of_freq(fixed_freq);
-        if (multiplier_of_freq(freq) != fixed_mult)
+        if (multiplier_of_freq(freq) != fixed_mult) {
+            debugOutput(DEBUG_LEVEL_ERROR, "DDS currently set to %d Hz, new sampling rate %d does not have the same multiplier\n",
+              fixed_freq, freq);
             return false;
+        }
         for (j=0; j<3; j++) {
             if (freq == base_freq[j]*fixed_mult) {
                 ret = 0;
@@ -523,18 +554,25 @@ Device::setSamplingFrequency( int samplingFrequency )
             }
         }
     }
-    // If requested frequency is unavailable, return -1
-    if (ret == -1)
+    // If requested frequency is unavailable, return false
+    if (ret == -1) {
+        debugOutput(DEBUG_LEVEL_ERROR, "requested sampling rate %d Hz not available\n", freq);
         return false;
+    }
 
-    // If a DDS frequency has been explicitly requested this is always
-    // used to programm the hardware DDS regardless of the rate requested
-    // by the software.  Otherwise we use the requested sampling rate.
-    if (dev_config->dds_freq > 0)
+    // If a DDS frequency has been explicitly requested this is always used
+    // to program the hardware DDS regardless of the rate requested by the
+    // software (such use of the DDS is only possible if the Fireface is
+    // operating in master clock mode).  Otherwise we use the requested
+    // sampling rate.
+    if (dev_config->dds_freq>0 && state.clock_mode==FF_STATE_CLOCKMODE_MASTER)
         freq = dev_config->dds_freq;
-    if (set_hardware_dds_freq(freq) != 0)
+    if (set_hardware_dds_freq(freq) != 0) {
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to set hardware sample rate to %d Hz\n", freq);
         return false;
+    }
 
+    debugOutput(DEBUG_LEVEL_VERBOSE, "hardware set to sampling frequency %d Hz\n", samplingFrequency);
     dev_config->software_freq = samplingFrequency;
     return true;
 }
