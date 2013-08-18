@@ -324,7 +324,7 @@ Device::destroyMixer() {
         m_ControlContainer = NULL;
     }
 
-    return false;
+    return ret;
 }
 
 bool
@@ -478,8 +478,8 @@ Device::setSamplingFrequency( int samplingFrequency )
     bool ret = -1;
     signed int i, j;
     signed int mult[3] = {1, 2, 4};
-    signed int base_freq[3] = {32000, 44100, 48000};
-    signed int freq = samplingFrequency;
+    unsigned int base_freq[3] = {32000, 44100, 48000};
+    unsigned int freq = samplingFrequency;
     FF_state_t state;
     signed int fixed_freq = 0;
 
@@ -504,8 +504,8 @@ Device::setSamplingFrequency( int samplingFrequency )
     // multiplier is locked in "master" clock mode if the device is
     // streaming.
     if (fixed_freq > 0) {
-        signed int fixed_mult = multiplier_of_freq(fixed_freq);
-        if (multiplier_of_freq(freq) != multiplier_of_freq(fixed_freq))
+        unsigned int fixed_mult = multiplier_of_freq(fixed_freq);
+        if (multiplier_of_freq(freq) != fixed_mult)
             return false;
         for (j=0; j<3; j++) {
             if (freq == base_freq[j]*fixed_mult) {
