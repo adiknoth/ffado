@@ -506,7 +506,7 @@ Device::setSamplingFrequency( int samplingFrequency )
     if (fixed_freq > 0) {
         signed int fixed_mult = multiplier_of_freq(fixed_freq);
         if (multiplier_of_freq(freq) != multiplier_of_freq(fixed_freq))
-            return -1;
+            return false;
         for (j=0; j<3; j++) {
             if (freq == base_freq[j]*fixed_mult) {
                 ret = 0;
