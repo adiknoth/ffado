@@ -590,12 +590,22 @@ Device::getSupportedSamplingFrequencies()
 
     // Generate the list of supported frequencies.  If the device is
     // externally clocked the frequency is limited to the external clock
-    // frequency.  If the device is running the multiplier is fixed.
-    if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
-        // FIXME: if synced to TCO, is autosync_freq valid?
-        frequencies.push_back(state.autosync_freq);
-    } else
+    // frequency.  At least that's the theory.  This does make it awkward
+    // to change the frequency in slave mode though, and there are added
+    // complications if there is no valid clock being received (in which
+    // case the autosync frequency will be zero.  Therefore, for the moment
+    // let this pass and just list all the standard frequencies regardless
+    // of the clock mode.  This can be revisited later.
+    //
+    //if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
+    //    // FIXME: if synced to TCO, is autosync_freq valid?
+    //    frequencies.push_back(state.autosync_freq);
+    //} else
+    // If the device is running the multiplier is fixed.
     if (state.is_streaming) {
+        // It's not certain that permitting rate changes while streaming
+        // is active will work.  See comments in setSamplingFrequency() and
+        // elsewhere.
         unsigned int fixed_mult = multiplier_of_freq(dev_config->software_freq);
         for (j=0; j<3; j++) {
             frequencies.push_back(freq[j]*fixed_mult);
