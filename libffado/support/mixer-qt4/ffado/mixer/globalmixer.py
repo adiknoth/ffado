@@ -65,6 +65,9 @@ class GlobalMixer(QWidget):
     @pyqtSignature("int")
     def on_samplerate_activated( self, sr ):
         log.debug("on_samplerate_activated( " + str(sr) + " )")
+        # If there's no clock, don't bother trying to set the sample rate
+        if (self.no_clock == 1):
+            return
         if self.samplerateselect.canChangeValue():
             self.samplerateselect.select( sr )
         else:
@@ -92,6 +95,32 @@ class GlobalMixer(QWidget):
         else:
             self.txtNickname.setText( self.nickname.text() )
 
+    def refreshSampleRates( self ):
+        no_clock_status = 0
+        n_rates = self.samplerateselect.count()
+        if (n_rates<1 or self.samplerateselect.getEnumLabel(0)=="0"):
+            no_clock_status = 1;
+
+        # Except for changes to the "no clock" status (where the number of
+        # "frequencies" can remain at 1), the following test won't account
+        # for cases where the frequency list changes but the total number of
+        # frequencies remains the same.  If a device comes along for which
+        # this is a problem, an alternative approach will be needed.
+        if (no_clock_status!=self.no_clock or n_rates!=self.num_rates):
+            self.no_clock = 0;
+            self.num_rates = n_rates
+            self.samplerate.clear()
+            for i in range( self.num_rates ):
+                label = self.samplerateselect.getEnumLabel( i )
+                if (label == "0"):
+                    label = "No clock found";
+                    self.no_clock = 1;
+                self.samplerate.insertItem( self.num_rates, label )
+            if (self.no_clock != 1):
+                self.samplerate.setCurrentIndex( self.samplerateselect.selected() )
+            else:
+                self.samplerate.setCurrentIndex(0);
+
     def initValues( self ):
         #print "GlobalMixer::initValues()"
         nb_clocks = self.clockselect.count()
@@ -99,10 +128,9 @@ class GlobalMixer(QWidget):
             self.clocksource.insertItem( nb_clocks, self.clockselect.getEnumLabel( i ) )
         self.clocksource.setCurrentIndex( self.clockselect.selected() )
 
-        nb_rates = self.samplerateselect.count()
-        for i in range( nb_rates ):
-            self.samplerate.insertItem( nb_rates, self.samplerateselect.getEnumLabel( i ) )
-        self.samplerate.setCurrentIndex( self.samplerateselect.selected() )
+        self.no_clock = 0;
+        self.num_rates = -1;
+        self.refreshSampleRates();
 
         self.txtNickname.setText( self.nickname.text() )
 
@@ -137,5 +165,9 @@ class GlobalMixer(QWidget):
         if (ss!=self.streaming_status and ss_txt!='Idle'):
             self.samplerate.setCurrentIndex( self.samplerateselect.selected() )
         self.streaming_status = ss
+
+        # Allow for devices whose sample rates can change dynamically (for
+        # example, in response to changes in external clock frequency)
+        self.refreshSampleRates();
 
 # vim: et
