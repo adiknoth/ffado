@@ -425,7 +425,8 @@ int
 Device::getSamplingFrequency( ) {
 
     // Retrieve the current sample rate.  For practical purposes this
-    // is the software rate currently in use.
+    // is the software rate currently in use if in master clock mode, or
+    // the external clock if in slave mode.
     //
     // If dds_freq functionality is pursued, some thinking will be required
     // here because the streaming engine will take its timings from the
@@ -435,6 +436,14 @@ Device::getSamplingFrequency( ) {
     // software_freq value.  Ultimately the streaming engine will probably
     // have to be changed to obtain the "real" sample rate through other
     // means.
+
+    FF_state_t state;
+    get_hardware_state(&state);
+    if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
+        // Note: this could return 0 if there is no valid external clock
+        return state.autosync_freq;
+    }
+
     return dev_config->software_freq;
 }
 
@@ -507,16 +516,18 @@ Device::setSamplingFrequency( int samplingFrequency )
     // frequency.
     if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
         // The autosync frequency can be retrieved from state.autosync_freq. 
-        // However, we probably don't want to prevent any rate changes based
-        // on the autosync frequency.  Otherwise a user would have to
-        // disconnect the external clock source (or switch to master clock
-        // mode) before a rate change could be made.  An autosync_freq value
-        // of 0 indicates the absence of a valid external clock.
+        // An autosync_freq value of 0 indicates the absence of a valid
+        // external clock.  Allow sampling frequencies which match the
+        // sync rate and reject all others.
         //
         // A further note: if synced to TCO, is autosync_freq valid?
         if (state.autosync_freq == 0) {
-          debugOutput(DEBUG_LEVEL_WARNING, "slave clock mode active but no valid external clock present\n");
+            debugOutput(DEBUG_LEVEL_ERROR, "slave clock mode active but no valid external clock present\n");
         }
+        if (state.autosync_freq==0 || (int)state.autosync_freq!=samplingFrequency)
+            return false;
+        dev_config->software_freq = samplingFrequency;
+        return true;
     } else
     if (dev_config->dds_freq > 0) {
         fixed_freq = dev_config->dds_freq;
@@ -590,17 +601,12 @@ Device::getSupportedSamplingFrequencies()
 
     // Generate the list of supported frequencies.  If the device is
     // externally clocked the frequency is limited to the external clock
-    // frequency.  At least that's the theory.  This does make it awkward
-    // to change the frequency in slave mode though, and there are added
-    // complications if there is no valid clock being received (in which
-    // case the autosync frequency will be zero.  Therefore, for the moment
-    // let this pass and just list all the standard frequencies regardless
-    // of the clock mode.  This can be revisited later.
-    //
-    //if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
-    //    // FIXME: if synced to TCO, is autosync_freq valid?
-    //    frequencies.push_back(state.autosync_freq);
-    //} else
+    // frequency.
+    if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
+        // FIXME: if synced to TCO, is autosync_freq valid?
+        // The autosync frequency will be zero if no valid clock is available
+        frequencies.push_back(state.autosync_freq);
+    } else
     // If the device is running the multiplier is fixed.
     if (state.is_streaming) {
         // It's not certain that permitting rate changes while streaming
