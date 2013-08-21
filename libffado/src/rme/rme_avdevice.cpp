@@ -585,6 +585,7 @@ Device::setSamplingFrequency( int samplingFrequency )
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "hardware set to sampling frequency %d Hz\n", samplingFrequency);
     dev_config->software_freq = samplingFrequency;
+    settings->sample_rate = samplingFrequency;
     return true;
 }
 
