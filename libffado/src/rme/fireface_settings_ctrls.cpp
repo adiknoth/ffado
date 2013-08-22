@@ -373,16 +373,22 @@ FF_state_t ff_state;
         case RME_CTRL_INFO_SYSCLOCK_MODE:
             if (m_parent.get_hardware_state(&ff_state) == 0)
                 return ff_state.clock_mode;
+            else
+                debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
             break;
         case RME_CTRL_INFO_SYSCLOCK_FREQ:
             return m_parent.getSamplingFrequency();
         case RME_CTRL_INFO_AUTOSYNC_FREQ:
             if (m_parent.get_hardware_state(&ff_state) == 0)
                 return ff_state.autosync_freq;
+            else
+                debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
             break;
         case RME_CTRL_INFO_AUTOSYNC_SRC:
             if (m_parent.get_hardware_state(&ff_state) == 0)
                 return ff_state.autosync_source;
+            else
+                debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
             break;
         case RME_CTRL_INFO_SYNC_STATUS:
             if (m_parent.get_hardware_state(&ff_state) == 0)
@@ -391,10 +397,14 @@ FF_state_t ff_state;
                        (ff_state.spdif_sync_status << 4) |
                        (ff_state.wclk_sync_status << 6) |
                        (ff_state.tco_sync_status << 8);
+            else
+                debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
             break;
         case RME_CTRL_INFO_SPDIF_FREQ:
             if (m_parent.get_hardware_state(&ff_state) == 0)
                 return ff_state.spdif_freq;
+            else
+                debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
             break;
 
         default:

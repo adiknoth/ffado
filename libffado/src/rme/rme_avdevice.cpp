@@ -438,7 +438,10 @@ Device::getSamplingFrequency( ) {
     // means.
 
     FF_state_t state;
-    get_hardware_state(&state);
+    if (get_hardware_state(&state) != 0) {
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
+        return 0;
+    }
     if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
         // Note: this could return 0 if there is no valid external clock
         return state.autosync_freq;
@@ -509,7 +512,10 @@ Device::setSamplingFrequency( int samplingFrequency )
     FF_state_t state;
     signed int fixed_freq = 0;
 
-    get_hardware_state(&state);
+    if (get_hardware_state(&state) != 0) {
+          debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
+          return false;
+    }
 
     // If device is locked to a frequency via external clock, explicit
     // setting of the DDS or by virtue of streaming being active, get that
@@ -598,7 +604,10 @@ Device::getSupportedSamplingFrequencies()
     signed int freq[3] = {32000, 44100, 48000};
     FF_state_t state;
 
-    get_hardware_state(&state);
+    if (get_hardware_state(&state) != 0) {
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
+        return frequencies;
+    }
 
     // Generate the list of supported frequencies.  If the device is
     // externally clocked the frequency is limited to the external clock

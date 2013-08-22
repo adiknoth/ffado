@@ -108,6 +108,7 @@ Device::init_hardware(void)
 
     // If no valid flash settings, configure with a static setup.
     if (dev_config->settings_valid == 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "flash settings unavailable or invalid; using defaults\n");
         memset(settings, 0, sizeof(*settings));
         settings->spdif_input_mode = FF_SWPARAM_SPDIF_INPUT_COAX;
         settings->spdif_output_mode = FF_SWPARAM_SPDIF_OUTPUT_COAX;
@@ -195,8 +196,10 @@ Device::init_hardware(void)
         // For now we'll fix this since that's what's done under other
         // systems.
         midi_hi_addr = 0x01;
-        if (writeRegister(RME_FF400_MIDI_HIGH_ADDR, (node_id<<16) | midi_hi_addr) != 0)
+        if (writeRegister(RME_FF400_MIDI_HIGH_ADDR, (node_id<<16) | midi_hi_addr) != 0) {
+            debugOutput(DEBUG_LEVEL_ERROR, "failed to write MIDI high address register\n");
             ret = -1;
+        }
     }
 
     // Also configure the TCO (Time Code Option) settings for those devices
@@ -204,7 +207,9 @@ Device::init_hardware(void)
     if (ret==0 && dev_config->tco_settings_valid==0) {
         if (dev_config->tco_present) {
             memset(tco_settings, 0, sizeof(*tco_settings));
-            write_tco_settings(tco_settings);
+            if (write_tco_settings(tco_settings) != 0) {
+                debugOutput(DEBUG_LEVEL_ERROR, "failed to write TCO settings\n");
+            }
         }
         dev_config->tco_settings_valid = 1;
     }
@@ -544,8 +549,10 @@ Device::set_hardware_params(FF_software_settings_t *use_settings)
             debugOutput(DEBUG_LEVEL_ERROR, "unimplemented model %d\n", m_rme_model);
             return -1;
     }
-    if (writeBlock(conf_reg, data, 3) != 0)
+    if (writeBlock(conf_reg, data, 3) != 0) {
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to write device settings\n");
         return -1;
+    }
 
     return 0;
 }
@@ -775,6 +782,8 @@ Device::set_hardware_dds_freq(signed int freq)
     }
     if (ret == 0)
         dev_config->hardware_freq = freq;
+    else
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to write DDS register\n");
 
     return ret;
 }
@@ -787,6 +796,7 @@ Device::hardware_init_streaming(unsigned int sample_rate,
     quadlet_t buf[5];
     fb_nodeaddr_t addr;
     unsigned int size;
+    signed int ret;
 
 debugOutput(DEBUG_LEVEL_VERBOSE, "*** stream init: %d, %d, %d\n",
   sample_rate, num_channels, tx_channel);
@@ -812,7 +822,10 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "*** stream init: %d, %d, %d\n",
         return -1;
     }
 
-    return writeBlock(addr, buf, size);
+    ret = writeBlock(addr, buf, size);
+    if (ret != 0)
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to write streaming parameters\n");
+    return ret;
 }
 
 signed int
@@ -845,7 +858,8 @@ debugOutput(DEBUG_LEVEL_VERBOSE, "start 0x%016llx data: %08x\n", addr, data);
 debugOutput(DEBUG_LEVEL_VERBOSE, "  ret=%d\n", ret);
         if (ret == 0) {
             dev_config->is_streaming = 1;
-        }
+        } else
+            debugOutput(DEBUG_LEVEL_ERROR, "failed to write for streaming start\n");
 
         set_hardware_channel_mute(-1, 0);
 
@@ -880,7 +894,8 @@ Device::hardware_stop_streaming(void)
         ret = writeBlock(addr, buf, size);
         if (ret == 0) {
             dev_config->is_streaming = 0;
-        }
+        } else
+            debugOutput(DEBUG_LEVEL_ERROR, "failed to write for streaming stop\n");
 
         set_hardware_channel_mute(-1, 1);
 
@@ -905,6 +920,7 @@ Device::set_hardware_ampgain(unsigned int index, signed int val) {
 // function.
     quadlet_t regval = 0;
     signed int devval = 0;
+    signed int ret;
     if (val > 120)
       val = 120;
     if (val < -120)
@@ -924,7 +940,10 @@ Device::set_hardware_ampgain(unsigned int index, signed int val) {
     }
     regval |= devval;
     regval |= (index << 16);
-    return writeRegister(RME_FF400_GAIN_REG, regval);
+    ret = writeRegister(RME_FF400_GAIN_REG, regval);
+    if (ret != 0)
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to write amp gains\n");
+    return ret;
 }
 
 signed int
@@ -980,7 +999,9 @@ Device::set_hardware_mixergain(unsigned int ctype, unsigned int src_channel,
             break;
     }
 
-    writeRegister(ram_addr, val);
+    if (writeRegister(ram_addr, val) != 0) {
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to write mixer gain element\n");
+    }
 
     // If setting the output volume and the device is the FF400, keep
     // the separate gain register in sync.
@@ -1034,7 +1055,10 @@ Device::set_hardware_channel_mute(signed int chan, signed int mute) {
     }
 
     // Write 28 quadlets even for FF400
-    return writeBlock(RME_FF_CHANNEL_MUTE_MASK, buf, 28);
+    i = writeBlock(RME_FF_CHANNEL_MUTE_MASK, buf, 28);
+    if (i != 0)
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to write channel mute\n");
+    return i;
 }
 
 signed int
@@ -1049,7 +1073,10 @@ Device::set_hardware_output_rec(signed int rec) {
         buf[i] = (rec!=0);
 
     // Write 28 quadlets even for FF400
-    return writeBlock(RME_FF_OUTPUT_REC_MASK, buf, 28);
+    i = writeBlock(RME_FF_OUTPUT_REC_MASK, buf, 28);
+    if (i != 0)
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to write output record flags\n");
+    return i;
 }
 
 }
