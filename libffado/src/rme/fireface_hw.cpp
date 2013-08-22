@@ -253,6 +253,7 @@ Device::get_hardware_state(FF_state_t *state)
     // Retrieve the hardware status and deduce the device state.  Return
     // -1 on error, 0 on success.  The given state structure will be 
     // cleared by this call.
+    static signed int call_count = 0;
     unsigned int stat0, stat1;
     memset(state, 0, sizeof(*state));
     if (get_hardware_status(&stat0, &stat1) != 0)
@@ -346,17 +347,20 @@ Device::get_hardware_state(FF_state_t *state)
            state->tco_sync_status = FF_STATE_SYNC_SYNCED; break;
     }
 
-    // Report the state reported by the hardware if debug output is active
-    debugOutput(DEBUG_LEVEL_VERBOSE, "State reported by hardware:\n");
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  is_streaming: %d\n", state->is_streaming);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  clock_mode: %s\n", state->clock_mode==FF_STATE_CLOCKMODE_MASTER?"master":"autosync/slave");
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  autosync source: %d\n", state->autosync_source);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  autosync freq: %d\n", state->autosync_freq);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif freq: %d\n", state->spdif_freq);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  ADAT 1/2 status: %x, %x\n", state->adat1_sync_status, state->adat2_sync_status);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  SDPIF status: %x\n", state->spdif_sync_status);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "  Wclk/tco status: %x, %x\n", state->wclk_sync_status, state->tco_sync_status);
-
+    // Report the state reported by the hardware if debug output is active.
+    // Only do this for the first few calls.
+    if (call_count < 2) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "State reported by hardware:\n");
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  is_streaming: %d\n", state->is_streaming);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  clock_mode: %s\n", state->clock_mode==FF_STATE_CLOCKMODE_MASTER?"master":"autosync/slave");
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  autosync source: %d\n", state->autosync_source);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  autosync freq: %d\n", state->autosync_freq);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  spdif freq: %d\n", state->spdif_freq);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  ADAT 1/2 status: %x, %x\n", state->adat1_sync_status, state->adat2_sync_status);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  SDPIF status: %x\n", state->spdif_sync_status);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "  Wclk/tco status: %x, %x\n", state->wclk_sync_status, state->tco_sync_status);
+        call_count++;
+    }
     return 0;
 }
 
