@@ -196,7 +196,7 @@ def VersionInt(vers):
 
 def CheckJackdVer():
     print 'Checking jackd version...',
-    ret = Popen("which jackd >/dev/null 2>&1 && jackd --version | cut -d ' ' -f 3", shell=True, stdout=PIPE).stdout.read()[:-1]
+    ret = Popen("which jackd >/dev/null 2>&1 && jackd --version | tail -n 1 | cut -d ' ' -f 3", shell=True, stdout=PIPE).stdout.read()[:-1]
     if (ret == ""):
         print "not installed"
         return -1
