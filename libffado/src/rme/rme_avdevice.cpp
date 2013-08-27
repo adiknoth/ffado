@@ -437,15 +437,20 @@ Device::getSamplingFrequency( ) {
     // have to be changed to obtain the "real" sample rate through other
     // means.
 
-    FF_state_t state;
-    if (get_hardware_state(&state) != 0) {
-        debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
-        return 0;
-    }
-    if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
-        // Note: this could return 0 if there is no valid external clock
-        return state.autosync_freq;
-    }
+// This needs to be reworked.  get_hardware_state() triggers an async
+// transaction and getSamplingFrequency() is called several times per
+// iso cycle by the transmit stream processor.  The kernel doesn't cope
+// with this and freezes after a short time having exhausted system memory.
+//
+//    FF_state_t state;
+//    if (get_hardware_state(&state) != 0) {
+//        debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
+//        return 0;
+//    }
+//    if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
+//        // Note: this could return 0 if there is no valid external clock
+//        return state.autosync_freq;
+//    }
 
     return dev_config->software_freq;
 }
