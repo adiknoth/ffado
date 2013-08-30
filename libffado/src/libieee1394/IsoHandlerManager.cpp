@@ -1329,9 +1329,10 @@ IsoHandlerManager::IsoHandler::~IsoHandler() {
 // the "jackd" thread.  Thus, wait for the lock before testing the state
 // of the handle so any in-progress disable() is complete.
     if (pthread_mutex_trylock(&m_disable_lock) == EBUSY) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "waiting for disable lock\n");
         pthread_mutex_lock(&m_disable_lock);
-        pthread_mutex_unlock(&m_disable_lock);
     }
+    pthread_mutex_unlock(&m_disable_lock);
     if(m_handle) {
         if (m_State == eHS_Running) {
             debugError("BUG: Handler still running!\n");
