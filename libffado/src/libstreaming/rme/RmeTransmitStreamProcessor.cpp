@@ -99,6 +99,7 @@ RmeTransmitStreamProcessor::getMaxPacketSize() {
     // needs to be confirmed that the values in use are still ok even
     // when the DDS is set to run 4% fast (something that's not presently
     // implemented by FFADO, but should be at some point).
+    debugOutput(DEBUG_LEVEL_VERBOSE, "max tx pkt size %d (fpp %d, nch %d)\n", dev->getFramesPerPacket() * dev->getNumChannels() * 4, dev->getFramesPerPacket(), dev->getNumChannels());
     return dev->getFramesPerPacket() * dev->getNumChannels() * 4;
 }
 

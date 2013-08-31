@@ -1023,6 +1023,10 @@ bool StreamProcessorManager::start() {
     }
     if (!start_result) {
         debugFatal("Could not syncStartAll...\n");
+        // If unable to start, ensure stream processors and their handlers
+        // are in the stopped state, which is what the caller would reasonably
+        // expect if start() fails.
+        stop();
         return false;
     }
     debugOutput( DEBUG_LEVEL_VERBOSE, " Started...\n");
