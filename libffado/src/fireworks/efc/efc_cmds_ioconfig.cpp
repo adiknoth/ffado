@@ -88,7 +88,7 @@ EfcGenericIOConfigCmd::setType( enum eCmdType type )
             case eCR_Mirror:
                 m_command_id=EFC_CMD_IO_CONFIG_GET_MIRROR;
                 break;
-            case eCR_DigitalMode:
+            case eCR_DigitalInterface:
                 m_command_id=EFC_CMD_IO_CONFIG_GET_DIGITAL_MODE;
                 break;
             case eCR_Phantom:
@@ -103,7 +103,7 @@ EfcGenericIOConfigCmd::setType( enum eCmdType type )
             case eCR_Mirror:
                 m_command_id=EFC_CMD_IO_CONFIG_SET_MIRROR;
                 break;
-            case eCR_DigitalMode:
+            case eCR_DigitalInterface:
                 m_command_id=EFC_CMD_IO_CONFIG_SET_DIGITAL_MODE;
                 break;
             case eCR_Phantom:
@@ -125,7 +125,7 @@ EfcGenericIOConfigCmd::setRegister( enum eIOConfigRegister r )
             case eCR_Mirror:
                 m_command_id=EFC_CMD_IO_CONFIG_GET_MIRROR;
                 break;
-            case eCR_DigitalMode:
+            case eCR_DigitalInterface:
                 m_command_id=EFC_CMD_IO_CONFIG_GET_DIGITAL_MODE;
                 break;
             case eCR_Phantom:
@@ -140,7 +140,7 @@ EfcGenericIOConfigCmd::setRegister( enum eIOConfigRegister r )
             case eCR_Mirror:
                 m_command_id=EFC_CMD_IO_CONFIG_SET_MIRROR;
                 break;
-            case eCR_DigitalMode:
+            case eCR_DigitalInterface:
                 m_command_id=EFC_CMD_IO_CONFIG_SET_DIGITAL_MODE;
                 break;
             case eCR_Phantom:

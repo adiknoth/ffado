@@ -211,6 +211,7 @@ public:
         eHIF_GroupOutCount,
         eHIF_GroupInCount,
         eHIF_PhantomPower,
+        eHIF_OpticalInterface,
     };
 public:
     HwInfoControl(FireWorks::Device& parent,

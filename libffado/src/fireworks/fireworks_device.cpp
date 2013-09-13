@@ -318,6 +318,8 @@ Device::buildMixer()
         new HwInfoControl(*this, HwInfoControl::eHIF_GroupInCount, "GroupInCount"));
     result &= m_HwInfoContainer->addElement(
         new HwInfoControl(*this, HwInfoControl::eHIF_PhantomPower, "PhantomPower"));
+    result &= m_HwInfoContainer->addElement(
+        new HwInfoControl(*this, HwInfoControl::eHIF_OpticalInterface, "OpticalInterface"));
 
     // add a save settings control
     result &= this->addElement(
@@ -335,6 +337,10 @@ Device::buildMixer()
     if(m_HwInfo.hasMirroring()) {
         result &= this->addElement(
             new IOConfigControl(*this, eCR_Mirror, "ChannelMirror"));
+    }
+    if(m_HwInfo.hasOpticalInterface()) {
+        result &= this->addElement(
+            new IOConfigControl(*this, eCR_DigitalInterface, "DigitalInterface"));
     }
     if(m_HwInfo.hasSoftwarePhantom()) {
         result &= this->addElement(

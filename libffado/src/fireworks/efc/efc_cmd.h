@@ -105,7 +105,7 @@
 // specifiers for the flags field
 #define EFC_CMD_HW_DYNADDR_SUPPORTED                0
 #define EFC_CMD_HW_MIRRORING_SUPPORTED              1
-#define EFC_CMD_HW_SPDIF_COAX_SUPPORTED             2
+#define EFC_CMD_HW_OPTICAL_INTERFACE_SUPPORTED      2
 #define EFC_CMD_HW_SPDIF_AESEBUXLR_SUPPORTED        3
 #define EFC_CMD_HW_HAS_DSP                          4
 #define EFC_CMD_HW_HAS_FPGA                         5
@@ -164,7 +164,7 @@ enum eCmdType {
 
 enum eIOConfigRegister {
     eCR_Mirror,
-    eCR_DigitalMode,
+    eCR_DigitalInterface,
     eCR_Phantom,
 };
 

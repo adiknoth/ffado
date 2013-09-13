@@ -647,6 +647,8 @@ int HwInfoControl::getValue()
             return m_ParentDevice.getHwInfo().m_nb_in_groups;
         case eHIF_PhantomPower:
             return m_ParentDevice.getHwInfo().hasSoftwarePhantom();
+        case eHIF_OpticalInterface:
+            return m_ParentDevice.getHwInfo().hasOpticalInterface();
         default:
             debugError("Bogus field\n");
             return 0;

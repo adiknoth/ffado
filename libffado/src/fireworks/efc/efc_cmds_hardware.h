@@ -58,8 +58,8 @@ public:
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_DSP);};
     bool hasFPGA() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_FPGA);};
-    bool hasSpdifCoax() const
-        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_SPDIF_COAX_SUPPORTED);};
+    bool hasOpticalInterface() const
+        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_OPTICAL_INTERFACE_SUPPORTED);};
     bool hasSpdifAESEBUXLR() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_SPDIF_AESEBUXLR_SUPPORTED);};
     bool hasMirroring() const
