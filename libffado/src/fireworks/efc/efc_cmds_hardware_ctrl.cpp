@@ -26,6 +26,7 @@
 
 #include "libutil/ByteSwap.h"
 #include <iostream>
+#include <unistd.h>
 
 using namespace std;
 
@@ -114,6 +115,13 @@ EfcSetClockCmd::deserialize( Util::Cmd::IISDeserialize& de )
     EFC_DESERIALIZE_AND_SWAP(de, &m_clock, result);
     EFC_DESERIALIZE_AND_SWAP(de, &m_samplerate, result);
     EFC_DESERIALIZE_AND_SWAP(de, &m_index, result);
+
+    /*
+     * With firmware version 5.8, after setting, approximately 100ms needs to
+     * get it effective. If getting command is executed during this period,
+     * previous value is returned. This is a simple hack for this issue.
+     */
+    usleep(150000);
 
     return result;
 }
