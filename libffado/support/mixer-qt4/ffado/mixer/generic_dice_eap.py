@@ -32,12 +32,13 @@ class Generic_Dice_EAP(QtGui.QWidget):
         self.layout = QtGui.QGridLayout(self)
         self.setLayout(self.layout)
         self.tabs = QtGui.QTabWidget(self)
+        self.tabs.setTabPosition(QtGui.QTabWidget.West)
         self.layout.addWidget(self.tabs)
 
     def buildMixer(self):
         #print self.hw
         #print self.hw.getText("/Generic/Nickname")
-        self.mixer = MatrixMixer(self.hw.servername, self.hw.basepath+"/EAP/MatrixMixer", self, "Columns_are_outputs")
+        self.mixer = MatrixMixer(self.hw.servername, self.hw.basepath+"/EAP/MatrixMixer", self, "Columns_are_outputs", -1, None, None, False, QtGui.QTabWidget.North, QtGui.QTabWidget.Rounded)
         self.tabs.addTab(self.mixer, "Mixer")
 
         self.router = CrossbarRouter(self.hw.servername, self.hw.basepath+"/EAP/Router", self)

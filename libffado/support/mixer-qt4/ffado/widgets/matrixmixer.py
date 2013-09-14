@@ -641,7 +641,7 @@ class SliderControlView(QtGui.QWidget):
                         self.out[i].lbl[j+1].setText(in_name)
 
 class MatrixMixer(QtGui.QWidget):
-    def __init__(self, servername, basepath, parent=None, rule="Columns_are_inputs", sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False):
+    def __init__(self, servername, basepath, parent=None, rule="Columns_are_inputs", sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False, taborientation=QtGui.QTabWidget.West, tabshape=QtGui.QTabWidget.Triangular):
         QtGui.QWidget.__init__(self, parent)
         self.servername = servername
         self.basepath = basepath
@@ -679,6 +679,7 @@ class MatrixMixer(QtGui.QWidget):
         self.use_short_names = QtGui.QAction("Short names", mxv_set)
         self.short_names_bool = False
         mxv_set.addAction(self.use_short_names)
+        self.use_short_names.setToolTip("Use short or full names for input and output channels")
         self.use_short_names.triggered.connect(self.shortChannelNames)
         mxv_set.addSeparator()
 
@@ -700,16 +701,12 @@ class MatrixMixer(QtGui.QWidget):
         # First tab is for matrix view
         # Next are for "per Out" view
         self.tabs = QtGui.QTabWidget(self)
-        self.tabs.setTabPosition(QtGui.QTabWidget.West)
-        self.tabs.setTabShape(QtGui.QTabWidget.Triangular)
+        self.tabs.setTabPosition(taborientation)
+        self.tabs.setTabShape(tabshape)
         self.layout.addWidget(self.tabs)
 
         # Inputs/Outputs versus rows/columns rule
         self.rule = rule
-
-        #palette = self.palette()
-        #palette.setColor(QtGui.QPalette.Window, palette.color(QtGui.QPalette.Window).darker());
-        #self.setPalette(palette)
 
         # Matrix view tab
         if (rule == "Columns_are_inputs"):
@@ -721,7 +718,7 @@ class MatrixMixer(QtGui.QWidget):
         self.scrollarea_matrix = QtGui.QScrollArea(self.tabs)
         self.scrollarea_matrix.setWidgetResizable(True)
         self.scrollarea_matrix.setWidget(self.matrix)
-        self.tabs.addTab(self.scrollarea_matrix, "Matrix")
+        self.tabs.addTab(self.scrollarea_matrix, " Matrix ")
 
         # Per out view tabs
         self.perOut = SliderControlView(self, servername, basepath, rule, self.short_names_bool, "In", "Out")
@@ -730,7 +727,7 @@ class MatrixMixer(QtGui.QWidget):
             self.perOut.out[i].scrollarea = QtGui.QScrollArea(self.tabs)
             self.perOut.out[i].scrollarea.setWidgetResizable(True)
             self.perOut.out[i].scrollarea.setWidget(self.perOut.out[i])
-            self.tabs.addTab(self.perOut.out[i].scrollarea, "Out:%02d" % (i+1))
+            self.tabs.addTab(self.perOut.out[i].scrollarea, " Out:%02d " % (i+1))
 
     def transposeMatrixView(self):
         self.transpose = not(self.transpose)
