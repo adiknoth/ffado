@@ -198,6 +198,28 @@ protected:
     FireWorks::Device&          m_ParentDevice;
 };
 
+class PlaybackRoutingControl : public Control::Discrete
+{
+public:
+    PlaybackRoutingControl(FireWorks::Device& parent);
+    PlaybackRoutingControl(FireWorks::Device& parent, std::string n);
+
+    virtual ~PlaybackRoutingControl();
+
+    virtual void show();
+
+    virtual bool setValue(int idx, int v);
+    virtual int getValue(int idx);
+
+    // not used
+    virtual bool setValue(int v) {return 0;};
+    virtual int getValue() {return 0;};
+    virtual int getMinimum() {return 0;};
+    virtual int getMaximum() {return 0;};
+private:
+    bool GetState(EfcIsocMapIOConfigCmd *cmd);
+    FireWorks::Device&          m_ParentDevice;
+};
 
 class HwInfoControl : public Control::Discrete
 {
@@ -212,6 +234,7 @@ public:
         eHIF_GroupInCount,
         eHIF_PhantomPower,
         eHIF_OpticalInterface,
+        eHIF_PlaybackRouting
     };
 public:
     HwInfoControl(FireWorks::Device& parent,

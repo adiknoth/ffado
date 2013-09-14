@@ -608,6 +608,89 @@ int IOConfigControl::getValue( )
     }
 }
 
+// PlaybackRouting controls
+
+PlaybackRoutingControl::PlaybackRoutingControl(FireWorks::Device& parent)
+: Control::Discrete(&parent, "PlaybackRouting")
+, m_ParentDevice(parent)
+{
+}
+
+PlaybackRoutingControl::PlaybackRoutingControl(FireWorks::Device& parent, std::string n)
+: Control::Discrete(&parent, n)
+, m_ParentDevice(parent)
+{
+}
+
+PlaybackRoutingControl::~PlaybackRoutingControl()
+{
+}
+
+void PlaybackRoutingControl::show()
+{
+    debugOutput(DEBUG_LEVEL_NORMAL, "PlaybackRouting\n");
+}
+
+bool PlaybackRoutingControl::GetState(EfcIsocMapIOConfigCmd *cmd)
+{
+    cmd->m_num_playmap_entries = 3;
+    cmd->m_playmap[0] = 0;
+    cmd->m_playmap[1] = 0;
+    cmd->m_playmap[2] = 0;
+
+    cmd->setType(eCT_Get);
+    if (!m_ParentDevice.doEfcOverAVC(*cmd))
+        return false;
+
+    return true;
+}
+
+
+bool PlaybackRoutingControl::setValue(int idx, int v)
+{
+    EfcIsocMapIOConfigCmd setCmd;
+
+    /*
+     * NOTE:
+     * Playback Stream ch1/2: 0
+     * Playback Stream ch3/4: 2
+     * Playback Stream ch5/6: 4
+     */
+    unsigned int value = v * 2;
+
+    if (!GetState(&setCmd)) {
+        debugError("Cmd failed\n");
+        return false;
+    }
+
+    setCmd.m_playmap[idx] = value;
+
+    setCmd.setType(eCT_Set);
+    if (!m_ParentDevice.doEfcOverAVC(setCmd)) {
+        debugError("Cmd failed\n");
+        return false;
+    }
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "setValue: result=%d:%d\n",
+                                      idx,
+                                      setCmd.m_playmap[idx]);
+
+    return true;
+}
+
+int PlaybackRoutingControl::getValue(int idx)
+{
+    EfcIsocMapIOConfigCmd getCmd;
+    GetState(&getCmd);
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "getValue: result=[%d][%d][%d]\n",
+                                      getCmd.m_playmap[0],
+                                      getCmd.m_playmap[1],
+                                      getCmd.m_playmap[2]);
+
+    return getCmd.m_playmap[idx] / 2;
+}
+
 // control to get hardware information
 HwInfoControl::HwInfoControl(FireWorks::Device& p,
                              enum eHwInfoField f)
@@ -649,6 +732,8 @@ int HwInfoControl::getValue()
             return m_ParentDevice.getHwInfo().hasSoftwarePhantom();
         case eHIF_OpticalInterface:
             return m_ParentDevice.getHwInfo().hasOpticalInterface();
+        case eHIF_PlaybackRouting:
+            return m_ParentDevice.getHwInfo().hasPlaybackRouting();
         default:
             debugError("Bogus field\n");
             return 0;
