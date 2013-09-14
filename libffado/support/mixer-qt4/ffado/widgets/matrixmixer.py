@@ -475,10 +475,16 @@ class ChannelSliderValueInfo(QtGui.QLineEdit):
         self.setAutoFillBackground(True)
         self.setFrame(False)
 
+        self.setMinimalDim()
+
         self.bgcolors = BckgrdColorForNumber()
 
         self.setValue(value)
 
+    def setMinimalDim(self):
+        fontmetrics = self.fontMetrics()
+        self.setMinimumSize(fontmetrics.boundingRect("-00.0 dB").size()*1.1)
+        
     def setValue(self, value):
         color = self.bgcolors.getColor(value)
         palette = self.palette()
@@ -776,28 +782,17 @@ class MatrixMixer(QtGui.QWidget):
         font.setPointSize(int(size))
         self.tabs.setFont(font)
 
-        if (self.matrix.cols > 1):
-            for i in range(self.matrix.cols):
-                font = self.matrix.columnHeaders[i].lbl.font()
-                font.setPointSize(int(size))
-                self.matrix.columnHeaders[i].setFont(font)
+        font = self.matrix.font()
+        font.setPointSize(int(size))
+        self.matrix.setFont(font)
 
-        if (self.matrix.rows > 1):
-            for j in range(self.matrix.rows):
-                font = self.matrix.rowHeaders[j].lbl.font()
-                font.setPointSize(int(size))
-                self.matrix.rowHeaders[j].setFont(font)
+        font = self.perOut.font()
+        font.setPointSize(int(size))
+        self.perOut.setFont(font)
 
         for i in range(self.perOut.nbOut):
-            if (self.perOut.nbOut > 1):
-                font = self.perOut.out[i].lbl[0].font()
-                font.setPointSize(int(size))
-                self.perOut.out[i].lbl[0].setFont(font)
-            if (self.perOut.nbIn > 1):
-                for j in range(self.perOut.nbIn):
-                    font = self.perOut.out[i].lbl[j+1].font()
-                    font.setPointSize(int(size))
-                    self.perOut.out[i].lbl[j+1].setFont(font)
+            for j in range(self.perOut.nbIn):
+                self.perOut.out[i].svl[j].setMinimalDim()
 
     # Allows long name for Mixer/Out and /In to be hidden 
     def shortChannelNames(self):
