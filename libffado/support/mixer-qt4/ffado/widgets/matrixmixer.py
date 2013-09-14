@@ -335,15 +335,15 @@ class ChannelSliderValueInfo(QtGui.QLineEdit):
         
 # Matrix view widget
 class MatrixControlView(QtGui.QWidget):
-    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False, shortColName="Ch", shortRowName="Ch"):
+    def __init__(self, servername, basepath, parent=None, sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False, shortcolname="Ch", shortrowname="Ch"):
         QtGui.QWidget.__init__(self, parent)
 
         self.bus = dbus.SessionBus()
         self.dev = self.bus.get_object(servername, basepath)
         self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
 
-        self.shortColName = shortColName
-        self.shortRowName = shortRowName
+        self.shortcolname = shortcolname
+        self.shortrowname = shortrowname
 
         self.mutes_dev = None
         self.mutes_interface = None
@@ -357,9 +357,9 @@ class MatrixControlView(QtGui.QWidget):
             self.inverts_dev = self.bus.get_object(servername, invertspath)
             self.inverts_interface = dbus.Interface(self.inverts_dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
 
-        cols = self.interface.getColCount()
-        rows = self.interface.getRowCount()
-        log.debug("Mixer has %i rows and %i columns" % (rows, cols))
+        self.cols = self.interface.getColCount()
+        self.rows = self.interface.getRowCount()
+        log.debug("Mixer has %i rows and %i columns" % (self.rows, self.cols))
 
         layout = QtGui.QGridLayout(self)
         layout.setSizeConstraint(QtGui.QLayout.SetNoConstraint);
@@ -368,27 +368,29 @@ class MatrixControlView(QtGui.QWidget):
         self.rowHeaders = []
         self.columnHeaders = []
         self.items = []
+        self.shortname = False
+
         # Add row/column headers, but only if there's more than one 
         # row/column
-        if (cols > 1):
-            for i in range(cols):
-                ch = MixerChannel(i, self, self.getColName(i, False), smallFont)
+        if (self.cols > 1):
+            for i in range(self.cols):
+                ch = MixerChannel(i, self, self.getColName(i, self.shortname), smallFont)
                 self.connect(ch, QtCore.SIGNAL("hide"), self.hideColumn)
                 layout.addWidget(ch, 0, i+1)
                 self.columnHeaders.append( ch )
             layout.setRowStretch(0, 0)
             layout.setRowStretch(1, 10)
-        if (rows > 1):
-            for i in range(rows):
-                ch = MixerChannel(i, self, self.getRowName(i, False), smallFont)
+        if (self.rows > 1):
+            for i in range(self.rows):
+                ch = MixerChannel(i, self, self.getRowName(i, self.shortname), smallFont)
                 self.connect(ch, QtCore.SIGNAL("hide"), self.hideRow)
                 layout.addWidget(ch, i+1, 0)
                 self.rowHeaders.append( ch )
 
         # Add node-widgets
-        for i in range(rows):
+        for i in range(self.rows):
             self.items.append([])
-            for j in range(cols):
+            for j in range(self.cols):
                 mute_value = None
                 if (self.mutes_interface != None):
                     mute_value = self.mutes_interface.getValue(i,j)
@@ -432,22 +434,188 @@ class MatrixControlView(QtGui.QWidget):
     # Columns and rows
     def getColName(self, i, shortname):
         name = self.interface.getColName(i)
+        self.shortname = shortname
         if (shortname or (name == '')):
             number = " %d" % (i+1)
-            name = self.shortColName + number
+            name = self.shortcolname + number
         return name
 
     def getRowName(self, j, shortname):
         name = self.interface.getRowName(j)
+        self.shortname = shortname
         if (shortname or (name == '')):
             number = " %d" % (j+1)
-            name = self.shortRowName + number
+            name = self.shortrowname + number
         return name
 
     def valueChanged(self, n):
         #log.debug("MatrixNode.valueChanged( %s )" % str(n))
         self.interface.setValue(n[1], n[0], n[2])
         self.emit(QtCore.SIGNAL("valueChanged"), n)
+        
+    # Update when routing is modified
+    def updateRouting(self):
+        if (self.cols > 1):
+            for i in range(self.cols):
+                last_name = self.columnHeaders[i].lbl.text()
+                col_name = self.getColName(i, self.shortname)
+                if last_name != col_name:
+                    #log.debug("MatrixControlView.updateRouting( %s )" % str(col_name))
+                    self.columnHeaders[i].name = col_name
+                    self.columnHeaders[i].lbl.setText(col_name)
+      
+        if (self.rows > 1):
+            for j in range(self.rows):
+                last_name = self.rowHeaders[j].lbl.text()
+                row_name = self.getRowName(j, self.shortname)
+                if last_name != row_name:
+                    #log.debug("MatrixControlView.updateRouting( %s )" % str(row_name))
+                    self.rowHeaders[j].name = row_name
+                    self.rowHeaders[j].lbl.setText(row_name)       
+
+# Matrix view widget
+class SliderControlView(QtGui.QWidget):
+    def __init__(self, parent, servername, basepath, rule="Columns_are_inputs", shortinname="Ch", shortoutname="Ch"):
+        QtGui.QWidget.__init__(self, parent)
+
+        self.bus = dbus.SessionBus()
+        self.dev = self.bus.get_object(servername, basepath)
+        self.interface = dbus.Interface(self.dev, dbus_interface="org.ffado.Control.Element.MatrixMixer")
+
+        self.rule = rule
+        self.shortname = False
+        self.shortinname = shortinname
+        self.shortoutname = shortoutname
+
+        self.out = []
+        self.nbIn = self.getNbIn()
+        self.nbOut = self.getNbOut()
+            
+        for i in range(self.nbOut):
+            widget = QtGui.QWidget(parent)
+            v_layout = QtGui.QVBoxLayout(widget)
+            v_layout.setAlignment(Qt.Qt.AlignCenter)
+            widget.setLayout(v_layout)
+            self.out.append(widget)
+
+            self.out[i].lbl = []
+
+            # Mixer/Out info label
+            if (self.nbOut > 1):
+                lbl = QtGui.QLabel(widget)
+                lbl.setText(self.getOutName(i, self.shortname))
+                lbl.setAlignment(Qt.Qt.AlignCenter)
+                v_layout.addWidget(lbl)
+                self.out[i].lbl.append(lbl)
+
+            h_layout_wid = QtGui.QWidget(widget)
+            h_layout = QtGui.QHBoxLayout(h_layout_wid)
+            h_layout.setAlignment(Qt.Qt.AlignCenter)
+            h_layout_wid.setLayout(h_layout)
+            v_layout.addWidget(h_layout_wid)
+            self.out[i].slider = []
+            self.out[i].svl = []
+
+            for j in range(self.nbIn):
+                h_v_layout_wid = QtGui.QWidget(h_layout_wid)
+                h_v_layout = QtGui.QVBoxLayout(h_v_layout_wid)
+                h_v_layout.setAlignment(Qt.Qt.AlignCenter)
+                h_v_layout_wid.setLayout(h_v_layout)
+                h_layout.addWidget(h_v_layout_wid)
+
+                # Mixer/In info label
+                if (self.nbIn > 1):
+                    lbl = QtGui.QLabel(h_v_layout_wid)
+                    lbl.setText(self.getInName(j, self.shortname))
+                    lbl.setAlignment(Qt.Qt.AlignCenter)
+                    h_v_layout.addWidget(lbl)
+                    self.out[i].lbl.append(lbl)
+
+                h_v_h_layout_wid = QtGui.QWidget(h_v_layout_wid)
+                h_v_h_layout = QtGui.QHBoxLayout(h_v_h_layout_wid)
+                h_v_h_layout.setAlignment(Qt.Qt.AlignCenter)
+                h_v_h_layout_wid.setLayout(h_v_h_layout)
+                h_v_layout.addWidget(h_v_h_layout_wid)
+
+                slider = ChannelSlider(j, i, self.getValue(j,i), h_v_h_layout_wid)
+                h_v_h_layout.addWidget(slider)
+                self.out[i].slider.append(slider)
+                self.out[i].connect(slider, QtCore.SIGNAL("valueChanged"), self.valueChanged)
+
+                # Slider value info
+                svl = ChannelSliderValueInfo(j, i, self.getValue(j,i), h_v_layout_wid)
+                h_v_layout.addWidget(svl)
+                self.out[i].svl.append(svl)
+
+    def getNbIn(self):
+        if (self.rule == "Columns_are_inputs"):
+            return self.interface.getColCount()
+        else:
+            return self.interface.getRowCount()
+        
+    def getNbOut(self):
+        if (self.rule == "Columns_are_inputs"):
+            return self.interface.getRowCount()
+        else:
+            return self.interface.getColCount()
+        
+    def getValue(self, In, Out):
+        if (self.rule == "Columns_are_inputs"):
+            return self.interface.getValue(Out, In)           
+        else:
+            return self.interface.getValue(In, Out)            
+
+    def setValue(self, In, Out, val):
+        if (self.rule == "Columns_are_inputs"):
+            return self.interface.setValue(Out, In, val)           
+        else:
+            return self.interface.setValue(In, Out, val)            
+
+    def valueChanged(self, n):
+        self.setValue(n[0], n[1], n[2])
+        self.out[n[1]].svl[n[0]].setValue(n[2])
+        self.emit(QtCore.SIGNAL("valueChanged"), n)
+
+    def getOutName(self, i, shortname):
+        self.shortname = shortname
+        if (shortname):
+            number = " %d" % (i+1)
+            name = self.shortoutname + number
+            return name
+        else:
+            if (self.rule == "Columns_are_inputs"):
+                return self.interface.getRowName(i)            
+            else:
+                return self.interface.getColName(i)             
+
+    def getInName(self, j, shortname):
+        self.shortname = shortname
+        if (shortname):
+            number = " %d" % (j+1)
+            name = self.shortinname + number
+            return name
+        else:
+            if (self.rule == "Columns_are_inputs"):
+                return self.interface.getColName(j)            
+            else:
+                return self.interface.getRowName(j)            
+
+    # Update when routing is modified
+    def updateRouting(self):
+        for i in range(self.nbOut):
+            if (self.nbOut > 1):
+                last_name = self.out[i].lbl[0].text()
+                out_name = self.getOutName(i, self.shortname)
+                if last_name != out_name:
+                    #log.debug("SliderControlView.updateRouting( %s )" % str(out_name))
+                    self.out[i].lbl[0].setText(out_name)
+            if (self.nbIn > 1):
+                for j in range(self.nbIn):
+                    last_name = self.out[i].lbl[j+1].text()
+                    in_name = self.getInName(j, self.shortname)
+                    if last_name != in_name:
+                        #log.debug("SliderControlView.updateRouting( %s )" % str(in_name))
+                        self.out[i].lbl[j+1].setText(in_name)
 
 class MatrixMixer(QtGui.QWidget):
     def __init__(self, servername, basepath, parent=None, rule="Columns_are_inputs", sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False):
@@ -488,18 +656,19 @@ class MatrixMixer(QtGui.QWidget):
         mxv_set.addSeparator()
 
         font_switch_lbl = QtGui.QLabel(mxv_set)
-        font_switch_lbl.setText("Font size")
+        font_switch_lbl.setText("Font size ")
         mxv_set.addWidget(font_switch_lbl)
         font_switch = QtGui.QComboBox(mxv_set)
         font_switch.setToolTip("Labels font size")
         font = font_switch.font()
         for i in range(10):
-            font_switch.addItem("%d" % (font.pointSize()+4-i))
-        font_switch.setCurrentIndex(font_switch.findText("%d" % font.pointSize()))
+            font_switch.addItem(" %d " % (font.pointSize()+4-i))
+        font_switch.setCurrentIndex(font_switch.findText(" %d " % font.pointSize()))
         mxv_set.addWidget(font_switch)
         self.connect(font_switch, QtCore.SIGNAL("activated(QString)"), self.changeFontSize)
 
         self.layout.addWidget(mxv_set)
+        self.mxv_set = mxv_set
 
         # First tab is for matrix view
         # Next are or "per Out" view
@@ -517,9 +686,9 @@ class MatrixMixer(QtGui.QWidget):
 
         # Matrix view tab
         if (rule == "Columns_are_inputs"):
-            self.matrix = MatrixControlView(servername, basepath, parent, sliderMaxValue, mutespath, invertspath, smallFont, "In", "Out")
+            self.matrix = MatrixControlView(servername, basepath, self, sliderMaxValue, mutespath, invertspath, smallFont, "In", "Out")
         else:
-            self.matrix = MatrixControlView(servername, basepath, parent, sliderMaxValue, mutespath, invertspath, smallFont, "Out", "In")
+            self.matrix = MatrixControlView(servername, basepath, self, sliderMaxValue, mutespath, invertspath, smallFont, "Out", "In")
         self.connect(self.matrix, QtCore.SIGNAL("valueChanged"), self.matrixControlChanged)
 
         self.scrollarea_matrix = QtGui.QScrollArea(self.tabs)
@@ -528,70 +697,13 @@ class MatrixMixer(QtGui.QWidget):
         self.tabs.addTab(self.scrollarea_matrix, "Matrix")
 
         # Per out view
-        self.out = []
-        nbIn = self.getNbIn()
-        nbOut = self.getNbOut()
-            
-        for i in range(nbOut):
-            widget = QtGui.QWidget(self)
-            v_layout = QtGui.QVBoxLayout(widget)
-            v_layout.setAlignment(Qt.Qt.AlignCenter)
-            self.out.append(v_layout)
-
-            # even numbered labels are for standart names
-            self.out[i].lbl = []
-
-            # Mixer/Out info label
-            if (nbOut > 1):
-                lbl = QtGui.QLabel(widget)
-                lbl.setText(self.getOutName(i))
-                lbl.setAlignment(Qt.Qt.AlignCenter)
-                self.out[i].addWidget(lbl)
-                self.out[i].lbl.append(lbl)
-
-            h_layout_wid = QtGui.QWidget(widget)
-            h_layout = QtGui.QHBoxLayout(h_layout_wid)
-            h_layout.setAlignment(Qt.Qt.AlignCenter)
-            h_layout_wid.setLayout(h_layout)
-            self.out[i].addWidget(h_layout_wid)
-            self.out[i].slider = []
-            self.out[i].svl = []
-
-            for j in range(nbIn):
-                h_v_layout_wid = QtGui.QWidget(h_layout_wid)
-                h_v_layout = QtGui.QVBoxLayout(h_v_layout_wid)
-                h_v_layout.setAlignment(Qt.Qt.AlignCenter)
-                h_v_layout_wid.setLayout(h_v_layout)
-                h_layout.addWidget(h_v_layout_wid)
-
-                # Mixer/In info label
-                if (nbIn > 1):
-                    lbl = QtGui.QLabel(h_v_layout_wid)
-                    lbl.setText(self.getInName(j))
-                    lbl.setAlignment(Qt.Qt.AlignCenter)
-                    h_v_layout.addWidget(lbl)
-                    self.out[i].lbl.append(lbl)
-
-                h_v_h_layout_wid = QtGui.QWidget(h_v_layout_wid)
-                h_v_h_layout = QtGui.QHBoxLayout(h_v_h_layout_wid)
-                h_v_h_layout.setAlignment(Qt.Qt.AlignCenter)
-                h_v_h_layout_wid.setLayout(h_v_h_layout)
-                h_v_layout.addWidget(h_v_h_layout_wid)
-
-                slider = ChannelSlider(j, i, self.getValue(j,i), h_v_h_layout_wid)
-                h_v_h_layout.addWidget(slider)
-                self.out[i].slider.append(slider)
-                self.out[i].connect(slider, QtCore.SIGNAL("valueChanged"), self.valueChanged_slider)
-
-                # Slider value info
-                svl = ChannelSliderValueInfo(j, i, self.getValue(j,i), h_v_layout_wid)
-                h_v_layout.addWidget(svl)
-                self.out[i].svl.append(svl)
-
-            self.out[i].scrollarea = QtGui.QScrollArea(self.tabs)
-            self.out[i].scrollarea.setWidgetResizable(True)
-            self.out[i].scrollarea.setWidget(widget)
-            self.tabs.addTab(self.out[i].scrollarea, "Out:%02d" % (i+1))
+        self.perOut = SliderControlView(self, servername, basepath, rule, "In", "Out")
+        self.connect(self.perOut, QtCore.SIGNAL("valueChanged"), self.sliderControlChanged)
+        for i in range(self.perOut.nbOut):
+            self.perOut.out[i].scrollarea = QtGui.QScrollArea(self.tabs)
+            self.perOut.out[i].scrollarea.setWidgetResizable(True)
+            self.perOut.out[i].scrollarea.setWidget(self.perOut.out[i])
+            self.tabs.addTab(self.perOut.out[i].scrollarea, "Out:%02d" % (i+1))
 
     def hideMatrixView(self):
         self.hide_matrix_bool = not(self.hide_matrix_bool)
@@ -605,77 +717,70 @@ class MatrixMixer(QtGui.QWidget):
             
     def hidePerOutputView(self):
         self.hide_per_output_bool = not(self.hide_per_output_bool)
-        nbOut = self.getNbOut()
         if (self.hide_per_output_bool):
-            for i in range(nbOut):
+            for i in range(self.perOut.nbOut):
                 self.tabs.removeTab(1)
             self.hide_per_output.setText("Show per Output")
         else:
-            for i in range(nbOut):
-                self.tabs.insertTab(i+1, self.out[i].scrollarea, "Out:%02d" % (i+1))
+            for i in range(self.perOut.nbOut):
+                self.tabs.insertTab(i+1, self.perOut.out[i].scrollarea, "Out:%02d" % (i+1))
             self.hide_per_output.setText("Hide per Output")
 
     # Font size for channel names
     def changeFontSize(self, size):
-        cols = self.matrix.interface.getColCount()
-        if (cols > 1):
-            for i in range(cols):
+        font = self.mxv_set.font()
+        font.setPointSize(int(size))
+        self.mxv_set.setFont(font)
+
+        font = self.tabs.font()
+        font.setPointSize(int(size))
+        self.tabs.setFont(font)
+
+        if (self.matrix.cols > 1):
+            for i in range(self.matrix.cols):
                 font = self.matrix.columnHeaders[i].lbl.font()
                 font.setPointSize(int(size))
                 self.matrix.columnHeaders[i].setFont(font)
 
-        rows = self.matrix.interface.getRowCount()
-        if (rows > 1):
-            for j in range(rows):
+        if (self.matrix.rows > 1):
+            for j in range(self.matrix.rows):
                 font = self.matrix.rowHeaders[j].lbl.font()
                 font.setPointSize(int(size))
                 self.matrix.rowHeaders[j].setFont(font)
 
-        nbIn = self.getNbIn()
-        nbOut = self.getNbOut()
-        for i in range(nbOut):
-            if (nbOut > 1):
-                font = self.out[i].lbl[0].font()
+        for i in range(self.perOut.nbOut):
+            if (self.perOut.nbOut > 1):
+                font = self.perOut.out[i].lbl[0].font()
                 font.setPointSize(int(size))
-                self.out[i].lbl[0].setFont(font)
-            if (nbIn > 1):
-                for j in range(nbIn):
-                    font = self.out[i].lbl[j+1].font()
+                self.perOut.out[i].lbl[0].setFont(font)
+            if (self.perOut.nbIn > 1):
+                for j in range(self.perOut.nbIn):
+                    font = self.perOut.out[i].lbl[j+1].font()
                     font.setPointSize(int(size))
-                    self.out[i].lbl[j+1].setFont(font)
+                    self.perOut.out[i].lbl[j+1].setFont(font)
 
     # Allows long name for Mixer/Out and /In to be hidden 
     def shortChannelNames(self):
         checked = not(self.short_names_bool)
-        cols = self.matrix.interface.getColCount()
-        if (cols > 1):
-            for i in range(cols):
+        if (self.matrix.cols > 1):
+            for i in range(self.matrix.cols):
                 self.matrix.columnHeaders[i].name = self.matrix.getColName(i, checked)
                 self.matrix.columnHeaders[i].lbl.setText(self.matrix.columnHeaders[i].name)
 
-        rows = self.matrix.interface.getRowCount()
-        if (rows > 1):
-            for j in range(rows):
+        if (self.matrix.rows > 1):
+            for j in range(self.matrix.rows):
                 self.matrix.rowHeaders[j].name = self.matrix.getRowName(j, checked)
                 self.matrix.rowHeaders[j].lbl.setText(self.matrix.rowHeaders[j].name)       
 
-        nbIn = self.getNbIn()
-        nbOut = self.getNbOut()
-        for i in range(nbOut):
-            if (nbOut > 1):
-                self.out[i].lbl[0].setText(self.getOutName(i))
-            if (nbIn > 1):
-                for j in range(nbIn):
-                    self.out[i].lbl[j+1].setText(self.getInName(j))
+        for i in range(self.perOut.nbOut):
+            if (self.perOut.nbOut > 1):
+                self.perOut.out[i].lbl[0].setText(self.perOut.getOutName(i, checked))
+            if (self.perOut.nbIn > 1):
+                for j in range(self.perOut.nbIn):
+                    self.perOut.out[i].lbl[j+1].setText(self.perOut.getInName(j, checked))
 
         # Care for hidden columns
-        if (cols > 1):
-            for i in self.matrix.hiddenCols:
-                self.matrix.columnHeaders[i].lbl.setText("%d" % (i+1))
-        # Care for hidden rows
-        if (rows > 1):
-            for j in self.matrix.hiddenRows:
-                self.matrix.rowHeaders[j].lbl.setText("%d" % (j+1))
+        self.matrix.checkVisibilities()
 
         self.short_names_bool = checked
         if (self.short_names_bool):
@@ -690,16 +795,14 @@ class MatrixMixer(QtGui.QWidget):
         # Update value needed for "per Out" view
         #log.debug("Update per Output( %s )" % str(n))
         if (self.rule == "Columns_are_inputs"):
-            self.out[n[1]].slider[n[0]].slider_set_value(n[2])
+            self.perOut.out[n[1]].slider[n[0]].slider_set_value(n[2])
         else:
-            self.out[n[0]].slider[n[1]].slider_set_value(n[2])
+            self.perOut.out[n[0]].slider[n[1]].slider_set_value(n[2])
 
     # "per Out" view
-    def valueChanged_slider(self, n):
-        #log.debug("MatrixSlider.valueChanged( %s )" % str(n))
-        self.setValue(n[0], n[1], n[2])
-        self.out[n[1]].svl[n[0]].setValue(n[2])
+    def sliderControlChanged(self, n):
         # Update value needed for matrix view
+        #log.debug("Update Matrix( %s )" % str(n))
         if (self.rule == "Columns_are_inputs"):
             self.matrix.items[n[1]][n[0]].setValue(n[2])
         else:
@@ -712,80 +815,14 @@ class MatrixMixer(QtGui.QWidget):
                 self.matrix.items[x][y].setValue(val)
                 self.matrix.items[x][y].internalValueChanged(val)
                 if (self.rule == "Columns_are_inputs"):
-                    self.out[x].slider[y].slider_set_value(val)
+                    self.perOut.out[x].slider[y].slider_set_value(val)
                 else:
-                    self.out[y].slider[x].slider_set_value(val)
-
-    def getNbIn(self):
-        if (self.rule == "Columns_are_inputs"):
-            return self.interface.getColCount()
-        else:
-            return self.interface.getRowCount()
-        
-    def getNbOut(self):
-        if (self.rule == "Columns_are_inputs"):
-            return self.interface.getRowCount()
-        else:
-            return self.interface.getColCount()
-        
-    def getValue(self, In, Out):
-        if (self.rule == "Columns_are_inputs"):
-            return self.interface.getValue(Out, In)           
-        else:
-            return self.interface.getValue(In, Out)            
-
-    def setValue(self, In, Out, val):
-        if (self.rule == "Columns_are_inputs"):
-            return self.interface.setValue(Out, In, val)           
-        else:
-            return self.interface.setValue(In, Out, val)            
-
-    def getOutName(self, i):
-        if (self.rule == "Columns_are_inputs"):
-            return self.matrix.rowHeaders[i].name            
-        else:
-            return self.matrix.columnHeaders[i].name            
-
-    def getInName(self, j):
-        if (self.rule == "Columns_are_inputs"):
-            return self.matrix.columnHeaders[j].name            
-        else:
-            return self.matrix.rowHeaders[j].name            
+                    self.perOut.out[y].slider[x].slider_set_value(val)
 
     # Update when routing is modified
     def updateRouting(self):
-        cols = self.interface.getColCount()
-        rows = self.interface.getRowCount()
-        if (cols > 1):
-            for i in range(cols):
-                last_name = self.matrix.columnHeaders[i].lbl.text()
-                col_name = self.getColName(i)
-                if last_name != col_name:
-                    self.matrix.columnHeaders[i].name = col_name
-                    self.matrix.columnHeaders[i].lbl.setText(col_name)
-      
-        if (rows > 1):
-            for j in range(rows):
-                last_name = self.matrix.rowHeaders[j].lbl.text()
-                row_name = self.getRowName(j)
-                if last_name != row_name:
-                    self.matrix.rowHeaders[j].name = row_name
-                    self.matrix.rowHeaders[j].lbl.setText(row_name)       
-
-        nbIn = self.getNbIn()
-        nbOut = self.getNbOut()
-        for i in range(nbOut):
-            if (nbOut > 1):
-                last_name = self.out[i].lbl[0].text()
-                out_name = self.getOutName(i)
-                if last_name != out_name:
-                    self.out[i].lbl[0].setText(out_name)
-            if (nbIn > 1):
-                for j in range(nbIn):
-                    last_name = self.out[i].lbl[j+1].text()
-                    in_name = self.getInName(j)
-                    if last_name != in_name:
-                        self.out[i].lbl[j+1].setText(in_name)
+        self.matrix.updateRouting()
+        self.perOut.updateRouting()
         
 #
 # vim: et ts=4 sw=4 fileencoding=utf8
