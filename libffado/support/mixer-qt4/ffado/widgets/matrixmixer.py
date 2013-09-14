@@ -662,9 +662,16 @@ class MatrixMixer(QtGui.QWidget):
         # Mixer view Tool bar
         mxv_set = QtGui.QToolBar("View settings", self)
 
+        # Here is a hack; the first action button appears to behaves strangely,
+        # possibly a PyQt bug (or an unsufficient fair implementation of it)
+        # Feel free to remove the next three lines at a time in the future
+        hack = QtGui.QAction(" ", mxv_set)
+        hack.setDisabled(True)
+        mxv_set.addAction(hack)
+
         transpose_matrix = QtGui.QAction("Transpose", mxv_set)
         self.transpose = False
-        transpose_matrix.setShortcut('Ctrl+T')
+        #transpose_matrix.setShortcut('Ctrl+T')
         transpose_matrix.setToolTip("Invert rows and columns in Matrix view")
         mxv_set.addAction(transpose_matrix)
         transpose_matrix.triggered.connect(self.transposeMatrixView)
