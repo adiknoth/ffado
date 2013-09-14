@@ -52,6 +52,8 @@ public:
     
     virtual void showEfcCmd();
     
+    bool hasPlaybackRouting() const
+        {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_PLAYBACK_ROUTING);};
     bool hasSoftwarePhantom() const
         {return EFC_CMD_HW_CHECK_FLAG(m_flags, EFC_CMD_HW_HAS_PHANTOM);};
     bool hasDSP() const

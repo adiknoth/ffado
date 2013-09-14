@@ -78,6 +78,8 @@ const char *eIOConfigRegisterToString(const enum eIOConfigRegister reg) {
             return "DigitalInterface";
         case eCR_Phantom:
             return "Phantom";
+        case eCR_IsocMap:
+            return "IsocMap";
         default:
             return "invalid";
     }

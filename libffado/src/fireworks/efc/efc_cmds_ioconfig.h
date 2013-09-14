@@ -36,11 +36,11 @@ typedef struct tag_efc_isoc_map
 
     uint32_t    num_playmap_entries;
     uint32_t    num_phys_out;
-    int32_t     playmap[ EFC_MAX_ISOC_MAP_ENTRIES ];
+    uint32_t     playmap[ EFC_MAX_ISOC_MAP_ENTRIES ];
 
     uint32_t    num_recmap_entries;
     uint32_t    num_phys_in;
-    int32_t     recmap[ EFC_MAX_ISOC_MAP_ENTRIES ];
+    uint32_t     recmap[ EFC_MAX_ISOC_MAP_ENTRIES ];
 } IsoChannelMap;
 
 class EfcGenericIOConfigCmd : public EfcCmd
@@ -63,6 +63,39 @@ public:
         { return "EfcGenericIOConfigCmd"; };
 
     uint32_t   m_value;
+
+private:
+    enum eCmdType           m_type;
+    enum eIOConfigRegister  m_reg;
+};
+
+class EfcIsocMapIOConfigCmd : public EfcCmd
+{
+public:
+    EfcIsocMapIOConfigCmd();
+    virtual ~EfcIsocMapIOConfigCmd() {};
+
+    virtual bool serialize( Util::Cmd::IOSSerialize& se );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
+
+    virtual void showEfcCmd();
+
+    bool setType( enum eCmdType type );
+    enum eCmdType getType() {return m_type;};
+
+    virtual const char* getCmdName() const
+        { return "EfcIsocMapIOConfigCmd"; };
+
+    uint32_t    m_samplerate;
+    uint32_t    m_flags;
+
+    uint32_t    m_num_playmap_entries;
+    uint32_t    m_num_phys_out;
+    uint32_t     m_playmap[ EFC_MAX_ISOC_MAP_ENTRIES ];
+
+    uint32_t    m_num_recmap_entries;
+    uint32_t    m_num_phys_in;
+    uint32_t     m_recmap[ EFC_MAX_ISOC_MAP_ENTRIES ];
 
 private:
     enum eCmdType           m_type;

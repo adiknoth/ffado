@@ -110,6 +110,7 @@
 #define EFC_CMD_HW_HAS_DSP                          4
 #define EFC_CMD_HW_HAS_FPGA                         5
 #define EFC_CMD_HW_HAS_PHANTOM                      6
+#define EFC_CMD_HW_HAS_PLAYBACK_ROUTING             7
 
 #define EFC_CMD_HW_CHECK_FLAG(__val__,__flag__) \
     (((__val__) & (1<<(__flag__))) != 0)
@@ -166,6 +167,7 @@ enum eIOConfigRegister {
     eCR_Mirror,
     eCR_DigitalInterface,
     eCR_Phantom,
+    eCR_IsocMap
 };
 
 const char *eMixerTargetToString(const enum eMixerTarget target);
