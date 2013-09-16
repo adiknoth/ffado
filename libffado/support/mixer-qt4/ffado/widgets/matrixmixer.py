@@ -865,7 +865,7 @@ class MatrixMixer(QtGui.QWidget):
     def refreshValues(self):
         for x in range(len(self.matrix.items)):
             for y in range(len(self.matrix.items[x])):
-                val = self.interface.getValue(x,y)
+                val = self.matrix.interface.getValue(x,y)
                 self.matrix.items[x][y].setValue(val)
                 self.matrix.items[x][y].internalValueChanged(val)
                 if (self.rule == "Columns_are_inputs"):
