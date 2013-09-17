@@ -866,12 +866,12 @@ class MatrixMixer(QtGui.QWidget):
         for x in range(len(self.matrix.items)):
             for y in range(len(self.matrix.items[x])):
                 val = self.matrix.interface.getValue(x,y)
-                self.matrix.items[x][y].setValue(val)
-                self.matrix.items[x][y].internalValueChanged(val)
-                if (self.rule == "Columns_are_inputs"):
-                    self.perOut.out[x].slider[y].slider_set_value(val)
+                if (self.transpose):
+                    self.matrix.items[y][x].setValue(val)
+                    self.matrix.items[y][x].internalValueChanged(val)
                 else:
-                    self.perOut.out[y].slider[x].slider_set_value(val)
+                    self.matrix.items[x][y].setValue(val)
+                    self.matrix.items[x][y].internalValueChanged(val)
 
     # Update when routing is modified
     def updateRouting(self):
