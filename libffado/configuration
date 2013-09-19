@@ -614,13 +614,21 @@ device_definitions = (
     driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
+{
+    vendorid    = 0x0000A0DE;
+    modelid     = 0x0010000B;
+    vendorname  = "Yamaha";
+    modelname   = "GO44";
+    driver      = "BEBOB";
+    mixer       = "YamahaGo";
+},
 { # Yamaha GO46, provided by Luis Pablo Gasparotto
     vendorid    = 0x0000A0DE;
     modelid     = 0x0010000C;
     vendorname  = "Yamaha";
     modelname   = "GO46";
     driver      = "BEBOB";
-    mixer       = "Phase24Control";
+    mixer       = "YamahaGo";
     xmit_max_cycles_early_transmit = 4;
 },
 { # DnR - Axum_FireWire_IO_card_16x16
