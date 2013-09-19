@@ -437,20 +437,28 @@ Device::getSamplingFrequency( ) {
     // have to be changed to obtain the "real" sample rate through other
     // means.
 
-// This needs to be reworked.  get_hardware_state() triggers an async
-// transaction and getSamplingFrequency() is called several times per
-// iso cycle by the transmit stream processor.  The kernel doesn't cope
-// with this and freezes after a short time having exhausted system memory.
-//
-//    FF_state_t state;
-//    if (get_hardware_state(&state) != 0) {
-//        debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
-//        return 0;
-//    }
-//    if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
-//        // Note: this could return 0 if there is no valid external clock
-//        return state.autosync_freq;
-//    }
+    // The kernel (as of 3.10 at least) seems to crash with an out-of-memory
+    // condition if this function calls get_hardware_state() too frequently
+    // (for example, several times per iso cycle).  The code of the RME
+    // driver should be structured in such a way as to prevent such calls
+    // from the fast path, but it's always possible that other components
+    // will call into this function when streaming is active (ffado-mixer
+    // for instance.  In such cases return the software frequency as a proxy
+    // for the true rate.
+
+    if (hardware_is_streaming()) {
+        return dev_config->software_freq;
+    }
+
+    FF_state_t state;
+    if (get_hardware_state(&state) != 0) {
+        debugOutput(DEBUG_LEVEL_ERROR, "failed to read device state\n");
+        return 0;
+    }
+    if (state.clock_mode == FF_STATE_CLOCKMODE_AUTOSYNC) {
+        // Note: this could return 0 if there is no valid external clock
+        return state.autosync_freq;
+    }
 
     return dev_config->software_freq;
 }
@@ -702,9 +710,9 @@ bool
 Device::resetForStreaming() {
     signed int err;
 
-signed int iso_rx;
-unsigned int stat[4];
-signed int i;
+    signed int iso_rx;
+    unsigned int stat[4];
+    signed int i;
 
     // Ensure the transmit processor is ready to start streaming.  When
     // this function is called from prepare() the transmit processor
@@ -763,6 +771,17 @@ signed int i;
         if (i == 100)
             debugFatal("timeout waiting for device not busy\n");
         return false;
+    } else {
+        signed int init_samplerate;
+        if ((stat[1] & SR1_CLOCK_MODE_MASTER) ||
+            (stat[0] & SR0_AUTOSYNC_FREQ_MASK)==0 ||
+            (stat[0] & SR0_AUTOSYNC_SRC_MASK)==SR0_AUTOSYNC_SRC_NONE) {
+            init_samplerate = dev_config->hardware_freq;
+        } else {
+            init_samplerate = (stat[0] & SR0_STREAMING_FREQ_MASK) * 250;
+        }
+        debugOutput(DEBUG_LEVEL_VERBOSE, "sample rate on start: %d\n",
+            init_samplerate);
     }
 
     return FFADODevice::resetForStreaming();
@@ -772,9 +791,8 @@ bool
 Device::prepare() {
 
     signed int mult, bandwidth;
-    signed int freq, init_samplerate;
+    signed int freq;
     signed int err = 0;
-    unsigned int stat[4];
 
     debugOutput(DEBUG_LEVEL_NORMAL, "Preparing Device...\n" );
 
@@ -856,17 +874,6 @@ Device::prepare() {
     if (m_rme_model == RME_MODEL_FIREFACE400) {
         iso_rx_channel = get1394Service().allocateIsoChannelGeneric(bandwidth);
     }
-
-    if ((stat[1] & SR1_CLOCK_MODE_MASTER) ||
-        (stat[0] & SR0_AUTOSYNC_FREQ_MASK)==0 ||
-        (stat[0] & SR0_AUTOSYNC_SRC_MASK)==SR0_AUTOSYNC_SRC_NONE) {
-        init_samplerate = dev_config->hardware_freq;
-    } else {
-        init_samplerate = (stat[0] & SR0_STREAMING_FREQ_MASK) * 250;
-    }
-
-    debugOutput(DEBUG_LEVEL_VERBOSE, "sample rate on start: %d\n",
-        init_samplerate);
 
     // get the device specific and/or global SP configuration
     Util::Configuration &config = getDeviceManager().getConfiguration();
@@ -985,8 +992,20 @@ Device::stopStreamByIndex(int i) {
 signed int
 Device::getFramesPerPacket(void) {
     // The number of frames transmitted in a single packet is solely
-    // determined by the sample rate.
-    signed int freq = getSamplingFrequency();
+    // determined by the sample rate.  This function is called several times
+    // per iso cycle by the tx stream processor, so use the software rate as
+    // a proxy for the hardware sample rate.  Calling getSamplingFrequency()
+    // is best avoided because otherwise the kernel tends to crash having
+    // run out of memory (something about the timing of async commands in
+    // getSamplingFrequency() and the iso tx handler seems to be tripping it
+    // up).
+    //
+    // If streaming is active the software sampling rate should be set up.
+    // If the dds_freq functionality is implemented the software rate can
+    // probably still be used because the hardware dictates that both
+    // must share the same multiplier, and the only reason for obtaining
+    // the sampling frequency is to determine the multiplier.
+    signed int freq = dev_config->software_freq;
     signed int mult = multiplier_of_freq(freq);
     switch (mult) {
         case 2: return 15;
