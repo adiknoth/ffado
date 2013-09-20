@@ -23,105 +23,176 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>203</width>
-    <height>258</height>
+    <width>534</width>
+    <height>207</height>
    </rect>
   </property>
-  <layout class="QVBoxLayout">
+  <layout class="QHBoxLayout" name="horizontalLayout">
    <item>
-    <widget class="QGroupBox" name="groupBox">
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="2" column="0">
+      <widget class="QPushButton" name="btnSaveSettings">
+       <property name="text">
+        <string>Save Settings to Device</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>S/PDIF Mode</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QRadioButton" name="radioConsumer">
+          <property name="text">
+           <string>Consumer</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QRadioButton" name="radioProfessional">
+          <property name="text">
+           <string>Professional</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QPushButton" name="btnPhantom">
+       <property name="text">
+        <string>Phantom Power</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QPushButton" name="btnIdentify">
+       <property name="text">
+        <string>Identify Device</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QGroupBox" name="DigIface">
+       <property name="title">
+        <string>Digital Interface</string>
+       </property>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0" colspan="2">
+         <widget class="QComboBox" name="cmbDigIface">
+          <item>
+           <property name="text">
+            <string>SPDIF Coaxial</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>SPDIF Optical</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ADAT Optical</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="PlbkRoute">
      <property name="title">
-      <string>S/PDIF Mode</string>
+      <string>Playback Routing</string>
      </property>
-     <layout class="QVBoxLayout">
-      <item>
-       <widget class="QRadioButton" name="radioConsumer">
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
         <property name="text">
-         <string>Consumer</string>
+         <string>Analog Out 1/2</string>
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QRadioButton" name="radioProfessional">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="cmbRoute1">
+        <item>
+         <property name="text">
+          <string>Stream Playback 1/2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Stream Playback 3/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Stream Playback 5/6</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelRoute2">
         <property name="text">
-         <string>Professional</string>
+         <string>Headphone Out 1/2</string>
         </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="cmbRoute2">
+        <item>
+         <property name="text">
+          <string>Stream Playback 1/2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Stream Playback 3/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Stream Playback 5/6</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Digital Out 1/2</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="cmbRoute3">
+        <item>
+         <property name="text">
+          <string>Stream Playback 1/2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Stream Playback 3/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Stream Playback 5/6</string>
+         </property>
+        </item>
        </widget>
       </item>
      </layout>
     </widget>
-   </item>
-   <item>
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Expanding</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>41</width>
-       <height>16</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
-    <widget class="QPushButton" name="btnPhantom">
-     <property name="text">
-      <string>Phantom Power</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Expanding</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>41</width>
-       <height>16</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item>
-    <widget class="QPushButton" name="btnSaveSettings">
-     <property name="text">
-      <string>Save Settings to Device</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="btnIdentify">
-     <property name="text">
-      <string>Identify Device</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Expanding</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>41</width>
-       <height>16</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>
@@ -130,6 +201,10 @@
  <tabstops>
   <tabstop>radioConsumer</tabstop>
   <tabstop>radioProfessional</tabstop>
+  <tabstop>cmbDigIface</tabstop>
+  <tabstop>cmbRoute1</tabstop>
+  <tabstop>cmbRoute2</tabstop>
+  <tabstop>cmbRoute3</tabstop>
   <tabstop>btnPhantom</tabstop>
   <tabstop>btnSaveSettings</tabstop>
   <tabstop>btnIdentify</tabstop>

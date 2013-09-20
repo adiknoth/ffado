@@ -138,6 +138,27 @@ class AudioFire(QWidget):
                         self.SPDIFmodeControls[sender][1]))
             self.hw.setDiscrete(self.SPDIFmodeControls[sender][0], self.SPDIFmodeControls[sender][1])
 
+    def updateDigIfaceControl(self, a0):
+        sender = self.sender()
+        state = a0
+	# 0/2/3 is available but GUI set 0/1/2
+        if a0 > 0:
+            state += 1
+        log.debug("set %s to %d" % (
+            self.DigIfaceControls[sender][0], state))
+	self.hw.setDiscrete(self.DigIfaceControls[sender][0], state)
+
+    def updatePlbkRouteControl(self, src):
+        sender = self.sender()
+        path = self.PlbkRouteControls[sender][0]
+        sink = self.PlbkRouteControls[sender][1]
+        self.hw.setDiscrete(path, sink, src)
+        self.setStreamLabel(src, sink)
+
+    def setStreamLabel(self, src, sink):
+        pos = src * 2 + 1
+        self.StreamMonitors[sink].lblName.setText("Playback %d/%d" % (pos, pos + 1))
+
     def buildMixer(self):
         log.debug("Building mixer")
         self.MatrixButtonControls={}
@@ -147,6 +168,9 @@ class AudioFire(QWidget):
         self.SelectorControls={}
         self.SPDIFmodeControls={}
         self.TriggerControls={}
+        self.DigIfaceControls={}
+        self.PlbkRouteControls={}
+        self.StreamMonitors=[]
 
         nb_pys_out = self.hw.getDiscrete("/HwInfo/PhysicalAudioOutCount")
         nb_pys_in = self.hw.getDiscrete("/HwInfo/PhysicalAudioInCount")
@@ -200,6 +224,7 @@ class AudioFire(QWidget):
             strip = AfMonitorWidget( grpPlayback )
             grpPlaybackLayout.addWidget(strip, 1)
             strip.lblName.setText("Playback %d/%d" % (output_id+1, output_id+2))
+            self.StreamMonitors.append(strip)
 
             self.VolumeControls[strip.sldGain0] = ["/Mixer/PC%dGain" % (output_id)]
             self.VolumeControls[strip.sldGain1] = ["/Mixer/PC%dGain" % (output_id+1)]
@@ -276,6 +301,25 @@ class AudioFire(QWidget):
             self.SelectorControls[settings.btnPhantom] = ["/PhantomPower"]
         else:
             settings.btnPhantom.hide()
+
+        has_opt_iface = self.hw.getDiscrete('/HwInfo/OpticalInterface')
+        if has_opt_iface:
+            self.DigIfaceControls[settings.cmbDigIface] = ['/DigitalInterface']
+        else:
+            settings.DigIface.hide()
+
+        has_plbk_route = self.hw.getDiscrete('/HwInfo/PlaybackRouting')
+        if has_plbk_route:
+            self.PlbkRouteControls[settings.cmbRoute1] = ['/PlaybackRouting', 0]
+            self.PlbkRouteControls[settings.cmbRoute2] = ['/PlaybackRouting', 1]
+            self.PlbkRouteControls[settings.cmbRoute3] = ['/PlaybackRouting', 2]
+            if self.configrom.getModelId() == 0x0AF2:
+                label_route2 = 'Headphone Out 1/2'
+            else:
+                label_route2 = 'Analog Out 3/4'
+            settings.labelRoute2.setText(label_route2)
+        else:
+            settings.PlbkRoute.hide()
 
         self.TriggerControls[settings.btnSaveSettings] = ["/SaveSettings"]
         self.TriggerControls[settings.btnIdentify] = ["/Identify"]
@@ -374,6 +418,21 @@ class AudioFire(QWidget):
 
             # connect the UI element
             QObject.connect(ctrl,SIGNAL('toggled(bool)'),self.updateSPDIFmodeControl)
+
+        for ctrl, info in self.DigIfaceControls.iteritems():
+            state = self.hw.getDiscrete(self.DigIfaceControls[ctrl][0])
+            # 0/2/3 is available but GUI set 0/1/2
+            if state > 0:
+                state -= 1
+            ctrl.setCurrentIndex(state)
+            QObject.connect(ctrl, SIGNAL('activated(int)'), self.updateDigIfaceControl)
+
+        for ctrl, info in self.PlbkRouteControls.iteritems():
+            sink = self.PlbkRouteControls[ctrl][1]
+            src = self.hw.getDiscrete(self.PlbkRouteControls[ctrl][0], sink)
+            ctrl.setCurrentIndex(src)
+            self.setStreamLabel(src, sink)
+            QObject.connect(ctrl, SIGNAL('activated(int)'), self.updatePlbkRouteControl)
 
         self.update_timer = QTimer(self)
         QObject.connect(self.update_timer, SIGNAL('timeout()'), self.polledUpdate)
