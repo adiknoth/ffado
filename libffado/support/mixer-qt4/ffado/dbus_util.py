@@ -59,21 +59,27 @@ class ControlInterface:
             log.error("Failed to get Continuous %s on server %s" % (path, self.servername))
             return 0
 
-    def setDiscrete(self, subpath, v):
+    def setDiscrete(self, subpath, v, idx=None):
         try:
             path = self.basepath + subpath
             dev = self.bus.get_object(self.servername, path)
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Discrete')
-            dev_cont.setValue(v)
+            if idx == None:
+                dev_cont.setValue(v)
+            else:
+                dev_cont.setValueIdx(v, idx)
         except:
             log.error("Failed to set Discrete %s on server %s" % (path, self.servername))
 
-    def getDiscrete(self, subpath):
+    def getDiscrete(self, subpath, idx=None):
         try:
             path = self.basepath + subpath
             dev = self.bus.get_object(self.servername, path)
             dev_cont = dbus.Interface(dev, dbus_interface='org.ffado.Control.Element.Discrete')
-            return dev_cont.getValue()
+            if idx == None:
+                return dev_cont.getValue()
+            else:
+                return dev_cont.getValueIdx(idx)
         except:
             log.error("Failed to get Discrete %s on server %s" % (path, self.servername))
             return 0
