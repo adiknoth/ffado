@@ -42,6 +42,20 @@ def fromDBvalue(value):
     else:
         return 0
 
+# v, vl, vr in linear scale
+# b range in [-1:1]
+def getVolumeLeft(v, b):
+    return int(round(0.5*v*(1.0-b),0))
+def getVolumeRight(v, b):
+    return v-int(round(0.5*v*(1.0-b),0))
+def getStereoVolume(vl, vr):
+    return int(round(vl+vr,0))
+def getStereoBalance(vl, vr):
+    if ((vl+vr) == 0):
+        return 0
+    else:
+        return round(float(vr-vl)/float(vr+vl),2)
+
 class ColorForNumber:
     def __init__(self):
         self.colors = dict()
@@ -359,12 +373,18 @@ class MatrixControlView(QtGui.QWidget):
                     font = node.font()
                     font.setPointSize(font.pointSize()/1.5)
                     node.setFont(font)
-                self.connect(node, QtCore.SIGNAL("valueChanged"), self.valueChanged)
+                self.nodeConnect(node)
                 layout.addWidget(node, i+1, j+1)
                 self.items[i].append(node)
 
         self.hiddenRows = []
         self.hiddenCols = []
+
+    def nodeConnect(self, node):
+        self.connect(node, QtCore.SIGNAL("valueChanged"), self.valueChanged)
+
+    def nodeDisconnect(self, node):
+        self.disconnect(node, QtCore.SIGNAL("valueChanged"), self.valueChanged)
 
     def checkVisibilities(self):
         for x in range(len(self.items)):
@@ -434,9 +454,19 @@ class MatrixControlView(QtGui.QWidget):
                 if last_name != row_name:
                     #log.debug("MatrixControlView.updateRouting( %s )" % str(row_name))
                     self.rowHeaders[j].name = row_name
-                    self.rowHeaders[j].lbl.setText(row_name)       
+                    self.rowHeaders[j].lbl.setText(row_name)
 
-class ChannelSlider(QtGui.QSlider):
+    def updateValues(self, n):
+        nbitems = len(n)/3
+        for i in range(nbitems):
+            n_0 = n[3*i]    
+            n_1 = n[3*i+1]   
+            n_2 = n[3*i+2] 
+            self.nodeDisconnect(self.items[n_0][n_1])
+            self.items[n_0][n_1].setValue(n_2)
+            self.nodeConnect(self.items[n_0][n_1])
+
+class VolumeSlider(QtGui.QSlider):
     def __init__(self, In, Out, value, parent):
         QtGui.QSlider.__init__(self, QtCore.Qt.Vertical, parent)
 
@@ -447,26 +477,29 @@ class ChannelSlider(QtGui.QSlider):
         self.setMinimum(v_min)
         self.setMaximum(v_max)
         self.setSingleStep(1)
-        value = 10.0*toDBvalue(value)
-        self.setValue(value)
+        self.sliderSetValue(value)
         self.In = In
         self.Out = Out
-        self.connect(self, QtCore.SIGNAL("valueChanged(int)"), self.slider_read_value)
+        self.connect(self, QtCore.SIGNAL("valueChanged(int)"), self.sliderValueChanged)
 
-    def slider_set_value(self, value):
-        #log.debug("Slider value changed( %i )" % value)
+    def sliderSetValue(self, value):
+        #log.debug("Volume slider value changed( %i )" % value)
         v = 10.0*toDBvalue(value)
-        #log.debug("Slider value changed(dB: %g )" % (0.1*v))
+        #log.debug("Volume slider value changed(dB: %g )" % (0.1*v))
         self.setValue(v)
+
+    def sliderReadValue(self, value):
+        return fromDBvalue(0.1*value)
 
     # Restore absolute value from DB
     # Emit signal for further use, especially for matrix view
-    def slider_read_value(self, value):
+    def sliderValueChanged(self, value):
         value = fromDBvalue(0.1*value)
         self.emit(QtCore.SIGNAL("valueChanged"), (self.In, self.Out, value))
         self.update()
 
-class ChannelSliderValueInfo(QtGui.QLineEdit):
+
+class VolumeSliderValueInfo(QtGui.QLineEdit):
     def __init__(self, In, Out, value, parent):
         QtGui.QLineEdit.__init__(self, parent)
 
@@ -475,17 +508,17 @@ class ChannelSliderValueInfo(QtGui.QLineEdit):
         self.setAutoFillBackground(True)
         self.setFrame(False)
 
-        self.setMinimalDim()
+        self.sliderSetMinimalDim()
 
         self.bgcolors = BckgrdColorForNumber()
 
-        self.setValue(value)
+        self.sliderSetValue(value)
 
-    def setMinimalDim(self):
+    def sliderSetMinimalDim(self):
         fontmetrics = self.fontMetrics()
         self.setMinimumSize(fontmetrics.boundingRect("-00.0 dB").size()*1.1)
         
-    def setValue(self, value):
+    def sliderSetValue(self, value):
         color = self.bgcolors.getColor(value)
         palette = self.palette()
         palette.setColor(QtGui.QPalette.Active, QtGui.QPalette.Base, color)
@@ -501,9 +534,38 @@ class ChannelSliderValueInfo(QtGui.QLineEdit):
 
         self.setText(text)
         
+class BalanceSlider(QtGui.QSlider):
+    def __init__(self, In, Out, value, parent):
+        QtGui.QSlider.__init__(self, QtCore.Qt.Horizontal, parent)
+
+        v_min = -50
+        v_max = 50
+        self.setTickPosition(QtGui.QSlider.TicksBothSides)
+        self.setTickInterval((v_max-v_min)/2)
+        self.setMinimum(v_min)
+        self.setMaximum(v_max)
+        self.setSingleStep(1)
+        self.In = In
+        self.Out = Out
+        self.sliderSetValue(value)
+        self.connect(self, QtCore.SIGNAL("valueChanged(int)"), self.sliderValueChanged)
+
+    def sliderSetValue(self, value):
+        #log.debug("Balance fader value set( %d, %d, %f )" % (self.In, self.Out, value))
+        v = int(round(50.0*value, 2))
+        self.setValue(v)
+
+    def sliderReadValue(self):
+        return float(round(self.value()/50.0, 2))
+
+    def sliderValueChanged(self, value):
+        value = float(round(self.value()/50.0, 2))
+        #log.debug("Balance fader value changed( %d, %d, %f )" % (self.In, self.Out, value))
+        self.emit(QtCore.SIGNAL("valueChanged"), (self.In, self.Out, value))
+
 # Slider view widget
 class SliderControlView(QtGui.QWidget):
-    def __init__(self, parent, servername, basepath, rule="Columns_are_inputs", shortname=False, shortinname="Ch", shortoutname="Ch"):
+    def __init__(self, parent, servername, basepath, rule="Columns_are_inputs", shortname=False, shortinname="Ch", shortoutname="Ch", stereochannels = []):
         QtGui.QWidget.__init__(self, parent)
 
         self.bus = dbus.SessionBus()
@@ -515,16 +577,29 @@ class SliderControlView(QtGui.QWidget):
         self.shortinname = shortinname
         self.shortoutname = shortoutname
 
+        self.stereochannels = stereochannels
+
         self.out = []
         self.nbIn = self.getNbIn()
         self.nbOut = self.getNbOut()
-            
+        self.outmatrix = []
+
+        k = 0
         for i in range(self.nbOut):
             widget = QtGui.QWidget(parent)
             v_layout = QtGui.QVBoxLayout(widget)
             v_layout.setAlignment(Qt.Qt.AlignCenter)
             widget.setLayout(v_layout)
             self.out.append(widget)
+
+            self.out[i].is_stereo = False
+            self.out[i].out_1 = k
+            self.outmatrix.append(i)
+            self.out[i].outname = "Out %d" % (k+1)
+            if k in self.stereochannels:
+                self.out[i].is_stereo = True
+                self.out[i].outname += "+%d" % (k+2)
+                self.outmatrix.append(i)
 
             self.out[i].lbl = []
 
@@ -541,8 +616,9 @@ class SliderControlView(QtGui.QWidget):
             h_layout.setAlignment(Qt.Qt.AlignCenter)
             h_layout_wid.setLayout(h_layout)
             v_layout.addWidget(h_layout_wid)
-            self.out[i].slider = []
+            self.out[i].volume = []
             self.out[i].svl = []
+            self.out[i].balance = []
 
             for j in range(self.nbIn):
                 h_v_layout_wid = QtGui.QWidget(h_layout_wid)
@@ -565,15 +641,37 @@ class SliderControlView(QtGui.QWidget):
                 h_v_h_layout_wid.setLayout(h_v_h_layout)
                 h_v_layout.addWidget(h_v_h_layout_wid)
 
-                slider = ChannelSlider(j, i, self.getValue(j,i), h_v_h_layout_wid)
-                h_v_h_layout.addWidget(slider)
-                self.out[i].slider.append(slider)
-                self.out[i].connect(slider, QtCore.SIGNAL("valueChanged"), self.valueChanged)
+                volume = VolumeSlider(j, i, self.getVolumeValue(j,i), h_v_h_layout_wid)
+                h_v_h_layout.addWidget(volume)
+                self.out[i].volume.append(volume)
+                self.volumeConnect(volume)
 
-                # Slider value info
-                svl = ChannelSliderValueInfo(j, i, self.getValue(j,i), h_v_layout_wid)
+                # Volume slider info
+                svl = VolumeSliderValueInfo(j, i, self.getVolumeValue(j,i), h_v_layout_wid)
                 h_v_layout.addWidget(svl)
                 self.out[i].svl.append(svl)
+
+                # Balance fader
+                if self.out[i].is_stereo:
+                    balance = BalanceSlider(j, i, self.getBalanceValue(j,i), h_v_layout_wid)
+                    h_v_layout.addWidget(balance)
+                    self.out[i].balance.append(balance)
+                    self.balanceConnect(balance)
+            k += 1
+            if self.out[i].is_stereo:
+                k += 1
+
+    def volumeConnect(self, volume):
+        self.connect(volume, QtCore.SIGNAL("valueChanged"), self.valueChangedVolume)
+
+    def volumeDisconnect(self, volume):
+        self.disconnect(volume, QtCore.SIGNAL("valueChanged"), self.valueChangedVolume)
+
+    def balanceConnect(self, balance):
+        self.connect(balance, QtCore.SIGNAL("valueChanged"), self.valueChangedBalance)
+
+    def balanceDisconnect(self, balance):
+        self.disconnect(balance, QtCore.SIGNAL("valueChanged"), self.valueChangedBalance)
 
     def getNbIn(self):
         if (self.rule == "Columns_are_inputs"):
@@ -583,15 +681,35 @@ class SliderControlView(QtGui.QWidget):
         
     def getNbOut(self):
         if (self.rule == "Columns_are_inputs"):
-            return self.interface.getRowCount()
+            nbout = self.interface.getRowCount()
         else:
-            return self.interface.getColCount()
+            nbout = self.interface.getColCount()
+        return nbout-len(self.stereochannels)
         
-    def getValue(self, In, Out):
+    def getVolumeValue(self, In, i):
+        Out = self.out[i].out_1
         if (self.rule == "Columns_are_inputs"):
-            return self.interface.getValue(Out, In)           
+            vl = self.interface.getValue(Out, In)           
         else:
-            return self.interface.getValue(In, Out)            
+            vl = self.interface.getValue(In, Out)
+        if (self.out[i].is_stereo):
+            if (self.rule == "Columns_are_inputs"):
+                vr = self.interface.getValue(Out+1, In)           
+            else:
+                vr = self.interface.getValue(In, Out+1)
+            return getStereoVolume(vl, vr)
+        else:
+            return vl;     
+
+    def getBalanceValue(self, In, i):
+        Out = self.out[i].out_1
+        if (self.rule == "Columns_are_inputs"):
+            vl = self.interface.getValue(Out, In)           
+            vr = self.interface.getValue(Out+1, In)           
+        else:
+            vl = self.interface.getValue(In, Out)
+            vr = self.interface.getValue(In, Out+1)
+        return getStereoBalance(vl, vr)
 
     def setValue(self, In, Out, val):
         if (self.rule == "Columns_are_inputs"):
@@ -599,23 +717,87 @@ class SliderControlView(QtGui.QWidget):
         else:
             return self.interface.setValue(In, Out, val)            
 
-    def valueChanged(self, n):
-        #log.debug("ChannelSlider.valueChanged( %s )" % str(n))
-        self.setValue(n[0], n[1], n[2])
-        self.out[n[1]].svl[n[0]].setValue(n[2])
-        self.emit(QtCore.SIGNAL("valueChanged"), n)
+    def updateValues(self, n):
+        nbitems = len(n)/3
+        for j in range(nbitems):
+            n_0 = n[3*j]    
+            n_1 = n[3*j+1]   
+            n_2 = n[3*j+2] 
+            i = self.outmatrix[n_1]
+            if (self.out[i].is_stereo):
+                v = self.getVolumeValue(n_0, i)
+                self.volumeDisconnect(self.out[i].volume[n_0])
+                self.balanceDisconnect(self.out[i].balance[n_0])
+                self.out[i].volume[n_0].sliderSetValue(v)
+                self.out[i].svl[n_0].sliderSetValue(v)
+                b = self.getBalanceValue(n_0, i)       
+                # log.debug("update Value (%d %d %d %f)" % (n_0, i, v, b))
+                self.out[i].balance[n_0].sliderSetValue(b)
+                self.volumeConnect(self.out[i].volume[n_0])
+                self.balanceConnect(self.out[i].balance[n_0])
+            else:
+                v = n_2
+                # log.debug("update Value (%d %d %d)" % (n_0, i, v))
+                self.volumeDisconnect(self.out[i].volume[n_0])
+                self.out[i].volume[n_0].sliderSetValue(v)
+                self.out[i].svl[n_0].sliderSetValue(v)
+                self.volumeConnect(self.out[i].volume[n_0])
+        
+    def valueChangedVolume(self, n):
+        #log.debug("VolumeSlider.valueChanged( %s )" % str(n))
+        v = n[2]
+        n1 = self.out[n[1]].out_1
+        if (self.out[n[1]].is_stereo):
+            b = self.out[n[1]].balance[n[0]].value()/50.0
+            vl = int(getVolumeLeft(v, b))
+            self.setValue(n[0], n1, vl)
+            n2 = n1+1
+            vr = int(getVolumeRight(v, b))
+            self.setValue(n[0], n2, vr)
+            n_t = (n[0], n1, vl, n[0], n2, vr)
+            self.emit(QtCore.SIGNAL("valueChanged"), n_t)
+        else:
+            self.setValue(n[0], n1, v)
+            n_t = (n[0], n1, v)
+            self.emit(QtCore.SIGNAL("valueChanged"), n_t)
+        self.out[n[1]].svl[n[0]].sliderSetValue(v)
+
+    def valueChangedBalance(self, n):
+        #log.debug("BalanceSlider.valueChanged( %s )" % str(n))
+        n1 = self.out[n[1]].out_1
+        v = fromDBvalue(0.1*self.out[n[1]].volume[n[0]].value())
+        b = n[2]
+        vl = int(getVolumeLeft(v, b))
+        self.setValue(n[0], n1, vl)
+        n2 = n1+1
+        vr = int(getVolumeRight(v, b))
+        self.setValue(n[0], n2, vr)
+        n_t = (n[0], n1, vl, n[0], n2, vr)
+        self.emit(QtCore.SIGNAL("valueChanged"), n_t)
 
     def getOutName(self, i, shortname):
         self.shortname = shortname
+        k = self.out[i].out_1
         if (shortname):
-            number = " %d" % (i+1)
+            if (self.out[i].is_stereo):
+                number = " %d+%d" % (k+1, k+2)
+            else:
+                number = " %d" % (k+1)
             name = self.shortoutname + number
             return name
         else:
-            if (self.rule == "Columns_are_inputs"):
-                return self.interface.getRowName(i)            
+            if (self.rule == "Columns_are_inputs"):                
+                if (self.out[i].is_stereo):
+                    name = self.interface.getRowName(k).replace('\n','')+" + "+self.interface.getRowName(k+1).replace('\n','')
+                else:
+                    name = self.interface.getRowName(k).replace('\n','')
+                return name
             else:
-                return self.interface.getColName(i)             
+                if (self.out[i].is_stereo):
+                    name = self.interface.getColName(k).replace('\n','')+" + "+self.interface.getColName(k+1).replace('\n','')
+                else:
+                    name = self.interface.getColName(k).replace('\n','')
+                return name
 
     def getInName(self, j, shortname):
         self.shortname = shortname
@@ -646,6 +828,8 @@ class SliderControlView(QtGui.QWidget):
                         #log.debug("SliderControlView.updateRouting( %s )" % str(in_name))
                         self.out[i].lbl[j+1].setText(in_name)
 
+from functools import partial
+
 class MatrixMixer(QtGui.QWidget):
     def __init__(self, servername, basepath, parent=None, rule="Columns_are_inputs", sliderMaxValue=-1, mutespath=None, invertspath=None, smallFont=False, taborientation=QtGui.QTabWidget.West, tabshape=QtGui.QTabWidget.Triangular):
         QtGui.QWidget.__init__(self, parent)
@@ -671,7 +855,7 @@ class MatrixMixer(QtGui.QWidget):
 
         transpose_matrix = QtGui.QAction("Transpose", mxv_set)
         self.transpose = False
-        #transpose_matrix.setShortcut('Ctrl+T')
+        transpose_matrix.setShortcut('Ctrl+T')
         transpose_matrix.setToolTip("Invert rows and columns in Matrix view")
         mxv_set.addAction(transpose_matrix)
         transpose_matrix.triggered.connect(self.transposeMatrixView)
@@ -706,6 +890,7 @@ class MatrixMixer(QtGui.QWidget):
             font_switch.addItem(" %d " % (font.pointSize()+4-i))
         font_switch.setCurrentIndex(font_switch.findText(" %d " % font.pointSize()))
         mxv_set.addWidget(font_switch)
+        mxv_set.addSeparator()
         self.connect(font_switch, QtCore.SIGNAL("activated(QString)"), self.changeFontSize)
 
         self.layout.addWidget(mxv_set)
@@ -733,14 +918,42 @@ class MatrixMixer(QtGui.QWidget):
         self.scrollarea_matrix.setWidget(self.matrix)
         self.tabs.addTab(self.scrollarea_matrix, " Matrix ")
 
+        # Add stereo/mono output choice in tool bar
+        if (rule == "Columns_are_inputs"):
+            if (self.transpose):
+                nb_out_mono = self.matrix.cols
+            else:
+                nb_out_mono = self.matrix.rows
+        else:
+            if (self.transpose):
+                nb_out_mono = self.matrix.rows
+            else:
+                nb_out_mono = self.matrix.cols
+
+        stereo_switch_lbl = QtGui.QLabel(mxv_set)
+        stereo_switch_lbl.setText("Mono/Stereo ")
+        mxv_set.addWidget(stereo_switch_lbl)
+
+        self.stereo_channels = []
+
+        self.stereo_switch = []
+        for i in range(nb_out_mono/2):
+            stereo_switch = QtGui.QAction("%d/%d" % (2*i+1, 2*i+2), mxv_set)
+            stereo_switch.setToolTip("Set these output channels as stereo")
+            stereo_switch.triggered.connect(partial(self.switchStereoChannel, i))
+            stereo_switch.is_stereo = False
+            mxv_set.addAction(stereo_switch)
+            self.stereo_switch.append(stereo_switch)
+        mxv_set.addSeparator()
+
         # Per out view tabs
-        self.perOut = SliderControlView(self, servername, basepath, rule, self.short_names_bool, "In", "Out")
+        self.perOut = SliderControlView(self, servername, basepath, rule, self.short_names_bool, "In", "Out", self.stereo_channels)
         self.connect(self.perOut, QtCore.SIGNAL("valueChanged"), self.sliderControlChanged)
         for i in range(self.perOut.nbOut):
             self.perOut.out[i].scrollarea = QtGui.QScrollArea(self.tabs)
             self.perOut.out[i].scrollarea.setWidgetResizable(True)
             self.perOut.out[i].scrollarea.setWidget(self.perOut.out[i])
-            self.tabs.addTab(self.perOut.out[i].scrollarea, " Out:%02d " % (i+1))
+            self.tabs.addTab(self.perOut.out[i].scrollarea, " %s " % self.perOut.out[i].outname)
 
     def transposeMatrixView(self):
         self.transpose = not(self.transpose)
@@ -771,12 +984,15 @@ class MatrixMixer(QtGui.QWidget):
     def hidePerOutputView(self):
         self.hide_per_output_bool = not(self.hide_per_output_bool)
         if (self.hide_per_output_bool):
+            index_0 = 1
+            if (self.hide_matrix_bool):
+                index_0 = 0
             for i in range(self.perOut.nbOut):
-                self.tabs.removeTab(1)
+                self.tabs.removeTab(index_0)
             self.hide_per_output.setText("Show per Output")
         else:
             for i in range(self.perOut.nbOut):
-                self.tabs.insertTab(i+1, self.perOut.out[i].scrollarea, "Out:%02d" % (i+1))
+                self.tabs.insertTab(i+1, self.perOut.out[i].scrollarea, " %s " % self.perOut.out[i].outname)
             self.hide_per_output.setText("Hide per Output")
 
     # Font size for channel names
@@ -799,7 +1015,7 @@ class MatrixMixer(QtGui.QWidget):
 
         for i in range(self.perOut.nbOut):
             for j in range(self.perOut.nbIn):
-                self.perOut.out[i].svl[j].setMinimalDim()
+                self.perOut.out[i].svl[j].sliderSetMinimalDim()
 
     # Allows long name for Mixer/Out and /In to be hidden 
     def shortChannelNames(self):
@@ -842,25 +1058,29 @@ class MatrixMixer(QtGui.QWidget):
     def matrixControlChanged(self, n):
         # Update value needed for "per Out" view
         #log.debug("Update per Output( %s )" % str(n))
+        nbitems = len(n)/3
         if (self.rule == "Columns_are_inputs"):
-            self.perOut.out[n[1]].slider[n[0]].slider_set_value(n[2])
+           n_t = n
         else:
-            self.perOut.out[n[0]].slider[n[1]].slider_set_value(n[2])
+            n_t = ()
+            for i in range(nbitems):
+                n_t += (n[3*i+1], n[3*i], n[3*i+2])
+
+        self.perOut.updateValues(n_t)
 
     # "per Out" view
     def sliderControlChanged(self, n):
         # Update value needed for matrix view
         #log.debug("Update Matrix( %s )" % str(n))
-        if (self.rule == "Columns_are_inputs"):
-            if (self.transpose):
-                self.matrix.items[n[0]][n[1]].setValue(n[2])
-            else:
-                self.matrix.items[n[1]][n[0]].setValue(n[2])
+        nbitems = len(n)/3
+        if (((self.rule == "Columns_are_inputs") and not self.transpose) or ((self.rule != "Columns_are_inputs") and self.transpose)):
+            n_t = ()
+            for i in range(nbitems):
+                n_t += (n[3*i+1], n[3*i], n[3*i+2])
         else:
-            if (self.transpose):
-                self.matrix.items[n[1]][n[0]].setValue(n[2])
-            else:
-                self.matrix.items[n[0]][n[1]].setValue(n[2])
+            n_t = n
+
+        self.matrix.updateValues(n_t)
 
     def refreshValues(self):
         for x in range(len(self.matrix.items)):
@@ -872,6 +1092,29 @@ class MatrixMixer(QtGui.QWidget):
                 else:
                     self.matrix.items[x][y].setValue(val)
                     self.matrix.items[x][y].internalValueChanged(val)
+
+    def switchStereoChannel(self, i):
+        #log.debug(" switching channels %d+%d to stereo/mono" % (2*i, 2*i+1))
+        self.stereo_switch[i].is_stereo = not(self.stereo_switch[i].is_stereo)
+        if (self.stereo_switch[i].is_stereo):
+            self.stereo_channels.append(2*i)
+        else:
+            self.stereo_channels.remove(2*i)
+
+        # tab 0 is for matrix except if it is hidden
+        index_0 = 1
+        if (self.hide_matrix_bool):
+            index_0 = 0
+        for i in range(self.perOut.nbOut):
+            self.tabs.removeTab(index_0)
+        self.perOut.destroy()
+        self.perOut = SliderControlView(self, self.servername, self.basepath, self.rule, self.short_names_bool, "In", "Out", self.stereo_channels)
+        self.connect(self.perOut, QtCore.SIGNAL("valueChanged"), self.sliderControlChanged)
+        for i in range(self.perOut.nbOut):
+            self.perOut.out[i].scrollarea = QtGui.QScrollArea(self.tabs)
+            self.perOut.out[i].scrollarea.setWidgetResizable(True)
+            self.perOut.out[i].scrollarea.setWidget(self.perOut.out[i])
+            self.tabs.addTab(self.perOut.out[i].scrollarea, " %s " % self.perOut.out[i].outname)
 
     # Update when routing is modified
     def updateRouting(self):
