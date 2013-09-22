@@ -466,6 +466,17 @@ class MatrixControlView(QtGui.QWidget):
             self.items[n_0][n_1].setValue(n_2)
             self.nodeConnect(self.items[n_0][n_1])
 
+    def refreshValues(self):
+        for x in range(len(self.items)):
+            for y in range(len(self.items[x])):
+                val = self.interface.getValue(x,y)
+                if (self.transpose):
+                    self.items[y][x].setValue(val)
+                    self.items[y][x].internalValueChanged(val)
+                else:
+                    self.items[x][y].setValue(val)
+                    self.items[x][y].internalValueChanged(val)
+
 class VolumeSlider(QtGui.QSlider):
     def __init__(self, In, Out, value, parent):
         QtGui.QSlider.__init__(self, QtCore.Qt.Vertical, parent)
@@ -828,6 +839,24 @@ class SliderControlView(QtGui.QWidget):
                         #log.debug("SliderControlView.updateRouting( %s )" % str(in_name))
                         self.out[i].lbl[j+1].setText(in_name)
 
+    def refreshValues(self):
+        for n_out in range(self.nbOut):
+            for n_in in range(self.nbIn):
+                i = self.outmatrix[n_out]
+                v = self.getVolumeValue(n_in, i)
+                if (self.out[i].is_stereo):
+                    self.volumeDisconnect(self.out[i].volume[n_in])
+                    self.out[i].volume[n_in].sliderSetValue(v)
+                    self.out[i].svl[n_in].sliderSetValue(v)
+                    b = self.getBalanceValue(n_in, i)       
+                    # log.debug("update Value (%d %d %d %f)" % (n_0, i, v, b))
+                    self.out[i].balance[n_in].sliderSetValue(b)
+                    self.volumeConnect(self.out[i].volume[n_in])
+                else:
+                    # log.debug("update Value (%d %d %d)" % (n_0, i, v))
+                    self.out[i].volume[n_in].sliderSetValue(v)
+                    self.out[i].svl[n_in].sliderSetValue(v)
+
 from functools import partial
 
 class MatrixMixer(QtGui.QWidget):
@@ -1086,15 +1115,9 @@ class MatrixMixer(QtGui.QWidget):
         self.matrix.updateValues(n_t)
 
     def refreshValues(self):
-        for x in range(len(self.matrix.items)):
-            for y in range(len(self.matrix.items[x])):
-                val = self.matrix.interface.getValue(x,y)
-                if (self.transpose):
-                    self.matrix.items[y][x].setValue(val)
-                    self.matrix.items[y][x].internalValueChanged(val)
-                else:
-                    self.matrix.items[x][y].setValue(val)
-                    self.matrix.items[x][y].internalValueChanged(val)
+        # Refreshing matrix coefficient should be sufficient,
+        #  propagating the changes to perOut view
+        self.matrix.refreshValues()
 
     def switchStereoChannel(self, channel, is_stereo):
         #log.debug(" switching channels %d+%d to stereo/mono" % (2*channel, 2*channel+1))
