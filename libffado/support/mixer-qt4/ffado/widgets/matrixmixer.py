@@ -931,18 +931,21 @@ class MatrixMixer(QtGui.QWidget):
                 nb_out_mono = self.matrix.cols
 
         stereo_switch_lbl = QtGui.QLabel(mxv_set)
-        stereo_switch_lbl.setText("Mono/Stereo ")
+        stereo_switch_lbl.setText("Stereo: ")
         mxv_set.addWidget(stereo_switch_lbl)
 
         self.stereo_channels = []
 
         self.stereo_switch = []
         for i in range(nb_out_mono/2):
-            stereo_switch = QtGui.QAction("%d/%d" % (2*i+1, 2*i+2), mxv_set)
+            stereo_switch = QtGui.QPushButton("%d+%d" % (2*i+1, 2*i+2), mxv_set)
             stereo_switch.setToolTip("Set these output channels as stereo")
-            stereo_switch.triggered.connect(partial(self.switchStereoChannel, i))
+            stereo_switch.setCheckable(True)
+            stereo_switch.clicked.connect(partial(self.switchStereoChannel, i))
+            stereo_switch.setMinimumSize(stereo_switch_lbl.fontMetrics().boundingRect("%d+%d" % (nb_out_mono, nb_out_mono)).size()*1.05)
+            stereo_switch.setSizePolicy(QtGui.QSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum))
             stereo_switch.is_stereo = False
-            mxv_set.addAction(stereo_switch)
+            mxv_set.addWidget(stereo_switch)
             self.stereo_switch.append(stereo_switch)
         mxv_set.addSeparator()
 
@@ -1093,13 +1096,13 @@ class MatrixMixer(QtGui.QWidget):
                     self.matrix.items[x][y].setValue(val)
                     self.matrix.items[x][y].internalValueChanged(val)
 
-    def switchStereoChannel(self, i):
-        #log.debug(" switching channels %d+%d to stereo/mono" % (2*i, 2*i+1))
-        self.stereo_switch[i].is_stereo = not(self.stereo_switch[i].is_stereo)
-        if (self.stereo_switch[i].is_stereo):
-            self.stereo_channels.append(2*i)
+    def switchStereoChannel(self, channel, is_stereo):
+        #log.debug(" switching channels %d+%d to stereo/mono" % (2*channel, 2*channel+1))
+        self.stereo_switch[channel].is_stereo = self.stereo_switch[channel].isChecked();
+        if (self.stereo_switch[channel].is_stereo):
+            self.stereo_channels.append(2*channel)
         else:
-            self.stereo_channels.remove(2*i)
+            self.stereo_channels.remove(2*channel)
 
         # tab 0 is for matrix except if it is hidden
         index_0 = 1
@@ -1110,11 +1113,16 @@ class MatrixMixer(QtGui.QWidget):
         self.perOut.destroy()
         self.perOut = SliderControlView(self, self.servername, self.basepath, self.rule, self.short_names_bool, "In", "Out", self.stereo_channels)
         self.connect(self.perOut, QtCore.SIGNAL("valueChanged"), self.sliderControlChanged)
+        current = 0
         for i in range(self.perOut.nbOut):
             self.perOut.out[i].scrollarea = QtGui.QScrollArea(self.tabs)
             self.perOut.out[i].scrollarea.setWidgetResizable(True)
             self.perOut.out[i].scrollarea.setWidget(self.perOut.out[i])
             self.tabs.addTab(self.perOut.out[i].scrollarea, " %s " % self.perOut.out[i].outname)
+            if self.perOut.out[i].out_1 == 2*channel:
+                current = i
+
+        self.tabs.setCurrentWidget(self.perOut.out[current].scrollarea)
 
     # Update when routing is modified
     def updateRouting(self):
