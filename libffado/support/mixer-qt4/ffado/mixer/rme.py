@@ -195,6 +195,10 @@ class Rme(QWidget):
         log.debug("combo %s set to %d" % (self.Combos[sender][0], a0))
         self.hw.setDiscrete(self.Combos[sender][0], a0)
 
+        # Enable the limiter control only when the front source is active
+        if (sender == self.ff800_ch1_src):
+            self.ch1_instr_limiter.setEnabled(a0==0)
+
     def updateStreamingState(self):
         ss = self.streamingstatus.selected()
         ss_txt = self.streamingstatus.getEnumLabel(ss)
@@ -335,6 +339,10 @@ class Rme(QWidget):
             ctrl.setChecked(val)
             log.debug("Radiobutton %s[%d] is %d" % (info[0], info[1], val))
 
+        # Make sure the Limiter control can receive a value
+        if (self.ff800_ch1_src.isEnabled()):
+            self.ch1_instr_limiter.setEnabled(1)
+
         for ctrl, info in self.Checkboxes.iteritems():
             if (not(ctrl.isEnabled())):
                 continue;
@@ -350,6 +358,12 @@ class Rme(QWidget):
                 val = 0
             ctrl.setChecked(val)
             log.debug("Checkbox %s[%d] is %d" % (info[0], info[1], val))
+
+        # The limiter (a checkbox) can only be controlled if the front
+        # source is selected for channel 1.
+        ch1_src = self.ff800_ch1_src.currentIndex()
+        if (self.ff800_ch1_src.isEnabled()):
+            self.ch1_instr_limiter.setEnabled(ch1_src==0)
 
         for ctrl, info in self.Gains.iteritems():
             if (not(ctrl.isEnabled())):
@@ -446,6 +460,12 @@ class Rme(QWidget):
 
         self.getValuesFromFF()
         self.setupSignals()
+
+        # Ensure the limiter checkbox has a signal handler associated with
+        # it.  If getValuesFromFF() disabled it because the front input was
+        # not selected, setupSignals() would not have configured a handler.
+        if (not(self.ch1_instr_limiter.isEnabled())):
+            QObject.connect(self.ch1_instr_limiter, SIGNAL('toggled(bool)'), self.updateCheckboxes)
 
         self.updateStreamingState()
         #log.debug("device streaming flag: %d" % (self.is_streaming))
