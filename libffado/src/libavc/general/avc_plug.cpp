@@ -1340,7 +1340,8 @@ Plug::debugOutputClusterInfos( int debugLevel )
               ++cit )
         {
             const ChannelInfo* channelInfo = &( *cit );
-            channelInfo = channelInfo;
+            // Avoid unused variable warning when debug is disabled
+            static_cast<void>(channelInfo);
             debugOutput( debugLevel,
                          "stream position: %d\n",
                          channelInfo->m_streamPosition );

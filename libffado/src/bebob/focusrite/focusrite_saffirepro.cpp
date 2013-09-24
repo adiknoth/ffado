@@ -448,7 +448,7 @@ SaffireProDevice::updateClockSources() {
             m_active_clocksource = &m_wordclock_clocksource;
             break;
     }
-    switch((sync && FR_SAFFIREPRO_CMD_ID_SYNC_LOCK_MASK) >> 8) {
+    switch((sync & FR_SAFFIREPRO_CMD_ID_SYNC_LOCK_MASK) >> 8) {
         case FR_SAFFIREPRO_CMD_SYNC_CONFIG_INTERNAL:
             // always locked
             break;

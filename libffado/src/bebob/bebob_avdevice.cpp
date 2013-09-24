@@ -709,7 +709,7 @@ Device::getCachePath()
 
     if ( asprintf( &pCachePath, "%s/cache/",  path.c_str() ) < 0 ) {
         debugError( "Could not create path string for cache pool (trying '/var/cache/libffado' instead)\n" );
-        cachePath == "/var/cache/libffado/";
+        cachePath = "/var/cache/libffado/";
     } else {
         cachePath = pCachePath;
         free( pCachePath );

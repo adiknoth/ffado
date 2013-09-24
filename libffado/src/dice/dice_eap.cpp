@@ -617,7 +617,7 @@ EAP::setupDefaultRouterConfig_low() {
               addRoute(eRS_Muted, 0, eRD_Mixer0, i+16);
             }
             // the ARM audio port
-            for (i=0; i<0; i++) {
+            for (i=0; i<8; i++) {
               addRoute(eRS_Muted, 0, eRD_ARM, i);
             }
             // mute

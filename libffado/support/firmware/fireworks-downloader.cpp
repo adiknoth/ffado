@@ -105,7 +105,7 @@ main( int argc, char** argv )
     printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
     printf("-----------------------------------------------\n\n");
 
-    memset(args, 0, sizeof(args));
+    memset(args, 0, sizeof(*args));
 
     args->guid = 0xFFFFFFFFFFFFFFFFLL;
     argp_parse (argp, argc, argv, 0, 0, args);
