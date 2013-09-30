@@ -1218,6 +1218,12 @@ IsoHandlerManager::IsoHandler::iso_transmit_handler(raw1394handle_t handle,
     assert(xmitHandler);
     unsigned int skipped = (dropped1 & 0xFFFF0000) >> 16;
     unsigned int dropped = dropped1 & 0xFFFF;
+{
+static int last_cycle = cycle;
+if (cycle<last_cycle && last_cycle-cycle<7000)
+  debugOutput(DEBUG_LEVEL_VERBOSE, "cycle=%d, last_cycle=%d\n", cycle, last_cycle);
+last_cycle = cycle;
+}
     return xmitHandler->getPacket(data, length, tag, sy, cycle, dropped, skipped);
 }
 
@@ -1612,6 +1618,13 @@ IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *leng
                       int cycle, unsigned int dropped, unsigned int skipped) {
 
     uint32_t pkt_ctr;
+{
+static int last_cycle = cycle;
+if (cycle<last_cycle && last_cycle-cycle<7000)
+  debugOutput(DEBUG_LEVEL_VERBOSE, "cycle=%d, last_cycle=%d\n", cycle, last_cycle);
+last_cycle = cycle; 
+}
+
     if (cycle < 0) {
         // mark invalid
         pkt_ctr = 0xFFFFFFFF;
