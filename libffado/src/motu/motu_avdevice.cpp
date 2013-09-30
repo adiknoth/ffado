@@ -2574,6 +2574,25 @@ unsigned int MotuDevice::ReadRegister(fb_nodeaddr_t reg) {
     return CondSwapFromBus32(quadlet);
 }
 
+signed int
+MotuDevice::readBlock(fb_nodeaddr_t reg, quadlet_t *buf, signed int n_quads) {
+//
+// Read "n_quads" quadlets from the device starting at register "reg" into
+// the buffer pointed to by "buf".  "buf" is assumed to have been
+// preallocated and be large enough for the requested data.
+//
+    signed int i;
+
+    if (get1394Service().read(0xffc0 | getNodeId(), reg, n_quads, buf) <= 0) {
+        debugError("Error doing motu block read of %d quadlets from register 0x%llx\n", n_quads, reg);
+        return -1;
+    }
+    for (i=0; i<n_quads; i++) {
+        buf[i] = CondSwapFromBus32(buf[i]);
+    }
+    return 0;
+}
+
 signed int MotuDevice::WriteRegister(fb_nodeaddr_t reg, quadlet_t data) {
 /*
  * Attempts to write the given data to the requested MOTU register.
@@ -2596,6 +2615,25 @@ signed int MotuDevice::WriteRegister(fb_nodeaddr_t reg, quadlet_t data) {
 
     SleepRelativeUsec(100);
     return (err==0)?0:-1;
+}
+
+signed int
+MotuDevice::writeBlock(fb_nodeaddr_t reg, quadlet_t *data, signed int n_quads) {
+//
+// Write n_quads quadlets from "data" to the device register "reg".  Note that
+// any necessary byte swapping is done in place, so the contents of "data"
+// may be altered by this function.
+//
+    signed int ret = 0;
+    signed int i;
+    for (i=0; i<n_quads; i++) {
+        data[i] = CondSwapToBus32(data[i]);
+    }
+    if (get1394Service().write(0xffc0 | getNodeId(), reg, n_quads, data) <= 0) {
+        ret = -1;
+        debugError("Error doing motu block write of %d quadlets to register 0x%llx\n", n_quads, reg);
+    }
+    return ret;
 }
 
 }

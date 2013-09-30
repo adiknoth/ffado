@@ -174,6 +174,7 @@ private: // helper functions
 
 // EAP stuff
 private:
+    int m_rate_cache;
     EAP*         m_eap;
 protected:
     virtual EAP* createEAP();

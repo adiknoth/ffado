@@ -460,7 +460,9 @@ private:
 
 public:
     unsigned int ReadRegister(fb_nodeaddr_t reg);
+    signed int readBlock(fb_nodeaddr_t reg, quadlet_t *buf, signed int n_quads);
     signed int WriteRegister(fb_nodeaddr_t reg, quadlet_t data);
+    signed int writeBlock(fb_nodeaddr_t reg, quadlet_t *data, signed int n_quads);
 
 private:
     Control::Container *m_MixerContainer;

@@ -59,6 +59,7 @@ namespace Dice {
 
 Device::Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     : FFADODevice( d, configRom )
+    , m_rate_cache( -1 )
     , m_eap( NULL )
     , m_global_reg_offset (0xFFFFFFFFLU)
     , m_global_reg_size (0xFFFFFFFFLU)
@@ -252,6 +253,12 @@ Device::getSamplingFrequency() {
         default:                 samplingFrequency = 0; break;
     }
 
+    if (samplingFrequency != m_rate_cache) {
+        if (m_rate_cache>0 && m_eap)
+            m_eap->update();
+        m_rate_cache = samplingFrequency;
+    }
+
     return samplingFrequency;
 }
 
@@ -422,6 +429,7 @@ Device::setSamplingFrequency( int samplingFrequency )
     }
 
     if (m_eap) {
+        m_rate_cache = samplingFrequency;
         m_eap->update();
     }
     showDevice();
