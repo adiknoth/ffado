@@ -1323,6 +1323,7 @@ signed int Ieee1394Service::allocateIsoChannelGeneric(unsigned int bandwidth) {
             break;
     }
     if (c < 63) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "found free iso channel %d\n", c);
         if (raw1394_bandwidth_modify(m_handle, bandwidth, RAW1394_MODIFY_ALLOC) < 0) {
             debugFatal("Could not allocate bandwidth of %d\n", bandwidth);
 
