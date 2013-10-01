@@ -381,9 +381,17 @@ device_definitions = (
     vendorid    = 0x0001f2;
     modelid     = 0x00000000;
     vendorname  = "Motu";
-    modelname   = "All of them";
+    modelname   = "All pre-mark3 devices";
     driver      = "MOTU";
     mixer       = "Motu";
+},
+{
+    vendorid    = 0x0001f2;
+    modelid     = 0x00000001;
+    vendorname  = "Motu";
+    modelname   = "All mark3 devices";
+    driver      = "MOTU";
+    mixer       = "Motu_Mark3";
 },
 {
     vendorid    = 0x000a35;

@@ -239,9 +239,15 @@ class PanelManager(QWidget):
 
         # The MOTU devices use unitVersion to differentiate models.  For the
         # moment though we don't need to know precisely which model we're
-        # using.
+        # using beyond it being a pre-mark3 (modelId=0) or mark3 (modelId=1) 
+        # device.
         if vendorId == 0x1f2:
-            modelId = 0x00000000
+            # All MOTU devices with a unit version of 0x15 or greater are
+            # mark3 devices
+            if (unitVersion >= 0x15):
+                modelId = 0x00000001
+            else:
+                modelId = 0x00000000
 
         # The RME devices use unitVersion to differentiate models. 
         # Therefore in the configuration file we use the config file's
