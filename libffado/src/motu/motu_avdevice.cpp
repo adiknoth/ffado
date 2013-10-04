@@ -1964,6 +1964,7 @@ unsigned int MotuDevice::getOpticalMode(unsigned int dir,
             return 0;
         }
         reg = ReadRegister(MOTU_G3_REG_OPTICAL_CTRL);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "mark3 optical control register = 0x%08x\n", reg);
         if (port_a_mode != NULL) {
             enable = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_A_IN_ENABLE:MOTU_G3_OPT_A_OUT_ENABLE;
             toslink = (dir==MOTU_DIR_IN)?MOTU_G3_OPT_A_IN_TOSLINK:MOTU_G3_OPT_A_OUT_TOSLINK;
