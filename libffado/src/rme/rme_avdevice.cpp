@@ -1071,7 +1071,6 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
     } else
     if (sample_rate >= MIN_QUAD_SPEED) {
       n_adat = 0;
-      n_spdif = 0;
     }
 
     if (direction == Streaming::Port::E_Capture) {
