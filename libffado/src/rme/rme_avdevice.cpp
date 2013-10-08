@@ -818,7 +818,9 @@ Device::prepare() {
     // channels (which differs between devices), then add SPDIF channels if
     // relevant.  Finally, the number of channels available from each ADAT
     // interface depends on sample rate: 0 at 4x, 4 at 2x and 8 at 1x.
-    if (m_rme_model == RME_MODEL_FIREFACE800)
+    //  Note that "analog only" bandwidth limit mode means analog 1-8
+    // regardless of the fireface model in use.
+    if (m_rme_model==RME_MODEL_FIREFACE800 && settings->limit_bandwidth!=FF_SWPARAM_BWLIMIT_ANALOG_ONLY)
         num_channels = 10;
     else
         num_channels = 8;
@@ -1042,11 +1044,15 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
 
     /* Apply bandwidth limit if selected.  This effectively sets up the
      * number of adat and spdif channels assuming single-rate speed.
+     * The total number of expected analog channels is also set here.
      */
     n_spdif = 2;
+    n_analog = (m_rme_model==RME_MODEL_FIREFACE800)?10:8;
     switch (dev_config->settings.limit_bandwidth) {
       case FF_SWPARAM_BWLIMIT_ANALOG_ONLY:
         n_adat = n_spdif = 0;
+        // "Analog only" means "Analog 1-8" regardless of the interface model
+        n_analog = 8;
         break;
       case FF_SWPARAM_BWLIMIT_ANALOG_SPDIF_ONLY:
         n_adat = 0;
@@ -1060,12 +1066,9 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
         n_adat = (m_rme_model==RME_MODEL_FIREFACE800)?16:8;
     }
 
-    /* Work out the number of analog channels based on the device model and
-     * adjust the spdif and ADAT channels according to the current sample
+    /* Adjust the spdif and ADAT channels according to the current sample
      * rate.
      */
-    n_analog = (m_rme_model==RME_MODEL_FIREFACE800)?10:8;
-    n_phones = 0;
     if (sample_rate>=MIN_DOUBLE_SPEED && sample_rate<MIN_QUAD_SPEED) {
       n_adat /= 2;
     } else
@@ -1073,13 +1076,19 @@ Device::addDirPorts(enum Streaming::Port::E_Direction direction) {
       n_adat = 0;
     }
 
+    n_phones = 0;
     if (direction == Streaming::Port::E_Capture) {
         s_processor = m_receiveProcessor;
     } else {
         s_processor = m_transmitProcessor;
-        /* Phones count as two of the analog outputs */
-        n_analog -= 2;
-        n_phones = 2;
+        /* Phones generally count as two of the analog outputs.  For
+         * the FF800 in "Analog 1-8" bandwidth limit mode this is
+         * not the case and the phones are inactive.
+         */
+        if (m_rme_model==RME_MODEL_FIREFACE400 || dev_config->settings.limit_bandwidth!=FF_SWPARAM_BWLIMIT_ANALOG_ONLY) {
+            n_analog -= 2;
+            n_phones = 2;
+        }
     }
 
     id = std::string("dev?");
