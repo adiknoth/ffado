@@ -701,8 +701,15 @@ PortGroupEntry PortGroups_TRAVELERmk3[] =
     {"Reverb%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, },
     {"Unknown%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, },
     //
-    // FIXME: optical port details to be filled in later.
+    // FIXME: optical port details still being determined.
     //
+    {"Toslink-A%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, },
+    {"ADAT-A%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, }, 
+    {"ADAT-A%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, }, 
+    {"Toslink-B%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_TOSLINK, },
+    {"ADAT-B%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
+    {"ADAT-B%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
+    {"UnknownB-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_TOSLINK, },
 };
 
 /* FIXME: as of 8 Oct 2010 this is still under development.  Presently this
