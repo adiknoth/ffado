@@ -1637,8 +1637,8 @@ IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *leng
         uint64_t pkt_ctr_ticks = wrapAtMinMaxTicks(tmp);
         pkt_ctr = TICKS_TO_CYCLE_TIMER(pkt_ctr_ticks);
 
-debugOutput(DEBUG_LEVEL_VERBOSE, "cy=%d, now_cy=%d, diff_cy=%lld, tmp=%lld, pkt_ctr_ticks=%lld, pkt_ctr=%d\n",
-  cycle, now_cycles, diff_cycles, tmp, pkt_ctr_ticks, pkt_ctr);
+//debugOutput(DEBUG_LEVEL_VERBOSE, "cy=%d, now_cy=%d, diff_cy=%lld, tmp=%lld, pkt_ctr_ticks=%lld, pkt_ctr=%d\n",
+//  cycle, now_cycles, diff_cycles, tmp, pkt_ctr_ticks, pkt_ctr);
         #if ISOHANDLER_CHECK_CTR_RECONSTRUCTION
         // add a seconds field
         uint32_t now = m_manager.get1394Service().getCycleTimer();
