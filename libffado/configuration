@@ -31,11 +31,19 @@ device_definitions = (
     driver      = "OXFORD";
     xmit_transfer_delay = 11776;
 },
-{ # IDs from Geoff Beasley.  Thought to be a BeBoB device: to be confirmed.
+{ # IDs from Geoff Beasley.
     vendorid    = 0x001564;
     modelid     = 0x00000006;
     vendorname  = "Behringer";
     modelname   = "X32";
+    driver      = "BEBOB";
+    xmit_max_cycles_early_transmit = 4;
+},
+{ # IDs from Tony Rocco.
+    vendorid    = 0x001564;
+    modelid     = 0x00001604;
+    vendorname  = "Behringer";
+    modelname   = "UFX-1604 mixer";
     driver      = "BEBOB";
     xmit_max_cycles_early_transmit = 4;
 },
