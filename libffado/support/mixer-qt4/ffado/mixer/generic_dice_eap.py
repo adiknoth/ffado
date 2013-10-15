@@ -41,12 +41,30 @@ class Generic_Dice_EAP(QtGui.QWidget):
         self.mixer = MatrixMixer(self.hw.servername, self.hw.basepath+"/EAP/MatrixMixer", self, "Columns_are_outputs", -1, None, None, False, QtGui.QTabWidget.North, QtGui.QTabWidget.Rounded)
         self.tabs.addTab(self.mixer, "Mixer")
 
-        self.router = CrossbarRouter(self.hw.servername, self.hw.basepath+"/EAP/Router", self)
+        self.router_scrollarea = self.buildRouter(self.hw.servername, self.hw.basepath+"/EAP/Router")
+        self.tabs.addTab(self.router_scrollarea, "Crossbar Router")
+
+    def buildRouter(self, servername, path):
+        self.router = CrossbarRouter(servername, path, self)
         self.connect(self.router, QtCore.SIGNAL("MixerRoutingChanged"), self.mixer.updateRouting)
         scrollarea = QtGui.QScrollArea(self.tabs)
         scrollarea.setWidgetResizable(True)
         scrollarea.setWidget(self.router)
-        self.tabs.addTab(scrollarea, "Crossbar Router")
+        return scrollarea
+
+    def updateOnSamplerateChange(self):
+        # Router configuration is samplerate dependent for DICE EAP devices
+        # Destroy and redraw the crossbar router view when called
+        n = self.tabs.indexOf(self.router_scrollarea)
+        self.tabs.removeTab(n)
+        self.router.destroy()
+        self.router_scrollarea.destroy()
+
+        self.router_scrollarea = self.buildRouter(self.hw.servername, self.hw.basepath+"/EAP/Router")
+        self.tabs.insertTab(n, self.router_scrollarea, "Crossbar Router")
+        self.tabs.setCurrentWidget(self.router_scrollarea)
+
+        self.mixer.updateRouting()
 
 
     #def getDisplayTitle(self):
