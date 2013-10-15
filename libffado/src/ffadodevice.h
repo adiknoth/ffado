@@ -151,10 +151,15 @@ public:
     /**
      * @brief Some devices require to update part of their internal configuration on samplerate change
      *        Most do not, so set default to false
-     * @param samplingFrequency
+     * @param oldSamplingFrequency : to be compared to the actual sampling frequency of the device
+     *        note: next, it is thus assumed that the device was actually set to some new sampling frequency
+     *        (while the client did not yet update its view of the device).
+     *        In some future, it might very well appear that restricting to this single argument is
+     *        unsufficient for some devices, so feel free to adapt accordingly.
+     *
      * @return true if changes have been performed
      */
-    virtual bool onSamplerateChange( int samplingFrequency ) { return false; }
+    virtual bool onSamplerateChange( int oldSamplingFrequency ) { return false; }
 
     /**
      * @brief get the supported sampling frequencies
