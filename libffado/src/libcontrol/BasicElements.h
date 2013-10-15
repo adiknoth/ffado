@@ -119,6 +119,8 @@ public:
     virtual int selected() = 0;
     virtual int count() = 0;
     virtual std::string getEnumLabel(int idx) = 0;
+    ///> Some devices update their internal configuration on select
+    virtual bool devConfigChanged(int idx) { return false; };
 };
 
 /*!

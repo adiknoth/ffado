@@ -249,6 +249,7 @@ public:
     int32_t selected( );
     int32_t count( );
     std::string getEnumLabel( const int32_t & idx );
+    bool devConfigChanged( const int32_t & );
 
 private:
     Control::Enum &m_Slave;

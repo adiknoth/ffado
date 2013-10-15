@@ -261,6 +261,18 @@ SamplerateSelect::show()
 
 }
 
+bool
+SamplerateSelect::devConfigChanged(int idx)
+{
+    std::vector<int> freqs = m_Device.getSupportedSamplingFrequencies();
+    if (idx >= 0 && idx < (int)freqs.size()) {
+        return m_Device.onSamplerateChange(freqs.at(idx));
+    } else {
+        debugWarning("bad index specified\n");
+        return false;
+    }
+}
+
 // --- stream status feedback selection ---
 
 StreamingStatus::StreamingStatus(FFADODevice &d)

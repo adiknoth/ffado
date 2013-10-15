@@ -149,6 +149,14 @@ public:
     virtual int getSamplingFrequency( ) = 0;
 
     /**
+     * @brief Some devices require to update part of their internal configuration on samplerate change
+     *        Most do not, so set default to false
+     * @param samplingFrequency
+     * @return true if changes have been performed
+     */
+    virtual bool onSamplerateChange( int samplingFrequency ) { return false; }
+
+    /**
      * @brief get the supported sampling frequencies
      * @return a vector containing the supported sampling frequencies
      */

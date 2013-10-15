@@ -163,7 +163,11 @@ class GlobalMixer(QWidget):
             self.chkStreamOut.setChecked(True)
 
         if (ss!=self.streaming_status and ss_txt!='Idle'):
+            sr = self.samplerate.currentIndex()
             self.samplerate.setCurrentIndex( self.samplerateselect.selected() )
+            # Check (and update) if device configuration needs to be updated
+            if ( self.samplerateselect.devConfigChanged(sr) ):
+              log.debug(" Mixer configuration would need to be updated ")
         self.streaming_status = ss
 
         # Allow for devices whose sample rates can change dynamically (for

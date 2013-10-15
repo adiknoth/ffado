@@ -141,6 +141,10 @@
           <arg type="i" name="idx" direction="in"/>
           <arg type="s" name="label" direction="out"/>
       </method>
+      <method name="devConfigChanged">
+          <arg type="i" name="id" direction="in"/>
+          <arg type="b" name="update" direction="out"/>
+      </method>
   </interface>
 
   <interface name="org.ffado.Control.Element.AttributeEnum">

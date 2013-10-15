@@ -670,6 +670,12 @@ Enum::getEnumLabel( const int32_t & idx )
     return retval;
 }
 
+bool
+Enum::devConfigChanged(const int32_t& idx)
+{
+    return m_Slave.devConfigChanged( idx );
+}
+
 // --- AttributeEnum
 AttributeEnum::AttributeEnum( DBus::Connection& connection, std::string p, Element* parent, Control::AttributeEnum &slave)
 : Element(connection, p, parent, slave)

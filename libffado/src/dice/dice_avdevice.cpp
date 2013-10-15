@@ -288,6 +288,29 @@ Device::getConfigurationId()
 }
 
 bool
+Device::onSamplerateChange( int oldSamplingFrequency )
+{
+    int current_sr = getSamplingFrequency();
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Current sample rate is: %d\n", (current_sr));
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Previous sample rate was: %d\n", (oldSamplingFrequency));
+    
+    if (current_sr != oldSamplingFrequency)
+    {
+        // Update for the new samplerate
+        if (m_eap) {
+          m_eap->update();
+        }
+        if ( !initIoFunctions() ) {
+          debugError("Could not initialize I/O functions\n");
+          return false;
+        }
+        showDevice();
+        return true;
+    }
+    return false;
+}
+
+bool
 Device::setSamplingFrequency( int samplingFrequency )
 {
     printMessage("Setting sample rate: %d\n", (samplingFrequency));
@@ -301,8 +324,8 @@ Device::setSamplingFrequency( int samplingFrequency )
         debugWarning("Could not retrieve snoopMode parameter, defaulting to false\n");
     }
 
+    int current_sr = getSamplingFrequency();
     if(snoopMode) {
-        int current_sr = getSamplingFrequency();
         if (current_sr != samplingFrequency ) {
             debugError("In snoop mode it is impossible to set the sample rate.\n");
             debugError("Please start the client with the correct setting.\n");
@@ -416,15 +439,9 @@ Device::setSamplingFrequency( int samplingFrequency )
     }
 
     // Update for the new samplerate
-    if ( !initIoFunctions() ) {
-        debugError("Could not initialize I/O functions\n");
-        return false;
+    if (onSamplerateChange(current_sr)) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "Device configuration updated");
     }
-
-    if (m_eap) {
-        m_eap->update();
-    }
-    showDevice();
 
     return true;
 }

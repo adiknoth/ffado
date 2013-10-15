@@ -85,6 +85,8 @@ public:
 
     virtual void show();
 
+    virtual bool devConfigChanged(int idx);
+
 protected:
     FFADODevice &m_Device;
 };

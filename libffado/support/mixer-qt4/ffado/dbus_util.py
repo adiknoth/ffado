@@ -335,6 +335,8 @@ class EnumInterface:
         return self.iface.getEnumLabel(idx)
     def canChangeValue(self):
         return self.iface_element.canChangeValue()
+    def devConfigChanged(self, idx):
+        return self.iface.devConfigChanged(idx)
 
 class SamplerateSelectInterface(EnumInterface):
     def __init__(self, servername, devicepath):

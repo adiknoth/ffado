@@ -90,6 +90,7 @@ public:
     virtual DICE_FL_INFO_PARAM* showFlashInfoFL(bool v = true);
     virtual bool showAppInfoFL();
 
+    virtual bool onSamplerateChange( int samplingFrequency );
     virtual bool setSamplingFrequency( int samplingFrequency );
     virtual int getSamplingFrequency( );
     virtual std::vector<int> getSupportedSamplingFrequencies();
