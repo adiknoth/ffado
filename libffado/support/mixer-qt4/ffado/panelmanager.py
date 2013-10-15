@@ -323,6 +323,10 @@ mixerwidget = ffado.mixer.%s.%s( w )
         self.tabs.addTab( w, title )
         self.panels[guid] = w
 
+        if 'onSamplerateChange' in dir(mixerwidget):
+          log.debug("Updating Mixer on samplerate change required")
+          globalmixer.onSamplerateChange = mixerwidget.onSamplerateChange
+
     def displayPanels(self):
         # if there is no panel, add the no-device message
         # else make sure it is not present

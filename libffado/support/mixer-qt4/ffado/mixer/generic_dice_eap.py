@@ -52,7 +52,7 @@ class Generic_Dice_EAP(QtGui.QWidget):
         scrollarea.setWidget(self.router)
         return scrollarea
 
-    def updateOnSamplerateChange(self):
+    def onSamplerateChange(self):
         # Router configuration is samplerate dependent for DICE EAP devices
         # Destroy and redraw the crossbar router view when called
         n = self.tabs.indexOf(self.router_scrollarea)
