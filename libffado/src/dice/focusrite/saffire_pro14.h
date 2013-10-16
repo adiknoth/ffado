@@ -131,7 +131,6 @@ private:
     };
     Dice::EAP* createEAP();
 
-    SaffirePro14EAP::MonitorSection *m_monitor;
 };
 
 }

@@ -246,31 +246,31 @@ SaffirePro40::SaffirePro40EAP::MonitorSection::MonitorSection(Dice::Focusrite::F
     // Global Mute control
     Control::Container* grp_globalmute = new Control::Container(m_eap, "GlobalMute");
     addElement(grp_globalmute);
-    FocusriteEAP::Switch* m_mute =
+    FocusriteEAP::Switch* mute =
         new FocusriteEAP::Switch(m_eap, "State",
                                  SAFFIRE_PRO40_REGISTER_APP_GLOBAL_MUTE_SWITCH,
                                  FOCUSRITE_EAP_GLOBAL_MUTE_SWITCH_VALUE,
                                  SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
                                  SAFFIRE_PRO40_MESSAGE_SET_GLOBAL_DIM_MUTE_SWITCH);
-    grp_globalmute->addElement(m_mute);
+    grp_globalmute->addElement(mute);
 
 
     // Global Dim control
     Control::Container* grp_globaldim = new Control::Container(m_eap, "GlobalDim");
     addElement(grp_globaldim);
-    FocusriteEAP::Switch* m_dim =
+    FocusriteEAP::Switch* dim =
         new FocusriteEAP::Switch(m_eap, "State",
                                  SAFFIRE_PRO40_REGISTER_APP_GLOBAL_DIM_SWITCH,
                                  FOCUSRITE_EAP_GLOBAL_DIM_SWITCH_VALUE, 
                                  SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
                                  SAFFIRE_PRO40_MESSAGE_SET_GLOBAL_DIM_MUTE_SWITCH);
-    grp_globaldim->addElement(m_dim);
-    FocusriteEAP::Poti* m_dimlevel =
+    grp_globaldim->addElement(dim);
+    FocusriteEAP::Poti* dimlevel =
         new FocusriteEAP::Poti(m_eap, "Level",
                                SAFFIRE_PRO40_REGISTER_APP_GLOBAL_DIM_VOLUME,
                                SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
                                SAFFIRE_PRO40_MESSAGE_SET_LINEOUT_MONITOR_VOLUME);
-    grp_globaldim->addElement(m_dimlevel);
+    grp_globaldim->addElement(dimlevel);
 
     FocusriteEAP::Switch* s;
     // Mono/stereo switch
@@ -427,8 +427,8 @@ SaffirePro40::~SaffirePro40()
 bool SaffirePro40::discover() {
     if (Dice::Device::discover()) {
         FocusriteEAP* eap = dynamic_cast<FocusriteEAP*>(getEAP());
-        m_monitor = new SaffirePro40EAP::MonitorSection(eap, "Monitoring");
-        eap->addElement(m_monitor);
+        SaffirePro40EAP::MonitorSection* monitor = new SaffirePro40EAP::MonitorSection(eap, "Monitoring");
+        eap->addElement(monitor);
         return true;
     }
     return false;

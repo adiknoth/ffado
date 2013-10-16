@@ -155,31 +155,31 @@ SaffirePro14::SaffirePro14EAP::MonitorSection::MonitorSection(Dice::Focusrite::F
     // Global Mute control
     Control::Container* grp_globalmute = new Control::Container(m_eap, "GlobalMute");
     addElement(grp_globalmute);
-    FocusriteEAP::Switch* m_mute =
+    FocusriteEAP::Switch* mute =
         new FocusriteEAP::Switch(m_eap, "State",
                                  SAFFIRE_PRO14_REGISTER_APP_GLOBAL_MUTE_SWITCH,
                                  FOCUSRITE_EAP_GLOBAL_MUTE_SWITCH_VALUE,
                                  SAFFIRE_PRO14_REGISTER_APP_MESSAGE_SET,
                                  SAFFIRE_PRO14_MESSAGE_SET_GLOBAL_DIM_MUTE_SWITCH);
-    grp_globalmute->addElement(m_mute);
+    grp_globalmute->addElement(mute);
 
 
     // Global Dim control
     Control::Container* grp_globaldim = new Control::Container(m_eap, "GlobalDim");
     addElement(grp_globaldim);
-    FocusriteEAP::Switch* m_dim =
+    FocusriteEAP::Switch* dim =
         new FocusriteEAP::Switch(m_eap, "State",
                                  SAFFIRE_PRO14_REGISTER_APP_GLOBAL_DIM_SWITCH,
                                  FOCUSRITE_EAP_GLOBAL_DIM_SWITCH_VALUE, 
                                  SAFFIRE_PRO14_REGISTER_APP_MESSAGE_SET,
                                  SAFFIRE_PRO14_MESSAGE_SET_GLOBAL_DIM_MUTE_SWITCH);
-    grp_globaldim->addElement(m_dim);
-    FocusriteEAP::Poti* m_dimlevel =
+    grp_globaldim->addElement(dim);
+    FocusriteEAP::Poti* dimlevel =
         new FocusriteEAP::Poti(m_eap, "Level",
                                SAFFIRE_PRO14_REGISTER_APP_GLOBAL_DIM_VOLUME,
                                SAFFIRE_PRO14_REGISTER_APP_MESSAGE_SET,
                                SAFFIRE_PRO14_MESSAGE_SET_LINEOUT_MONITOR_VOLUME);
-    grp_globaldim->addElement(m_dimlevel);
+    grp_globaldim->addElement(dimlevel);
 
     FocusriteEAP::Switch* s;
     // Mono/stereo switch
@@ -319,36 +319,36 @@ SaffirePro14::SaffirePro14EAP::MonitorSection::MonitorSection(Dice::Focusrite::F
     // Line/Inst and Hi/Lo Gain switches
     Control::Container* grp_LineInstGain = new Control::Container(m_eap, "LineInstGain");
     addElement(grp_LineInstGain);
-    FocusriteEAP::Switch* m_lineinst =
+    FocusriteEAP::Switch* lineinst =
         new FocusriteEAP::Switch(m_eap, "LineInst1",
                                  SAFFIRE_PRO14_REGISTER_APP_LINEOUT_INST_SWITCH,
                                  SAFFIRE_PRO14_LINEOUT_SWITCH_INST_VALUE,
                                  SAFFIRE_PRO14_REGISTER_APP_MESSAGE_SET,
                                  SAFFIRE_PRO14_MESSAGE_SET_INSTLINE);
-    grp_LineInstGain->addElement(m_lineinst);
-    m_lineinst =
+    grp_LineInstGain->addElement(lineinst);
+    lineinst =
         new FocusriteEAP::Switch(m_eap, "LineInst2",
                                  SAFFIRE_PRO14_REGISTER_APP_LINEOUT_INST_SWITCH,
                                  SAFFIRE_PRO14_LINEOUT_SWITCH_INST_VALUE
                                     <<FOCUSRITE_EAP_LINEOUT_SWITCH_INST_SHIFT,
                                  SAFFIRE_PRO14_REGISTER_APP_MESSAGE_SET,
                                  SAFFIRE_PRO14_MESSAGE_SET_INSTLINE);
-    grp_LineInstGain->addElement(m_lineinst);
-    m_lineinst =
+    grp_LineInstGain->addElement(lineinst);
+    lineinst =
         new FocusriteEAP::Switch(m_eap, "LineGain3",
                                  SAFFIRE_PRO14_REGISTER_APP_LINEOUT_GAIN_SWITCH,
                                  SAFFIRE_PRO14_LINEOUT_SWITCH_GAIN_VALUE,
                                  SAFFIRE_PRO14_REGISTER_APP_MESSAGE_SET,
                                  SAFFIRE_PRO14_MESSAGE_SET_INSTLINE);
-    grp_LineInstGain->addElement(m_lineinst);
-    m_lineinst =
+    grp_LineInstGain->addElement(lineinst);
+    lineinst =
         new FocusriteEAP::Switch(m_eap, "LineGain4",
                                  SAFFIRE_PRO14_REGISTER_APP_LINEOUT_GAIN_SWITCH,
                                  SAFFIRE_PRO14_LINEOUT_SWITCH_GAIN_VALUE
                                     <<FOCUSRITE_EAP_LINEOUT_SWITCH_GAIN_SHIFT,
                                  SAFFIRE_PRO14_REGISTER_APP_MESSAGE_SET,
                                  SAFFIRE_PRO14_MESSAGE_SET_INSTLINE);
-    grp_LineInstGain->addElement(m_lineinst);
+    grp_LineInstGain->addElement(lineinst);
 }
 
 /**
@@ -370,8 +370,8 @@ SaffirePro14::~SaffirePro14()
 bool SaffirePro14::discover() {
     if (Dice::Device::discover()) {
         FocusriteEAP* eap = dynamic_cast<FocusriteEAP*>(getEAP());
-        m_monitor = new SaffirePro14EAP::MonitorSection(eap, "Monitoring");
-        eap->addElement(m_monitor);
+        SaffirePro14EAP::MonitorSection* monitor = new SaffirePro14EAP::MonitorSection(eap, "Monitoring");
+        eap->addElement(monitor);
         return true;
     }
     return false;
