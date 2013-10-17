@@ -28,6 +28,11 @@
 namespace Dice {
 namespace Maudio {
 
+Profire2626::Profire2626EAP::Profire2626EAP(Dice::Device & dev) 
+    : Dice::EAP(dev)
+{
+}
+
 //
 // Profire 2626 has
 //  - 8 mic/line inputs
@@ -274,6 +279,87 @@ void Profire2626::Profire2626EAP::setupDefaultRouterConfig_high()
 }
 
 /**
+ * Application space register read/write
+ */
+bool Profire2626::Profire2626EAP::readApplicationReg(unsigned offset, quadlet_t* quadlet)
+{
+    bool ret = readReg(Dice::EAP::eRT_Application, offset, quadlet);
+    return ret;
+}
+
+bool Profire2626::Profire2626EAP::writeApplicationReg(unsigned offset, quadlet_t quadlet)
+{
+    bool ret = writeReg(Dice::EAP::eRT_Application, offset, quadlet);
+    if (!ret) {
+        debugWarning("Couldn't write %i to register %x!\n", quadlet, offset);
+        return false;
+    }
+    return ret;
+}
+
+/**
+ * Switch class
+ */
+Profire2626::Profire2626EAP::Switch::Switch(
+        Profire2626::Profire2626EAP* eap, std::string name,
+        size_t offset, int activevalue)
+    : Control::Boolean(eap, name)
+    , m_eap(eap)
+    , m_name(name)
+    , m_offset(offset)
+    , m_activevalue(activevalue)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Create Switch %s)\n", m_name.c_str());
+}
+
+bool Profire2626::Profire2626EAP::Switch::selected()
+{
+    quadlet_t state_tmp;
+
+    m_eap->readApplicationReg(m_offset, &state_tmp);
+    bool is_selected = (state_tmp&m_activevalue)?true:false;
+    return is_selected;
+}
+
+bool Profire2626::Profire2626EAP::Switch::select(bool n)
+{
+    quadlet_t state_tmp;
+    m_eap->readApplicationReg(m_offset, &state_tmp);
+    bool is_selected = (state_tmp&m_activevalue)?true:false;
+
+    // Switch the corresponding bit(s)
+    if ( n != is_selected ) {
+        m_eap->writeApplicationReg(m_offset, state_tmp^m_activevalue);
+        is_selected = n;
+    }
+    return is_selected;
+}
+
+/**
+ *  Profire2626 Settings section
+ */
+Profire2626::Profire2626EAP::SettingsSection::SettingsSection(
+        Profire2626::Profire2626EAP* eap, std::string name)
+    : Control::Container(eap, name)
+    , m_eap(eap)
+{
+    // Volume Knob
+    Control::Container* grp_volumeknob = new Control::Container(m_eap, "VolumeKnob");
+    addElement(grp_volumeknob);
+
+    for (unsigned i=0; i<MAUDIO_PROFIRE2626_REGISTER_APP_VOLUME_KNOB_SIZE; ++i) {
+        std::stringstream stream;
+        stream << "Line" << i*2+1 << "Line" << i*2+2;
+        Profire2626EAP::Switch* outputPair =
+            new Profire2626EAP::Switch(m_eap, stream.str(),
+                                 MAUDIO_PROFIRE2626_REGISTER_APP_VOLUME_KNOB_OFFSET,
+                                 MAUDIO_PROFIRE2626_REGISTER_APP_VOLUME_KNOB_VALUE
+                                      <<(MAUDIO_PROFIRE2626_REGISTER_APP_VOLUME_KNOB_SHIFT+i));
+        grp_volumeknob->addElement(outputPair);
+    }
+}
+
+/**
   Device
 */
 Profire2626::Profire2626( DeviceManager& d, std::auto_ptr<ConfigRom>(configRom))
@@ -288,10 +374,15 @@ Profire2626::~Profire2626()
     getEAP()->storeFlashConfig();
 }
 
-bool Profire2626::discover() 
+bool Profire2626::discover()
 {
     if (Dice::Device::discover()) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Discovering Dice::Maudio::Profire2626\n");
+
+        Profire2626EAP* eap = dynamic_cast<Profire2626EAP*>(getEAP());
+        Profire2626EAP::SettingsSection *settings = new Profire2626EAP::SettingsSection(eap, "Settings");
+        eap->addElement(settings);
+
         return true;
     }
     return false;

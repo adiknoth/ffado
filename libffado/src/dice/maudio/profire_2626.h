@@ -31,6 +31,12 @@
 
 #include "libieee1394/configrom.h"
 
+// Global monitor registers (application space)
+#define MAUDIO_PROFIRE2626_REGISTER_APP_VOLUME_KNOB_OFFSET 0x00
+#define MAUDIO_PROFIRE2626_REGISTER_APP_VOLUME_KNOB_SIZE 4
+#define MAUDIO_PROFIRE2626_REGISTER_APP_VOLUME_KNOB_VALUE 1
+#define MAUDIO_PROFIRE2626_REGISTER_APP_VOLUME_KNOB_SHIFT 0
+
 namespace Dice {
 namespace Maudio {
 
@@ -46,12 +52,10 @@ public:
 
     bool canChangeNickname() { return false; }
 
-private:
     class Profire2626EAP : public Dice::EAP
     {
     public:
-        Profire2626EAP(Dice::Device& dev) : Dice::EAP(dev) {
-}
+        Profire2626EAP(Dice::Device& dev);
 
         void setupSources_low();
         void setupDestinations_low();
@@ -63,7 +67,38 @@ private:
         void setupDefaultRouterConfig_mid();
         void setupDefaultRouterConfig_high();
 
+        bool readApplicationReg(unsigned, quadlet_t*);
+        bool writeApplicationReg(unsigned, quadlet_t);
+
+       /**
+        * @brief A standard-switch for boolean.
+        *
+        * If you don't like True and False for the labels, subclass and return your own.
+        * \internal copy&paste from focusrite_eap.h
+        */
+        class Switch : public Control::Boolean
+        {
+        public:
+            Switch(Profire2626EAP*, std::string, size_t, int);
+            bool selected();
+            bool select(bool);
+        private:
+            Profire2626EAP* m_eap;
+            std::string m_name;
+            size_t m_offset;
+            int m_activevalue;
+        };
+
+        class SettingsSection : public Control::Container
+        {
+        public:
+            SettingsSection(Profire2626EAP*, std::string);
+        private:
+            Profire2626EAP * m_eap;
+        };
     };
+
+private:
     Dice::EAP* createEAP();
 };
 
