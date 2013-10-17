@@ -44,7 +44,8 @@ namespace Maudio {
 //  - 16 mixer outputs
 //  - 1 MIDI output
 //
-void Profire2626::Profire2626EAP::setupSources_low() {
+void Profire2626::Profire2626EAP::setupSources_low()
+{
     addSource("Mic/Line/In", 0, 8, eRS_InS1, 1);
     addSource("ADAT A/In", 0, 8, eRS_ADAT, 1);
     addSource("ADAT B/In", 9, 8, eRS_ADAT, 1);
@@ -55,7 +56,8 @@ void Profire2626::Profire2626EAP::setupSources_low() {
     addSource("Mute", 0, 1, eRS_Muted);
 }
 
-void Profire2626::Profire2626EAP::setupDestinations_low() {
+void Profire2626::Profire2626EAP::setupDestinations_low()
+{
     addDestination("Line/Out", 0, 8, eRD_InS1, 1);
     addDestination("ADAT A/Out", 0, 8, eRD_ADAT, 1);
     addDestination("ADAT B/Out", 8, 8, eRD_ADAT, 1);
@@ -67,7 +69,8 @@ void Profire2626::Profire2626EAP::setupDestinations_low() {
     addDestination("Mute", 0, 1, eRD_Muted);
 }
 
-void Profire2626::Profire2626EAP::setupSources_mid() {
+void Profire2626::Profire2626EAP::setupSources_mid()
+{
     addSource("Mic/Line/In", 0, 8, eRS_InS1, 1);
     addSource("ADAT A/In", 0, 4, eRS_ADAT, 1);
     addSource("ADAT B/In", 4, 4, eRS_ADAT, 1);
@@ -78,7 +81,8 @@ void Profire2626::Profire2626EAP::setupSources_mid() {
     addSource("Mute", 0, 1, eRS_Muted);
 }
 
-void Profire2626::Profire2626EAP::setupDestinations_mid() {
+void Profire2626::Profire2626EAP::setupDestinations_mid()
+{
     addDestination("Line/Out", 0, 8, eRD_InS1, 1);
     addDestination("ADAT A/Out", 0, 4, eRD_ADAT, 1);
     addDestination("ADAT B/Out", 4, 4, eRD_ADAT, 1);
@@ -90,7 +94,8 @@ void Profire2626::Profire2626EAP::setupDestinations_mid() {
     addDestination("Mute", 0, 1, eRD_Muted);
 }
 
-void Profire2626::Profire2626EAP::setupSources_high() {
+void Profire2626::Profire2626EAP::setupSources_high()
+{
     addSource("Mic/Line/In", 0, 8, eRS_InS1, 1);
     addSource("ADAT A/In", 0, 2, eRS_ADAT, 1);
     addSource("ADAT B/In", 2, 2, eRS_ADAT, 1);
@@ -101,7 +106,8 @@ void Profire2626::Profire2626EAP::setupSources_high() {
     addSource("Mute", 0, 1, eRS_Muted);
 }
 
-void Profire2626::Profire2626EAP::setupDestinations_high() {
+void Profire2626::Profire2626EAP::setupDestinations_high()
+{
     addDestination("Line/Out", 0, 8, eRD_InS1, 1);
     addDestination("ADAT A/Out", 0, 2, eRD_ADAT, 1);
     addDestination("ADAT B/Out", 2, 2, eRD_ADAT, 1);
@@ -118,8 +124,8 @@ void Profire2626::Profire2626EAP::setupDestinations_high() {
  * 91 destinations
  * This tries to mimic default config from Windows control panel
  */
-void
-Profire2626::Profire2626EAP::setupDefaultRouterConfig_low() {
+void Profire2626::Profire2626EAP::setupDefaultRouterConfig_low()
+{
     unsigned int i;
 
     // ======== the 1394 stream receivers
@@ -190,8 +196,8 @@ Profire2626::Profire2626EAP::setupDefaultRouterConfig_low() {
     }
 }
 
-void
-Profire2626::Profire2626EAP::setupDefaultRouterConfig_mid() {
+void Profire2626::Profire2626EAP::setupDefaultRouterConfig_mid()
+{
     unsigned int i;
 
     // ======== the 1394 stream receivers
@@ -262,17 +268,15 @@ Profire2626::Profire2626EAP::setupDefaultRouterConfig_mid() {
     }
 }
 
-void
-Profire2626::Profire2626EAP::setupDefaultRouterConfig_high() {
+void Profire2626::Profire2626EAP::setupDefaultRouterConfig_high() 
+{
     printMessage("Don't know how to handle High (192 kHz) sample rate for Profire2626\n");
 }
-
 
 /**
   Device
 */
-Profire2626::Profire2626( DeviceManager& d,
-                                    std::auto_ptr<ConfigRom>( configRom ))
+Profire2626::Profire2626( DeviceManager& d, std::auto_ptr<ConfigRom>(configRom))
     : Dice::Device( d, configRom)
 {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Created Dice::Maudio::Profire2626 (NodeID %d)\n",
@@ -284,7 +288,8 @@ Profire2626::~Profire2626()
     getEAP()->storeFlashConfig();
 }
 
-bool Profire2626::discover() {
+bool Profire2626::discover() 
+{
     if (Dice::Device::discover()) {
         debugOutput(DEBUG_LEVEL_VERBOSE, "Discovering Dice::Maudio::Profire2626\n");
         return true;
@@ -292,14 +297,14 @@ bool Profire2626::discover() {
     return false;
 }
 
-void
-Profire2626::showDevice()
+void Profire2626::showDevice()
 {
     debugOutput(DEBUG_LEVEL_VERBOSE, "This is a Dice::Maudio::Profire2626\n");
     Dice::Device::showDevice();
 }
 
-Dice::EAP* Profire2626::createEAP() {
+Dice::EAP* Profire2626::createEAP()
+{
     return new Profire2626EAP(*this);
 }
 
