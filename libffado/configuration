@@ -119,7 +119,7 @@ device_definitions = (
     modelid     = 0x00000011;
     vendorname  = "PreSonus";
     modelname   = "Firestudio Mobile";
-    driver = "DICE";
+    driver      = "DICE";
 },
 { # Entry for StudioLive 2442, from Walt Baldwin
     vendorid    = 0x00000A92;
@@ -256,15 +256,15 @@ device_definitions = (
     modelid     = 0x00000010;
     vendorname  = "M-Audio";
     modelname   = "ProFire 2626";
-    driver = "DICE";
-    mixer       = "Generic_Dice_EAP";
+    driver      = "DICE";
+    mixer       = "Profire2626";
 },
 {
     vendorid    = 0x000d6c;
     modelid     = 0x00000011;
     vendorname  = "M-Audio";
     modelname   = "ProFire 610";
-    driver = "DICE";
+    driver      = "DICE";
     mixer       = "Generic_Dice_EAP";
 },
 {
