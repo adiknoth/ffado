@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Profire2626Settings</class>
+ <widget class="QWidget" name="Profire2626Settings">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>763</width>
+    <height>542</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="1">
+    <widget class="QGroupBox" name="PeakMeters">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="toolTip">
+      <string>not implemented</string>
+     </property>
+     <property name="title">
+      <string>Peak meters</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="meterMode">
+        <item>
+         <property name="text">
+          <string>Pre fader</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Post fader</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Mode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Peak hold</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="peakHold">
+        <item>
+         <property name="text">
+          <string>Off</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1 second</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>3 seconds</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Infinite</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="2">
+    <widget class="QGroupBox" name="StandaloneMode">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="toolTip">
+      <string>not implemented</string>
+     </property>
+     <property name="statusTip">
+      <string/>
+     </property>
+     <property name="whatsThis">
+      <string/>
+     </property>
+     <property name="title">
+      <string>Standalone mode</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="1">
+       <widget class="QComboBox" name="syncSource">
+        <item>
+         <property name="text">
+          <string>Internal</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>SPDIF</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Optical A</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Word Clock (BNC)</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Optical port B mode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Sample rate</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Sync source</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>Converter mode</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="sampleRate">
+        <item>
+         <property name="text">
+          <string>44.1 kHz</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>48 kHz</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>88.2 kHz</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>96 kHz</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>176.4 kHz</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>192 kHz</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="opticalBMode">
+        <item>
+         <property name="text">
+          <string>ADAT</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>SPDIF</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QComboBox" name="converterMode">
+        <item>
+         <property name="text">
+          <string>A/D</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>A/D - D/A</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="MasterVolumeKnob">
+     <property name="title">
+      <string>Master volume knob</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QCheckBox" name="line1line2">
+        <property name="text">
+         <string>Analog out 1/2</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="line3line4">
+        <property name="text">
+         <string>Analog out 3/4</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="line5line6">
+        <property name="text">
+         <string>Analog out 5/6</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="line7line8">
+        <property name="text">
+         <string>Analog out 7/8</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Warning:&lt;/span&gt; Unchecking a port will make it play at full volume and may damage your speakers and/or hearing!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
