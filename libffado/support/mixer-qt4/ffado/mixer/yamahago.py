@@ -1,4 +1,5 @@
 #
+# Copyright (c) 2013      by Takashi Sakamoto
 # Copyright (C) 2005-2008 by Pieter Palmers
 #
 # This file is part of FFADO
@@ -32,148 +33,124 @@ class YamahaGo(QWidget):
 	def __init__(self,parent = None):
 		QWidget.__init__(self,parent)
 
-	# startup
-	def initValues(self):
-		self.modelId = self.configrom.getModelId()
-		# GO44
-		if self.modelId == 0x0010000B:
-			self.is46 = False
-		# GO46
-		elif self.modelId == 0x0010000C:
-			self.is46 = True
-		else:
-			return
-
-		if (not self.is46):
-			uicLoad("ffado/mixer/yamahago44", self)
-			self.setWindowTitle("Yamaha GO44 Control")
-		else:
-			uicLoad("ffado/mixer/yamahago46", self)
-			self.setWindowTitle("Yamaha GO46 Control")
-
-		# common
-		self.VolumeControls = {
-			'strmplbk12':	['/Mixer/Feature_Volume_3', self.sldStrmPlbk12],
-			'strmplbk34':	['/Mixer/Feature_Volume_4', self.sldStrmPlbk34],
-			'strmplbk56':	['/Mixer/Feature_Volume_5', self.sldStrmPlbk56],
-			'anain12':	['/Mixer/Feature_Volume_6', self.sldAnaIn12],
-			'digiin12':	['/Mixer/Feature_Volume_7', self.sldDigiIn12],
-		}
-		self.JackSourceSelectors = {
-			'anaout12':	['/Mixer/Selector_1', self.cmbAnaOut12],
-			'anaout34':	['/Mixer/Selector_2', self.cmbAnaOut34],
-			'digiout12':	['/Mixer/Selector_3', self.cmbDigiOut12],
-			'clksrc':	['/Mixer/Selector_4', self.cmbClkSrc]
-			}
-
-		if (self.is46):
-			# volume for mixer output
-			self.VolumeControls['master'] = ['/Mixer/Feature_Volume_2', self.sldMaster]
-			# volume for analog output
-			self.OutputVolumeControls = {
-				'anaout12':	['/Mixer/Feature_Volume_1', 1, self.sldAnaOut12],
-				'anaout34':	['/Mixer/Feature_Volume_1', 3, self.sldAnaOut34]
-			}
-		else:
-			# volume for mixer output
-			self.VolumeControls['master'] = ['/Mixer/Feature_Volume_1', self.sldMaster]
-
-
-		# mixer master volume
-		self.sldMaster.setEnabled(True)
-
-		# gain control for mixer input
-		for name, ctrl in self.VolumeControls.iteritems():
-			decibel = self.hw.getContignuous(ctrl[0])
-			vol = pow(10, decibel / 16384 + 2)
-			log.debug("%s volume is %d" % (name , vol))
-			ctrl[1].setValue(vol)
-
-		# source selector for jack output
-		for name, ctrl in self.JackSourceSelectors.iteritems():
-			state = self.hw.getDiscrete(ctrl[0])
-			log.debug("%s state is %d" % (name , state))
-			ctrl[1].setCurrentIndex(state)
-
-		if (self.is46):
-			# volume for output
-			for name, ctrl in self.OutputVolumeControls.iteritems():
-				decibel = self.hw.getContignuous(ctrl[0], ctrl[1])
-				vol = pow(10, decibel / 16384 + 2)
-				log.debug("%s volume for %d is %d" % (name, ctrl[1], vol))
-				ctrl[2].setValue(vol)
-
 	def getDisplayTitle(self):
 		if self.configrom.getModelId() == 0x0010000B:
 			return "GO44"
 		else:
 			return "GO46"
 
+	# startup
+	def initValues(self):
+		uicLoad("ffado/mixer/yamahago", self)
+		
+		self.modelId = self.configrom.getModelId()
+		# GO44
+		if self.modelId == 0x0010000B:
+			self.setWindowTitle("Yamaha GO44 Control")
+			self.box_ana_out.hide()
+			self.is46 = False
+		# GO46
+		elif self.modelId == 0x0010000C:
+			self.setWindowTitle("Yamaha GO46 Control")
+			self.box_ana_in_12_level.hide()
+			self.is46 = True
+
+		# common
+		self.VolumeControls = {
+			self.sld_mixer_strm_in_1:	['/Mixer/Feature_Volume_3', 1, self.sld_mixer_strm_in_2, 2, self.link_mixer_strm_in_12],
+			self.sld_mixer_strm_in_2:	['/Mixer/Feature_Volume_3', 2, self.sld_mixer_strm_in_1, 1, self.link_mixer_strm_in_12],
+			self.sld_mixer_strm_in_3:	['/Mixer/Feature_Volume_4', 1, self.sld_mixer_strm_in_4, 2, self.link_mixer_strm_in_34],
+			self.sld_mixer_strm_in_4:	['/Mixer/Feature_Volume_4', 2, self.sld_mixer_strm_in_3, 1, self.link_mixer_strm_in_34],
+			self.sld_mixer_strm_in_5:	['/Mixer/Feature_Volume_5', 1, self.sld_mixer_strm_in_6, 2, self.link_mixer_strm_in_56],
+			self.sld_mixer_strm_in_6:	['/Mixer/Feature_Volume_5', 2, self.sld_mixer_strm_in_5, 1, self.link_mixer_strm_in_56],
+			self.sld_mixer_ana_in_1:	['/Mixer/Feature_Volume_6', 1, self.sld_mixer_ana_in_2,  2, self.link_mixer_ana_in_12],
+			self.sld_mixer_ana_in_2:	['/Mixer/Feature_Volume_6', 2, self.sld_mixer_ana_in_1,  1, self.link_mixer_ana_in_12],
+			self.sld_mixer_dig_in_1:	['/Mixer/Feature_Volume_7', 1, self.sld_mixer_dig_in_2,  2, self.link_mixer_dig_in_12],
+			self.sld_mixer_dig_in_2:	['/Mixer/Feature_Volume_7', 2, self.sld_mixer_dig_in_1,  1, self.link_mixer_dig_in_12]
+		}
+		self.JackSourceSelectors = {
+			self.cmb_ana_out_12_route:	'/Mixer/Selector_1',
+			self.cmb_ana_out_34_route:	'/Mixer/Selector_2',
+			self.cmb_dig_out_12_route:	'/Mixer/Selector_3'
+			}
+
+		if not self.is46:
+			# volume for mixer output
+			self.VolumeControls[self.sld_mixer_out_1] = ['/Mixer/Feature_Volume_1', 1, self.sld_mixer_out_2, 2, self.link_mixer_out_12]
+			self.VolumeControls[self.sld_mixer_out_2] = ['/Mixer/Feature_Volume_1', 2, self.sld_mixer_out_1, 1, self.link_mixer_out_12]
+			# analog out 3/4 is headphone out 1/2
+			self.label_ana_out_34_route.setText("Headphone out 1/2")
+		else:
+			# volume for mixer output
+			self.VolumeControls[self.sld_mixer_out_1]	= ['/Mixer/Feature_Volume_2', 1, self.sld_mixer_out_2, 2, self.link_mixer_out_12]
+			self.VolumeControls[self.sld_mixer_out_2]	= ['/Mixer/Feature_Volume_2', 2, self.sld_mixer_out_1, 1, self.link_mixer_out_12]
+			# volume for analog output
+			self.VolumeControls[self.sld_ana_out_1]	= ['/Mixer/Feature_Volume_1', 1, self.sld_ana_out_2, 2, self.link_ana_out_12]
+			self.VolumeControls[self.sld_ana_out_2]	= ['/Mixer/Feature_Volume_1', 2, self.sld_ana_out_1, 1, self.link_ana_out_12]
+			self.VolumeControls[self.sld_ana_out_3]	= ['/Mixer/Feature_Volume_1', 3, self.sld_ana_out_4, 4, self.link_ana_out_34]
+			self.VolumeControls[self.sld_ana_out_4]	= ['/Mixer/Feature_Volume_1', 4, self.sld_ana_out_3, 3, self.link_ana_out_34]
+
+		# gain control
+		for ctl, params in self.VolumeControls.items():
+			path	= params[0]
+			idx	= params[1]
+			
+			db = self.hw.getContignuous(path, idx)
+			vol = self.db2vol(db)
+			ctl.setValue(vol)
+			
+			pair	= params[2]
+			pidx	= params[3]
+			link	= params[4]
+			
+			pdb = self.hw.getContignuous(path, pidx)
+			pvol = self.db2vol(db)
+			
+			if pvol == vol:
+				link.setChecked(True)
+			
+			QObject.connect(ctl, SIGNAL('valueChanged(int)'), self.updateVolume)
+
+		# source selector for jack output
+		for ctl, param in self.JackSourceSelectors.items():
+			state = self.hw.getDiscrete(param)
+			ctl.setCurrentIndex(state)
+			
+			QObject.connect(ctl, SIGNAL('activated(int)'), self.updateSelector)
+			
+		if not self.is46:
+			QObject.connect(self.cmb_ana_in_12_level, SIGNAL('activated(int)'), self.updateMicLevel)
+
 	# helper functions
-	def setVolume(self, name, vol):
-		decibel = (log10(vol + 1) - 2) * 16384
-		log.debug("setting %s volume to %d" % (name, decibel))
-		self.hw.setContignuous(self.VolumeControls[name][0], decibel)
-	def setOutVolume(self, id, vol):
-		decibel = (log10(vol + 1) - 2) * 16384
-		self.hw.setContignuous('/Mixer/Feature_Volume_1', decibel, id)
-	def setSelector(self, a0, a1):
-		name = a0
-		state = a1
-		log.debug("setting %s state to %d" % (name, state))
-		self.hw.setDiscrete(self.JackSourceSelectors[name][0], state)
-	def setAnaInLevel(self, a0):
-		if a0 == 0:
+	def vol2db(self, vol):
+		return (log10(vol + 1) - 2) * 16384
+	def db2vol(self, db):
+		return pow(10, db / 16384 + 2) - 1
+	
+	def updateMicLevel(self, state):
+		if state == 0:
 			level = 0
-			string = 'high'
-		elif a0 == 1:
+		elif state == 1:
 			level = -1535
-			string = 'middle'
 		else:
 			level = -3583
-			string = 'low'
-		log.debug("setting front level to %s, %d" % (string, level))
 		self.hw.setContignuous('/Mixer/Feature_Volume_2', level)
 
-	# source control for mixer
-	def setGainStrmPlbk12(self, a0):
-		self.setVolume('strmplbk12', a0)
-	def setGainStrmPlbk34(self, a0):
-		self.setVolume('strmplbk34', a0)
-	def setGainAnaIn12(self, a0):
-		self.setVolume('anain12', a0)
-	def setGainStrmPlbk56(self, a0):
-		self.setVolume('strmplbk56', a0)
-	def setGainDigiIn(self,a0):
-		self.setVolume('digiin12', a0)
-	def setVolumeMixer(self, a0):
-		self.setVolume('master', a0)
-	def setVolumeAnaOut12(self, a0):
-		self.setOutVolume(1, a0)
-		self.setOutVolume(2, a0)
-	def setVolumeAnaOut34(self, a0):
-		self.setOutVolume(3, a0)
-		self.setOutVolume(4, a0)
+	def updateVolume(self, vol):
+		sender	= self.sender()
+		path	= self.VolumeControls[sender][0]
+		idx	= self.VolumeControls[sender][1]
+		pair	= self.VolumeControls[sender][2]
+		p_idx	= self.VolumeControls[sender][3]
+		link	= self.VolumeControls[sender][4]
 
-	# Source selector for output jack
-	def setAnaOut12(self, a0):
-		self.setSelector('anaout12', a0)
-	def setAnaOut34(self, a0):
-		self.setSelector('anaout34', a0)
-	def setDigiOut12(self, a0):
-		self.setSelector('digiout12', a0)
-	def setClkSrc(self, a0):
-		# if streaming, this operation break connection
-		ss = self.streamingstatus.selected()
-		ss_txt = self.streamingstatus.getEnumLabel(ss)
-		if (ss_txt == 'Idle'):
-			self.setSelector('clksrc', a0)
-		else:
-			msg = QMessageBox()
-			msg.question( msg, "Error", \
-				"<qt>During streaming, this option is disable.</qt>", \
-				QMessageBox.Ok)
-			ctrl = self.JackSourceSelectors['clksrc']
-			state = self.hw.getDiscrete(ctrl[0])
-			ctrl[1].setCurrentIndex(state)
-# vim: et
+		db = self.vol2db(vol)
+		self.hw.setContignuous(path, db, idx)
+		
+		if link.isChecked():
+			pair.setValue(vol)
+
+	def updateSelector(self, state):
+		sender	= self.sender()
+		path	= self.JackSourceSelectors[sender]
+		self.hw.setDiscrete(path, state)
