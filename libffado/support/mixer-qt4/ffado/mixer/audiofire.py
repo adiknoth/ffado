@@ -324,8 +324,11 @@ class AudioFire(QWidget):
         self.TriggerControls[settings.btnSaveSettings] = ["/SaveSettings"]
         self.TriggerControls[settings.btnIdentify] = ["/Identify"]
 
-        self.SPDIFmodeControls[settings.radioConsumer] = ["/SpdifMode", 0]
-        self.SPDIFmodeControls[settings.radioProfessional] = ["/SpdifMode", 1]
+        if self.configrom.getModelId() == 0x0AF12:
+            settings.spdifMode.hide()
+        else:
+            self.SPDIFmodeControls[settings.radioConsumer] = ["/SpdifMode", 0]
+            self.SPDIFmodeControls[settings.radioProfessional] = ["/SpdifMode", 1]
 
         # Store a reference to the "save" button for later manipulation
         self.btnSaveSettings = settings.btnSaveSettings
