@@ -48,7 +48,6 @@ public:
         eD_FireWorks   = 2,
         eD_GenericAVC  = 3,
         eD_Oxford      = 4,
-        eD_MAudio      = 5,
         eD_MOTU        = 10,
         eD_DICE        = 20,
         eD_MetricHalo  = 30,

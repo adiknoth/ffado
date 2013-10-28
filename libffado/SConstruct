@@ -61,7 +61,6 @@ Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
     BoolVariable( "ENABLE_METRIC_HALO", "Enable/Disable support for the Metric Halo platform.", False ),
     BoolVariable( "ENABLE_RME", "Enable/Disable support for the RME platform.", True ),
     BoolVariable( "ENABLE_DIGIDESIGN", "Enable/Disable support for Digidesign interfaces.", False ),
-    BoolVariable( "ENABLE_MAUDIO", "Enable/Disable support for the M-Audio custom BeBoB devices.", False ),
     BoolVariable( "ENABLE_BOUNCE", "Enable/Disable the BOUNCE device.", False ),
     BoolVariable( "ENABLE_GENERICAVC", """\
 Enable/Disable the the generic avc part (mainly used by apple).
@@ -430,7 +429,6 @@ if env['ENABLE_ALL']:
     env['ENABLE_RME'] = True
     env['ENABLE_DIGIDESIGN'] = True
     env['ENABLE_BOUNCE'] = True
-    env['ENABLE_MAUDIO'] = True
 
 
 env['BUILD_STATIC_LIB'] = False

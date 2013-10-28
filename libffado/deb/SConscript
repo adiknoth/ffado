@@ -55,9 +55,9 @@ DEBFILES.append(("usr/share/libffado/ffado_driver_genericavc.txt",  "#src/generi
 if env['ENABLE_BEBOB']:
     DEBFILES.append(("usr/share/libffado/ffado_driver_bebob.txt",  "#src/bebob/ffado_driver_bebob.txt"))
     DEBFILES.append(("usr/bin/ffado-bridgeco-downloader", "#support/firmware/ffado-bridgeco-downloader"))
-    #DEBFILES.append(("usr/share/libffado/fw410.xml", "#src/maudio/fw410.xml"))
-    #DEBFILES.append(("usr/share/libffado/fwap.xml","#src/maudio/fwap.xml"))
-    #DEBFILES.append(("usr/share/libffado/refdesign.xml","#src/maudio/refdesign.xml"))
+    #DEBFILES.append(("usr/share/libffado/fw410.xml", "#src/bebob/maudio/fw410.xml"))
+    #DEBFILES.append(("usr/share/libffado//fwap.xml","#src/bebob/maudio/fwap.xml"))
+    #DEBFILES.append(("usr/share/libffado//refdesign.xml","#src/bebob/maudio/refdesign.xml"))
 if env['ENABLE_FIREWORKS']:
     DEBFILES.append(("usr/share/libffado/ffado_driver_fireworks.txt",  "#src/fireworks/ffado_driver_fireworks.txt"))
     DEBFILES.append(("usr/bin/ffado-fireworks-downloader", "#support/firmware/ffado-fireworks-downloader"))

@@ -501,8 +501,6 @@ Configuration::convertDriver(const std::string& driver) const {
         return eD_GenericAVC;
     if(driver == "OXFORD")
         return eD_Oxford;
-    if(driver == "MAUDIO")
-        return eD_MAudio;
     if(driver == "MOTU")
         return eD_MOTU;
     if(driver == "DICE")

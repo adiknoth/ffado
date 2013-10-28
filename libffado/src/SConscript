@@ -101,17 +101,10 @@ bebob_source = env.Split( '\
 ' )
 
 bebob_pkgdata = env.Split( '\
-	maudio/refdesign.xml \
-	maudio/fw410.xml \
-	maudio/fwap.xml \
+	bebob/maudio/refdesign.xml \
+	bebob/maudio/fw410.xml \
+	bebob/maudio/fwap.xml \
 ' )
-
-maudio_source =  env.Split( '\
-	maudio/maudio_avdevice.cpp \
-' )
-
-maudio_pkgdata = env.Split( '\
-' )	
 
 genericavc_source =  env.Split( '\
 	genericavc/avc_avdevice.cpp \
@@ -244,11 +237,6 @@ if env['ENABLE_BEBOB']:
 	libenv.MergeFlags( "-DENABLE_BEBOB" )
 	source += bebob_source
 	pkgdata += bebob_pkgdata
-if env['ENABLE_MAUDIO']:
-	env['ENABLE_GENERICAVC'] = True
-	libenv.MergeFlags( "-DENABLE_MAUDIO" )
-	source += maudio_source
-	pkgdata += maudio_pkgdata
 if env['ENABLE_FIREWORKS']:
 	env['ENABLE_GENERICAVC'] = True
 	libenv.MergeFlags( "-DENABLE_FIREWORKS" )

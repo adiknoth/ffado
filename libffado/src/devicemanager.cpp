@@ -44,10 +44,6 @@
 #include "bebob/bebob_avdevice.h"
 #endif
 
-#ifdef ENABLE_MAUDIO
-#include "maudio/maudio_avdevice.h"
-#endif
-
 #ifdef ENABLE_GENERICAVC
     #include "genericavc/avc_avdevice.h"
 #endif
@@ -1050,13 +1046,6 @@ DeviceManager::getDriverForDeviceDo( ConfigRom *configRom,
     debugOutput( DEBUG_LEVEL_VERBOSE, "Trying Oxford FW90x...\n" );
     if ( Oxford::Device::probe( getConfiguration(), *configRom, generic ) ) {
         return Oxford::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
-    }
-#endif
-
-#ifdef ENABLE_MAUDIO
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Trying M-Audio...\n" );
-    if ( MAudio::Device::probe( getConfiguration(), *configRom, generic ) ) {
-        return MAudio::Device::createDevice( *this, std::auto_ptr<ConfigRom>( configRom ) );
     }
 #endif
 
