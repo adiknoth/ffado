@@ -140,6 +140,12 @@ private:
     uint32_t getClock();
     bool setClock(uint32_t);
 
+    /*
+     * Audiofire12 often return wrong data for clock source.
+     * This member is used to cache the latest clock source change.
+     */
+    int m_current_clock;
+
     uint32_t            m_efc_version;
 
     EfcHardwareInfoCmd  m_HwInfo;

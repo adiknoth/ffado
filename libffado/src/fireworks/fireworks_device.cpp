@@ -38,11 +38,14 @@
 #include "fireworks/fireworks_control.h"
 
 #include "libutil/PosixMutex.h"
+#include "libutil/SystemTimeSource.h"
 
 #include "IntelFlashMap.h"
 
 #define ECHO_FLASH_ERASE_TIMEOUT_MILLISECS 2000
 #define FIREWORKS_MIN_FIRMWARE_VERSION 0x04080000
+#define AVC_MAX_TRIAL		2
+#define AVC_RETRY_INTERVAL	200000
 
 #include <sstream>
 #include <unistd.h>
@@ -186,6 +189,8 @@ Device::discoverUsingEFC()
         return false;
     }
 
+    m_current_clock = -1;
+
     m_efc_discovery_done = true;
     return true;
 }
@@ -202,8 +207,10 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
     }
 }
 
-bool 
-Device::doEfcOverAVC(EfcCmd &c) {
+bool Device::doEfcOverAVC(EfcCmd &c)
+{
+    int trial;
+
     EfcOverAVCCmd cmd( get1394Service() );
     cmd.setCommandType( AVC::AVCCommand::eCT_Control );
     cmd.setNodeId( getConfigRom().getNodeId() );
@@ -213,10 +220,16 @@ Device::doEfcOverAVC(EfcCmd &c) {
     cmd.setVerbose( getDebugLevel() );
     cmd.m_cmd = &c;
 
-    if ( !cmd.fire()) {
-        debugError( "EfcOverAVCCmd command failed\n" );
-        c.showEfcCmd();
-        return false;
+    for (trial = 0; trial < AVC_MAX_TRIAL; trial++) {
+        if (cmd.fire())
+            break;
+        Util::SystemTimeSource::SleepUsecRelative(AVC_RETRY_INTERVAL);
+    }
+
+    if (trial == AVC_MAX_TRIAL) {
+            debugError( "EfcOverAVCCmd command failed\n" );
+            c.showEfcCmd();
+            return false;
     }
 
     if ( cmd.getResponse() != AVC::AVCCommand::eR_Accepted) {
@@ -542,7 +555,7 @@ Device::setActiveClockSource(ClockSource s) {
         return false;
     }
 
-    result=setClock(s.id);
+    result = setClock(s.id);
 
     // From the ECHO sources:
     // "If this is a 1200F and the sample rate is being set via EFC, then
@@ -629,36 +642,49 @@ Device::clockIdToClockSource(uint32_t clockid) {
     return s;
 }
 
-uint32_t
-Device::getClock() {
+uint32_t Device::getClock()
+{
+    uint32_t clock;
+
     EfcGetClockCmd gccmd;
     if (!doEfcOverAVC(gccmd)) {
         debugError("Could not get clock info\n");
-        return EFC_CMD_HW_CLOCK_UNSPECIFIED;
-    }
-    debugOutput(DEBUG_LEVEL_VERBOSE, "Active clock: 0x%08X\n",gccmd.m_clock);
+        /* fallback to cache */
+        if (m_current_clock >= 0)
+            clock = m_current_clock;
+	/* fallback to internal */
+        else if (setClock(EFC_CMD_HW_CLOCK_INTERNAL))
+            clock = EFC_CMD_HW_CLOCK_INTERNAL;
+	/* fatal error */
+        else
+            clock = EFC_CMD_HW_CLOCK_UNSPECIFIED;
+    } else
+        clock = gccmd.m_clock;
+
+    debugOutput(DEBUG_LEVEL_VERBOSE, "Active clock: 0x%08X\n", clock);
     gccmd.showEfcCmd();
 
-    return gccmd.m_clock;
+    return clock;
 }
 
-bool
-Device::setClock(uint32_t id) {
-    EfcGetClockCmd gccmd;
-    if (!doEfcOverAVC(gccmd)) {
-        debugError("Could not get clock info\n");
+bool Device::setClock(uint32_t id)
+{
+    int sampling_rate = getSamplingFrequency();
+    if (!sampling_rate)
         return false;
-    }
+
     debugOutput(DEBUG_LEVEL_VERBOSE, "Set clock: 0x%08X\n", id);
 
     EfcSetClockCmd sccmd;
     sccmd.m_clock=id;
-    sccmd.m_samplerate=gccmd.m_samplerate;
+    sccmd.m_samplerate= sampling_rate;
     sccmd.m_index=0;
     if (!doEfcOverAVC(sccmd)) {
         debugError("Could not set clock info\n");
         return false;
     }
+
+    m_current_clock = id;
     return true;
 }
 
@@ -903,31 +929,41 @@ Device::getSessionBase()
 }
 
 int
-Device::getSamplingFrequency( ) {
+Device::getSamplingFrequency()
+{
+    int sampling_rate;
+
     EfcGetClockCmd gccmd;
     if (!doEfcOverAVC(gccmd)) {
-        debugError("Could not get clock info\n");
-        return false;
+        /* fallback to 'input/output plug signal format' command */
+        sampling_rate = GenericAVC::Device::getSamplingFrequency();
+        if (!sampling_rate) {
+            debugError("Could not get sample rate\n");
+            return false;
+        }
+        return sampling_rate;
     }
     return gccmd.m_samplerate;
 }
 bool
-Device::setSamplingFrequency( int s )
+Device::setSamplingFrequency(int s)
 {
-    EfcGetClockCmd gccmd;
-    if (!doEfcOverAVC(gccmd)) {
-        debugError("Could not get clock info\n");
+    uint32_t clock = getClock();
+    if (clock == EFC_CMD_HW_CLOCK_UNSPECIFIED)
         return false;
-    }
+
     debugOutput(DEBUG_LEVEL_VERBOSE, "Set samplerate: %d\n", s);
 
     EfcSetClockCmd sccmd;
-    sccmd.m_clock=gccmd.m_clock;
-    sccmd.m_samplerate=s;
-    sccmd.m_index=0;
+    sccmd.m_clock = clock;
+    sccmd.m_samplerate = s;
+    sccmd.m_index = 0;
     if (!doEfcOverAVC(sccmd)) {
-        debugError("Could not set sample rate\n");
-        return false;
+        /* fallback to 'input/output plug signal format' command */
+        if (!GenericAVC::Device::setSamplingFrequency(s)) {
+            debugError("Could not set sample rate\n");
+            return false;
+        }
     }
     return true;
 }
