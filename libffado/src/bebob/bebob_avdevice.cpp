@@ -36,6 +36,7 @@
 #include "bebob/edirol/edirol_fa66.h"
 #include "bebob/esi/quatafire610.h"
 #include "bebob/yamaha/yamaha_avdevice.h"
+#include "bebob/maudio/maudio_normal_avdevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -169,6 +170,16 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
                 return new Yamaha::GoDevice(d, configRom);
             default: // return a plain BeBoB device
                 return new Device(d, configRom);
+        }
+        case FW_VENDORID_MAUDIO:
+        switch (modelId) {
+        case 0x0000000a: // Ozonic
+        case 0x00010046: // fw410
+        case 0x00010060: // Audiophile
+        case 0x00010062: // Solo
+            return new MAudio::NormalDevice(d, configRom, modelId);
+         default:
+             return new Device(d, configRom);
         }
         default:
             return new Device(d, configRom);
