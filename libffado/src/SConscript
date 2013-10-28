@@ -97,6 +97,7 @@ bebob_source = env.Split( '\
 	bebob/mackie/onyxmixer.cpp \
 	bebob/yamaha/yamaha_cmd.cpp \
 	bebob/yamaha/yamaha_avdevice.cpp \
+	bebob/maudio/maudio_normal_avdevice.cpp \
 ' )
 
 bebob_pkgdata = env.Split( '\
