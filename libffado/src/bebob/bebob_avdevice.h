@@ -95,6 +95,12 @@ public:
     virtual int getFeatureFBLRBalanceCurrent(int id, int channel);
     virtual bool setFeatureFBLRBalanceCurrent(int id, int channel, int v);
 
+    virtual bool setProcessingFBMixerSingleCurrent(int id, int iPlugNum,
+                                                   int iAChNum, int oAChNum,
+                                                   int setting);
+    virtual int  getProcessingFBMixerSingleCurrent(int id, int iPlugNum,
+                                                   int iAChNum, int oAChNum);
+
     virtual void showDevice();
     virtual void setVerboseLevel(int l);
 protected:

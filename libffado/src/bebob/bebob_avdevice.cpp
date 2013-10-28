@@ -483,6 +483,78 @@ Device::getFeatureFBLRBalanceCurrent(int id, int channel)
     return getFeatureFBLRBalanceValue(id, channel, AVC::FunctionBlockCmd::eCA_Current);   
 }
 
+bool
+Device::setProcessingFBMixerSingleCurrent(int id, int iPlugNum,
+                                    int iAChNum, int oAChNum,
+                                    int setting)
+{
+	AVC::FunctionBlockCmd fbCmd(get1394Service(),
+                           AVC::FunctionBlockCmd::eFBT_Processing,
+                           id,
+                           AVC::FunctionBlockCmd::eCA_Current);
+    fbCmd.setNodeId(getNodeId());
+    fbCmd.setSubunitId(0x00);
+    fbCmd.setCommandType(AVCCommand::eCT_Control);
+    fbCmd.setVerboseLevel( getDebugLevel() );
+
+    AVC::FunctionBlockProcessing *fbp = fbCmd.m_pFBProcessing;
+    fbp->m_selectorLength = 0x04;
+    fbp->m_fbInputPlugNumber = iPlugNum;
+    fbp->m_inputAudioChannelNumber = iAChNum;
+    fbp->m_outputAudioChannelNumber = oAChNum;
+
+    // mixer object is not generated automatically
+    fbp->m_pMixer = new AVC::FunctionBlockProcessingMixer;
+    fbp->m_pMixer->m_mixerSetting = setting;
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+        return false;
+    }
+
+    if((fbCmd.getResponse() != AVCCommand::eR_Accepted)) {
+        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Accepted\n");
+    }
+
+    return (fbCmd.getResponse() == AVCCommand::eR_Accepted);
+}
+
+int
+Device::getProcessingFBMixerSingleCurrent(int id, int iPlugNum,
+                                    int iAChNum, int oAChNum)
+{
+	AVC::FunctionBlockCmd fbCmd(get1394Service(),
+                           AVC::FunctionBlockCmd::eFBT_Processing,
+                           id,
+                           AVC::FunctionBlockCmd::eCA_Current);
+    fbCmd.setNodeId(getNodeId());
+    fbCmd.setSubunitId(0x00);
+    fbCmd.setCommandType(AVCCommand::eCT_Status);
+    fbCmd.setVerboseLevel( getDebugLevel() );
+
+    AVC::FunctionBlockProcessing *fbp = fbCmd.m_pFBProcessing;
+    fbp->m_selectorLength = 0x04;
+    fbp->m_fbInputPlugNumber = iPlugNum;
+    fbp->m_inputAudioChannelNumber = iAChNum;
+    fbp->m_outputAudioChannelNumber = oAChNum;
+
+    // mixer object is not generated automatically
+    fbp->m_pMixer = new AVC::FunctionBlockProcessingMixer;
+
+    if ( !fbCmd.fire() ) {
+        debugError( "cmd failed\n" );
+        return 0;
+    }
+
+    if( (fbCmd.getResponse() != AVCCommand::eR_Implemented) ) {
+        debugWarning("fbCmd.getResponse() != AVCCommand::eR_Implemented\n");
+    }
+
+    int16_t setting = (int16_t)(fbp->m_pMixer->m_mixerSetting);
+
+    return setting;
+}
+
 void
 Device::showDevice()
 {
