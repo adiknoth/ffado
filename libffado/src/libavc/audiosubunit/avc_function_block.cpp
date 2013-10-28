@@ -142,11 +142,15 @@ FunctionBlockFeatureLRBalance::clone() const
 FunctionBlockProcessingMixer::FunctionBlockProcessingMixer()
     : IBusData()
     , m_controlSelector( FunctionBlockProcessing::eCSE_Processing_Mixer )
+    , m_controlDataLength( 0x02 )
+    , m_mixerSetting( 0x0000 )
 {
 }
 
 FunctionBlockProcessingMixer::FunctionBlockProcessingMixer( const FunctionBlockProcessingMixer& rhs )
-    : m_controlSelector( rhs.m_controlSelector )
+    : m_controlSelector( rhs.m_controlSelector ),
+      m_controlDataLength( 0x02 ),
+      m_mixerSetting( 0x00 )
 {
 }
 
@@ -158,7 +162,9 @@ bool
 FunctionBlockProcessingMixer::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool bStatus;
-    bStatus = se.write( m_controlSelector,    "FunctionBlockProcessingMixer controlSelector" );
+    bStatus  = se.write( m_controlSelector,    "FunctionBlockProcessingMixer controlSelector" );
+    bStatus &= se.write( m_controlDataLength,  "FunctionBlockProcessingMixer controlDataLength" );
+    bStatus &= se.write( m_mixerSetting,       "FunctionBlockProcessingMixer mixerSetting" );
 
     return bStatus;
 }
@@ -167,7 +173,13 @@ bool
 FunctionBlockProcessingMixer::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool bStatus;
-    bStatus = de.read( &m_controlSelector );
+    byte_t padding;
+
+    bStatus  = de.read( &m_controlSelector );
+    bStatus &= de.read( &m_controlDataLength );
+    bStatus &= de.read( &m_mixerSetting );
+    bStatus &= de.read( &padding );
+    bStatus &= de.read( &padding );
 
     return bStatus;
 }

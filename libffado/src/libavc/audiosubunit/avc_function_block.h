@@ -78,7 +78,9 @@ public:
     virtual bool deserialize( Util::Cmd::IISDeserialize& de );
     virtual FunctionBlockProcessingMixer* clone() const;
 
-    control_selector_t m_controlSelector;
+    control_selector_t     m_controlSelector;
+    control_data_length_t  m_controlDataLength;
+    u_int16_t              m_mixerSetting;
 };
 
 ///////////////////////////////////////////
