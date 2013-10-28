@@ -324,6 +324,19 @@ MixerFBFeatureLRBalance::getMaximum()
 
 // --- element implementation classes
 
+/*
+ * This function is named with 'EnhancedMixer' but current implementation is
+ * for 'Processing'. There is several reasons.
+ *  There is no way to distinguish 'EnhancedMixer' from 'Processing', the
+ *   former is an extension of 'Processing' in AV/C audio subunit command.
+ *  The limitation of parameter of Continuous dbus interface. The ffado
+ *   developer considered to change the type of interface but it's not
+ *   reasonable in a point of cost/effect.
+ *  As of Oct 2013, the FFADO developers confirm only M-Audio BeBoB devices uses
+ *   this command to control mixer. No other devices use it. M-Audio BeBoB
+ *   devices can be controlled by single type 'Processing' command even if
+ *   they can be controlled by both single and multi type.
+ */
 EnhancedMixerFBFeature::EnhancedMixerFBFeature(Mixer& parent, FunctionBlockEnhancedMixer& s)
 : Control::Continuous(&parent)
 , m_Parent(parent) 
@@ -348,21 +361,34 @@ EnhancedMixerFBFeature::~EnhancedMixerFBFeature()
 }
 
 bool
-EnhancedMixerFBFeature::setValue(double v)
-{
-    debugOutput(DEBUG_LEVEL_NORMAL,"Set feature volume %d to %d...\n",
-                m_Slave.getId(), (int)v);
+EnhancedMixerFBFeature::setValue(int idx, double v)
+ {
+    int iPlugNum = (idx >> 8) & 0xF;
+    int iAChNum  = (idx >> 4) & 0xF;
+    int oAChNum  = (idx >> 0) & 0xF;
 
-    return true;
+    debugOutput(DEBUG_LEVEL_NORMAL,"Set: FBID: 0x%02X, FBPN: 0x%02X, "
+                    "ICN: 0x%02X, OCN: 0x%02X, DATA: 0x%04X\n",
+                m_Slave.getId(), iPlugNum, iAChNum, oAChNum, (int)v);
+
+    return m_Parent.getParent().setProcessingFBMixerSingleCurrent(m_Slave.getId(),
+                                                    iPlugNum, iAChNum, oAChNum,
+                                                    (int)v);
 }
 
 double
-EnhancedMixerFBFeature::getValue()
+EnhancedMixerFBFeature::getValue(int idx)
 {
-    debugOutput(DEBUG_LEVEL_NORMAL,"Get feature volume %d...\n",
-                m_Slave.getId());
+    int iPlugNum = (idx >> 8) & 0xF;
+    int iAChNum  = (idx >> 4) & 0xF;
+    int oAChNum  = (idx >> 0) & 0xF;
 
-    return 0;
+    debugOutput(DEBUG_LEVEL_NORMAL,"Set: FBID: 0x%02X, FBPN: 0x%02X, "
+                    "ICN: 0x%02X, OCN: 0x%02X\n",
+                m_Slave.getId(), iPlugNum, iAChNum, oAChNum);
+
+    return m_Parent.getParent().getProcessingFBMixerSingleCurrent(m_Slave.getId(),
+                                                   iPlugNum, iAChNum, oAChNum);
 }
 
 // --- element implementation classes

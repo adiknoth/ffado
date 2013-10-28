@@ -113,12 +113,13 @@ public:
     EnhancedMixerFBFeature(Mixer& parent, FunctionBlockEnhancedMixer&);
     virtual ~EnhancedMixerFBFeature();
 
-    virtual bool setValue(double v);
-    virtual double getValue();
-    virtual bool setValue(int idx, double v)
-        {return setValue(v);};
-    virtual double getValue(int idx)
-        {return getValue();};
+    virtual bool setValue(int idx, double v);
+    virtual double getValue(int idx);
+
+    virtual bool setValue(double v)
+        {return setValue(1, v);};
+    virtual double getValue()
+        {return getValue(1);};
 
     virtual double getMinimum() {return -32768;};
     virtual double getMaximum() {return 0;};
