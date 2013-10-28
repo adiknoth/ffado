@@ -216,7 +216,7 @@ device_definitions = (
     vendorname  = "M-Audio";
     modelname   = "Ozonic";
     driver      = "BEBOB";
-    mixer       = "Ozonic";
+    mixer       = "MAudio_BeBoB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -225,6 +225,7 @@ device_definitions = (
     vendorname  = "M-Audio";
     modelname   = "FW Solo";
     driver      = "BEBOB";
+    mixer       = "MAudio_BeBoB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -233,6 +234,7 @@ device_definitions = (
     vendorname  = "M-Audio";
     modelname   = "NRV10";
     driver      = "BEBOB";
+    # no mixer
     xmit_max_cycles_early_transmit = 4;
 },
 {
@@ -241,6 +243,16 @@ device_definitions = (
     vendorname  = "M-Audio";
     modelname   = "FW Audiophile";
     driver      = "BEBOB";
+    mixer       = "MAudio_BeBoB";
+    xmit_max_cycles_early_transmit = 4;
+},
+{
+    vendorid    = 0x000d6c;
+    modelid     = 0x00010046;
+    vendorname  = "M-Audio";
+    modelname   = "FW 410";
+    driver      = "BEBOB";
+    mixer       = "MAudio_BeBoB";
     xmit_max_cycles_early_transmit = 4;
 },
 {
