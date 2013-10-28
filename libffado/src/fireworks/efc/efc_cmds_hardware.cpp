@@ -190,11 +190,14 @@ EfcPolledValuesCmd::serialize( Util::Cmd::IOSSerialize& se )
 bool
 EfcPolledValuesCmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
-    bool result=true;
+    int i, nb_meters;
+    bool result;
     
-    result &= EfcCmd::deserialize ( de );
+    if (!EfcCmd::deserialize(de))
+        return false;
     
     // the serialization is different from the deserialization
+    result = true;
     EFC_DESERIALIZE_AND_SWAP(de, &m_status, result);
     
     EFC_DESERIALIZE_AND_SWAP(de, &m_detect_spdif, result);
@@ -207,13 +210,19 @@ EfcPolledValuesCmd::deserialize( Util::Cmd::IISDeserialize& de )
     EFC_DESERIALIZE_AND_SWAP(de, &m_reserved5, result);
     EFC_DESERIALIZE_AND_SWAP(de, &m_reserved6, result);
 
-    int i=0;
-    int nb_meters=m_nb_output_meters+m_nb_input_meters;
-    
-    assert(nb_meters<POLLED_MAX_NB_METERS);
-    for (i=0; i<nb_meters; i++) {
-        EFC_DESERIALIZE_AND_SWAP(de, (uint32_t *)&m_meters[i], result);
+    if (!result)
+        return result;
+
+    nb_meters = m_nb_output_meters + m_nb_input_meters;
+    if (nb_meters > POLLED_MAX_NB_METERS) {
+        m_nb_output_meters = 0;
+        m_nb_input_meters = 0;
+        return false;
     }
+
+    result = true;
+    for (i = 0; i < nb_meters; i++)
+        EFC_DESERIALIZE_AND_SWAP(de, (uint32_t *)&m_meters[i], result);
     
     return result;
 }
@@ -221,22 +230,29 @@ EfcPolledValuesCmd::deserialize( Util::Cmd::IISDeserialize& de )
 void
 EfcPolledValuesCmd::showEfcCmd()
 {
+    unsigned int i;
+
     EfcCmd::showEfcCmd();
     
     debugOutput(DEBUG_LEVEL_NORMAL, "EFC POLLED info:\n");
     debugOutput(DEBUG_LEVEL_NORMAL, " Status          : 0x%08X\n", m_status);
     debugOutput(DEBUG_LEVEL_NORMAL, " Detect SPDIF    : 0x%08X\n", m_detect_spdif);
     debugOutput(DEBUG_LEVEL_NORMAL, " Detect ADAT     : 0x%08X\n", m_detect_adat);
-    
-    unsigned int i=0;
-    debugOutput(DEBUG_LEVEL_NORMAL, " # Output Meters : %d\n", m_nb_output_meters);
-    for (i=0;i<m_nb_output_meters;i++) {
-        debugOutput(DEBUG_LEVEL_NORMAL, "     Meter %d: %d\n", i, m_meters[i]);
-    }
-    
-    debugOutput(DEBUG_LEVEL_NORMAL, " # Input Meters  : %d\n", m_nb_input_meters);
-    for (;i<m_nb_output_meters+m_nb_input_meters;i++) {
-        debugOutput(DEBUG_LEVEL_NORMAL, "     Meter %d: %d\n", i, m_meters[i]);
+   
+    /* prevent buffer over run */
+    if (m_nb_output_meters + m_nb_input_meters > POLLED_MAX_NB_METERS)
+        return;
+
+    if (m_nb_output_meters > 0) {
+        debugOutput(DEBUG_LEVEL_NORMAL, " # Output Meters : %d\n", m_nb_output_meters);
+        for (i = 0; i < m_nb_output_meters; i++)
+            debugOutput(DEBUG_LEVEL_NORMAL, "     Meter %d: %d\n", i, m_meters[i]);
+    }    
+
+    if (m_nb_input_meters > 0) {
+        debugOutput(DEBUG_LEVEL_NORMAL, " # Input Meters  : %d\n", m_nb_input_meters);
+        for (; i < m_nb_output_meters + m_nb_input_meters; i++)
+            debugOutput(DEBUG_LEVEL_NORMAL, "     Meter %d: %d\n", i, m_meters[i]);
     }
 }
 
