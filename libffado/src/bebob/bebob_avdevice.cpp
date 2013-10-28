@@ -35,6 +35,7 @@
 #include "bebob/edirol/edirol_fa101.h"
 #include "bebob/edirol/edirol_fa66.h"
 #include "bebob/esi/quatafire610.h"
+#include "bebob/yamaha/yamaha_avdevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -161,6 +162,14 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
                 default: // return a plain BeBoB device
                     return new Device(d, configRom);
            }
+        case FW_VENDORID_YAMAHA:
+        switch (modelId) {
+            case 0x0010000b:
+            case 0x0010000c:
+                return new Yamaha::GoDevice(d, configRom);
+            default: // return a plain BeBoB device
+                return new Device(d, configRom);
+        }
         default:
             return new Device(d, configRom);
     }
