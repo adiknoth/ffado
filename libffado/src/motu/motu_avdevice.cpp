@@ -731,7 +731,10 @@ PortGroupEntry PortGroups_TRAVELERmk3[] =
 };
 
 /* FIXME: as of 8 Oct 2010 this is still under development.  Presently this
- * layout is nothing more than an educated guess.
+ * layout is nothing more than an educated guess.  The presence of the
+ * Toslink-{A,B}-extra-* ports is even more of a guess, and is based on
+ * the observation that they have so far proved necessary on the mk3
+ * devices which we have been able to explicitly verify.
  */
 PortGroupEntry PortGroups_896mk3[] =
 {
@@ -745,8 +748,10 @@ PortGroupEntry PortGroups_896mk3[] =
     {"UnknownOut-%d", 2, MOTU_PA_OUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_ANY, },
     {"Toslink-A%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, },
     {"ADAT-A%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, }, 
+    {"Toslink-A-extra-%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_TOSLINK|MOTU_PA_MK3_OPT_B_ANY, },
     {"ADAT-A%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ADAT|MOTU_PA_MK3_OPT_B_ANY, }, 
     {"Toslink-B%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_TOSLINK, },
+    {"Toslink-B-extra-%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_TOSLINK, },
     {"ADAT-B%d", 8, MOTU_PA_INOUT | MOTU_PA_RATE_1x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
     {"ADAT-B%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
 };
