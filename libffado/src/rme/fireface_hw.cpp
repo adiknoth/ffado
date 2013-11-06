@@ -172,20 +172,20 @@ Device::init_hardware(void)
         for (src=0; src<n_channels; src++) {
             if (!have_mixer_settings)
                 settings->input_faders[getMixerGainIndex(src, dest)] = 0;
-            set_hardware_mixergain(RME_FF_MM_INPUT, src, dest, 0);
+            set_hardware_mixergain(RME_FF_MM_INPUT, src, dest, settings->input_faders[getMixerGainIndex(src, dest)]);
         }
         for (src=0; src<n_channels; src++) {
             if (!have_mixer_settings)
                 settings->playback_faders[getMixerGainIndex(src, dest)] =
                   src==dest?0x8000:0;
             set_hardware_mixergain(RME_FF_MM_PLAYBACK, src, dest, 
-              src==dest?0x8000:0);
+              settings->playback_faders[getMixerGainIndex(src, dest)]);
         }
     }
     for (src=0; src<n_channels; src++) {
         if (!have_mixer_settings)
             settings->output_faders[src] = 0x8000;
-        set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, 0x8000);
+        set_hardware_mixergain(RME_FF_MM_OUTPUT, src, 0, settings->output_faders[src]);
     }
 
     set_hardware_output_rec(0);
