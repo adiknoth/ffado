@@ -682,5 +682,13 @@ device_definitions = (
     modelid     = 0x00000004;
     vendorname  = "Avid";
     modelname   = "Mbox 3 Pro";
+},
+{ # Allen and Heath Zed R16.  Information from Brendan Pike.
+    vendorid    = 0x000004C4;
+    modelid     = 0x00000000;
+    vendorname  = "Allen and Heath";
+    modelname   = "Zed R16";
+    driver      = "DICE";
+    mixer       = "Generic_Dice_EAP";
 }
 );
