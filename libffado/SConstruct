@@ -121,7 +121,7 @@ opts.Save( 'cache/options.cache', env )
 
 def ConfigGuess( context ):
     context.Message( "Trying to find the system triple: " )
-    ret = os.popen( "admin/config.guess" ).read()[:-1]
+    ret = os.popen( "/bin/sh admin/config.guess" ).read()[:-1]
     context.Result( ret )
     return ret
 
@@ -575,14 +575,17 @@ if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64"
     # build for 64-bit userland?
     if env['DIST_TARGET'] == "powerpc64":
         print "Doing a 64-bit PowerPC build"
-        env.MergeFlags( "-m64" )
+        machineflags = { 'CXXFLAGS' : ['-m64'] }
+        env.MergeFlags( machineflags )
     elif env['DIST_TARGET'] == "x86_64":
         print "Doing a 64-bit x86 build"
-        env.MergeFlags( "-m64" )
+        machineflags = { 'CXXFLAGS' : ['-m64'] }
+        env.MergeFlags( machineflags )
         needs_fPIC = True
     else:
         print "Doing a 32-bit build"
-        env.MergeFlags( "-m32" )
+        machineflags = { 'CXXFLAGS' : ['-m32'] }
+        env.MergeFlags( machineflags )
 
 if needs_fPIC or ( env.has_key('COMPILE_FLAGS') and '-fPIC' in env['COMPILE_FLAGS'] ):
     env.MergeFlags( "-fPIC" )
