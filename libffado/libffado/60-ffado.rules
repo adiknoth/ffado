@@ -46,6 +46,8 @@ ATTR{vendor}=="0x00a0de", GROUP="audio", ENV{ID_FFADO}="1"
 ATTR{vendor}=="0x000fd7", GROUP="audio", ENV{ID_FFADO}="1"
 # Allen and Heath
 ATTR{vendor}=="0x0004c4", GROUP="audio", ENV{ID_FFADO}="1"
+# Midas
+ATTR{vendor}=="0x10c73f", GROUP="audio", ENV{ID_FFADO}="1"
 
 # The devices below are by vendors who make other firewire devices in
 # addition to their audio interfaces.  They need more specific rules to

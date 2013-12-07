@@ -690,5 +690,13 @@ device_definitions = (
     modelname   = "Zed R16";
     driver      = "DICE";
     mixer       = "Generic_Dice_EAP";
+},
+{ # Midas Venice F32.  Information from Jano Svitok.
+    vendorid    = 0x0010C73F;
+    modelid     = 0x00000001;
+    vendorname  = "Midas";
+    modelname   = "Venice F32";
+    driver      = "DICE";
+    mixer       = "Generic_Dice_EAP";
 }
 );
