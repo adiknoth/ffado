@@ -488,7 +488,7 @@ config = config_guess.split ("-")
 
 needs_fPIC = False
 
-#=== Begin Revised CXXFLAGS =========================================
+#=== Begin Revised CXXFLAGS ========================================= 
 def outputof(*cmd):
     """Run a command without running a shell, return cmd's stdout
     """
