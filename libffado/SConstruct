@@ -488,103 +488,275 @@ config = config_guess.split ("-")
 
 needs_fPIC = False
 
+#=== Begin Revised CXXFLAGS =========================================
+def outputof(*cmd):
+    """Run a command without running a shell, return cmd's stdout
+    """
+    p = Popen(cmd, stdout=PIPE)
+    return p.communicate()[0]
+
+def cpuinfo_kv():
+    """generator which reads lines from Linux /proc/cpuinfo and splits them
+    into key:value tokens and yields (key, value) tuple.
+    """
+    f = open('/proc/cpuinfo', 'r')
+    for line in f:
+        line = line.strip()
+        if line:
+            k,v = line.split(':')
+            yield (k.strip(), v.strip())
+    f.close()
+
+
+class CpuInfo (object):
+    """Collects information about the CPU, mainly from /proc/cpuinfo
+    """
+    def __init__(self):
+        self.sysname, self.hostname, self.release, self.version, self.machine = os.uname()
+        # general CPU architecture
+        self.is_x86 = self.machine in ('i686', 'x86_64') or \
+                      re.match("i[3-5]86", self.machine) or False
+        self.is_powerpc = self.machine in ('ppc64', 'ppc', 'powerpc', 'powerpc64')
+        #!!! probably not comprehensive
+        self.is_mips = self.machine == 'mips'
+        #!!! not a comprehensive list. uname -m on one android phone reports 'armv71'
+        # I have no other arm devices I can check
+        self.is_arm = self.machine in ('armv71', )
+
+        self.cpu_count = 0
+        if self.is_x86:
+            self.cpu_info_x86()
+        elif self.is_powerpc:
+            self.cpu_info_ppc()
+        elif self.is_mips:
+            self.cpu_info_mips()
+
+        # 64-bit (x86_64/AMD64/Intel64)
+        # Long Mode (x86-64: amd64, also known as Intel 64, i.e. 64-bit capable)
+        self.is_64bit = (self.is_x86 and 'lm' in self.x86_flags) or \
+                        (self.is_powerpc and '970' in self.ppc_type)
+
+        # Hardware virtualization capable: vmx (Intel), svm (AMD)
+        self.has_hwvirt = self.is_x86 and (
+                            (self.is_amd and 'svm' in self.x86_flags) or
+                            (self.is_intel and 'vmx' in self.x86_flags))
+
+        # Physical Address Extensions (support for more than 4GB of RAM)
+        self.has_pae = self.is_x86 and 'pae' in self.x86_flags
+
+
+    def cpu_info_x86(self):
+        "parse /proc/cpuinfo for x86 kernels"
+        for k,v in cpuinfo_kv():
+            if k == 'processor':
+                self.cpu_count += 1
+                if self.cpu_count > 1:
+                    # assume all CPUs are identical features, no need to
+                    # parse all of them
+                    continue
+            elif k == 'vendor_id': # AuthenticAMD, GenuineIntel
+                self.vendor_id = v
+                self.is_amd = v == 'AuthenticAMD'
+                self.is_intel = v == 'GenuineIntel'
+            elif k == 'flags':
+                self.x86_flags = v.split()
+            elif k == 'model name':
+                self.model_name = v
+            elif k == 'cpu family':
+                self.cpu_family = v
+            elif k == 'model':
+                self.model = v
+
+    def cpu_info_ppc(self):
+        "parse /proc/cpuinfo for PowerPC kernels"
+        # http://en.wikipedia.org/wiki/List_of_PowerPC_processors
+        # PowerPC 7xx family
+        # PowerPC 740 and 750, 233-366 MHz
+        # 745/755, 300–466 MHz
+
+        # PowerPC G4 series
+        # 7400/7410 350 - 550 MHz, uses AltiVec, a SIMD extension of the original PPC specs
+        # 7450 micro-architecture family up to 1.5 GHz and 256 kB on-chip L2 cache and improved Altivec
+        # 7447/7457 micro-architecture family up to 1.8 GHz with 512 kB on-chip L2 cache
+        # 7448 micro-architecture family (1.5 GHz) in 90 nm with 1MB L2 cache and slightly
+        #  improved AltiVec (out of order instructions).
+        # 8640/8641/8640D/8641D with one or two e600 (Formerly known as G4) cores, 1MB L2 cache
+
+        # PowerPC G5 series
+        # 970 (2003), 64-bit, derived from POWER4, enhanced with VMX, 512 kB L2 cache, 1.4 – 2 GHz
+        # 970FX (2004), manufactured at 90 nm, 1.8 - 2.7 GHz
+        # 970GX (2006), manufactured at 90 nm, 1MB L2 cache/core, 1.2 - 2.5 GHz
+        # 970MP (2005), dual core, 1 MB L2 cache/core, 1.6 - 2.5 GHz
+        for k,v in cpuinfo_kv():
+            if k == 'processor':
+                self.cpu_count += 1
+            elif k == 'cpu':
+                self.is_altivec_supported = 'altivec' in v
+                ppc_type, x = v.split(',')
+                self.ppc_type = ppc_type.strip()
+        # older kernels might not have a 'processor' line
+        if self.cpu_count == 0:
+            self.cpu_count += 1
+
+
+    def cpu_info_mips(self):
+        "parse /proc/cpuinfo for MIPS kernels"
+        for k,v in cpuinfo_kv():
+            if k == 'processor':
+                self.cpu_count += 1
+            elif k == 'cpu model':
+                self.mips_cpu_model = v
+
+
+def is_userspace_32bit(cpuinfo):
+    """Even if `uname -m` reports a 64-bit architecture, userspace could still
+    be 32-bit, such as Debian on powerpc64. This function tries to figure out
+    if userspace is 32-bit, i.e. we might need to pass '-m32' or '-m64' to gcc.
+    """
+    if not cpuinfo.is_64bit:
+        return True
+    # note that having a 64-bit CPU means nothing for these purposes. You could
+    # run a completely 32-bit system on a 64-bit capable CPU.
+    answer = None
+    # Debian ppc64 returns machine 'ppc64', but userspace might be 32-bit
+    # We'll make an educated guess by examining a known executable
+    exe = '/bin/mount'
+    if os.path.isfile(exe):
+        #print 'Found %s' % exe
+        if os.path.islink(exe):
+            real_exe = os.path.join(os.path.dirname(exe), os.readlink(exe))
+            #print '%s is a symlink to %s' % (exe, real_exe)
+        else:
+            real_exe = exe
+        # presumably if a person is running this script, they should have
+        # a gcc toolchain installed...
+        x = outputof('objdump', '-Wi', real_exe)
+        # should emit a line that looks like this:
+        # /bin/mount:     file format elf32-i386
+        # or like this:
+        # /bin/mount:     file format elf64-x86-64
+        # or like this:
+        # /bin/mount:     file format elf32-powerpc
+        for line in x.split('\n'):
+            line = line.strip()
+            if line.startswith(real_exe) and 'file format' in line:
+                x, fmt = line.rsplit(None, 1)
+                answer = 'elf32' in fmt
+                break
+    else:
+        print '!!! Not found %s' % exe
+    return answer
+
+
+def cc_flags_x86(cpuinfo, enable_optimizations):
+    """add certain gcc -m flags based on CPU features
+    """
+    # See http://gcc.gnu.org/onlinedocs/gcc-4.4.4/gcc/i386-and-x86_002d64-Options.html
+    cc_opts = []
+    if cpuinfo.machine == 'i586':
+        cc_opts.append('-march=i586')
+    elif cpuinfo.machine == 'i686':
+        cc_opts.append('-march=i686')
+
+    if 'mmx' in cpuinfo.x86_flags:
+        cc_opts.append('-mmmx')
+
+    # map from proc/cpuinfo flags to gcc options
+    opt_flags = [
+            ('sse', ('-mfpmath=sse', '-msse')),
+            ('sse2', '-msse2'),
+            ('ssse3', '-mssse3'),
+            ('sse4', '-msse4'),
+            ('sse4_1', '-msse4.1'),
+            ('sse4_2', '-msse4.2'),
+            ('sse4a', '-msse4a'),
+            ('3dnow', '-m3dnow'),
+    ]
+    if enable_optimizations:
+        for flag, gccopt in opt_flags:
+            if flag in cpuinfo.x86_flags:
+                if isinstance(gccopt, (tuple, list)):
+                    cc_opts.extend(gccopt)
+                else:
+                    cc_opts.append(gccopt)
+    return cc_opts
+
+
+def cc_flags_powerpc(cpuinfo, enable_optimizations):
+    """add certain gcc -m flags based on CPU model
+    """
+    cc_opts = []
+    if cpuinfo.is_altivec_supported:
+        cc_opts.append ('-maltivec')
+        cc_opts.append ('-mabi=altivec')
+
+    if re.match('74[0145][0578]A?', cpuinfo.ppc_type) is not None:
+        cc_opts.append ('-mcpu=7400')
+        cc_opts.append ('-mtune=7400')
+    elif re.match('750', cpuinfo.ppc_type) is not None:
+        cc_opts.append ('-mcpu=750')
+        cc_opts.append ('-mtune=750')
+    elif re.match('PPC970', cpuinfo.ppc_type) is not None:
+        cc_opts.append ('-mcpu=970')
+        cc_opts.append ('-mtune=970')
+    elif re.match('Cell Broadband Engine', cpuinfo.ppc_type) is not None:
+        cc_opts.append('-mcpu=cell')
+        cc_opts.append('-mtune=cell')
+    return cc_opts
+#=== End Revised CXXFLAGS =========================================
+
 # Autodetect
 if env['DIST_TARGET'] == 'auto':
-    if re.search ("x86_64", config[config_cpu]) != None:
+    if re.search ("x86_64", config[config_cpu]) is not None:
         env['DIST_TARGET'] = 'x86_64'
-    elif re.search("i[0-5]86", config[config_cpu]) != None:
+    elif re.search("i[0-5]86", config[config_cpu]) is not None:
         env['DIST_TARGET'] = 'i386'
-    elif re.search("i686", config[config_cpu]) != None:
+    elif re.search("i686", config[config_cpu]) is not None:
         env['DIST_TARGET'] = 'i686'
-    elif re.search("powerpc64", config[config_cpu]) != None:
+    elif re.search("powerpc64", config[config_cpu]) is not None:
         env['DIST_TARGET'] = 'powerpc64'
-    elif re.search("powerpc", config[config_cpu]) != None:
+    elif re.search("powerpc", config[config_cpu]) is not None:
         env['DIST_TARGET'] = 'powerpc'
     else:
         env['DIST_TARGET'] = config[config_cpu]
     print "Detected DIST_TARGET = " + env['DIST_TARGET']
 
-if ((re.search ("i[0-9]86", config[config_cpu]) != None) or (re.search ("x86_64", config[config_cpu]) != None) or (re.search ("powerpc", config[config_cpu]) != None)):
-    
-    build_host_supports_sse = 0
-    build_host_supports_sse2 = 0
-    build_host_supports_sse3 = 0
+#=== Begin Revised CXXFLAGS =========================================
+# comment on DIST_TARGET up top implies it can be used for cross-compiling
+# but that's not true because even if it is not 'auto' the original
+# script still reads /proc/cpuinfo to determine gcc arch flags.
+# This script does the same as the original. Needs to be fixed someday.
+cpuinfo = CpuInfo()
+if cpuinfo.is_x86:
+    opt_flags.extend(cc_flags_x86(cpuinfo, env['ENABLE_OPTIMIZATIONS']))
+if cpuinfo.is_powerpc:
+    opt_flags.extend(cc_flags_powerpc(cpuinfo, env['ENABLE_OPTIMIZATIONS']))
+if '-msse' in opt_flags:
+    env['USE_SSE'] = 1
+if '-msse2' in opt_flags:
+    env['USE_SSE2'] = 1
 
-    if config[config_kernel] == 'linux' :
-        
-        if (env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64'):
-            
-            flag_line = os.popen ("cat /proc/cpuinfo | grep '^flags'").read()[:-1]
-            x86_flags = flag_line.split (": ")[1:][0].split ()
-            
-            if "mmx" in x86_flags:
-                opt_flags.append ("-mmmx")
-            if "sse" in x86_flags:
-                build_host_supports_sse = 1
-            if "sse2" in x86_flags:
-                build_host_supports_sse2 = 1
-            #if "sse3" in x86_flags:
-                #build_host_supports_sse3 = 1
-            if "3dnow" in x86_flags:
-                opt_flags.append ("-m3dnow")
-            
-            if config[config_cpu] == "i586":
-                opt_flags.append ("-march=i586")
-            elif config[config_cpu] == "i686":
-                opt_flags.append ("-march=i686")
-
-        elif (env['DIST_TARGET'] == 'powerpc') or (env['DIST_TARGET'] == 'powerpc64'):
-
-            cpu_line = os.popen ("cat /proc/cpuinfo | grep '^cpu'").read()[:-1]
-
-            ppc_type = cpu_line.split (": ")[1]
-            if re.search ("altivec", ppc_type) != None:
-                opt_flags.append ("-maltivec")
-                opt_flags.append ("-mabi=altivec")
-
-            ppc_type = ppc_type.split (", ")[0]
-            if re.match ("74[0145][0578]A?", ppc_type) != None:
-                opt_flags.append ("-mcpu=7400")
-                opt_flags.append ("-mtune=7400")
-            elif re.match ("750", ppc_type) != None:
-                opt_flags.append ("-mcpu=750")
-                opt_flags.append ("-mtune=750")
-            elif re.match ("PPC970", ppc_type) != None:
-                opt_flags.append ("-mcpu=970")
-                opt_flags.append ("-mtune=970")
-            elif re.match ("Cell Broadband Engine", ppc_type) != None:
-                opt_flags.append ("-mcpu=cell")
-                opt_flags.append ("-mtune=cell")
-
-    if ((env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64')) \
-       and build_host_supports_sse and env['ENABLE_OPTIMIZATIONS']:
-        opt_flags.extend (["-msse", "-mfpmath=sse"])
-        env['USE_SSE'] = 1
-
-    if ((env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64')) \
-       and build_host_supports_sse2 and env['ENABLE_OPTIMIZATIONS']:
-        opt_flags.extend (["-msse2"])
-        env['USE_SSE2'] = 1
-
-    #if ((env['DIST_TARGET'] == 'i686') or (env['DIST_TARGET'] == 'x86_64')) \
-       #and build_host_supports_sse2 and env['ENABLE_OPTIMIZATIONS']:
-        #opt_flags.extend (["-msse3"])
-        #env['USE_SSE3'] = 1
-
-    # build for 64-bit userland?
-    if env['DIST_TARGET'] == "powerpc64":
-        print "Doing a 64-bit PowerPC build"
-        machineflags = { 'CXXFLAGS' : ['-m64'] }
-        env.MergeFlags( machineflags )
-    elif env['DIST_TARGET'] == "x86_64":
-        print "Doing a 64-bit x86 build"
-        machineflags = { 'CXXFLAGS' : ['-m64'] }
-        env.MergeFlags( machineflags )
-        needs_fPIC = True
-    else:
-        print "Doing a 32-bit build"
+m32 = is_userspace_32bit(cpuinfo)
+print 'User space is %s' % (m32 and '32-bit' or '64-bit')
+if cpuinfo.is_powerpc:
+    if m32:
+        print "Doing a 32-bit PowerPC build for %s CPU" % cpuinfo.ppc_type
         machineflags = { 'CXXFLAGS' : ['-m32'] }
-        env.MergeFlags( machineflags )
+    else:
+        print "Doing a 64-bit PowerPC build for %s CPU" % cpuinfo.ppc_type
+        machineflags = { 'CXXFLAGS' : ['-m64'] }
+    env.MergeFlags( machineflags )
+elif cpuinfo.is_x86:
+    if m32:
+        print "Doing a 32-bit %s build for %s" % (cpuinfo.machine, cpuinfo.model_name)
+        machineflags = { 'CXXFLAGS' : ['-m32'] }
+    else:
+        print "Doing a 64-bit %s build for %s" % (cpuinfo.machine, cpuinfo.model_name)
+        machineflags = { 'CXXFLAGS' : ['-m64'] }
+        needs_fPIC = True
+    env.MergeFlags( machineflags )
+#=== End Revised CXXFLAGS =========================================
+
 
 if needs_fPIC or ( env.has_key('COMPILE_FLAGS') and '-fPIC' in env['COMPILE_FLAGS'] ):
     env.MergeFlags( "-fPIC" )
