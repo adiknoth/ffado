@@ -37,6 +37,7 @@
 #include "bebob/esi/quatafire610.h"
 #include "bebob/yamaha/yamaha_avdevice.h"
 #include "bebob/maudio/maudio_normal_avdevice.h"
+#include "bebob/presonus/presonus_avdevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -178,8 +179,15 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
         case 0x00010060: // Audiophile
         case 0x00010062: // Solo
             return new MAudio::NormalDevice(d, configRom, modelId);
-         default:
+        default:
              return new Device(d, configRom);
+        }
+        case FW_VENDORID_PRESONUS:
+        switch (modelId) {
+        case 0x00010000:
+            return new Presonus::FireboxDevice(d, configRom);
+        default:
+            return new Device(d, configRom);
         }
         default:
             return new Device(d, configRom);
