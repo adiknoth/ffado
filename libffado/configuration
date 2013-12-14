@@ -78,7 +78,7 @@ device_definitions = (
     vendorname  = "PreSonus";
     modelname   = "FIREBOX";
     driver      = "BEBOB";
-    mixer       = "Presonus_Experimental";
+    mixer       = "Presonus_Firebox";
     xmit_max_cycles_early_transmit = 4;
 },
 {
