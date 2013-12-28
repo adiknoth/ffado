@@ -90,6 +90,7 @@ static VendorModelEntry supportedDeviceList[] =
     {FW_VENDORID_MOTU, 0, 0x00000023, 0x000001f2, MOTU_MODEL_NONE, "MOTU", "V4HD subdevice 2"},
     {FW_VENDORID_MOTU, 0, 0x00000024, 0x000001f2, MOTU_MODEL_NONE, "MOTU", "V4HD subdevice 3"},
     {FW_VENDORID_MOTU, 0, 0x00000030, 0x000001f2, MOTU_MODEL_ULTRALITEmk3_HYB, "MOTU", "UltraLiteMk3-hybrid"},
+    {FW_VENDORID_MOTU, 0, 0x00000045, 0x000001f2, MOTU_MODEL_4PRE, "MOTU", "4pre"},
 };
 
 // Ports declarations
@@ -756,6 +757,13 @@ PortGroupEntry PortGroups_896mk3[] =
     {"ADAT-B%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
 };
 
+/* FIXME: this is just a placeholder at present.  The details are still
+ * to be worked out.  28 Dec 2013.
+ */
+PortGroupEntry PortGroups_4PRE[] =
+{
+  {"Analog%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_ANY },
+};
 
 #define PORTGROUPS(__model) PortGroups_ ## __model, N_ELEMENTS(PortGroups_ ## __model)
 
@@ -787,6 +795,8 @@ const DevicePropertyEntry DevicesProperty[] = {
       Ports_TRAVELERmk3,  N_ELEMENTS( Ports_TRAVELERmk3 ),  192000 },
     { PORTGROUPS(896mk3), 
       NULL, 0,  192000 },  // 896 Mk 3
+    { PORTGROUPS(4PRE),
+      NULL, 0,  96000, },
 };
 
 MotuDevice::MotuDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
