@@ -93,9 +93,9 @@ class Presonus_Firebox(QtGui.QWidget):
             tab_mixer_layout.addWidget(link, 3, col, 1, 2, Qt.AlignHCenter)
 
             if self.inputs[i][2] > 0:
-                for j in range(0, 2):
+                for j in range(1, 3):
                     button = QToolButton(tab_mixer)
-                    tab_mixer_layout.addWidget(button, 1, col + j, Qt.AlignHCenter)
+                    tab_mixer_layout.addWidget(button, 1, col + j - 1, Qt.AlignHCenter)
                     button.setText('+12dB')
                     button.setCheckable(True)
                     button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
