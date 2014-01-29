@@ -1381,8 +1381,8 @@ EAP::Mixer::setValue( const int row, const int col, const double val)
         debugWarning("Mixer is read-only\n");
         return false;
     }
-    int nb_inputs = m_eap.m_mixer_nb_tx;
-    int addr = ((nb_inputs * col) + row) * 4;
+    int nb_outputs = m_eap.m_mixer_nb_tx;
+    int addr = ((nb_outputs * col) + row) * 4;
     quadlet_t tmp = (quadlet_t) val;
     if(!m_eap.writeRegBlock(eRT_Mixer, 4+addr, &tmp, 4)) {
         debugError("Failed to write coefficient\n");
@@ -1394,8 +1394,8 @@ EAP::Mixer::setValue( const int row, const int col, const double val)
 double
 EAP::Mixer::getValue( const int row, const int col)
 {
-    int nb_inputs = m_eap.m_mixer_nb_tx;
-    int addr = ((nb_inputs * col) + row) * 4;
+    int nb_outputs = m_eap.m_mixer_nb_tx;
+    int addr = ((nb_outputs * col) + row) * 4;
     quadlet_t tmp;
     if(!m_eap.readRegBlock(eRT_Mixer, 4+addr, &tmp, 4)) {
         debugError("Failed to read coefficient\n");

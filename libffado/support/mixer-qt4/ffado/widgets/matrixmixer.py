@@ -1,7 +1,7 @@
 # coding=utf8
 #
 # Copyright (C) 2009 by Arnold Krille
-# Copyright (C) 2013 by Philippe Carriere
+#               2013 by Philippe Carriere
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -477,6 +477,157 @@ class MatrixControlView(QtGui.QWidget):
                     self.items[x][y].setValue(val)
                     self.items[x][y].internalValueChanged(val)
 
+    def saveSettings(self, indent):
+        matrixSaveString = []
+        matrixSaveString.append('%s  <row_number>\n' % indent)
+        matrixSaveString.append('%s    %d\n' % (indent, self.rows))        
+        matrixSaveString.append('%s  </row_number>\n' % indent)
+        matrixSaveString.append('%s  <col_number>\n' % indent)
+        matrixSaveString.append('%s    %d\n' % (indent, self.cols))        
+        matrixSaveString.append('%s  </col_number>\n' % indent)
+        matrixSaveString.append('%s  <coefficients>\n' % indent)
+        for i in range(self.rows):
+            line = '%s    ' % indent
+            for j in range(self.cols):
+                line += '%d ' % self.interface.getValue(i,j)
+            line += '\n'
+            matrixSaveString.append(line)        
+        matrixSaveString.append('%s  </coefficients>\n' % indent)
+        if (self.mutes_interface != None):
+            matrixSaveString.append('%s  <mutes>\n' % indent)
+            for i in range(self.rows):
+                line = '%s    ' % indent
+                for j in range(self.cols):
+                    line += '%d ' % self.mutes_interface.getValue(i,j)
+                line += '\n'
+                matrixSaveString.append(line)        
+            matrixSaveString.append('%s  </mutes>\n' % indent)
+
+        if (self.inverts_interface != None):
+            matrixSaveString.append('%s  <inverts>\n' % indent)
+            for i in range(self.rows):
+                line = '%s    ' % indent
+                for j in range(self.cols):
+                    line += '%d ' % self.inverts_interface.getValue(i,j)
+                line += '\n'
+                matrixSaveString.append(line)        
+            matrixSaveString.append('%s  </inverts>\n' % indent)
+
+        return matrixSaveString
+
+    def readSettings(self, readMatrixString, transpose_coeff):
+        if readMatrixString[0].find("<row_number>") == -1:
+            log.debug("Number of matrix rows must be specified")
+            return False
+        if readMatrixString[2].find("</row_number>") == -1:
+            log.debug("Non-conformal xml file")
+            return False
+        n_rows = int(readMatrixString[1])
+
+        if readMatrixString[3].find("<col_number>") == -1:
+            log.debug("Number of matrix columns must be specified")
+            return False
+        if readMatrixString[5].find("</col_number>") == -1:
+            log.debug("Non-conformal xml file")
+            return False
+        n_cols = int(readMatrixString[4])
+
+        if transpose_coeff:
+            if n_rows > self.cols:
+                n_rows = self.cols
+            if n_cols > self.rows:
+                n_cols = self.rows
+        else:
+            if n_rows > self.rows:
+                n_rows = self.rows
+            if n_cols > self.cols:
+                n_cols = self.cols
+        log.debug("Setting %d rows and %d columns coefficients" % (n_rows, n_cols))
+
+        try:
+            idxb = readMatrixString.index('<coefficients>')
+            idxe = readMatrixString.index('</coefficients>')
+        except Exception:
+            log.debug("No mixer matrix coefficients specified")
+            idxb = -1
+            idxe = -1
+        if idxb >= 0:
+            if idxe < idxb + n_rows + 1:
+                log.debug("Incoherent number of rows in coefficients")
+                return False
+            i = 0
+            for s in readMatrixString[idxb+1:idxb + n_rows + 1]:
+                coeffs = s.split()
+                if len(coeffs) < n_cols:
+                    log.debug("Incoherent number of columns in coefficients")
+                    return False
+                j = 0
+                for c in coeffs[0:n_cols]:
+                    if transpose_coeff:
+                        self.interface.setValue(j, i, int(c))
+                    else:
+                        self.interface.setValue(i, j, int(c))
+                    j += 1
+                i += 1
+                del coeffs
+
+        try:
+            idxb = readMatrixString.index('<mutes>')
+            idxe = readMatrixString.index('</mutes>')
+        except Exception:
+            log.debug("No mixer mute coefficients specified")
+            idxb = -1
+            idxe = -1
+        if idxb >= 0:
+            if idxe < idxb + n_rows + 1:
+                log.debug("Incoherent number of rows in mute")
+                return false
+            i = 0
+            for s in readMatrixString[idxb+1:idxb + n_rows + 1]:
+                coeffs = s.split()
+                if len(coeffs) < n_cols:
+                    log.debug("Incoherent number of columns in mute")
+                    return false
+                j = 0
+                for c in coeffs[0:n_cols]:
+                    if transpose_coeff:
+                        self.mutes_interface.setValue(j, i, int(c))
+                    else:
+                        self.mutes_interface.setValue(i, j, int(c))
+                    j += 1
+                i += 1
+                del coeffs
+
+        try:
+            idxb = readMatrixString.index('<inverts>')
+            idxe = readMatrixString.index('</inverts>')
+        except Exception:
+            log.debug("No mixer inverts coefficients specified")
+            idxb = -1
+            idxe = -1
+        if idxb >= 0:
+            if idxe < idxb + n_rows + 1:
+                log.debug("Incoherent number of rows in inverts")
+                return false
+            i = 0
+            for s in readMatrixString[idxb+1:idxb + n_rows + 1]:
+                coeffs = s.split()
+                if len(coeffs) < n_cols:
+                    log.debug("Incoherent number of columns in inverts")
+                    return false
+                j = 0
+                for c in coeffs[0:n_cols]:
+                    if transpose_coeff:
+                        self.inverts_interface.setValue(j, i, int(c))
+                    else:
+                        self.inverts_interface.setValue(i, j, int(c))
+                    j += 1
+                i += 1
+                del coeffs
+
+        self.refreshValues()
+        return True
+
 class VolumeSlider(QtGui.QSlider):
     def __init__(self, In, Out, value, parent):
         QtGui.QSlider.__init__(self, QtCore.Qt.Vertical, parent)
@@ -857,6 +1008,88 @@ class SliderControlView(QtGui.QWidget):
                     self.out[i].volume[n_in].sliderSetValue(v)
                     self.out[i].svl[n_in].sliderSetValue(v)
 
+    def saveSettings(self, indent):
+        rows = self.interface.getRowCount()
+        cols = self.interface.getColCount()
+        matrixSaveString = []
+        matrixSaveString.append('%s  <row_number>\n' % indent)
+        matrixSaveString.append('%s    %d\n' % (indent, rows))        
+        matrixSaveString.append('%s  </row_number>\n' % indent)
+        matrixSaveString.append('%s  <col_number>\n' % indent)
+        matrixSaveString.append('%s    %d\n' % (indent, cols))        
+        matrixSaveString.append('%s  </col_number>\n' % indent)
+        matrixSaveString.append('%s  <coefficients>\n' % indent)
+        for i in range(rows):
+            line = '%s    ' % indent
+            for j in range(cols):
+                line += '%d ' % self.interface.getValue(i,j)
+            line += '\n'
+            matrixSaveString.append(line)        
+        matrixSaveString.append('%s  </coefficients>\n' % indent)
+
+        return matrixSaveString
+
+    def readSettings(self, readMatrixString, transpose_coeff):
+        rows = self.interface.getRowCount()
+        cols = self.interface.getColCount()
+        if readMatrixString[0].find("<row_number>") == -1:
+            log.debug("Number of matrix rows must be specified")
+            return False
+        if readMatrixString[2].find("</row_number>") == -1:
+            log.debug("Non-conformal xml file")
+            return False
+        n_rows = int(readMatrixString[1])
+
+        if readMatrixString[3].find("<col_number>") == -1:
+            log.debug("Number of matrix columns must be specified")
+            return False
+        if readMatrixString[5].find("</col_number>") == -1:
+            log.debug("Non-conformal xml file")
+            return False
+        n_cols = int(readMatrixString[4])
+
+        if transpose_coeff:
+            if n_rows > cols:
+                n_rows = cols
+            if n_cols > rows:
+                n_cols = rows
+        else:
+            if n_rows > rows:
+                n_rows = rows
+            if n_cols > cols:
+                n_cols = cols
+        log.debug("Setting %d rows and %d columns coefficients" % (n_rows, n_cols))
+
+        try:
+            idxb = readMatrixString.index('<coefficients>')
+            idxe = readMatrixString.index('</coefficients>')
+        except Exception:
+            log.debug("No mixer matrix coefficients specified")
+            idxb = -1
+            idxe = -1
+        if idxb >= 0:
+            if idxe < idxb + n_rows + 1:
+                log.debug("Incoherent number of rows in coefficients")
+                return False
+            i = 0
+            for s in readMatrixString[idxb+1:idxb + n_rows + 1]:
+                coeffs = s.split()
+                if len(coeffs) < n_cols:
+                    log.debug("Incoherent number of columns in coefficients")
+                    return False
+                j = 0
+                for c in coeffs[0:n_cols]:
+                    if transpose_coeff:
+                        self.interface.setValue(j, i, int(c))
+                    else:
+                        self.interface.setValue(i, j, int(c))
+                    j += 1
+                i += 1
+                del coeffs
+
+        self.refreshValues()
+        return True
+
 from functools import partial
 
 class MatrixMixer(QtGui.QWidget):
@@ -1152,5 +1385,65 @@ class MatrixMixer(QtGui.QWidget):
         self.matrix.updateRouting()
         self.perOut.updateRouting()
         
+    def saveSettings(self, indent):
+        mixerString = []
+        mixerString.append("%s<matrices>\n" % indent)
+        mixerString.extend(self.matrix.saveSettings(indent))
+        mixerString.append("%s</matrices>\n" % indent)
+        mixerString.append("%s<stereo_outputs>\n" % indent)
+        mixerString.append("%s  <number>\n" % indent)
+        n = len(self.stereo_channels)
+        mixerString.append("%s    %d\n" % (indent, n))
+        mixerString.append("%s  </number>\n" % indent)
+        if n > 0:
+            mixerString.append("%s  <channels>\n" % indent)
+            for i in self.stereo_channels:
+                mixerString.append("%s    %d %d\n" % (indent, i+1, i+2))
+            mixerString.append("%s  </channels>\n" % indent)
+        mixerString.append("%s</stereo_outputs>\n" % indent)
+        return mixerString
+
+    def readSettings(self, readMixerString, transpose_coeff):
+        try:
+            idxb = readMixerString.index('<matrices>')
+            idxe = readMixerString.index('</matrices>')
+        except Exception:
+            log.debug("No matrices found")
+            idxb = -1
+            idxe = -1
+        if idxb >= 0:
+            if idxe > idxb+1:
+                readString = []
+                for s in readMixerString[idxb+1:idxe]:
+                    readString.append(s)
+                if self.matrix.readSettings(readString, transpose_coeff):
+                    log.debug("Mixer matrices settings modified")
+                del readString
+        try:
+            idx = readMixerString.index('<stereo_outputs>')
+        except Exception:
+            log.debug("No stereo outputs channels information found")
+            idx = -1
+        if idx >= 0:
+            if readMixerString[idx+1].find('<number>') == -1:
+                log.debug("Number of stereo output channels must be specified")
+                return False
+            n = int(readMixerString[idx+2])
+            if n > self.perOut.nbOut/2:
+                log.debug("Incoherent number of stereo channels")
+                return False
+            if n > 0:
+                if readMixerString[idx+3].find('</number>') == -1:
+                    log.debug("No </number> tag found")
+                    return False
+                if readMixerString[idx+4].find('<channels>') == -1:
+                    log.debug("No <channels> tag found")
+                    return False
+                for s in readMixerString[idx+5:idx+5+n]:
+                    i = (int(s.split()[0]) - 1)/2
+                    self.stereo_switch[i].setChecked(True);
+                    self.switchStereoChannel(i, True)
+        return True
+                    
 #
 # vim: et ts=4 sw=4 fileencoding=utf8

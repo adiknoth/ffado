@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2009 by Arnold Krille
+#               2013 by Philippe Carriere
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -123,9 +124,9 @@ class CrossbarRouter(QtGui.QWidget):
 
         self.settings = QtCore.QSettings(self)
 
-        destinations = self.interface.getDestinationNames()
+        self.destinations = self.interface.getDestinationNames()
         self.outgroups = []
-        for ch in destinations:
+        for ch in self.destinations:
             tmp = str(ch).split(":")[0]
             if not tmp in self.outgroups:
                 self.outgroups.append(tmp)
@@ -145,7 +146,7 @@ class CrossbarRouter(QtGui.QWidget):
         self.biglayout.addLayout(self.layout)
 
         self.switchers = {}
-        for out in destinations:
+        for out in self.destinations:
             btn = OutputSwitcher(self.interface, out, self)
             self.layout.addWidget(btn, int(out.split(":")[-1]) + 1, self.outgroups.index(out.split(":")[0]))
             self.switchers[out] = btn
@@ -183,28 +184,40 @@ class CrossbarRouter(QtGui.QWidget):
         self.emit(QtCore.SIGNAL("MixerRoutingChanged"))
 
     def saveSettings(self, indent):
-        destinations = self.interface.getDestinationNames()
         routerSaveString = []
-        routerSaveString.append('%s<dimensions>\n' % indent)
-        routerSaveString.append('%s  %d 2\n' % (indent, len(destinations)))
-        routerSaveString.append('%s</dimensions>\n' % indent)
+        routerSaveString.append('%s<dest_number>\n' % indent)
+        routerSaveString.append('%s  %d\n' % (indent, len(self.destinations)))
+        routerSaveString.append('%s</dest_number>\n' % indent)
+        routerSaveString.append('%s<srcperdest>\n' % indent)
+        routerSaveString.append('%s  2\n' % indent)
+        routerSaveString.append('%s</srcperdest>\n' % indent)
         routerSaveString.append('%s<connections>\n' % indent)
-        for out in destinations:
+        for out in self.destinations:
             routerSaveString.append('%s  ' % indent + out + ' ')
             routerSaveString.append(self.interface.getSourceForDestination(out) + '\n')
         routerSaveString.append('%s</connections>\n' % indent)
         return routerSaveString        
 
     def readSettings(self, routerReadString):
-        try:
-            idx = routerReadString.index('<dimensions>')
-        except Exception:
-            log.debug("Router dimensions must be specified\n")
+        sources = str(self.interface.getSourceNames())
+        if routerReadString[0].find('<dest_number>') == -1:
+            log.debug("Number of router destinations must be specified\n")
             return False
-        n_r = int(routerReadString[idx+1].split()[0])
-        n_c = int(routerReadString[idx+1].split()[1])
-        if n_c > 2:
-            print "Don't know how to handle more than one source for one destination"
+        if routerReadString[2].find('</dest_number>') == -1:
+            log.debug("Incompatible xml file\n")
+            return False
+        n_dest = int(routerReadString[1])
+        if n_dest != len(self.destinations):
+            log.debug("Caution: numbers of destinations mismatch")
+        if routerReadString[3].find('<srcperdest>') == -1:
+            log.debug("Number of sources per destinations must be specified\n")
+            return False
+        if routerReadString[5].find('</srcperdest>') == -1:
+            log.debug("Incompatible xml file\n")
+            return False
+        n_spd = int(routerReadString[4])
+        if n_spd != 2:
+            log.debug("Unable to handle more than one source for each destination;")
         try:
             idxb = routerReadString.index('<connections>')
             idxe = routerReadString.index('</connections>')
@@ -213,14 +226,16 @@ class CrossbarRouter(QtGui.QWidget):
             idxb = -1
             idxe = -1
             return False
-        if idxb > 0:
-            if idxe > idxb:
+        if idxb >= 0:
+            if idxe > idxb + 1:
                 for s in routerReadString[idxb+1:idxe]:
                     destination = s.split()[0]
-                    source = s.split()[1]
-                    idx = self.switchers[destination].combo.findText(source)
-                    self.switchers[destination].combo.setCurrentIndex(idx)
-                    self.switchers[destination].comboCurrentChanged(source)
+                    if str(self.destinations).find(destination) != -1:
+                        source = s.split()[1]
+                        if sources.find(source) != -1:                        
+                            idx = self.switchers[destination].combo.findText(source)
+                            self.switchers[destination].combo.setCurrentIndex(idx)
+                            self.switchers[destination].comboCurrentChanged(source)
         return True
 #
 # vim: sw=4 ts=4 et

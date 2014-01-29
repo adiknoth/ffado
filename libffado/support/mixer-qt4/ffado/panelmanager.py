@@ -1,6 +1,7 @@
 #
 # Copyright (C) 2005-2008 by Pieter Palmers
 #               2007-2008 by Arnold Krille
+#               2013 by Philippe Carriere
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
@@ -485,6 +486,7 @@ mixerwidget = ffado.mixer.%s.%s( w )
         except IOError:
           print "Unable to open file"
           return
+        log.debug("Opening file %s" % readfilename)
         # discard useless whitespace characters
         readString = []
         for line in f:
@@ -530,7 +532,7 @@ mixerwidget = ffado.mixer.%s.%s( w )
         while nd > 0:
           idxb = readString.index('<device>')
           idxe = readString.index('</device>')
-          if idxe < idxb:
+          if idxe < idxb+1:
             print "Not a regular xml file: data must be enclosed between a <device> and </device> tag"
             return
           stringDev = []
@@ -543,7 +545,7 @@ mixerwidget = ffado.mixer.%s.%s( w )
               print "Device guid not found"
               return
           guid = stringDev[idx+1]
-          log.debug("Device %s found\n" % guid)
+          log.debug("Device %s found" % guid)
 
           if guid in self.panels:
               w = self.panels[guid]

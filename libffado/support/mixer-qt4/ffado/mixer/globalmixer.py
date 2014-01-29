@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2008 by Arnold Krille
+#               2013 by Philippe Carriere
 #
 # This file is part of FFADO
 # FFADO = Free Firewire (pro-)audio drivers for linux
