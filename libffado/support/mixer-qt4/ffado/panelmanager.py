@@ -86,6 +86,7 @@ class PanelManager(QWidget):
     def __init__(self, parent, devmgr=None):
         QWidget.__init__(self, parent)
         self.setObjectName("PanelManager")
+        self.parent = parent
 
         # maps a device GUID to a QT panel
         self.panels = {}
@@ -332,12 +333,12 @@ mixerwidget = ffado.mixer.%s.%s( w )
         w.gmixSaveSetgs = globalmixer.saveSettings
         w.gmixReadSetgs = globalmixer.readSettings
         if 'saveSettings' in dir(mixerwidget):
-          log.debug("Settings saving available for Mixer")
           w.smixSaveSetgs = mixerwidget.saveSettings
+          self.parent.saveaction.setEnabled(True)
 
         if 'readSettings' in dir(mixerwidget):
-          log.debug("Settings reading available for Mixer")
           w.smixReadSetgs = mixerwidget.readSettings
+          self.parent.openaction.setEnabled(True)
 
     def displayPanels(self):
         # if there is no panel, add the no-device message
