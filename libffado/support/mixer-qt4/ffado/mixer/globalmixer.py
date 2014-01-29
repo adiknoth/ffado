@@ -182,4 +182,74 @@ class GlobalMixer(QWidget):
         # example, in response to changes in external clock frequency)
         self.refreshSampleRates();
 
+    def saveSettings(self, indent):
+        saveString = []
+        saveString.append('%s<nickname>\n' % indent)
+        saveString.append('%s  ' % indent + str(self.txtNickname.text()) + '\n')
+        saveString.append('%s</nickname>\n' % indent)
+        saveString.append('%s<clock>\n' % indent)
+        saveString.append('%s  ' % indent + str(self.clockselect.getEnumLabel(self.clockselect.selected())) + '\n')
+        saveString.append('%s</clock>\n' % indent)
+        saveString.append('%s<samplerate>\n' % indent)
+        saveString.append('%s  ' % indent + str(self.samplerateselect.getEnumLabel(self.samplerateselect.selected())) + ' \n')
+        saveString.append('%s</samplerate>\n' % indent)
+        return saveString
+
+    def readSettings(self, readString):
+        # Nickname
+        try:
+            idx = readString.index('<nickname>')
+        except Exception:
+            print "No nickname found"
+            idx = -1
+        if idx >= 0:
+            nickname = readString[idx+1]
+            if self.nickname.canChangeValue():
+                self.txtNickname.setText(nickname)
+                self.on_txtNickname_returnPressed()
+            log.debug("Nickname changed for %s" % nickname)
+        # Clock
+        try:
+            idx = readString.index('<clock>')
+        except Exception:
+            print "No clock found"
+            idx = -1
+        if idx >= 0:
+            clock = readString[idx+1]
+            nb_clocks = self.clockselect.count()
+            clockLabel = []
+            for i in range( nb_clocks ):
+                clockLabel.append(self.clockselect.getEnumLabel(i))
+            try:
+                idxclock = clockLabel.index(clock)
+            except Exception:
+                print "No %s clock found" % clock
+                idxclock = -1
+            if idxclock >= 0:
+                self.on_clocksource_activated(idxclock)           
+                self.clocksource.setCurrentIndex(self.clockselect.selected())
+                log.debug("Clock set to index %d (%s)" % (idxclock, clock))
+            del clockLabel
+        # Samplerate
+        try:
+            idx = readString.index('<samplerate>')
+        except Exception:
+            print "Samplerate not found"
+            idx = -1
+        if idx >= 0:
+            samplerate = readString[idx+1]
+            nb_srate = self.samplerateselect.count()
+            srateLabel = []
+            for i in range( nb_srate ):
+              srateLabel.append(self.samplerateselect.getEnumLabel(i))
+            try:
+                idxsrate = srateLabel.index(samplerate)
+            except Exception:
+                print "No %s samplerate found" % samplerate
+                idxsrate = -1
+            if idxsrate >= 0:
+                self.on_samplerate_activated(idxsrate)    
+                self.samplerate.setCurrentIndex(self.samplerateselect.selected())
+                log.debug("Samplerate set to index %d (%s)" % (idxsrate, samplerate))
+         
 # vim: et

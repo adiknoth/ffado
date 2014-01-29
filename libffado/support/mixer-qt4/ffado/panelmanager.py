@@ -23,7 +23,7 @@
 
 from ffado.config import * #FFADO_VERSION, FFADO_DBUS_SERVER, FFADO_DBUS_BASEPATH
 
-from PyQt4.QtGui import QFrame, QWidget, QTabWidget, QVBoxLayout, QMainWindow, QIcon, QAction, qApp, QStyleOptionTabWidgetFrame
+from PyQt4.QtGui import QFrame, QWidget, QTabWidget, QVBoxLayout, QMainWindow, QIcon, QAction, qApp, QStyleOptionTabWidgetFrame, QFileDialog
 from PyQt4.QtCore import QTimer
 
 from ffado.dbus_util import *
@@ -51,6 +51,7 @@ else:
 # pseudo-guid
 GUID_GENERIC_MIXER = 0
 
+FILE_VERSION = '0.1'
 
 class HLine( QFrame ):
     def __init__( self, parent ):
@@ -327,6 +328,16 @@ mixerwidget = ffado.mixer.%s.%s( w )
           log.debug("Updating Mixer on samplerate change required")
           globalmixer.onSamplerateChange = mixerwidget.onSamplerateChange
 
+        w.gmixSaveSetgs = globalmixer.saveSettings
+        w.gmixReadSetgs = globalmixer.readSettings
+        if 'saveSettings' in dir(mixerwidget):
+          log.debug("Settings saving available for Mixer")
+          w.smixSaveSetgs = mixerwidget.saveSettings
+
+        if 'readSettings' in dir(mixerwidget):
+          log.debug("Settings reading available for Mixer")
+          w.smixReadSetgs = mixerwidget.readSettings
+
     def displayPanels(self):
         # if there is no panel, add the no-device message
         # else make sure it is not present
@@ -426,4 +437,125 @@ mixerwidget = ffado.mixer.%s.%s( w )
 
         self.displayPanels()
 
+    def saveSettings(self):
+        saveString = []
+        saveString.append('<?xml version="1.0" encoding="UTF-8"?>\n')
+        saveString.append('<fileversion>\n')
+        saveString.append('  <major>\n')
+        saveString.append('    ' + str(FILE_VERSION).split('.')[0] + '\n')
+        saveString.append('  </major>\n')
+        saveString.append('  <minor>\n')
+        saveString.append('    ' + str(FILE_VERSION).split('.')[1] + '\n')
+        saveString.append('  </minor>\n')
+        saveString.append('</fileversion>\n')
+        saveString.append('<ffadoversion>\n')
+        saveString.append('  <major>\n')
+        saveString.append('    ' + str(str(FFADO_VERSION).split('-')[0]).split('.')[0] + '\n')
+        saveString.append('  </major>\n')
+        saveString.append('  <minor>\n')
+        saveString.append('    ' + str(str(FFADO_VERSION).split('-')[0]).split('.')[1] + '\n')
+        saveString.append('  </minor>\n')
+        saveString.append('</ffadoversion>\n')
+        for guid in self.panels.keys():
+          saveString.append('<device>\n')
+          saveString.append('  <guid>\n')
+          saveString.append('    ' + str(guid) + '\n')
+          saveString.append('  </guid>\n')        
+          w = self.panels[guid]
+          indent = "  "
+          saveString.extend(w.gmixSaveSetgs(indent))
+          if 'smixSaveSetgs' in dir(w):
+              saveString.extend(w.smixSaveSetgs(indent))
+          saveString.append('</device>\n')
+        # file saving
+        savefilename = QFileDialog.getSaveFileName(self, 'Save File', os.getenv('HOME'))
+        try:
+          f = open(savefilename, 'w')
+        except IOError:
+          print "Unable to open save file"
+          return
+        for s in saveString:
+          f.write(s)
+        f.close()
+
+    def readSettings(self):
+        readfilename = QFileDialog.getOpenFileName(self, 'Open File', os.getenv('HOME'))
+        try:
+          f = open(readfilename, 'r')
+        except IOError:
+          print "Unable to open file"
+          return
+        # discard useless whitespace characters
+        readString = []
+        for line in f:
+          readString.append(" ".join(str(line).split()))
+        f.close()
+        # Check it is a compatible "FFADO" file
+        # It must start with the <?xml ... tag as the first string
+        if readString[0].find("<?xml") == -1:
+            print "Not an xml data file"
+            return
+        # Then there must be a file version tag somewhere in the file
+        try:
+            idx = readString.index('<fileversion>')
+        except Exception:
+            print "Data file should contain the version tag"
+            return
+        if readString[idx+1].find("<major>") == -1:
+            print "Incompatible versioning of the file"
+        if readString[idx+3].find("</major>") == -1:
+            print "Not a valid xml file"
+        if readString[idx+4].find("<minor>") == -1:
+            print "Incompatible versioning of the file"
+        if readString[idx+6].find("</minor>") == -1:
+            print "Not a valid xml file"
+        version_major = readString[idx+2]
+        version =  version_major + '.' + readString[idx+5]
+        log.debug("File version: %s" % version)
+        # File version newer than present
+        if int(version_major) > int(str(FILE_VERSION).split('.')[0]):
+            print "File version is too recent: you should upgrade your FFADO installation"
+            return
+        # FIXME At a time it will be necessary to detect if an older major version is detected
+        #
+        # It looks like useless to check for the FFADO version
+        # Add something here if you would like so
+        #
+        # Now search for devices
+        nd = readString.count('<device>');
+        n  = readString.count('</device>');
+        if n != nd:
+            print "Not a regular xml file: opening device tag must match closing ones"
+            return
+        while nd > 0:
+          idxb = readString.index('<device>')
+          idxe = readString.index('</device>')
+          if idxe < idxb:
+            print "Not a regular xml file: data must be enclosed between a <device> and </device> tag"
+            return
+          stringDev = []
+          for s in readString[idxb:idxe]:
+            stringDev.append(s)
+          # determine the device guid
+          try:
+              idx = stringDev.index('<guid>')
+          except Exception:
+              print "Device guid not found"
+              return
+          guid = stringDev[idx+1]
+          log.debug("Device %s found\n" % guid)
+
+          if guid in self.panels:
+              w = self.panels[guid]
+              w.gmixReadSetgs(stringDev)
+              if 'smixReadSetgs' in dir(w):
+                w.smixReadSetgs(stringDev)
+              log.debug("Settings changed for device %s" % guid)
+          else:
+              log.debug("Device %s not present; settings ignored" % guid)
+
+          del stringDev[:]
+          del readString[idxb:idxe]
+          nd -= 1
+   
 # vim: et

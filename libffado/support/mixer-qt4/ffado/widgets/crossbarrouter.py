@@ -181,5 +181,46 @@ class CrossbarRouter(QtGui.QWidget):
 
     def updateMixerRouting(self):
         self.emit(QtCore.SIGNAL("MixerRoutingChanged"))
+
+    def saveSettings(self, indent):
+        destinations = self.interface.getDestinationNames()
+        routerSaveString = []
+        routerSaveString.append('%s<dimensions>\n' % indent)
+        routerSaveString.append('%s  %d 2\n' % (indent, len(destinations)))
+        routerSaveString.append('%s</dimensions>\n' % indent)
+        routerSaveString.append('%s<connections>\n' % indent)
+        for out in destinations:
+            routerSaveString.append('%s  ' % indent + out + ' ')
+            routerSaveString.append(self.interface.getSourceForDestination(out) + '\n')
+        routerSaveString.append('%s</connections>\n' % indent)
+        return routerSaveString        
+
+    def readSettings(self, routerReadString):
+        try:
+            idx = routerReadString.index('<dimensions>')
+        except Exception:
+            log.debug("Router dimensions must be specified\n")
+            return False
+        n_r = int(routerReadString[idx+1].split()[0])
+        n_c = int(routerReadString[idx+1].split()[1])
+        if n_c > 2:
+            print "Don't know how to handle more than one source for one destination"
+        try:
+            idxb = routerReadString.index('<connections>')
+            idxe = routerReadString.index('</connections>')
+        except Exception:
+            log.debug("Router connections not specified\n")
+            idxb = -1
+            idxe = -1
+            return False
+        if idxb > 0:
+            if idxe > idxb:
+                for s in routerReadString[idxb+1:idxe]:
+                    destination = s.split()[0]
+                    source = s.split()[1]
+                    idx = self.switchers[destination].combo.findText(source)
+                    self.switchers[destination].combo.setCurrentIndex(idx)
+                    self.switchers[destination].comboCurrentChanged(source)
+        return True
 #
 # vim: sw=4 ts=4 et

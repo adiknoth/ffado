@@ -66,6 +66,30 @@ class Generic_Dice_EAP(QtGui.QWidget):
 
         self.mixer.updateRouting()
 
+    def saveSettings(self, indent):
+        saveString = []
+        saveString.append('%s<router>\n' % indent)
+        idt = indent + "  "
+        saveString.extend(self.router.saveSettings(idt))
+        saveString.append('%s</router>\n' % indent)
+        return saveString
+
+    def readSettings(self, readString):
+        try:
+            idxb = readString.index('<router>')
+            idxe = readString.index('</router>')
+        except Exception:
+            log.debug("No router settings found")
+            idxb = -1
+            idxe = -1
+        if idxb > 0:
+            if idxe > idxb:
+                stringRouter = []
+                for s in readString[idxb:idxe]:
+                    stringRouter.append(s)
+                if self.router.readSettings(stringRouter):
+                    log.debug("Router settings modified")
+                del stringRouter
 
     #def getDisplayTitle(self):
     #    return "Saffire PRO40/PRO24 Mixer"
