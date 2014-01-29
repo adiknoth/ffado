@@ -474,4 +474,120 @@ class Rme(QWidget):
         QObject.connect(self.update_timer, SIGNAL('timeout()'), self.status_update)
         self.update_timer.start(1000)
 
+    def saveSettings(self, indent):
+        saveString = []
+        idt = indent + "  "
+        saveString.append('%s<inputmatrix>\n' % indent)
+        saveString.extend(self.inputmatrix.saveSettings(idt))
+        # Do not forget to mention the adopted rule for matrix columns mixer
+        #  This might be useful for future import function
+        saveString.append("%s  <col_rule>\n" % indent)
+        saveString.append("%s    Columns_are_inputs\n" % indent)
+        saveString.append("%s  </col_rule>\n" % indent)
+        saveString.append('%s</inputmatrix>\n' % indent)
+
+        saveString.append('%s<playbackmatrix>\n' % indent)
+        saveString.extend(self.inputmatrix.saveSettings(idt))
+        # Do not forget to mention the adopted rule for matrix columns mixer
+        #  This might be useful for future import function
+        saveString.append("%s  <col_rule>\n" % indent)
+        saveString.append("%s    Columns_are_inputs\n" % indent)
+        saveString.append("%s  </col_rule>\n" % indent)
+        saveString.append('%s</playbackmatrix>\n' % indent)
+
+        saveString.append('%s<outputmatrix>\n' % indent)
+        saveString.extend(self.inputmatrix.saveSettings(idt))
+        # Do not forget to mention the adopted rule for matrix columns mixer
+        #  This might be useful for future import function
+        saveString.append("%s  <col_rule>\n" % indent)
+        saveString.append("%s    Columns_are_inputs\n" % indent)
+        saveString.append("%s  </col_rule>\n" % indent)
+        saveString.append('%s</outputmatrix>\n' % indent)
+        return saveString
+
+    def readSettings(self, readString):
+        try:
+            idxb = readString.index('<inputmatrix>')
+            idxe = readString.index('</inputmatrix>')
+        except Exception:
+            log.debug("No Input matrix settings found")
+            idxb = -1
+            idxe = -1
+        if idxb >= 0:
+            if idxe > idxb + 1:
+                stringMixer = []
+                for s in readString[idxb+1:idxe]:
+                    stringMixer.append(s)
+                # When trying to import from a different device, the rule for column interpretation is
+                # not necessarily the same
+                try:
+                    idx = stringMixer.index('<col_rule>')
+                except Exception:
+                    log.debug('Do not know how to handle column versus input/output')
+                    idx = -1
+                transpose_coeff = False
+                if idx >=0:
+                    if stringMixer[idx+1].find("Columns_are_inputs") == -1:
+                        log.debug('Transposing the matrix coefficient; you are importing, are not you ?')
+                        transpose_coeff = True
+                if self.inputmatrix.readSettings(stringMixer, transpose_coeff):
+                    log.debug("Input matrix settings modified")
+                del stringMixer
+
+        try:
+            idxb = readString.index('<playbackmatrix>')
+            idxe = readString.index('</playbackmatrix>')
+        except Exception:
+            log.debug("No Plaback matrix settings found")
+            idxb = -1
+            idxe = -1
+        if idxb >= 0:
+            if idxe > idxb + 1:
+                stringMixer = []
+                for s in readString[idxb+1:idxe]:
+                    stringMixer.append(s)
+                # When trying to import from a different device, the rule for column interpretation is
+                # not necessarily the same
+                try:
+                    idx = stringMixer.index('<col_rule>')
+                except Exception:
+                    log.debug('Do not know how to handle column versus input/output')
+                    idx = -1
+                transpose_coeff = False
+                if idx >=0:
+                    if stringMixer[idx+1].find("Columns_are_inputs") == -1:
+                        log.debug('Transposing the matrix coefficient; you are importing, are not you ?')
+                        transpose_coeff = True
+                if self.playbackmatrix.readSettings(stringMixer, transpose_coeff):
+                    log.debug("Plaback matrix settings modified")
+                del stringMixer
+
+        try:
+            idxb = readString.index('<outputmatrix>')
+            idxe = readString.index('</outputmatrix>')
+        except Exception:
+            log.debug("No Output matrix settings found")
+            idxb = -1
+            idxe = -1
+        if idxb >= 0:
+            if idxe > idxb + 1:
+                stringMixer = []
+                for s in readString[idxb+1:idxe]:
+                    stringMixer.append(s)
+                # When trying to import from a different device, the rule for column interpretation is
+                # not necessarily the same
+                try:
+                    idx = stringMixer.index('<col_rule>')
+                except Exception:
+                    log.debug('Do not know how to handle column versus input/output')
+                    idx = -1
+                transpose_coeff = False
+                if idx >=0:
+                    if stringMixer[idx+1].find("Columns_are_inputs") == -1:
+                        log.debug('Transposing the matrix coefficient; you are importing, are not you ?')
+                        transpose_coeff = True
+                if self.outputmatrix.readSettings(stringMixer, transpose_coeff):
+                    log.debug("Output matrix settings modified")
+                del stringMixer
+
 # vim: et
