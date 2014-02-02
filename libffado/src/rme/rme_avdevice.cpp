@@ -517,7 +517,7 @@ Device::setSamplingFrequency( int samplingFrequency )
     // Otherwise the software has free choice of the software speeds noted
     // above.
 
-    bool ret = -1;
+    bool ret = false;
     signed int i, j;
     signed int mult[3] = {1, 2, 4};
     unsigned int base_freq[3] = {32000, 44100, 48000};
@@ -570,7 +570,7 @@ Device::setSamplingFrequency( int samplingFrequency )
         }
         for (j=0; j<3; j++) {
             if (freq == base_freq[j]*fixed_mult) {
-                ret = 0;
+                ret = true;
                 break;
             }
         }
@@ -578,14 +578,14 @@ Device::setSamplingFrequency( int samplingFrequency )
         for (i=0; i<3; i++) {
             for (j=0; j<3; j++) {
                 if (freq == base_freq[j]*mult[i]) {
-                    ret = 0;
+                    ret = true;
                     break;
                 }
             }
         }
     }
     // If requested frequency is unavailable, return false
-    if (ret == -1) {
+    if (ret == false) {
         debugOutput(DEBUG_LEVEL_ERROR, "requested sampling rate %d Hz not available\n", freq);
         return false;
     }
