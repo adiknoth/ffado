@@ -767,7 +767,7 @@ PortGroupEntry PortGroups_4PRE[] =
     {"Analog%d", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 5, },
     {"Main-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 0, },
     {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 6, },
-    {"Extra-%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 7, },
+    {"Extra-%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 7, },
 };
 
 #define PORTGROUPS(__model) PortGroups_ ## __model, N_ELEMENTS(PortGroups_ ## __model)
