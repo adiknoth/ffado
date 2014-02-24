@@ -757,7 +757,7 @@ PortGroupEntry PortGroups_896mk3[] =
     {"ADAT-B%d", 4, MOTU_PA_INOUT | MOTU_PA_RATE_2x|MOTU_PA_MK3_OPT_A_ANY|MOTU_PA_MK3_OPT_B_ADAT, },
 };
 
-/* FIXME: this is still being determined as of 12 Feb 2014. */
+/* Believed correct as of 24 Feb 2014.  Thanks to Tim Radvan for testing. */
 PortGroupEntry PortGroups_4PRE[] =
 {
     {"Mix-%s", 2, MOTU_PA_IN | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 1, },
