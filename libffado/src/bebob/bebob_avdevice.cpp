@@ -37,7 +37,7 @@
 #include "bebob/esi/quatafire610.h"
 #include "bebob/yamaha/yamaha_avdevice.h"
 #include "bebob/maudio/maudio_normal_avdevice.h"
-#include "bebob/presonus/presonus_avdevice.h"
+#include "bebob/presonus/firebox_avdevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"

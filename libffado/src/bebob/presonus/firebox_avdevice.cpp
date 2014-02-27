@@ -22,7 +22,7 @@
  *
  */
 
-#include "presonus_avdevice.h"
+#include "firebox_avdevice.h"
 
 namespace BeBoB {
 namespace Presonus {
