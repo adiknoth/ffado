@@ -83,6 +83,14 @@ device_definitions = (
 },
 {
     vendorid    = 0x000a92;
+    modelid     = 0x00010001;
+    vendorname  = "PreSonus";
+    modelname   = "Inspire1394";
+    driver      = "BEBOB";
+    mixer       = "Presonus_Inspire1394";
+},
+{
+    vendorid    = 0x000a92;
     modelid     = 0x00010066;
     vendorname  = "PreSonus";
     modelname   = "FirePOD";
