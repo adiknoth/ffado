@@ -29,29 +29,46 @@
 #include "debugmodule/debugmodule.h"
 #include "bebob/bebob_avdevice.h"
 
+#include "libavc/general/avc_vendor_dependent_cmd.h"
+
 namespace BeBoB {
 namespace Presonus {
 
-enum EInspire1394CmdSubFunc {
-    EInspire1394CmdSubFuncPhono,
-    EInspire1394CmdSubFuncPhantom,
-    EInspire1394CmdSubFuncBoost,
-    EInspire1394CmdSubFuncLimit
+enum EInspire1394CmdSubfunc {
+    EInspire1394CmdSubfuncPhono = 0,
+    EInspire1394CmdSubfuncPhantom,
+    EInspire1394CmdSubfuncBoost,
+    EInspire1394CmdSubfuncLimit
 };
 
-class Inspire1394VendorDependentCmd:: public AVC::VendorDependentCmd
+class Inspire1394Device : public BeBoB::Device {
+public:
+    Inspire1394Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    virtual ~Inspire1394Device();
+
+    virtual void showDevice();
+
+    bool setSpecificValue(EInspire1394CmdSubfunc subfunc,
+                          int idx, uint8_t val);
+    bool getSpecificValue(EInspire1394CmdSubfunc subfunc,
+                          int idx, uint8_t *val);
+private:
+    bool addSpecificControls(void);
+};
+
+class Inspire1394Cmd : public AVC::VendorDependentCmd
 {
 public:
-    Inspire1394VendorDependentCmd( Ieee1394Service& ieee1394service );
-    virtual ~Inspire1394VendorDependentCmd;
+    Inspire1394Cmd( Ieee1394Service& ieee1394service );
+    virtual ~Inspire1394Cmd() {};
 
     virtual bool serialize( Util::Cmd::IOSSerialize& se);
-    virtual bool deserialize( Util::Cmd::IOSDeserialize& de );
+    virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
     virtual const char* getCmdName() const
-    { return "Inspire1394VendorDependentCmd"; }
+    { return "Inspire1394Cmd"; }
 
-    virtual void setSubFunc(EInspire1394CmdSubFunc subfunc)
+    virtual void setSubfunc(uint8_t subfunc)
     { m_subfunc = subfunc; }
     virtual void setIdx(int idx)
     { m_idx = idx; }
@@ -62,44 +79,31 @@ public:
     { return m_arg; }
 
 protected:
-    EInspire1394CmdSubFunc m_subfunc;
-    uint32_t m_idx;
-    uint32_t m_arg;
-}
+    uint8_t m_subfunc;
+    uint8_t m_idx;
+    uint8_t m_arg;
+};
 
-class BinaryControl
-    : public Control::Discrete
+class BinaryControl : public Control::Discrete
 {
 public:
     BinaryControl(Inspire1394Device& parent,
-                  EInspire1394CmdSubFunc subfunc,
+                  EInspire1394CmdSubfunc subfunc,
                   std::string name, std::string label, std::string desc);
 
-    virtual bool setValue(int val) {
-        { return setValue(0, val); }
-    virtual int getValue() {
-        { return getValue(0); }
     virtual bool setValue(int idx, int val);
     virtual int getValue(int idx);
+    virtual bool setValue(int val)
+        { return setValue(0, val); }
+    virtual int getValue(void)
+        { return getValue(0); }
 
-    virtual int getMinimum() {return 0;};
-    virtual int getMaximum() {return 1;};
+    virtual int getMinimum() { return 0; };
+    virtual int getMaximum() { return 1; };
 
 private:
     Inspire1394Device&      m_Parent;
-    EInspire1394CmdSubFuncm_subfunc;
-};
-
-class Inspire1394Device : public BeBoB::Device {
-public:
-    Inspire1394Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~Inspire1394Device();
-
-    virtual void showDevice();
-
-private:
-    bool getSpecificValue();
-    bool setSpecificValue();
+    EInspire1394CmdSubfunc  m_subfunc;
 };
 
 } // namespace Presonus

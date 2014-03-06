@@ -38,6 +38,7 @@
 #include "bebob/yamaha/yamaha_avdevice.h"
 #include "bebob/maudio/maudio_normal_avdevice.h"
 #include "bebob/presonus/firebox_avdevice.h"
+#include "bebob/presonus/inspire1394_avdevice.h"
 
 #include "libieee1394/configrom.h"
 #include "libieee1394/ieee1394service.h"
@@ -186,6 +187,8 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
         switch (modelId) {
         case 0x00010000:
             return new Presonus::FireboxDevice(d, configRom);
+        case 0x00010001:
+            return new Presonus::Inspire1394Device(d, configRom);
         default:
             return new Device(d, configRom);
         }

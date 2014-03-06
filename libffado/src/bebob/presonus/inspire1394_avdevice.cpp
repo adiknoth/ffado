@@ -25,30 +25,32 @@
 #include "./inspire1394_avdevice.h"
 
 #include "libutil/ByteSwap.h"
-#include <iostream>
+#include "libutil/cmd_serialize.h"
 
 namespace BeBoB {
 namespace Presonus {
 
-Inspire1394VendorDependentCmd::Inspire1394VendorDependentCmd(Ieee1394Service& ieee1394service)
+Inspire1394Cmd::Inspire1394Cmd(Ieee1394Service& ieee1394service)
     : VendorDependentCmd( ieee1394service )
     , m_subfunc( 0x00 )
     , m_idx( 0x00 )
     , m_arg( 0x00 )
 {
     m_companyId = 0x000a92;
+    setSubunitType( AVC::eST_Audio );
+    setSubunitId( 0x00 );
 }
-bool Inspire1394VendorDependentCmd::serialize( Util::Cmd::IOSSerialize& se )
+bool Inspire1394Cmd::serialize( Util::Cmd::IOSSerialize& se )
 {
     bool result = true;
     result &= VendorDependentCmd::serialize( se );
-    result &= se.write(m_subfunc, "Inspire1394VendorDependentCmd subfunc");
-    result &= se.write(m_idx, "Inspire1394VendorDependentCmd idx");
-    result &= se.write(m_arg, "Inspire1394VendorDependentCmd arg");
+    result &= se.write(m_subfunc, "Inspire1394Cmd subfunc");
+    result &= se.write(m_idx, "Inspire1394Cmd idx");
+    result &= se.write(m_arg, "Inspire1394Cmd arg");
 
     return result;
 }
-bool Inspire1394VendorDependentCmd::deserialize( Util::Cmd::IOSDeserialize& de )
+bool Inspire1394Cmd::deserialize( Util::Cmd::IISDeserialize& de )
 {
     bool result = true;
     result &= VendorDependentCmd::deserialize( de );
@@ -60,7 +62,7 @@ bool Inspire1394VendorDependentCmd::deserialize( Util::Cmd::IOSDeserialize& de )
 }
 
 BinaryControl::BinaryControl(Inspire1394Device& parent,
-                EInspire1394SubFunc subfunc,
+                EInspire1394CmdSubfunc subfunc,
                 std::string name, std::string label, std::string desc)
     : Control::Discrete(&parent)
     , m_Parent(parent)
@@ -72,7 +74,7 @@ BinaryControl::BinaryControl(Inspire1394Device& parent,
 }
 bool BinaryControl::setValue(int idx, int v)
 {
-    uint32_t val = v;
+    uint8_t val = v;
 
     debugOutput(DEBUG_LEVEL_VERBOSE,
                 "setValue for type: %d, idx: %d, val: %d\n", 
@@ -87,7 +89,7 @@ bool BinaryControl::setValue(int idx, int v)
 }
 int BinaryControl::getValue(int idx)
 {
-    uint32_t val;
+    uint8_t val;
 
     if ( !m_Parent.getSpecificValue(m_subfunc, idx, &val) ) {
         debugError( "getSpecificValue failed\n" );
@@ -107,42 +109,49 @@ Inspire1394Device::Inspire1394Device(DeviceManager& d,
 {
     addSpecificControls();
 }
+Inspire1394Device::~Inspire1394Device(void) 
+{
+}
 void Inspire1394Device::showDevice()
 {
     debugOutput(DEBUG_LEVEL_NORMAL,
                 "This is a BeBoB::Presonus::Inspire1394Device\n");
     BeBoB::Device::showDevice();
 }
-bool Inspire1394Device::addSpecificControls()
+bool Inspire1394Device::addSpecificControls(void)
 {
     Control::Container *ctls;
-    BinaryControl ctl;
+    BinaryControl *ctl;
     bool result = true;
 
     debugOutput(DEBUG_LEVEL_VERBOSE,
                 "Building a PreSonus Inspire1394 mixer...\n");
 
-    ctls = new Control::Container(m_eap, "GlobalMute");
+    ctls = new Control::Container(this, "Preamp");
     if ( !addElement(ctls) ) {
         debugWarning("Could not register specific controls to device\n");
         delete ctls;
         return false;
     }
 
-    ctl = BinaryControl(*this, Inspire1394CmdTypePhono,
+    // RIAA equalization curve for Analog In 3/4
+    ctl = new BinaryControl(*this, EInspire1394CmdSubfuncPhono,
                         "PhonoSwitch", "Phono Switch", "Phono Switch");
     result &= ctls->addElement(ctl);
 
-    ctl = BinaryControl(*this, Inspire1394CmdTypePhantom,
+    // 48V for Analog In 1/2
+    ctl = new BinaryControl(*this, EInspire1394CmdSubfuncPhantom,
                         "PhantomPower", "Phantom Power", "Phantom Power");
     result &= ctls->addElement(ctl);
 
-    ctl = BinaryControl(*this, Inspire1394CmdTypeBoost,
+    // +20dB for Analog In 1/2 
+    ctl = new BinaryControl(*this, EInspire1394CmdSubfuncBoost,
                         "MicBoost", "Mic Boost", "Mic Boost");
     result &= ctls->addElement(ctl);
 
-    ctl = BinaryControl(*this, Inspire1394CmdTypeLine,
-                        "LineSwitch", "Line Switch", "Line Switch");
+    // Limitter of preamp for Analog In 1/2
+    ctl = new BinaryControl(*this, EInspire1394CmdSubfuncLimit,
+                        "MicLimit", "Mic Limit", "Mic Limit");
     result &= ctls->addElement(ctl);
 
     if ( !result ) {
@@ -153,20 +162,23 @@ bool Inspire1394Device::addSpecificControls()
 
     return true;
 }
-bool Inspire1394Device::getSpecificValue(EInspire1394CmdSubFunc subfunc,
-                                         int idx, uint32_t *val)
+bool Inspire1394Device::getSpecificValue(EInspire1394CmdSubfunc subfunc,
+                                         int idx, uint8_t *val)
 {
-    Inspire1394VendorDependentCmd cmd( get1394Service() );
+    Inspire1394Cmd cmd( get1394Service() );
     cmd.setCommandType( AVC::AVCCommand::eCT_Status );
-    cmd.setNodeId( getConfigRom() );
+    cmd.setNodeId( getConfigRom().getNodeId() );
     cmd.setVerbose( getDebugLevel() );
 
-    cmd.setSubFunc(subfunc);
+    cmd.setSubfunc(subfunc);
     cmd.setIdx(idx);
     cmd.setArg(0xff);
 
     if ( !cmd.fire() ) {
-        debugError( "Inspire1394VendorDependentCmd failed\n" );
+        debugError( "Inspire1394Cmd failed\n" );
+        return false;
+    } else if (cmd.getResponse() != AVC::AVCCommand::eR_Implemented ) {
+        debugError("Inspire1394Cmd received error response\n");
         return false;
     }
 
@@ -174,25 +186,27 @@ bool Inspire1394Device::getSpecificValue(EInspire1394CmdSubFunc subfunc,
 
     return true;
 }
-bool Inspire1394Device::setSpecificValue(EInspire1394CmdSubFUnc type,
-                                         int idx, uint32_t val)
+bool Inspire1394Device::setSpecificValue(EInspire1394CmdSubfunc subfunc,
+                                         int idx, uint8_t val)
 {
-    Inspire1394VendorDependentCmd cmd( get1394Service() );
+    Inspire1394Cmd cmd( get1394Service() );
     cmd.setCommandType( AVC::AVCCommand::eCT_Control );
-    cmd.setNodeId( getConfigRom() );
+    cmd.setNodeId( getConfigRom().getNodeId() );
     cmd.setVerbose( getDebugLevel() );
 
-    cmd.setSubFunc(type);
+    cmd.setSubfunc(subfunc);
     cmd.setIdx(idx);
     cmd.setArg(val);
 
     if ( !cmd.fire() ) {
-        debugError( "Inspire1394VendorDependentCmd failed\n" );
+        debugError( "Inspire1394Cmd failed\n" );
+        return false;
+    } else if (cmd.getResponse() != AVC::AVCCommand::eR_Accepted) {
+        debugError("Inspire1394Cmd received error response\n");
         return false;
     }
 
     return true;
-}
 }
 
 } // namespace Presonus
