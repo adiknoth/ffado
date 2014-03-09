@@ -264,6 +264,26 @@ device_definitions = (
     xmit_max_cycles_early_transmit = 4;
 },
 {
+    // experimental for mixer functionality
+    vendorid    = 0x000d6c;
+    modelid     = 0x00010071;
+    vendorname  = "M-Audio";
+    modelname   = "FW 1814";
+    driver      = "BEBOB";
+    mixer       = "MAudio_BeBoB";
+    xmit_max_cycles_early_transmit = 4;
+},
+{
+    // experimental for mixer functionality
+    vendorid    = 0x000d6c;
+    modelid     = 0x00010091;
+    vendorname  = "M-Audio";
+    modelname   = "ProjectMix I/O";
+    driver      = "BEBOB";
+    mixer       = "MAudio_BeBoB";
+    xmit_max_cycles_early_transmit = 4;
+},
+{
     vendorid    = 0x000d6c;
     modelid     = 0x000100A1;
     vendorname  = "M-Audio";
