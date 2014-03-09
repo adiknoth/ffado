@@ -95,7 +95,7 @@ device_definitions = (
     vendorname  = "PreSonus";
     modelname   = "FirePOD";
     driver      = "BEBOB";
-    mixer       = "Presonus_Experimental";
+    mixer       = "Presonus_FP10";
     xmit_max_cycles_early_transmit = 4;
 },
 { # Presonus Firestudio 26x26, Bob Hamil via jaimes on the forums
