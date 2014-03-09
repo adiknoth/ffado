@@ -22,12 +22,13 @@
  *
  */
 
-#include "maudio_normal_avdevice.h"
+#include "normal_avdevice.h"
 
 namespace BeBoB {
 namespace MAudio {
+namespace Normal {
 
-NormalDevice::NormalDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ),
+Device::Device(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ),
                            unsigned int modelId)
     : BeBoB::Device( d, configRom)
 {
@@ -47,22 +48,22 @@ NormalDevice::NormalDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom
     }
     updateClkSrc();
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::MAudio::NormalDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::MAudio::Normal::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 }
 
-NormalDevice::~NormalDevice()
+Device::~Device()
 {
 }
 
 void
-NormalDevice::showDevice()
+Device::showDevice()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::MAudio::NormalDevice\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::MAudio::Normal::Device\n");
     BeBoB::Device::showDevice();
 }
 
-bool NormalDevice::updateClkSrc()
+bool Device::updateClkSrc()
 {
     int plugid;
 
@@ -133,7 +134,7 @@ bool NormalDevice::updateClkSrc()
     return true;
 }
 
-int NormalDevice::getClkSrc()
+int Device::getClkSrc()
 {
     AVC::SignalSourceCmd cmd( get1394Service() );
     cmd.setCommandType( AVC::AVCCommand::eCT_Status );
@@ -177,7 +178,7 @@ int NormalDevice::getClkSrc()
 }
 
 FFADODevice::ClockSourceVector
-NormalDevice::getSupportedClockSources() {
+Device::getSupportedClockSources() {
     FFADODevice::ClockSourceVector r;
 
     r.push_back(m_internal_clksrc);
@@ -192,7 +193,7 @@ NormalDevice::getSupportedClockSources() {
 }
 
 FFADODevice::ClockSource
-NormalDevice::getActiveClockSource()
+Device::getActiveClockSource()
 {
     if (!updateClkSrc()) {
         ClockSource s;
@@ -203,7 +204,7 @@ NormalDevice::getActiveClockSource()
 }
 
 bool
-NormalDevice::setActiveClockSource(ClockSource s)
+Device::setActiveClockSource(ClockSource s)
 {
 	AVC::SignalSourceCmd cmd( get1394Service() );
     cmd.setCommandType( AVC::AVCCommand::eCT_Control );
@@ -238,5 +239,6 @@ NormalDevice::setActiveClockSource(ClockSource s)
     return true;
 }
 
+} // namespace Normal
 } // namespace MAudio
 } // namespace BeBoB

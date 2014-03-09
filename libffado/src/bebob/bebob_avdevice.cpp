@@ -36,7 +36,7 @@
 #include "bebob/edirol/edirol_fa66.h"
 #include "bebob/esi/quatafire610.h"
 #include "bebob/yamaha/yamaha_avdevice.h"
-#include "bebob/maudio/maudio_normal_avdevice.h"
+#include "bebob/maudio/normal_avdevice.h"
 #include "bebob/presonus/firebox_avdevice.h"
 #include "bebob/presonus/inspire1394_avdevice.h"
 
@@ -179,7 +179,7 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
         case 0x00010046: // fw410
         case 0x00010060: // Audiophile
         case 0x00010062: // Solo
-            return new MAudio::NormalDevice(d, configRom, modelId);
+            return new MAudio::Normal::Device(d, configRom, modelId);
         default:
              return new Device(d, configRom);
         }

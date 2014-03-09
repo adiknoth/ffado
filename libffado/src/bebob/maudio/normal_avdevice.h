@@ -31,19 +31,20 @@
 
 namespace BeBoB {
 namespace MAudio {
+namespace Normal {
 
-enum MAudioNormalID {
+enum DeviceID {
 	FW_410,
 	FW_AUDIOPHILE,
 	FW_SOLO,
 	FW_OZONIC
 };
 
-class NormalDevice : public BeBoB::Device {
+class Device : public BeBoB::Device {
 public:
-    NormalDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ),
+    Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ),
                   unsigned int modelId);
-    virtual ~NormalDevice();
+    virtual ~Device();
 
     virtual void showDevice();
 
@@ -58,9 +59,10 @@ private:
     ClockSource m_spdif_clksrc;
     ClockSource m_adat_clksrc;
     ClockSource *m_active_clksrc;
-    enum MAudioNormalID m_id;
+    enum DeviceID m_id;
 };
 
+} // namespace Normal
 } // namespace MAudio
 } // namespace BeBoB
 
