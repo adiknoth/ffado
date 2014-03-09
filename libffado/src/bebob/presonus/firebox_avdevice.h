@@ -31,11 +31,12 @@
 
 namespace BeBoB {
 namespace Presonus {
+namespace Firebox {
 
-class FireboxDevice : public BeBoB::Device {
+class Device : public BeBoB::Device {
 public:
-	FireboxDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~FireboxDevice();
+	Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    virtual ~Device();
 
     virtual void showDevice();
 
@@ -50,6 +51,7 @@ private:
     ClockSource *m_active_clksrc;
 };
 
+} // namespace Firebox
 } // namespace Presonus
 } // namespace BeBoB
 

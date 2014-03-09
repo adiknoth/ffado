@@ -33,40 +33,41 @@
 
 namespace BeBoB {
 namespace Presonus {
+namespace Inspire1394 {
 
-enum EInspire1394CmdSubfunc {
-    EInspire1394CmdSubfuncPhono = 0,
-    EInspire1394CmdSubfuncPhantom,
-    EInspire1394CmdSubfuncBoost,
-    EInspire1394CmdSubfuncLimit
+enum ECmdSubfunc {
+    ECmdSubfuncPhono = 0,
+    ECmdSubfuncPhantom,
+    ECmdSubfuncBoost,
+    ECmdSubfuncLimit
 };
 
-class Inspire1394Device : public BeBoB::Device {
+class Device : public BeBoB::Device {
 public:
-    Inspire1394Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
-    virtual ~Inspire1394Device();
+    Device( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ));
+    virtual ~Device();
 
     virtual void showDevice();
 
-    bool setSpecificValue(EInspire1394CmdSubfunc subfunc,
+    bool setSpecificValue(ECmdSubfunc subfunc,
                           int idx, uint8_t val);
-    bool getSpecificValue(EInspire1394CmdSubfunc subfunc,
+    bool getSpecificValue(ECmdSubfunc subfunc,
                           int idx, uint8_t *val);
 private:
     bool addSpecificControls(void);
 };
 
-class Inspire1394Cmd : public AVC::VendorDependentCmd
+class Command : public AVC::VendorDependentCmd
 {
 public:
-    Inspire1394Cmd( Ieee1394Service& ieee1394service );
-    virtual ~Inspire1394Cmd() {};
+    Command( Ieee1394Service& ieee1394service );
+    virtual ~Command() {};
 
     virtual bool serialize( Util::Cmd::IOSSerialize& se);
     virtual bool deserialize( Util::Cmd::IISDeserialize& de );
 
-    virtual const char* getCmdName() const
-    { return "Inspire1394Cmd"; }
+    virtual const char* getCommandName() const
+    { return "Inspire1394"; }
 
     virtual void setSubfunc(uint8_t subfunc)
     { m_subfunc = subfunc; }
@@ -87,8 +88,8 @@ protected:
 class BinaryControl : public Control::Discrete
 {
 public:
-    BinaryControl(Inspire1394Device& parent,
-                  EInspire1394CmdSubfunc subfunc,
+    BinaryControl(Device& parent,
+                  ECmdSubfunc subfunc,
                   std::string name, std::string label, std::string desc);
 
     virtual bool setValue(int idx, int val);
@@ -102,10 +103,11 @@ public:
     virtual int getMaximum() { return 1; };
 
 private:
-    Inspire1394Device&      m_Parent;
-    EInspire1394CmdSubfunc  m_subfunc;
+    Device&      m_Parent;
+    ECmdSubfunc  m_subfunc;
 };
 
+} // namespace Inspire1394
 } // namespace Presonus
 } // namespace BeBoB
 

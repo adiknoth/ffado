@@ -26,8 +26,9 @@
 
 namespace BeBoB {
 namespace Presonus {
+namespace Firebox {
 
-FireboxDevice::FireboxDevice(DeviceManager& d, std::auto_ptr<ConfigRom>(configRom))
+Device::Device(DeviceManager& d, std::auto_ptr<ConfigRom>(configRom))
     : BeBoB::Device( d, configRom)
 {
     m_intl_clksrc.type = FFADODevice::eCT_Internal;
@@ -44,23 +45,23 @@ FireboxDevice::FireboxDevice(DeviceManager& d, std::auto_ptr<ConfigRom>(configRo
     m_spdif_clksrc.slipping = false;
     m_spdif_clksrc.description = "S/PDIF (Coaxial)";
 
-    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Presonus::FireboxDevice (NodeID %d)\n",
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Created BeBoB::Presonus::Firebox::Device (NodeID %d)\n",
                  getConfigRom().getNodeId() );
 }
 
-FireboxDevice::~FireboxDevice()
+Device::~Device()
 {
 }
 
 void
-FireboxDevice::showDevice()
+Device::showDevice()
 {
-    debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Presonus::FireboxDevice\n");
+    debugOutput(DEBUG_LEVEL_NORMAL, "This is a BeBoB::Presonus::Firebox::Device\n");
     BeBoB::Device::showDevice();
 }
 
 FFADODevice::ClockSourceVector
-FireboxDevice::getSupportedClockSources()
+Device::getSupportedClockSources()
 {
     FFADODevice::ClockSourceVector r;
     r.push_back(m_intl_clksrc);
@@ -69,7 +70,7 @@ FireboxDevice::getSupportedClockSources()
 }
 
 enum FFADODevice::eClockSourceType
-FireboxDevice::getClkSrc()
+Device::getClkSrc()
 {
     AVC::SignalSourceCmd cmd(get1394Service());
     cmd.setCommandType(AVC::AVCCommand::eCT_Status);
@@ -113,7 +114,7 @@ FireboxDevice::getClkSrc()
 }
 
 FFADODevice::ClockSource
-FireboxDevice::getActiveClockSource()
+Device::getActiveClockSource()
 {
     switch (getClkSrc()) {
     case eCT_Internal:
@@ -132,7 +133,7 @@ FireboxDevice::getActiveClockSource()
 }
 
 bool
-FireboxDevice::setActiveClockSource(ClockSource s)
+Device::setActiveClockSource(ClockSource s)
 {
 	AVC::SignalSourceCmd cmd(get1394Service());
     cmd.setCommandType(AVC::AVCCommand::eCT_Control);
@@ -167,5 +168,6 @@ FireboxDevice::setActiveClockSource(ClockSource s)
     return true;
 }
 
+} // namespace Firebox
 } // namespace Presonus
 } // namespace BeBoB

@@ -186,9 +186,9 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
         case FW_VENDORID_PRESONUS:
         switch (modelId) {
         case 0x00010000:
-            return new Presonus::FireboxDevice(d, configRom);
+            return new Presonus::Firebox::Device(d, configRom);
         case 0x00010001:
-            return new Presonus::Inspire1394Device(d, configRom);
+            return new Presonus::Inspire1394::Device(d, configRom);
         default:
             return new Device(d, configRom);
         }
