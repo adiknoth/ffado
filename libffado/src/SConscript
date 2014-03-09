@@ -98,6 +98,8 @@ bebob_source = env.Split( '\
 	bebob/yamaha/yamaha_cmd.cpp \
 	bebob/yamaha/yamaha_avdevice.cpp \
 	bebob/maudio/normal_avdevice.cpp \
+	bebob/maudio/special_avdevice.cpp \
+	bebob/maudio/special_mixer.cpp \
 	bebob/presonus/firebox_avdevice.cpp \
 	bebob/presonus/inspire1394_avdevice.cpp \
 ' )
