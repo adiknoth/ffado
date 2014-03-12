@@ -697,7 +697,7 @@ PortGroupEntry PortGroups_ULTRALITEmk3_hybrid[] =
     {"Main-%s", 2, MOTU_PA_OUT | MOTU_PA_RATE_ANY|MOTU_PA_OPTICAL_ANY, 0, },
     {"SPDIF%d", 2, MOTU_PA_INOUT | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 6, },
     {"Reverb%d", 2, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 7, },
-    {"Unknown%d", 4, MOTU_PA_IN | MOTU_PA_RATE_1x2x|MOTU_PA_OPTICAL_ANY, 8, },
+    {"Unknown%d", 4, MOTU_PA_IN | MOTU_PA_RATE_1x|MOTU_PA_OPTICAL_ANY, 8, },
 };
 
 /* FIXME: as of 5 Aug 2010 this is still under development */
