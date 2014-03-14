@@ -255,7 +255,7 @@ if not env.GetOption('clean'):
         # means users don't have to have jack development files present on
         # their system for this to work.
         have_jack = (jackd_ver >= VersionInt('0.0.0'))
-        good_jack1 = (jackd_ver < VersionInt('1.9.0')) and (jackd_ver >= VersionInt('0.122.0'))
+        good_jack1 = (jackd_ver < VersionInt('1.9.0')) and (jackd_ver >= VersionInt('0.121.4'))
         good_jack2 = (jackd_ver >= VersionInt('1.9.9'))
     else:
         # Jackd is not runnable.  Attempt to identify a version from
