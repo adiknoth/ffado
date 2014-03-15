@@ -25,7 +25,8 @@ class MAudio_BeBoB(QWidget):
 		0x00010062:	[1,	"Firewire Solo"],
 		0x00010060:	[2,	"Firewire Audiophile"],
 		0x00010046:	[3,	"Firewire 410"],
-		0x00010071:	[4,	"fw1814/ProjectMix"],
+		0x00010071:	[4,	"Firewire 1814"],
+		0x00010091:	[4,	"ProjectMix I/O"],
 	}
 
 	labels = [
