@@ -1782,7 +1782,6 @@ bool
 MotuDevice::startStreamByIndex(int i) {
 
 quadlet_t isoctrl = ReadRegister(MOTU_REG_ISOCTRL);
-quadlet_t config2_reg = ReadRegister(MOTU_G1_REG_CONFIG_2);
 
     if (m_motu_model == MOTU_MODEL_828MkI) {
         // The 828MkI device does this differently.  In particular it does
@@ -1791,6 +1790,9 @@ quadlet_t config2_reg = ReadRegister(MOTU_G1_REG_CONFIG_2);
         // enable both when the 0th index is requested and ignore any
         // request for index 1.  Also note that on the G1 devices,
         // MOTU_REG_ISOCTRL and MOTU_G1_REG_CONFIG are one and the same.
+
+        quadlet_t config2_reg = ReadRegister(MOTU_G1_REG_CONFIG_2);
+
         if (i == 1)
             return true;
         m_receiveProcessor->setChannel(m_iso_recv_channel);
