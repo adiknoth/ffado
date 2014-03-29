@@ -133,13 +133,16 @@
 #define MOTU_G1_RATE_44100         0x0000
 #define MOTU_G1_RATE_48000         0x0004
 
-// Clock source control bits in MOTU_G1_REG_CONFIG
-#define MOTU_G1_CLKSRC_MASK         0x0027
+// Clock source control bits in MOTU_G1_REG_CONFIG.  The SMTPE clock source
+// is not presently supported in FFADO because software requirements of this
+// source are not yet known.
+#define MOTU_G1_CLKSRC_MASK         0x0023
 #define MOTU_G1_CLKSRC_ADAT_9PIN    0x0001
+#define MOTU_G1_CLKSRC_SMTPE        0x0003  // Not currently supported in FFADO
 #define MOTU_G1_CLKSRC_INTERNAL     0x0020
 #define MOTU_G1_CLKSRC_SPDIF        0x0022
 #define MOTU_G1_CLKSRC_TOSLINK      0x0022
-#define MOTU_G1_CLKSRC_ADAT_OPTICAL 0x0026
+#define MOTU_G1_CLKSRC_ADAT_OPTICAL 0x0021
 #define MOTU_G1_CLKSRC_UNCHANGED   MOTU_CLKSRC_UNCHANGED
 
 // Monitor control bits in MOTU_G1_REG_CONFIG
