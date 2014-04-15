@@ -23,6 +23,13 @@ device_definitions = (
     modelname   = "IFFWDM";  
     driver      = "BEBOB";
 },
+{ # IDs provided by Travis Kepley
+    vendorid    = 0x000ff2;
+    modelid     = 0x0x0006;
+    vendorname  = "Loud Technologies Inc.";
+    modelname   = "Onyx 1640i";
+    driver      = "DICE";
+},
 { # entries provided by Holger Dehnhardt
     vendorid    = 0x000ff2;
     modelid     = 0x081216;
