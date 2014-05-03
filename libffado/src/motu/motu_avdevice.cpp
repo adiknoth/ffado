@@ -761,6 +761,23 @@ MotuDevice::setClockCtrlRegister(signed int samplingFrequency, unsigned int cloc
             supported=false;
         }
 
+// For testing ultralite mk3
+debugOutput(DEBUG_LEVEL_VERBOSE, "supported: %d\n", supported);
+{
+  signed int cx = 0;
+  
+  while (cx<3000) {
+    if (WriteRegister(MOTU_REG_CLKSRC_NAME0, 0x496e7465) == 0)
+      break;
+    usleep(1000);
+    cx++;
+  }
+  if (cx<3000)
+    debugOutput(DEBUG_LEVEL_VERBOSE, "guard write ok");
+  else
+    debugOutput(DEBUG_LEVEL_VERBOSE, "guard write timeout");
+}
+
         // A write to the rate/clock control register requires the
         // textual name of the current clock source be sent to the
         // clock source name registers.  This appears to be the same for
