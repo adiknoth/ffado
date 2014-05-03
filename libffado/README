@@ -39,10 +39,13 @@ The devices officially supported are:
 * ESI Quatafire 610
 * Terratec Producer Phase 88
 * Focusrite Saffire (original/white)
-* Focusrite Saffire PRO10
-* Focusrite Saffire PRO26
+* Focusrite Saffire Pro10
+* Focusrite Saffire Pro26
+* Focusrite Saffire Pro14, Pro24, Pro40
+* Focusrite Saffire Pro24DSP (audio streaming only, DSP control not available)
 * ECHO AudioFire2, AudioFire4, AudioFire8, AudioFire12
 * Mackie Onyx Mixer FireWire expansion
+* RME Fireface 400, RME Fireface 800
 
 The 'officially supported' label is only given to devices that fullfil the
 following:
@@ -52,22 +55,31 @@ following:
 
 Through reverse-engineering the following devices will also work:
 * MOTU Traveler
-* MOTU 828mkII, MOTU Ultralite, MOTU 896HD, MOTU 8pre
-Note: the support for these devices is based on a significant reverse
-engineering effort. This means that the developers had no support from the
-device vendor, and this of course limits the extent to which problems can
-be solved. You have been warned. Please do not buy devices for which support
-is based upon reverse engineering, nor from vendors that are Linux-hostile
-(e.g. MOTU). Value the support that some vendors provide and buy their
-stuff. Check ffado.org for details. It can't be said enough: currently it is
-extremely unwise to buy a MOTU device if you intend to use Linux.
+* MOTU 828mkII, MOTU Ultralite, MOTU 896HD, MOTU 8pre, MOTU 4pre
+* Audio only: MOTU Ultralite mk3, MOTU Traveler mk3, MOTU 896mk3, MOTU 828mk3
+* Audio only, firewire interface only: MOTU Ultralite mk3 hybrid
+Note:
+1) The support for these MOTU devices is based on a significant reverse
+   engineering effort.  This means that the developers had no support from
+   the device vendor, and this of course limits the extent to which problems
+   can be solved.  You have been warned.  Please do not buy devices for
+   which support is based upon reverse engineering, nor from vendors that
+   are Linux-hostile (e.g.  MOTU).  Value the support that some vendors
+   provide and buy their stuff.  Check ffado.org for details.  It can't be
+   said enough: currently it is extremely unwise to buy a MOTU device if you
+   intend to use Linux.
+2) "Audio only" means that FFADO can be used to stream audio to and from the
+   device, control sample rate and clock source.  Control of the mixer
+   and DSP functions is not presently supported.  It is planned but no ETA
+   is available at this stage.
 
-The driver is written to provide generic support for all devices it might be
-able to handle. This means that most devices based on the BridgeCo BeBoB or
-the ECHO FireWorks platform will work, at least to a certain extent.
+The FFADO driver is written to provide generic support for all devices it
+might be able to handle.  This means that most devices based on the BridgeCo
+BeBoB, the ECHO FireWorks platform or the TC Electronics DICE platform will
+work, at least to a certain extent.
 
 Devices for which work is in progress:
-* RME Firewire devices
+* RME UFX and UCX firewire devices
 
 Devices that have been reported to (partially) work with the generic support:
 * Presonus FireBox
