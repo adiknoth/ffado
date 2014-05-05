@@ -39,7 +39,7 @@ if not os.path.isdir( "cache" ):
 opts = Variables( "cache/options.cache" )
 
 opts.AddVariables(
-    BoolVariable( "DEBUG_BUILD", "Build with \"-g -Wall\" rather than \"-O2\"", False ),
+    BoolVariable( "DEBUG_BUILD", "Build with \"-g -Wall\" rather than \"-O2\"", True ),
     BoolVariable( "DEBUG", "Enable support for debug messages", True ),
     BoolVariable( "PROFILE", "Build with symbols and other profiling info", False ),
     PathVariable( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local", PathVariable.PathAccept ),
