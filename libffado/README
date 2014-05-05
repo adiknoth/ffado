@@ -1,30 +1,31 @@
-FFADO v2.x
+FFADO v2.2
 ==========
 
-The FFADO project aims to provide a free driver implemenation for FireWire 
-(IEEE1394, iLink) based (semi-) professional audio interfaces. The focus of
-the project are on audio/music production rather than consumer audio. This
-means that, although we intend to supported all features at some point, 
-consumer features are considered less important. The most obvious example of
-a consumer feature is AC3/DTS passthrough support, which is unsupported at 
-the moment.
+The FFADO project aims to provide a free driver implemenation for FireWire
+(IEEE1394, iLink) based audio interfaces.  The focus of the project are on
+audio/music production rather than consumer audio.  This means that although
+we intend to supported all features at some point, consumer features are
+considered less important.  The most obvious example of a consumer feature
+is AC3/DTS passthrough support, which is unsupported at the moment.
 
 This package provides the libffado shared library that provides a unified
-programming interface to configure and use all supported devices. Currently
+programming interface to configure and use all supported devices.  Currently
 this library is used by the 'firewire' backends of the jack audio connection
-kit sound server (jackaudio.org). This backend provides audio and midi support,
-and is available both in jackd and it's multiprocessor variant jackdmp.
-(note: At the moment there is no support for ALSA nor for pulseaudio.)
+kit sound server (jackaudio.org).  This backend provides audio and midi
+support, and is available both in jackd and its multiprocessor variant
+jackdmp.  At present there is no support for ALSA or pulseaudio, although
+jack bridging solutions may help in some situations.
 
-Access to the device internal configuration (e,g, internal mixer) is exposed
-using the ffado-dbus-server daemon. This daemon exposes the configurable 
-parameters of all detected devices through DBUS. The ffadomixer application in
-support/mixer presents a GUI to control these parameters (only for officially
-supported devices).
+Access to the device internal configuration (the internal mixer and device
+settings) is exposed using the ffado-dbus-server daemon.  This daemon
+exposes the configurable parameters of all detected devices through DBUS. 
+The ffado-mixer application in support/mixer/ presents a GUI to control these
+parameters.
 
 Features
 --------
-* 24-bit audio input/output (unlimited number of channels)
+* 24-bit audio input/output (number of channels only limited by interface
+  hardware)
 * supports for all samplerates a device supports
 * MIDI input/output (unlimited number of channels)
 * Support for S/PDIF and ADAT/SMUX I/O
@@ -35,64 +36,77 @@ Features
 Device Support
 --------------
 
-The devices officially supported are:
-* ESI Quatafire 610
-* Terratec Producer Phase 88
-* Focusrite Saffire (original/white)
-* Focusrite Saffire Pro10
-* Focusrite Saffire Pro26
-* Focusrite Saffire Pro14, Pro24, Pro40
-* Focusrite Saffire Pro24DSP (audio streaming only, DSP control not available)
-* ECHO AudioFire2, AudioFire4, AudioFire8, AudioFire12
-* Mackie Onyx Mixer FireWire expansion
-* RME Fireface 400, RME Fireface 800
-
-The 'officially supported' label is only given to devices that fullfil the
+The 'officially supported' label is only given to devices that fulfil the
 following:
-* at least one of the developers has the device
-* the vendor provides development support (access to information)
-* the device works
+ * at least one of the developers has the device
+ * the vendor provides development support (access to information)
+ * the device works
 
-Through reverse-engineering the following devices will also work:
-* MOTU Traveler
-* MOTU 828mkII, MOTU Ultralite, MOTU 896HD, MOTU 8pre, MOTU 4pre
-* Audio only: MOTU Ultralite mk3, MOTU Traveler mk3, MOTU 896mk3, MOTU 828mk3
-* Audio only, firewire interface only: MOTU Ultralite mk3 hybrid
-Note:
-1) The support for these MOTU devices is based on a significant reverse
-   engineering effort.  This means that the developers had no support from
-   the device vendor, and this of course limits the extent to which problems
-   can be solved.  You have been warned.  Please do not buy devices for
-   which support is based upon reverse engineering, nor from vendors that
-   are Linux-hostile (e.g.  MOTU).  Value the support that some vendors
-   provide and buy their stuff.  Check ffado.org for details.  It can't be
-   said enough: currently it is extremely unwise to buy a MOTU device if you
-   intend to use Linux.
-2) "Audio only" means that FFADO can be used to stream audio to and from the
-   device, control sample rate and clock source.  Control of the mixer
-   and DSP functions is not presently supported.  It is planned but no ETA
-   is available at this stage.
+The devices which are officially supported are:
+ * ESI Quatafire 610
+ * Terratec Producer Phase 88
+ * Focusrite Saffire (original/white)
+ * Focusrite Saffire Pro10
+ * Focusrite Saffire Pro26
+ * Focusrite Saffire Pro14, Pro40
+ * ECHO AudioFire2, AudioFire4, AudioFire8, AudioFire12
+ * Mackie Onyx Mixer FireWire expansion
+ * RME Fireface 400, RME Fireface 800
 
 The FFADO driver is written to provide generic support for all devices it
 might be able to handle.  This means that most devices based on the BridgeCo
 BeBoB, the ECHO FireWorks platform or the TC Electronics DICE platform will
-work, at least to a certain extent.
+work, at least to a certain extent.  For some devices specific functions
+have been added to augment the generic framework and provide enhanced
+support, usually in the area of device and mixer control.
 
-Devices for which work is in progress:
-* RME UFX and UCX firewire devices
+FFADO includes device-specific functionality for following devices.  The
+code has been developed based on feedback received from users, and it has
+been reported to work by users.  Note that FFADO may not support all device
+functions.
+ * Presonus Firebox and Inspire1394
+ * Presonus FireStudio Tube, FireStudio Project
+ * M-Audio Ozonic, Firewire Solo
+ * M-Audio Profire 2626
+ * M-Audio Audiophile and 410 (startup workaround needed, see
+   http://sourceforge.net/p/ffado/mailman/message/30807938)
+ * M-Audio 1814 and ProjectMix (mixer only, audio streaming not supported)
+ * Focusrite Saffire Pro24
+ * Focusrite Saffire Pro24DSP (audio streaming only, DSP control not available)
+ * Yamaha GO44 and GO46
 
 Devices that have been reported to (partially) work with the generic support:
-* Presonus FireBox
-* Presonus FirePod / FP10
-* Alesis io14
-* TC Konnekt 8, Konnekt 24D, Konnekt Live
+ * Presonus FirePod / FP10
+ * Alesis io14
+ * TC Konnekt 8, Konnekt 24D, Konnekt Live
+
+As a result of a significant reverse-engineering effort a selection of
+devices from MOTU are supported.  The developers had no support from the
+device vendor and this of course limits the extent to which problems can be
+solved.  You have been warned.  Please do not buy devices for which support
+is based upon reverse engineering, nor from vendors who are hostile towards
+Linux like MOTU.  Value the support that some vendors provide and buy their
+stuff.  Check ffado.org for details.  It can't be said enough: currently it
+is extremely unwise to buy a MOTU device if you intend to use Linux. 
+MOTU devices reported to work with FFADO are:
+ * MOTU Traveler
+ * MOTU 828mkII, MOTU Ultralite, MOTU 896HD, MOTU 8pre, MOTU 4pre
+ * Audio only: MOTU Ultralite mk3, MOTU Traveler mk3, MOTU 896mk3, MOTU 828mk3
+ * Audio only, firewire interface only: MOTU Ultralite mk3 hybrid
+
+"Audio only" means that FFADO can be used to stream audio to and from the
+device, control sample rate and clock source.  Control of the mixer and DSP
+functions is not presently supported.  It is planned but no ETA is available
+at this stage.
+
+Devices for which work is in progress.  These are not yet usable:
+ * RME UFX and UCX firewire devices
 
 Usupported devices:
-* Presonus FireStation
-* Presonus FireStudio (all variants)
-* Other TC Konnekt devices
-* Other Alesis devices
-* Metric Halo devices
+ * Presonus FireStation
+ * Other TC Konnekt devices
+ * Other Alesis devices
+ * Metric Halo devices
 
 We constantly try to persuade vendors to help us extend our device support.
 
@@ -212,26 +226,32 @@ Here is a sample session (without realtime support enabled):
 An important remark is that for good performance, one should always run jack
 with the -R flag to enable realtime scheduling for critical threads:
     $ jackd -R -d firewire
+In most cases this is now the default.
+
+For best results across most hardware it is necessary to use a kernel
+configured with the "Low latency desktop" option (CONFIG_PREEMPT) enabled. 
+Most distributions provide this as an option, often called "low latency". 
+In general it is no longer necessary to use an RT-patched kernel.
 
 In case of problems
 -------------------
 
-First of all, check whether your problem is in fact a problem, and
-whether it is a FFADO problem. The magic tool for this is google.
+First of all, check whether your problem is in fact a problem, and whether
+it is a FFADO problem.  The magic tool for this is google.
 
-User support is a rather annoying occupation, especially since it sucks
-time from developers that are not paid for developing, let alone for doing
-user support. Please make sure that you have checked the following places:
-    http://www.ffado.org/
-    http://subversion.ffado.org/
-    http://www.google.com/
-      (the terms "ffado-devel" "ffado-user" or "freebob-user" work great)
-Some might consider this a bit arrogant or "newbie-unfriendly", but personally
-I (Pieter Palmers) consider this a matter of politeness towards the developers.
+When seeking support from the developers keep in mind that none of the FFADO
+developers are paid to work on FFADO or to support FFADO users.  Answering
+the same question multiple times reduces the amount of time they have to
+work on the code.  Before contacting the developers please see if your query
+or problem has been seen before.  The following places are helpful:
+ * http://www.ffado.org/
+ * http://subversion.ffado.org/
+ * http://www.google.com/
+   (the terms "ffado-devel" and "ffado-user" work well)
 
-If you have tried to find a solution to your problem, but you couldn't find
-one or are confused, don't hesitate to ask for help. The preferred way is by
-signing up to the mailing list as described on http://www.ffado.org/?q=contact.
+If you have tried to find a solution to your problem but couldn't or are
+confused, don't hesitate to ask for help.  The preferred way is by signing
+up to the mailing list as described on http://www.ffado.org/?q=contact.
 
 Writing a bug report
 --------------------
