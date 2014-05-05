@@ -39,9 +39,8 @@ if not os.path.isdir( "cache" ):
 opts = Variables( "cache/options.cache" )
 
 opts.AddVariables(
-    BoolVariable( "DEBUG", """\
-Toggle debug-build. DEBUG means \"-g -Wall\" and more, otherwise we will use
-  \"-O2\" to optimize.""", True ),
+    BoolVariable( "DEBUG_BUILD", "Build with \"-g -Wall\" rather than \"-O2\"", False ),
+    BoolVariable( "DEBUG", "Enable support for debug messages", True ),
     BoolVariable( "PROFILE", "Build with symbols and other profiling info", False ),
     PathVariable( "PREFIX", "The prefix where ffado will be installed to.", "/usr/local", PathVariable.PathAccept ),
     PathVariable( "BINDIR", "Overwrite the directory where apps are installed to.", "$PREFIX/bin", PathVariable.PathAccept ),
@@ -404,11 +403,16 @@ config_guess = conf.ConfigGuess()
 
 env = conf.Finish()
 
-if env['DEBUG']:
-    print "Doing a DEBUG build"
-    env.MergeFlags( "-DDEBUG -Wall -g" )
+if env['DEBUG_BUILD']:
+    print "Doing a debug build"
+    env.MergeFlags( "-Wall -g" )
 else:
-    env.MergeFlags( "-O2 -DNDEBUG" )
+    env.MergeFlags( "-O2" )
+
+if env['DEBUG']:
+    env.MergeFlags( "-DDEBUG" )
+else:
+    env.MergeFlags( "-DNDEBUG" )
 
 if env['PROFILE']:
     print "Doing a PROFILE build"
