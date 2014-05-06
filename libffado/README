@@ -68,9 +68,10 @@ functions.
  * Presonus FireStudio Tube, FireStudio Project
  * M-Audio Ozonic, Firewire Solo
  * M-Audio Profire 2626
- * M-Audio Audiophile and 410 (startup workaround needed, see
-   http://sourceforge.net/p/ffado/mailman/message/30807938)
- * M-Audio 1814 and ProjectMix (mixer only, audio streaming not supported)
+ * M-Audio Audiophile and 410 (latest firmware and startup workaround needed,
+   see http://sourceforge.net/p/ffado/mailman/message/30807938)
+ * M-Audio 1814 and ProjectMix (mixer only, audio streaming not supported. and
+   Firewire 1814 needs startup workaround above)
  * Focusrite Saffire Pro24
  * Focusrite Saffire Pro24DSP (audio streaming only, DSP control not available)
  * Yamaha GO44 and GO46
