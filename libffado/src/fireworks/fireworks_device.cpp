@@ -439,6 +439,11 @@ Device::loadSession()
     return true;
 }
 
+/*
+ * NOTE:
+ * Firmware version 5.0 or later for AudioFire12 returns invalid values to
+ * contents of response against this command.
+ */
 bool
 Device::updatePolledValues() {
     Util::MutexLockHelper lock(*m_poll_lock);
@@ -624,22 +629,29 @@ uint32_t Device::getClock()
     uint32_t clock;
 
     EfcGetClockCmd gccmd;
-    if (!doEfcOverAVC(gccmd)) {
-        debugError("Could not get clock info\n");
+    if (doEfcOverAVC(gccmd)) {
+        clock = gccmd.m_clock;
+    } else {
+        /*
+         * NOTE:
+         * Firmware version 5.0 or later for AudioFire12 returns invalid
+         * values to contents of response against this command.
+         */
+        gccmd.showEfcCmd();
+        debugError("Could not get clock info. Do fallback\n");
+
         /* fallback to cache */
         if (m_current_clock >= 0)
             clock = m_current_clock;
-	/* fallback to internal */
+        /* fallback to internal */
         else if (setClock(EFC_CMD_HW_CLOCK_INTERNAL))
             clock = EFC_CMD_HW_CLOCK_INTERNAL;
-	/* fatal error */
+        /* fatal error */
         else
             clock = EFC_CMD_HW_CLOCK_UNSPECIFIED;
-    } else
-        clock = gccmd.m_clock;
+    }
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "Active clock: 0x%08X\n", clock);
-    gccmd.showEfcCmd();
 
     return clock;
 }
@@ -911,16 +923,23 @@ Device::getSamplingFrequency()
     int sampling_rate;
 
     EfcGetClockCmd gccmd;
-    if (!doEfcOverAVC(gccmd)) {
-        /* fallback to 'input/output plug signal format' command */
-        sampling_rate = GenericAVC::Device::getSamplingFrequency();
-        if (!sampling_rate) {
-            debugError("Could not get sample rate\n");
-            return false;
-        }
+    if (doEfcOverAVC(gccmd))
+        return gccmd.m_samplerate;
+
+    /*
+     * NOTE:
+     * Firmware version 5.0 or later for AudioFire12 returns wrong response to
+     * this command.
+     */
+    debugError("Could not get clock info. Do fallback\n");
+
+    /* fallback to 'input/output plug signal format' command */
+    sampling_rate = GenericAVC::Device::getSamplingFrequency();
+    if (sampling_rate)
         return sampling_rate;
-    }
-    return gccmd.m_samplerate;
+
+    debugError("Could not get sample rate\n");
+    return false;
 }
 bool
 Device::setSamplingFrequency(int s)
@@ -935,14 +954,22 @@ Device::setSamplingFrequency(int s)
     sccmd.m_clock = clock;
     sccmd.m_samplerate = s;
     sccmd.m_index = 0;
-    if (!doEfcOverAVC(sccmd)) {
-        /* fallback to 'input/output plug signal format' command */
-        if (!GenericAVC::Device::setSamplingFrequency(s)) {
-            debugError("Could not set sample rate\n");
-            return false;
-        }
-    }
-    return true;
+    if (doEfcOverAVC(sccmd))
+        return true;
+
+    /*
+     * NOTE:
+     * This is just for assurance, with consideration about a quirk of firmware
+     * version 5.0 or later for AudioFire12.
+     */
+    debugError("Could not set clock info. Do fallback\n");
+
+    /* fallback to 'input/output plug signal format' command */
+    if (GenericAVC::Device::setSamplingFrequency(s))
+        return true;
+
+    debugError("Could not set sample rate\n");
+    return false;
 }
 
 
