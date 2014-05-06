@@ -924,9 +924,10 @@ Device::getSamplingFrequency()
 
     /*
      * NOTE:
-     * Firmware version 5.0 or later for AudioFire12 returns wrong response to
-     * this command.
+     * Firmware version 5.0 or later for AudioFire12 returns  values to
+     * contents of response against this command.
      */
+    gccmd.showEfcCmd();
     debugError("Could not get clock info. Do fallback\n");
 
     /* fallback to 'input/output plug signal format' command */
