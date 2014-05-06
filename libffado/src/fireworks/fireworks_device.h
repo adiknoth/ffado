@@ -31,6 +31,7 @@
 
 #include "efc/efc_cmd.h"
 #include "efc/efc_cmds_hardware.h"
+#include "efc/efc_cmds_hardware_ctrl.h"
 #include "fireworks_session_block.h"
 
 #include <pthread.h>
@@ -137,9 +138,13 @@ private:
 
     FFADODevice::ClockSource clockIdToClockSource(uint32_t clockflag);
     bool isClockValid(uint32_t id);
-    uint32_t getClock();
-    bool setClock(uint32_t);
 
+    bool getClock(EfcGetClockCmd &gccmd);
+    uint32_t getClockSrc();
+
+    bool setClock(EfcSetClockCmd sccmd);
+    bool setClockSrc(uint32_t clock);
+ 
     /*
      * Audiofire12 often return wrong data for clock source.
      * This member is used to cache the latest clock source change.
