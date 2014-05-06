@@ -182,11 +182,6 @@ Device::discoverUsingEFC()
     // depends on this
     m_efc_version = m_HwInfo.m_header.version;
 
-    if (!updatePolledValues()) {
-        debugError("Could not update polled values\n");
-        return false;
-    }
-
     m_current_clock = -1;
 
     m_efc_discovery_done = true;
@@ -523,10 +518,10 @@ Device::getSupportedClockSources() {
 bool
 Device::isClockValid(uint32_t id) {
     // always valid
-    if (id==EFC_CMD_HW_CLOCK_INTERNAL) return true;
+    if (id==EFC_CMD_HW_CLOCK_INTERNAL)
+        return true;
 
-    // the polled values are used to detect
-    // whether clocks are valid
+    // the polled values tell thether each clock source is detected or not
     if (!updatePolledValues()) {
         debugError("Could not update polled values\n");
         return false;
@@ -576,13 +571,6 @@ FFADODevice::ClockSource
 Device::clockIdToClockSource(uint32_t clockid) {
     ClockSource s;
     debugOutput(DEBUG_LEVEL_VERBOSE, "clock id: %u\n", clockid);
-
-    // the polled values are used to detect
-    // whether clocks are valid
-    if (!updatePolledValues()) {
-        debugError("Could not update polled values\n");
-        return s;
-    }
 
     switch (clockid) {
         case EFC_CMD_HW_CLOCK_INTERNAL:
