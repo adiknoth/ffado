@@ -408,6 +408,7 @@ env = conf.Finish()
 if env['DEBUG']:
     print "Doing a debug build"
     env.MergeFlags( "-Wall -g -DDEBUG" )
+    env['DEBUG_MESSAGES'] = True
 else:
     env.MergeFlags( "-O2" )
 
