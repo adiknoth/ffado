@@ -38,7 +38,6 @@
 #include "fireworks/fireworks_control.h"
 
 #include "libutil/PosixMutex.h"
-#include "libutil/SystemTimeSource.h"
 
 #include "IntelFlashMap.h"
 
@@ -521,7 +520,7 @@ Device::isClockValid(uint32_t id) {
     if (id==EFC_CMD_HW_CLOCK_INTERNAL)
         return true;
 
-    // the polled values tell thether each clock source is detected or not
+    // the polled values tell whether each clock source is detected or not
     if (!updatePolledValues()) {
         debugError("Could not update polled values\n");
         return false;
