@@ -44,8 +44,6 @@
 
 #define ECHO_FLASH_ERASE_TIMEOUT_MILLISECS 2000
 #define FIREWORKS_MIN_FIRMWARE_VERSION 0x04080000
-#define AVC_MAX_TRIAL		2
-#define AVC_RETRY_INTERVAL	200000
 
 #include <sstream>
 #include <unistd.h>
@@ -209,8 +207,6 @@ Device::createDevice(DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
 
 bool Device::doEfcOverAVC(EfcCmd &c)
 {
-    int trial;
-
     EfcOverAVCCmd cmd( get1394Service() );
     cmd.setCommandType( AVC::AVCCommand::eCT_Control );
     cmd.setNodeId( getConfigRom().getNodeId() );
@@ -220,16 +216,10 @@ bool Device::doEfcOverAVC(EfcCmd &c)
     cmd.setVerbose( getDebugLevel() );
     cmd.m_cmd = &c;
 
-    for (trial = 0; trial < AVC_MAX_TRIAL; trial++) {
-        if (cmd.fire())
-            break;
-        Util::SystemTimeSource::SleepUsecRelative(AVC_RETRY_INTERVAL);
-    }
-
-    if (trial == AVC_MAX_TRIAL) {
-            debugError( "EfcOverAVCCmd command failed\n" );
-            c.showEfcCmd();
-            return false;
+    if (!cmd.fire()) {
+        debugError( "EfcOverAVCCmd command failed\n" );
+        c.showEfcCmd();
+        return false;
     }
 
     if ( cmd.getResponse() != AVC::AVCCommand::eR_Accepted) {
