@@ -43,7 +43,7 @@
 
 #if DEBUG_USE_MESSAGE_BUFFER
 #else
-    #ifdef DEBUG
+    #ifdef DEBUG_MESSAGES
         #warning Printing debug info without ringbuffer, not RT-safe!
     #else
         #error Printing debug info without ringbuffer, not RT-safe (not allowed for non-debug builds)!
