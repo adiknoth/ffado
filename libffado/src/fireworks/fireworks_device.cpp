@@ -177,10 +177,6 @@ Device::discoverUsingEFC()
         return false;
     }
 
-    // save the EFC version, since some stuff
-    // depends on this
-    m_efc_version = m_HwInfo.m_header.version;
-
     m_current_clock = -1;
 
     m_efc_discovery_done = true;

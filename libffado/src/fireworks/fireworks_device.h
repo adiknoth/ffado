@@ -146,8 +146,6 @@ private:
      */
     int m_current_clock;
 
-    uint32_t            m_efc_version;
-
     EfcHardwareInfoCmd  m_HwInfo;
 
     bool updatePolledValues();
