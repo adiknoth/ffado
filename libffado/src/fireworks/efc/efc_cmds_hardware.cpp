@@ -213,14 +213,19 @@ EfcPolledValuesCmd::deserialize( Util::Cmd::IISDeserialize& de )
     if (!result)
         return result;
 
+    /*
+     * NOTE:
+     * Firmware version 5.0 or later for AudioFire12 returns invalid values to
+     * contents of response against this command. Currently apply a workaround
+     * to compensate the value because this value is not re-used again.
+     */
     nb_meters = m_nb_output_meters + m_nb_input_meters;
     if (nb_meters > POLLED_MAX_NB_METERS) {
         m_nb_output_meters = 0;
         m_nb_input_meters = 0;
-        return false;
+        nb_meters = 0;
     }
 
-    result = true;
     for (i = 0; i < nb_meters; i++)
         EFC_DESERIALIZE_AND_SWAP(de, (uint32_t *)&m_meters[i], result);
     
