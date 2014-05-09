@@ -213,6 +213,7 @@ bool Device::writeReg(uint64_t offset, uint32_t data)
     /* cache because it's 'write-only' */
     m_regs[offset / 4] = data;
 
+    trials = 0;
     do {
         if (get1394Service().write_quadlet(nodeId, addr, quad))
             break;
@@ -238,6 +239,7 @@ bool Device::writeBlk(uint64_t offset, unsigned int size, uint32_t *data)
         data[i] = CondSwapToBus32(data[i]);
     }
 
+    trials = 0;
     do {
         if (get1394Service().write(nodeId, addr, length, (fb_quadlet_t*)data))
             break;
