@@ -22,8 +22,6 @@
  *
  */
 
-#warning RME support is reasonably functional but some bugs undoubtedly remain.  Please report experiences on the ffado-devel mailing list.
-
 #include "config.h"
 
 #include "rme/rme_avdevice.h"
