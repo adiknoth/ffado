@@ -470,9 +470,7 @@ RmeTransmitStreamProcessor::generateSilentPacketHeader (
     *length = 0;
 
     uint64_t presentation_time;
-    unsigned int presentation_cycle;
-    int cycles_until_presentation;
-            
+
     uint64_t transmit_at_time;
     unsigned int transmit_at_cycle;
     int cycles_until_transmit;
@@ -487,9 +485,10 @@ RmeTransmitStreamProcessor::generateSilentPacketHeader (
     presentation_time = addTicks(m_last_timestamp, (unsigned int)lrintf(n_events * ticks_per_frame));
 
     transmit_at_time = substractTicks(presentation_time, RME_TRANSMIT_TRANSFER_DELAY);
-    presentation_cycle = (unsigned int)(TICKS_TO_CYCLES(presentation_time));
     transmit_at_cycle = (unsigned int)(TICKS_TO_CYCLES(transmit_at_time));
-    cycles_until_presentation = diffCycles(presentation_cycle, cycle);
+    // Not currently used for silent packets:
+    //  unsigned int presentation_cycle = (unsigned int)(TICKS_TO_CYCLES(presentation_time));
+    //  int cycles_until_presentation = diffCycles(presentation_cycle, cycle);
     cycles_until_transmit = diffCycles(transmit_at_cycle, cycle);
 
     if (cycles_until_transmit < 0)
