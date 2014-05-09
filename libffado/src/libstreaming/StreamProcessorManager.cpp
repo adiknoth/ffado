@@ -633,7 +633,7 @@ bool StreamProcessorManager::syncStartAll() {
         uint64_t ticks_at_period_margin = ticks_at_period + m_sync_delay;
         uint64_t pred_system_time_at_xfer = m_SyncSource->getParent().get1394Service().getSystemTimeForCycleTimerTicks(ticks_at_period_margin);
     
-        #ifdef DEBUG
+        #if DEBUG_EXTREME_ENABLE
         int64_t now = Util::SystemTimeSource::getCurrentTime();
         debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "CTR  pred: %"PRId64", syncdelay: %"PRId64", diff: %"PRId64"\n", ticks_at_period, ticks_at_period_margin, ticks_at_period_margin-ticks_at_period );
         debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "PREWAIT  pred: %"PRId64", now: %"PRId64", wait: %"PRId64"\n", pred_system_time_at_xfer, now, pred_system_time_at_xfer-now );
@@ -642,7 +642,7 @@ bool StreamProcessorManager::syncStartAll() {
         // wait until it's time to transfer
         Util::SystemTimeSource::SleepUsecAbsolute(pred_system_time_at_xfer);
     
-        #ifdef DEBUG
+        #if DEBUG_EXTREME_ENABLE
         now = Util::SystemTimeSource::getCurrentTime();
         debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "POSTWAIT pred: %"PRId64", now: %"PRId64", excess: %"PRId64"\n", pred_system_time_at_xfer, now, now-pred_system_time_at_xfer );
         #endif
@@ -1227,7 +1227,7 @@ bool StreamProcessorManager::waitForPeriod() {
     uint64_t ticks_at_period_margin = ticks_at_period + m_sync_delay;
     uint64_t pred_system_time_at_xfer = m_SyncSource->getParent().get1394Service().getSystemTimeForCycleTimerTicks(ticks_at_period_margin);
 
-    #ifdef DEBUG
+    #if DEBUG_EXTREME_ENABLE
     int64_t now = Util::SystemTimeSource::getCurrentTime();
     debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "CTR  pred: %"PRId64", syncdelay: %"PRId64", diff: %"PRId64"\n", ticks_at_period, ticks_at_period_margin, ticks_at_period_margin-ticks_at_period );
     debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "PREWAIT  pred: %"PRId64", now: %"PRId64", wait: %"PRId64"\n", pred_system_time_at_xfer, now, pred_system_time_at_xfer-now );
@@ -1236,13 +1236,13 @@ bool StreamProcessorManager::waitForPeriod() {
     // wait until it's time to transfer
     Util::SystemTimeSource::SleepUsecAbsolute(pred_system_time_at_xfer);
 
-    #ifdef DEBUG
+    #if DEBUG_EXTREME_ENABLE
     now = Util::SystemTimeSource::getCurrentTime();
     debugOutputExtreme(DEBUG_LEVEL_VERBOSE, "POSTWAIT pred: %"PRId64", now: %"PRId64", excess: %"PRId64"\n", pred_system_time_at_xfer, now, now-pred_system_time_at_xfer );
     #endif
 
     // the period should be ready now
-    #ifdef DEBUG
+    #if DEBUG_EXTREME_ENABLE
     int rcv_fills[10];
     int xmt_fills[10];
     int i;
@@ -1378,7 +1378,7 @@ bool StreamProcessorManager::waitForPeriod() {
                         "transfer period %d at %"PRIu64" ticks...\n",
                         m_nbperiods, m_time_of_transfer);
 
-    #ifdef DEBUG
+    #if DEBUG_EXTREME_ENABLE
     int rcv_bf=0, xmt_bf=0;
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
         it != m_ReceiveProcessors.end();
@@ -1393,7 +1393,9 @@ bool StreamProcessorManager::waitForPeriod() {
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, 
                         "XF at %011"PRIu64" ticks, RBF=%d, XBF=%d, SUM=%d...\n",
                         m_time_of_transfer, rcv_bf, xmt_bf, rcv_bf+xmt_bf);
+    #endif
 
+    #ifdef DEBUG
     // check if xruns occurred on the Iso side.
     // also check if xruns will occur should we transfer() now
     for ( StreamProcessorVectorIterator it = m_ReceiveProcessors.begin();
