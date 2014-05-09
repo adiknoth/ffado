@@ -269,7 +269,6 @@ bool
 CycleTimerHelper::initDLL() {
     uint32_t cycle_timer;
     uint64_t local_time;
-    uint64_t cycle_timer_ticks;
 
     double bw_rel = m_dll_coeff_b / (DLL_SQRT2 * DLL_2PI);
     double bw_abs = bw_rel / (m_usecs_per_update / 1e6);
@@ -288,7 +287,9 @@ CycleTimerHelper::initDLL() {
         debugError("Could not read cycle timer register\n");
         return false;
     }
-    cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
+    #if DEBUG_EXTREME_ENABLE
+    uint64_t cycle_timer_ticks = CYCLE_TIMER_TO_TICKS(cycle_timer);
+    #endif
 
     debugOutputExtreme( DEBUG_LEVEL_VERY_VERBOSE, " read : CTR: %11u, local: %17"PRIu64"\n",
                         cycle_timer, local_time);
