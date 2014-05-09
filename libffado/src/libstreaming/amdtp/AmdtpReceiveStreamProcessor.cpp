@@ -208,7 +208,7 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
     // frames, meaning that we might receive
     // this packet x*syt_interval*ticks_per_frame
     // later than expected (the real receive time)
-    #ifdef DEBUG
+    #if DEBUG_EXTREME_ENABLE
     static int64_t last_t = Util::SystemTimeSource::getCurrentTime();
     int64_t now_t = Util::SystemTimeSource::getCurrentTime();
     if(isRunning()) {
@@ -220,7 +220,9 @@ AmdtpReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int
                            m_last_timestamp, now_t-last_t, m_data_buffer->getBufferFill());*/
     }
     last_t = now_t;
+    #endif
 
+    #ifdef DEBUG
     // check whether nevents is a multiple of 8.
     if (nevents & 0x7) {
         debugError("Invalid nevents value for AMDTP (%u)\n", nevents);
