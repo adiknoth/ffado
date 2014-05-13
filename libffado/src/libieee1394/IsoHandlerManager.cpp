@@ -1310,6 +1310,7 @@ IsoHandlerManager::IsoHandler::IsoHandler(IsoHandlerManager& manager, enum EHand
    , m_skipped( 0 )
    , m_min_ahead( 7999 )
 #endif
+   , m_deferred_cycles( 0 )
 {
     pthread_mutex_init(&m_disable_lock, NULL);
 }
@@ -1684,6 +1685,9 @@ IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *leng
     }
     #endif
 
+    if (m_last_cycle == -1)
+        m_deferred_cycles = 0;
+
     // keep track of dropped cycles
     int dropped_cycles = 0;
     if (m_last_cycle != cycle && m_last_cycle != -1) {
@@ -1691,6 +1695,12 @@ IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *leng
         // correct for skipped packets
         // since those are not dropped, but only delayed
         dropped_cycles -= skipped;
+
+        // Correct for cycles previously seen but deferred
+        if (dropped_cycles == 0)
+            m_deferred_cycles = 0;
+        else
+            dropped_cycles -= m_deferred_cycles;
 
         #ifdef DEBUG
         if(skipped) {
@@ -1711,17 +1721,13 @@ IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *leng
         }
         #endif
     }
-    if (cycle >= 0) {
-        m_last_cycle = cycle;
-        
-        #ifdef DEBUG
-/*        int ahead = diffCycles(cycle, now_cycles);
-        if (ahead < m_min_ahead) m_min_ahead = ahead;
-*/
-        #endif
-    }
 
     #ifdef DEBUG
+//    if (cycle >= 0) {
+//        int ahead = diffCycles(cycle, now_cycles);
+//        if (ahead < m_min_ahead) m_min_ahead = ahead;
+//    }
+
     if (dropped > 0) {
         debugOutput(DEBUG_LEVEL_VERBOSE,
                     "(%p) OHCI issue on cycle %u (dropped_cycles=%d, last_cycle=%u, dropped=%d, skipped: %d)\n",
@@ -1738,8 +1744,17 @@ IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *leng
                          this, getTypeString(), *length, m_max_packet_size);
         }
         #endif
-            return retval;
+        if (cycle >= 0) {
+            if (retval!=RAW1394_ISO_DEFER && retval!=RAW1394_ISO_AGAIN) {
+                m_last_cycle = cycle;
+            } else
+                m_deferred_cycles++;
+        }
+        return retval;
     }
+
+    if (cycle >= 0)
+        m_last_cycle = cycle;
 
     *tag = 0;
     *sy = 0;

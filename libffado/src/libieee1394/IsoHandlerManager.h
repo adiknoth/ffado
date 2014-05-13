@@ -233,6 +233,7 @@ class IsoHandlerManager
             unsigned int    m_skipped;
             int             m_min_ahead;
 #endif
+            unsigned int m_deferred_cycles;
 
         protected:
             DECLARE_DEBUG_MODULE;
