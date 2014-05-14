@@ -239,7 +239,7 @@ bool Device::writeBlk(uint64_t offset, unsigned int size, uint32_t *data)
         data[i] = CondSwapToBus32(data[i]);
     }
 
-    trials = 0;
+    trials = 0;
     do {
         if (get1394Service().write(nodeId, addr, length, (fb_quadlet_t*)data))
             break;
