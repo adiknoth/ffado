@@ -135,13 +135,13 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
                                                 unsigned char tag, unsigned char sy,
                                                 uint32_t pkt_ctr)
 {
-  int64_t pkt_timestamp;
+    int64_t pkt_timestamp;
 
-// For testing
-static signed int rep = 0;
-if (rep == 0) {
-  debugOutput(DEBUG_LEVEL_VERBOSE, "first data packet header, len=%d\n", length);
-}
+    // To assist with debugging
+    static signed int rep = 0;
+    if (rep == 0) {
+      debugOutput(DEBUG_LEVEL_VERBOSE, "first data packet header, len=%d\n", length);
+    }
 
     if (length > 0) {
         // The iso data blocks from the RMEs comprise 24-bit audio
@@ -150,13 +150,6 @@ if (rep == 0) {
         // The number of samples for each channel present in a packet
         // varies: 7 for 1x rates, 15 for 2x rates and 25 for 4x rates.
         // quadlet_t *quadlet = (quadlet_t *)data;
-
-        // Don't even attempt to process a packet if it isn't what we expect
-        // from an RME.  For now the only condition seems to be a tag of 0
-        // but this is still to be confirmed under all conditions.
-//        if (tag!=1) {
-//            return eCRV_Invalid;
-//        }
 
         // Timestamps are not transmitted explicitly by the RME interfaces
         // so we have to fake it in order to fit in with the rest of the
@@ -188,6 +181,8 @@ if (rep == 0) {
 
         m_last_timestamp = pkt_timestamp;
 
+// Retain this as it might be helpful for future development.
+//
 //if (rep == 0) {
 //  debugOutput(DEBUG_LEVEL_VERBOSE, "  timestamp: %lld, ct=%08x (%03ld,%04ld,%04ld)\n", m_last_timestamp, pkt_ctr,
 //    CYCLE_TIMER_GET_SECS(pkt_ctr), CYCLE_TIMER_GET_CYCLES(pkt_ctr), CYCLE_TIMER_GET_OFFSET(pkt_ctr));
@@ -200,7 +195,8 @@ if (rep == 0) {
 //  n_hw_tx_buffer_samples = adata[7] & 0xff;
 //  debugOutput(DEBUG_LEVEL_VERBOSE, "  hw tx: 0x%02x\n", n_hw_tx_buffer_samples);
 //}
-rep=1;
+
+        rep=1;
         return eCRV_OK;
     } else {
         return eCRV_Invalid;
@@ -223,8 +219,8 @@ RmeReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int l
     // m_event_size should never be zero
     unsigned int n_events = length / m_event_size;
 
-// for testing
-static signed int rep = 0;
+    // To assist with debugging
+    static signed int rep = 0;
 
     // we have to keep in mind that there are also
     // some packets buffered by the ISO layer,
@@ -240,11 +236,12 @@ static signed int rep = 0;
     }
     #endif
 
-// For testing
-if (rep == 0) {
-  debugOutput(DEBUG_LEVEL_VERBOSE, "data packet data, length=%d, ev_size=%d, n_events=%d\n", length, m_event_size, n_events);
-  rep = 1;
-}
+    // For debugging
+    if (rep == 0) {
+        debugOutput(DEBUG_LEVEL_VERBOSE, "data packet data, length=%d, ev_size=%d, n_events=%d\n", length, m_event_size, n_events);
+        rep = 1;
+    }
+
     if(m_data_buffer->writeFrames(n_events, (char *)data, m_last_timestamp)) {
         return eCRV_OK;
     } else {
@@ -372,6 +369,11 @@ RmeReceiveStreamProcessor::decodeRmeMidiEventsToPort(
     // Zero the buffer
     memset(buffer, 0, nevents*sizeof(*buffer));
 
+    // This code comes directly from the MOTU driver and is retained for
+    // reference.  In the long run it will not be used because the RME
+    // does not use the iso stream to send MIDI data.  Instead an ARM
+    // is needed.
+    //
     // Get MIDI bytes if present in any frames within the packet.  RME MIDI
     // data is sent as part of a 3-byte sequence starting at the port's
     // position.  Some RMEs (eg: the 828MkII) send more than one MIDI byte
@@ -389,7 +391,7 @@ RmeReceiveStreamProcessor::decodeRmeMidiEventsToPort(
 
     while (j < nevents) {
         /* Most events don't have MIDI data bytes */
-//        if (unlikely((*src & RME_KEY_MASK_MIDI) == RME_KEY_MASK_MIDI)) {
+        // if (unlikely((*src & RME_KEY_MASK_MIDI) == RME_KEY_MASK_MIDI)) {
         if (0) {
             // A MIDI byte is in *(src+2).  Bit 24 is used to flag MIDI data
             // as present once the data makes it to the output buffer.

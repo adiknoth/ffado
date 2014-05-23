@@ -292,9 +292,6 @@ enum StreamProcessor::eChildReturnValue
 RmeTransmitStreamProcessor::generatePacketData (
     unsigned char *data, unsigned int *length)
 {
-    // Size of a single data frame in quadlets
-//    unsigned dbs = m_event_size / 4;
-
     // Flag the successful start of streaming so generateEmptyPacketHeader()
     // knows that true empty packets are now required.
     streaming_has_run=1;
@@ -305,37 +302,18 @@ RmeTransmitStreamProcessor::generatePacketData (
     signed n_events = getNominalFramesPerPacket();
 
     if (m_data_buffer->readFrames(n_events, (char *)(data))) {
-//        float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
 
-//        for (int i=0; i < n_events; i++, quadlet += dbs) {
-//            int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
-//            *quadlet = CondSwapToBus32(fullTicksToSph(ts_frame));
-//        }
-        // FIXME: temporary
-//        if (*length > 0) {
-//            memset(data, *length, 0);
-//        }
-//
-// 1 kHz tone into ch7 (phones L) for testing
-{
-static signed int dpy = 0;
-float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
-  signed int i, int_tpf = lrintf(ticks_per_frame);
-//signed int j;
-//  quadlet_t *sample = (quadlet_t *)data;
-  quadlet_t *sample = (quadlet_t *)data + 6;
-if (dpy==0) {
-  debugOutput(DEBUG_LEVEL_NORMAL, "ticks per frame: %d %d %d (len=%d)\n", int_tpf, n_events, m_event_size, *length);
-}
-if (++dpy == 8000)
-dpy=0;
+        // 1 kHz tone into ch7 (phones L) for testing, but only if a debug
+        // level is set.
 #if TESTTONE
         if (getDebugLevel() > 0) {
+            float ticks_per_frame = m_Parent.getDeviceManager().getStreamProcessorManager().getSyncSource().getTicksPerFrame();
+            signed int int_tpf = lrintf(ticks_per_frame);
+            quadlet_t *sample = (quadlet_t *)data + 6;
+            signed int i;
             for (i=0; i<n_events; i++, sample+=m_event_size/4) {
                 static signed int a_cx = 0;
                 signed int val = lrintf(0x7fffff*sin((1000.0*2.0*M_PI/24576000.0)*a_cx));
-//for (j=0; j<18;j++)
-//*(sample+j) = val << 8;
                 *sample = val << 8;
                 if ((a_cx+=int_tpf) >= 24576000) {
                     a_cx -= 24576000;
@@ -343,7 +321,6 @@ dpy=0;
             }
         }
 #endif
-}
 
         return eCRV_OK;
     }
