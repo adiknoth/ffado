@@ -322,17 +322,10 @@ MotuTransmitStreamProcessor::generatePacketData (
     }
 #endif
 
-//fprintf(stderr,"tx: %d/%d\n",
-//  TICKS_TO_CYCLES(fullTicksToSph(m_last_timestamp)),
-//  TICKS_TO_OFFSET(fullTicksToSph(m_last_timestamp)));
         // Set up each frames's SPH.
-//fprintf(stderr,"tpf=%f\n", ticks_per_frame);
         for (int i=0; i < n_events; i++, quadlet += dbs) {
             int64_t ts_frame = addTicks(m_last_timestamp, (unsigned int)lrintf(i * ticks_per_frame));
             *quadlet = CondSwapToBus32(fullTicksToSph(ts_frame));
-//fprintf(stderr,"tx: %d/%d\n",
-//  CYCLE_TIMER_GET_CYCLES(fullTicksToSph(ts_frame)),
-//  CYCLE_TIMER_GET_OFFSET(fullTicksToSph(ts_frame)));
         }
 
         /* Zero any pad bytes which, due to their number not being a multiple
@@ -348,25 +341,29 @@ MotuTransmitStreamProcessor::generatePacketData (
             }
         }
 
-{
-static signed int pktcx = 0;
-unsigned int i;
-  if (pktcx==0 && getDebugLevel()>0 ) {
-    fprintf(stderr, "Packet to MOTU: length=%d, eventsize=%d, n_events=%d\n", *length, m_event_size, n_events);
-    for (i=0; i<*length; i++) {
-      if ((i&0x000f) == 0)
-        fprintf(stderr, "%08x  ", i);
-      fprintf(stderr, "%02x ", data[i]);
-      if ((i&0x000f) == 7)
-        fprintf(stderr, "- ");
-      if ((i&0x000f) == 0xf)
-        fprintf(stderr, "\n");
-    }
-    fprintf(stderr, "\n");
-  }
-  if (++pktcx == 8000)
-    pktcx=0;
-}
+        /* To assist in verifying packet contents being sent to the
+         * interface, periodically print the data being sent when a debug
+         * mode is active.
+         */
+        if (getDebugLevel() > 0) {
+            static signed int pktcx = 0;
+            unsigned int i;
+            if (pktcx == 0) {
+                fprintf(stderr, "Packet to MOTU: length=%d, eventsize=%d, n_events=%d\n", *length, m_event_size, n_events);
+                for (i=0; i<*length; i++) {
+                    if ((i&0x000f) == 0)
+                        fprintf(stderr, "%08x  ", i);
+                    fprintf(stderr, "%02x ", data[i]);
+                    if ((i&0x000f) == 7)
+                        fprintf(stderr, "- ");
+                    if ((i&0x000f) == 0xf)
+                        fprintf(stderr, "\n");
+                }
+                fprintf(stderr, "\n");
+            }
+            if (++pktcx == 8000)
+                pktcx=0;
+        }
 
         return eCRV_OK;
     }

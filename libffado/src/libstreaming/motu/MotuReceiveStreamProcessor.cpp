@@ -117,11 +117,6 @@ MotuReceiveStreamProcessor::getNominalFramesPerPacket() {
 bool
 MotuReceiveStreamProcessor::prepareChild() {
     debugOutput( DEBUG_LEVEL_VERBOSE, "Preparing (%p)...\n", this);
-
-    // prepare the framerate estimate
-    // FIXME: not needed anymore?
-    //m_ticks_per_frame = (TICKS_PER_SECOND*1.0) / ((float)m_Parent.getDeviceManager().getStreamProcessorManager().getNominalRate());
-
     return true;
 }
 
@@ -179,11 +174,12 @@ static int pktcx = 0;
         uint32_t last_sph = CondSwapFromBus32(*(quadlet_t *)(data+8+(n_events-1)*m_event_size));
         m_last_timestamp = sphRecvToFullTicks(last_sph, m_Parent.get1394Service().getCycleTimer());
 
-        // For debugging only - to be removed once Ultralite mk3 issues have been 
-        // resolved.  JMW, 31 May 2010.
+        // To assist in debugging the packet format from new devices, periodically
+        // dump a packet when debug is active.  Originally written to debug the
+        // Ultralite mk3 it has been retained since it could prove useful in
+        // future.
         if ((!len_shown || pktcx==0) && getDebugLevel()>0 ) {
             unsigned int i;
-//            debugOutput(DEBUG_LEVEL_VERBOSE,"Packet from MOTU: length=%d, eventsize=%d, n_events=%d\n", length, m_event_size, n_events);
             fprintf(stderr, "Packet from MOTU: length=%d, eventsize=%d, n_events=%d\n", length, m_event_size, n_events);
             for (i=0; i<length; i++) {
               if ((i&0x000f) == 0)
@@ -196,11 +192,14 @@ static int pktcx = 0;
             }
             fprintf(stderr, "\n");
         }
-// For testing 828mk1, dump incoming packet roughly once a second
-if (++pktcx == 8000)
-  pktcx=0;
+        // Print packet contents once per second
+        if (++pktcx == 8000)
+            pktcx=0;
 
+        // For now suppress packet printing after the first packet
         len_shown = 1;
+
+        // If debug is active print the first 20 packet timestamps.
         if (ts_print_cx<20 && getDebugLevel()>0 ) {
           debugOutput(DEBUG_LEVEL_VERBOSE,"last ts=0x%08x\n", last_sph);
           ts_print_cx++;
