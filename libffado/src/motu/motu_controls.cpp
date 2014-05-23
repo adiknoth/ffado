@@ -112,8 +112,6 @@ MotuBinarySwitch::getValue()
         return 0;
     }
 
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
     return (val & m_value_mask) != 0;
 }
@@ -162,8 +160,6 @@ ChannelFader::getValue()
         return 0;
     }
 
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
     return val & 0xff;
 }
@@ -212,8 +208,6 @@ ChannelPan::getValue()
         return 0;
     }
 
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
     return ((val >> 8) & 0xff) - 0x40;
 }
@@ -326,8 +320,6 @@ double ChannelFaderMatrixMixer::getValue(const int row, const int col)
         debugOutput(DEBUG_LEVEL_VERBOSE, "ignoring control marked as non-existent\n");
         return 0;
     }
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(reg) & 0xff;
 
     debugOutput(DEBUG_LEVEL_VERBOSE, "ChannelFader getValue for row %d col %d = %u\n",
@@ -381,8 +373,6 @@ double ChannelPanMatrixMixer::getValue(const int row, const int col)
         return 0;
     }
 
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(reg);
     val = ((val >> 8) & 0xff) - 0x40;
 
@@ -454,8 +444,6 @@ double ChannelBinSwMatrixMixer::getValue(const int row, const int col)
         return 0;
     }
 
-    // FIXME: we could just read the appropriate mixer status field from the 
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(reg);
     val = (val & m_value_mask) != 0;
 
@@ -509,8 +497,6 @@ MixFader::getValue()
         return 0;
     }
 
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
     return val & 0xff;
 }
@@ -563,8 +549,6 @@ MixMute::getValue()
         return 0;
     }
 
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
     return (val & 0x00001000) != 0;
 }
@@ -621,8 +605,6 @@ MixDest::getValue()
         debugOutput(DEBUG_LEVEL_WARNING, "use of MOTU_CTRL_NONE in non-matrix control\n");
         return true;
     }
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(m_register);
     return (val >> 8) & 0x0f;
 }
@@ -664,8 +646,6 @@ PhonesSrc::getValue()
     unsigned int val;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for phones destination\n");
 
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     val = m_parent.ReadRegister(MOTU_REG_ROUTE_PORT_CONF);
     return val & 0x0f;
 }
@@ -705,8 +685,6 @@ OpticalMode::getValue()
     unsigned int dir, omode_a;
     debugOutput(DEBUG_LEVEL_VERBOSE, "getValue for optical mode %d\n", m_register);
 
-    // FIXME: we could just read the appropriate mixer status field from the
-    // receive stream processor once we work out an efficient way to do this.
     dir = (m_register==MOTU_CTRL_DIR_IN)?MOTU_DIR_IN:MOTU_DIR_OUT;
     m_parent.getOpticalMode(dir, &omode_a, NULL);
     switch (omode_a) {
