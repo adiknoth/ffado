@@ -1607,12 +1607,20 @@ enum raw1394_iso_disposition IsoHandlerManager::IsoHandler::putPacket(
     return RAW1394_ISO_OK;
 }
 
+int cbuf[0x100], cbuf_i=0;
+int rbuf[0x100];
+
 enum raw1394_iso_disposition
 IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *length,
                       unsigned char *tag, unsigned char *sy,
                       int cycle, unsigned int dropped, unsigned int skipped) {
 
     uint32_t pkt_ctr;
+
+int local_cbuf_i = cbuf_i;
+cbuf[cbuf_i] = cycle;
+cbuf_i = (cbuf_i+1) & 0xff;
+
     if (cycle < 0) {
         // mark invalid
         pkt_ctr = 0xFFFFFFFF;
@@ -1712,6 +1720,12 @@ IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *leng
         if (dropped_cycles < 0) { 
             debugWarning("(%p) dropped < 1 (%d), cycle: %d, last_cycle: %d, dropped: %d, skipped: %d\n", 
                          this, dropped_cycles, cycle, m_last_cycle, dropped, skipped);
+debugOutput(DEBUG_LEVEL_VERBOSE, "m_deferred_cycles=%d\n", m_deferred_cycles);
+signed int ii = cbuf_i;
+do {
+  debugOutput(DEBUG_LEVEL_VERBOSE, "  cycle %d, return %d\n", cbuf[ii], rbuf[ii]);
+  ii = (ii+1)&0xff;
+} while (ii != cbuf_i);
         }
         if (dropped_cycles > 0) {
             debugOutput(DEBUG_LEVEL_VERBOSE,
@@ -1750,9 +1764,11 @@ IsoHandlerManager::IsoHandler::getPacket(unsigned char *data, unsigned int *leng
             } else
                 m_deferred_cycles++;
         }
+rbuf[local_cbuf_i] = retval;
         return retval;
     }
 
+rbuf[local_cbuf_i] = 0x12345678;
     if (cycle >= 0)
         m_last_cycle = cycle;
 
