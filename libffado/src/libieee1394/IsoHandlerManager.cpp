@@ -1021,8 +1021,12 @@ IsoHandlerManager::dumpInfoForStream(Streaming::StreamProcessor *stream)
 {
     IsoHandler *h = getHandlerForStream(stream);
     if (h) {
+        #ifdef DEBUG
         debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packets, Dropped, Skipped : %d, %d, %d\n",
                             h->m_packets, h->m_dropped, h->m_skipped);
+        #else
+        debugOutputShort( DEBUG_LEVEL_NORMAL, "  Packets : %d\n", h->m_packets);
+        #endif
     } else {
         debugError("No handler for stream %p??\n", stream);
     }

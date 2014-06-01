@@ -38,12 +38,11 @@ int main() {
      *
      */
 
-    #ifdef DEBUG
+    #ifdef DEBUG_MESSAGES
     uint32_t now_ctr = 0x140001DA;
     uint64_t now = CYCLE_TIMER_TO_TICKS(0x140001DA);
     unsigned int cycle = 7968;
     uint16_t syt = 0x583B;
-    #endif
     
     debugOutput(DEBUG_LEVEL_VERBOSE,"NOW_CTR          : %08X (%03us %04uc %04ut)\n",
                           now_ctr,
@@ -63,16 +62,16 @@ int main() {
                           (unsigned int)CYCLE_TIMER_GET_OFFSET(syt));
     debugOutput(DEBUG_LEVEL_VERBOSE,"CYCLE            : %uc\n",
                           cycle);
-    #ifdef DEBUG
     uint64_t calc_ts = sytRecvToFullTicks(syt, cycle, now_ctr);
-    #endif
 
     debugOutput(DEBUG_LEVEL_VERBOSE,"CALC_TS          : %011"PRIu64" (%03us %04uc %04ut)\n",
                           calc_ts,
                           (unsigned int)TICKS_TO_SECS(calc_ts),
                           (unsigned int)TICKS_TO_CYCLES(calc_ts),
                           (unsigned int)TICKS_TO_OFFSET(calc_ts));
-
+    #else
+    printf("DEBUG_MESSAGES not enabled for build.  This program won't show anything without it.\n");
+    #endif
     
 // BL: 1211722982: Debug (IsoHandler.cpp)[ 420] putPacket: received packet: length=168, channel=0, cycle=7968
 // BL: 1211723031: Debug (cycletimer.h)[ 308] sytRecvToFullTicks: SYT=583B CY=7968 CTR=140001DA
