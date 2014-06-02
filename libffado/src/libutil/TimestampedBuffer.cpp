@@ -1148,7 +1148,9 @@ void TimestampedBuffer::dumpInfo() {
                                           this, m_framecounter, getBufferFill());
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   Timestamps           : head: "TIMESTAMP_FORMAT_SPEC", Tail: "TIMESTAMP_FORMAT_SPEC", Next tail: "TIMESTAMP_FORMAT_SPEC"\n",
                                           ts_head, m_buffer_tail_timestamp, m_buffer_next_tail_timestamp);
+#ifdef DEBUG
     debugOutputShort( DEBUG_LEVEL_NORMAL, "    Head - Tail         : "TIMESTAMP_FORMAT_SPEC" (%f frames)\n", diff, diff/m_dll_e2*m_update_period);
+#endif
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   DLL Rate             : %f (%f)\n", m_dll_e2, m_dll_e2/m_update_period);
     debugOutputShort( DEBUG_LEVEL_NORMAL, "   DLL Bandwidth        : %10e 1/ticks (%f Hz)\n", getBandwidth(), getBandwidth() * TICKS_PER_SECOND);
 }
