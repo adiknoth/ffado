@@ -179,8 +179,8 @@ EfcIsocMapIOConfigCmd::EfcIsocMapIOConfigCmd(void)
     m_category_id = EFC_CAT_IO_CONFIG;
     m_reg = eCR_IsocMap;
     m_type = eCT_Get;
-    memset(m_playmap, EFC_MAX_ISOC_MAP_ENTRIES, 0);
-    memset(m_recmap, EFC_MAX_ISOC_MAP_ENTRIES, 0);
+    memset(m_playmap, 0, sizeof(m_playmap));
+    memset(m_recmap, 0, sizeof(m_recmap));
 }
 bool
 EfcIsocMapIOConfigCmd::serialize( Util::Cmd::IOSSerialize& se )
