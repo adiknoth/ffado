@@ -213,6 +213,17 @@ class MixerNode(QtGui.QAbstractSlider):
             del self.tmpvalue
             ev.accept()
 
+    # Wheel event is mainly for scrolling inside the mixer window
+    #   Additionnaly press Control key for wheel controling the values
+    def wheelEvent (self, ev):
+        if (ev.modifiers() & Qt.Qt.ControlModifier):
+            tmpvalue = self.value()
+            change = ev.delta()/8
+            self.setValue( tmpvalue + math.copysign(pow(abs(change), 2), change) )
+            ev.accept()
+        else:
+            ev.ignore()
+
     def paintEvent(self, ev):
         p = QtGui.QPainter(self)
         rect = self.rect()
