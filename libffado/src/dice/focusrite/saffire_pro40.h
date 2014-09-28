@@ -58,8 +58,11 @@
 #define SAFFIRE_PRO40_REGISTER_APP_LINEOUT_MONITOR_VOLUME 0x14
 #define SAFFIRE_PRO40_REGISTER_APP_LINEOUT_MONITOR_SWITCH 0x28
 
-// Switch control (per line/out mute, dim and mono)
+// Switch controls 
+// per line/out mute, dim and mono
 #define SAFFIRE_PRO40_REGISTER_APP_LINEOUT_SWITCH_CONTROL 0x3C
+// ADAT as SPDIF
+#define SAFFIRE_PRO40_REGISTER_APP_ADATSPDIF_SWITCH_CONTROL 0x5C
 
 // Message set
 //   The location of the message register and the values for each setting
@@ -95,6 +98,9 @@ public:
 private:
     class SaffirePro40EAP : public FocusriteEAP
     {
+    private:
+        // Adat as Spdif register state required to adapt the router settings
+        bool getADATSPDIF_state();
     public:
         SaffirePro40EAP(Dice::Device& dev) : FocusriteEAP(dev) {
         }
@@ -109,6 +115,22 @@ private:
         void setupDefaultRouterConfig_mid();
         void setupDefaultRouterConfig_high();
 
+        // Pro 40 requires a specific switch which updates the view of the routing
+        // (essentially the ADAT/SPDIF switch)
+        class Switch : public FocusriteEAP::Switch
+        {
+        public:
+          Switch(Dice::Focusrite::FocusriteEAP*, std::string, size_t, int, size_t, int);
+          bool select(bool);
+        private:
+          Dice::Focusrite::FocusriteEAP* m_eap;
+          std::string m_name;
+          size_t m_offset;
+          int m_activevalue;
+          size_t m_msgset_offset;
+          int m_msgset_value;
+        };
+
         class MonitorSection : public Control::Container
         {
         public:
@@ -116,6 +138,7 @@ private:
         private:
           Dice::Focusrite::FocusriteEAP* m_eap;
         };
+
     };
     Dice::EAP* createEAP();
 

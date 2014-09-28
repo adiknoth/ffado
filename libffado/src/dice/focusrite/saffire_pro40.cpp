@@ -30,23 +30,44 @@
 namespace Dice {
 namespace Focusrite {
 
+// ADAT as SPDIF state
+bool SaffirePro40::SaffirePro40EAP::getADATSPDIF_state() {
+    quadlet_t state_tmp;
+    bool adatspdif = false;
+
+    if (!readReg(Dice::EAP::eRT_Application, SAFFIRE_PRO40_REGISTER_APP_ADATSPDIF_SWITCH_CONTROL,
+                 &state_tmp)) {
+        debugWarning("Could not read ADAT/SPDIF switch register: assume ADAT \n");
+    }
+    else {
+        adatspdif = (state_tmp&FOCUSRITE_EAP_ADATSPDIF_SWITCH_VALUE)?true:false;
+    }
+    return adatspdif;
+}
+
 //
 // Under 48kHz Saffire pro 40 has
 //  - 8 analogic inputs (mic/line)
-//  - 8 ADAT inputs
+//  - 8 ADAT inputs or 2 optical SPDIF inputs
 //  - 2 SPDIF inputs
 //  - 20 ieee1394 inputs
 //  - 18 mixer inputs
 //
 //  - 10 analogic outputs
-//  - 8 ADAT outputs
+//  - 8 ADAT outputs or 0 optical SPDIF outputs
 //  - 2 SPDIF outputs
 //  - 20 ieee1394 outputs
 //  - 16 mixer outputs
 //
 void SaffirePro40::SaffirePro40EAP::setupSources_low() {
+    bool adatspdif = getADATSPDIF_state();
+
     addSource("SPDIF/In",  0,  2, eRS_AES, 1);
-    addSource("ADAT/In",   0,  8, eRS_ADAT, 1);
+    if (!adatspdif) {
+      addSource("ADAT/In",   0,  8, eRS_ADAT, 1);
+    } else {
+      addSource("SPDIF/In",  4,  2, eRS_AES, 3);
+    }
     addSource("Mic/Lin/Inst", 0,  2, eRS_InS1, 1);
     addSource("Mic/Lin/In", 2,  6, eRS_InS1, 3);
     addSource("Mixer/Out",  0, 16, eRS_Mixer, 1);
@@ -56,8 +77,12 @@ void SaffirePro40::SaffirePro40EAP::setupSources_low() {
 }
 
 void SaffirePro40::SaffirePro40EAP::setupDestinations_low() {
+    bool adatspdif = getADATSPDIF_state();
+
     addDestination("SPDIF/Out",  0,  2, eRD_AES, 1);
-    addDestination("ADAT/Out",   0,  8, eRD_ADAT, 1);
+    if (!adatspdif) {
+      addDestination("ADAT/Out",   0,  8, eRD_ADAT, 1);
+    }
     addDestination("Line/Out", 0,  2, eRD_InS0, 1);
     addDestination("Line/Out", 0,  8, eRD_InS1, 3);
     addDestination("Mixer/In",  0, 16, eRD_Mixer0, 1);
@@ -84,8 +109,14 @@ void SaffirePro40::SaffirePro40EAP::setupDestinations_low() {
 //  - 16 mixer outputs
 //
 void SaffirePro40::SaffirePro40EAP::setupSources_mid() {
+    bool adatspdif = getADATSPDIF_state();
+
     addSource("SPDIF/In",  0,  2, eRS_AES, 1);
-    addSource("ADAT/In",   0,  4, eRS_ADAT, 1);
+    if (!adatspdif) {
+      addSource("ADAT/In",   0,  4, eRS_ADAT, 1);
+    } else {
+      addSource("SPDIF/In",  4,  2, eRS_AES, 3);
+    }
     addSource("Mic/Lin/Inst", 0,  2, eRS_InS1, 1);
     addSource("Mic/Lin/In", 2,  6, eRS_InS1, 3);
     addSource("Mixer/Out",  0, 16, eRS_Mixer, 1);
@@ -94,8 +125,12 @@ void SaffirePro40::SaffirePro40EAP::setupSources_mid() {
 }
 
 void SaffirePro40::SaffirePro40EAP::setupDestinations_mid() {
+    bool adatspdif = getADATSPDIF_state();
+
     addDestination("SPDIF/Out",  0,  2, eRD_AES, 1);
-    addDestination("ADAT/Out",   0,  4, eRD_ADAT, 1);
+    if (!adatspdif) {
+      addDestination("ADAT/Out",   0,  4, eRD_ADAT, 1);
+    }
     addDestination("Line/Out", 0,  2, eRD_InS0, 1);
     addDestination("Line/Out", 0,  8, eRD_InS1, 3);
     addDestination("Mixer/In",  0, 16, eRD_Mixer0, 1);
@@ -239,6 +274,26 @@ SaffirePro40::SaffirePro40EAP::setupDefaultRouterConfig_high() {
 /**
  *  Pro 40 Monitor section
  */ 
+// Subclassed switch
+SaffirePro40::SaffirePro40EAP::Switch::Switch(Dice::Focusrite::FocusriteEAP* eap, std::string name,
+    size_t offset, int activevalue, size_t msgset_offset, int msgset_value)
+    : FocusriteEAP::Switch(eap, name, offset, activevalue, msgset_offset, msgset_value)
+    , m_eap(eap)
+    , m_name(name)
+    , m_offset(offset)
+    , m_activevalue(activevalue)
+    , m_msgset_offset(msgset_offset)
+    , m_msgset_value(msgset_value)
+{
+    debugOutput( DEBUG_LEVEL_VERBOSE, "Create Pro 40 Switch %s)\n", m_name.c_str());    
+}
+
+bool SaffirePro40::SaffirePro40EAP::Switch::select(bool n) {
+    bool is_selected = FocusriteEAP::Switch::select(n);
+    m_eap->update();
+    return is_selected;
+}
+
 SaffirePro40::SaffirePro40EAP::MonitorSection::MonitorSection(Dice::Focusrite::FocusriteEAP* eap, 
     std::string name) : Control::Container(eap, name)
     , m_eap(eap)
@@ -254,6 +309,17 @@ SaffirePro40::SaffirePro40EAP::MonitorSection::MonitorSection(Dice::Focusrite::F
                                  SAFFIRE_PRO40_MESSAGE_SET_GLOBAL_DIM_MUTE_SWITCH);
     grp_globalmute->addElement(mute);
 
+    // ADAT as optical SPDIF switch control
+    Control::Container* grp_adatspdif = new Control::Container(m_eap, "AdatSpdif");
+    addElement(grp_adatspdif);
+    SaffirePro40::SaffirePro40EAP::Switch* adatspdif =
+        new SaffirePro40::SaffirePro40EAP::Switch(
+                                 m_eap, "State",
+                                 SAFFIRE_PRO40_REGISTER_APP_ADATSPDIF_SWITCH_CONTROL,
+                                 FOCUSRITE_EAP_ADATSPDIF_SWITCH_VALUE,
+                                 SAFFIRE_PRO40_REGISTER_APP_MESSAGE_SET,
+                                 SAFFIRE_PRO40_MESSAGE_SET_INSTLINE);
+    grp_adatspdif->addElement(adatspdif);
 
     // Global Dim control
     Control::Container* grp_globaldim = new Control::Container(m_eap, "GlobalDim");

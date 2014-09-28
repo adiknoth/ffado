@@ -45,6 +45,7 @@
 // One register for each
 #define FOCUSRITE_EAP_GLOBAL_MUTE_SWITCH_VALUE 1
 #define FOCUSRITE_EAP_GLOBAL_DIM_SWITCH_VALUE 1
+#define FOCUSRITE_EAP_ADATSPDIF_SWITCH_VALUE 1
 
 // Per Line/Out switch monitor registers; bit encoding
 //   Each register controls two (left and rigth) Line/Out
