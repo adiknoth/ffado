@@ -248,8 +248,10 @@ class Saffire_Dice(Generic_Dice_EAP):
             p = LineInfo(widget.LineVolume_10, DiscreteControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/Volume10"))
             self.LineVolumes.append(p)
 
-            # No Line/Inst switch control from interface for Pro40
-            widget.LineInSwitches.setVisible(False)
+            # Adat/Spdif switch control from interface for Pro40
+            self.adatSpdifInterface = BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/AdatSpdif/State")
+            widget.AdatSpdif.setChecked(self.adatSpdifInterface.selected())
+            self.connect(widget.AdatSpdif, QtCore.SIGNAL("toggled(bool)"), self.adatSpdifToggle)
 
         else:
             # Line/Inst and Hi/Lo switches for Pro14 and 24
@@ -303,6 +305,12 @@ class Saffire_Dice(Generic_Dice_EAP):
     def dimToggle(self, dim):
         self.dimInterface.select(dim)
         self.DimLevel.setEnabled(dim)
+    def adatSpdifToggle(self, spdif):
+        self.adatSpdifInterface.select(spdif)
+        # FIXME
+        # Here we should consider that router configuration has changed inside the device
+        #   so that the device has to be rediscovered by the dbus (as it is the case when
+        self.onSamplerateChange()
 
     def HWToggle(self, HW):
         for i in range(self.nbLines):
