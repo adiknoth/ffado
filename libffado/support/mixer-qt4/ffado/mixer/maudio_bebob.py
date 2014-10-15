@@ -231,7 +231,7 @@ class MAudio_BeBoB(QWidget):
 
         model = self.configrom.getModelId() 
         if model not in self.info:
-            return;
+            return
 
         self.id = self.info[model][0]    
         name = self.info[model][1]
@@ -500,7 +500,7 @@ class MAudio_BeBoB(QWidget):
 
             for j in range(len(mixer_ids)):
                 if (i != j and j != len(mixer_ids) - 1):
-                    continue;
+                    continue
                 widget.cmb_src.addItem("%s Out" % mixer_labels[j], mixer_ids[j])
 
         # add headphone
@@ -594,7 +594,7 @@ class MAudio_BeBoB(QWidget):
             out_ch_l    = self.mixers[self.id][1][mix_out_idx][0]
             # see /libffado/src/bebob/bebob_mixer.cpp
             mux_id = self.getMultiplexedId(in_id, in_ch_l, out_ch_l)
-            curr = self.hw.getContignuous(path, mux_id);
+            curr = self.hw.getContignuous(path, mux_id)
             if (curr == 0):
                 state = True
             else:
@@ -700,7 +700,7 @@ class MAudio_BeBoB(QWidget):
                 self.hw.setContignuous(path, 0x8000, mux_id)
         # if inconsistency between Selector and Mixer, set AUX as default
         if enbl == -1:
-            self.hw.setDiscrete('/Mixer/Selector_7', 1);
+            self.hw.setDiscrete('/Mixer/Selector_7', 1)
             enbl = 5
 
         self.FW410HP.setCurrentIndex(enbl)
