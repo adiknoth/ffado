@@ -82,26 +82,26 @@ class YamahaGo(QWidget):
             self.label_ana_out_34_route.setText("Headphone out 1/2")
         else:
             # volume for mixer output
-            self.VolumeControls[self.sld_mixer_out_1]    = ['/Mixer/Feature_Volume_2', 1, self.sld_mixer_out_2, 2, self.link_mixer_out_12]
-            self.VolumeControls[self.sld_mixer_out_2]    = ['/Mixer/Feature_Volume_2', 2, self.sld_mixer_out_1, 1, self.link_mixer_out_12]
+            self.VolumeControls[self.sld_mixer_out_1] = ['/Mixer/Feature_Volume_2', 1, self.sld_mixer_out_2, 2, self.link_mixer_out_12]
+            self.VolumeControls[self.sld_mixer_out_2] = ['/Mixer/Feature_Volume_2', 2, self.sld_mixer_out_1, 1, self.link_mixer_out_12]
             # volume for analog output
-            self.VolumeControls[self.sld_ana_out_1]    = ['/Mixer/Feature_Volume_1', 1, self.sld_ana_out_2, 2, self.link_ana_out_12]
-            self.VolumeControls[self.sld_ana_out_2]    = ['/Mixer/Feature_Volume_1', 2, self.sld_ana_out_1, 1, self.link_ana_out_12]
-            self.VolumeControls[self.sld_ana_out_3]    = ['/Mixer/Feature_Volume_1', 3, self.sld_ana_out_4, 4, self.link_ana_out_34]
-            self.VolumeControls[self.sld_ana_out_4]    = ['/Mixer/Feature_Volume_1', 4, self.sld_ana_out_3, 3, self.link_ana_out_34]
+            self.VolumeControls[self.sld_ana_out_1] = ['/Mixer/Feature_Volume_1', 1, self.sld_ana_out_2, 2, self.link_ana_out_12]
+            self.VolumeControls[self.sld_ana_out_2] = ['/Mixer/Feature_Volume_1', 2, self.sld_ana_out_1, 1, self.link_ana_out_12]
+            self.VolumeControls[self.sld_ana_out_3] = ['/Mixer/Feature_Volume_1', 3, self.sld_ana_out_4, 4, self.link_ana_out_34]
+            self.VolumeControls[self.sld_ana_out_4] = ['/Mixer/Feature_Volume_1', 4, self.sld_ana_out_3, 3, self.link_ana_out_34]
 
         # gain control
         for ctl, params in self.VolumeControls.items():
-            path    = params[0]
-            idx    = params[1]
+            path = params[0]
+            idx = params[1]
             
             db = self.hw.getContignuous(path, idx)
             vol = self.db2vol(db)
             ctl.setValue(vol)
             
-            pair    = params[2]
-            pidx    = params[3]
-            link    = params[4]
+            pair = params[2]
+            pidx = params[3]
+            link = params[4]
             
             pdb = self.hw.getContignuous(path, pidx)
             pvol = self.db2vol(db)
@@ -137,12 +137,12 @@ class YamahaGo(QWidget):
         self.hw.setContignuous('/Mixer/Feature_Volume_2', level)
 
     def updateVolume(self, vol):
-        sender    = self.sender()
-        path    = self.VolumeControls[sender][0]
-        idx    = self.VolumeControls[sender][1]
-        pair    = self.VolumeControls[sender][2]
-        p_idx    = self.VolumeControls[sender][3]
-        link    = self.VolumeControls[sender][4]
+        sender = self.sender()
+        path = self.VolumeControls[sender][0]
+        idx = self.VolumeControls[sender][1]
+        pair = self.VolumeControls[sender][2]
+        p_idx = self.VolumeControls[sender][3]
+        link = self.VolumeControls[sender][4]
 
         db = self.vol2db(vol)
         self.hw.setContignuous(path, db, idx)
@@ -151,6 +151,6 @@ class YamahaGo(QWidget):
             pair.setValue(vol)
 
     def updateSelector(self, state):
-        sender    = self.sender()
-        path    = self.JackSourceSelectors[sender]
+        sender = self.sender()
+        path = self.JackSourceSelectors[sender]
         self.hw.setDiscrete(path, state)
