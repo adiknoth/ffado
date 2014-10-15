@@ -1,5 +1,5 @@
-from PyQt4.QtCore import SIGNAL, SLOT, QObject, Qt
-from PyQt4.QtGui import QWidget, QMessageBox, QHBoxLayout, QVBoxLayout, QTabWidget, QGroupBox, QLabel, QDial, QSlider, QToolButton, QSizePolicy
+from PyQt4.QtCore import SIGNAL, QObject, Qt
+from PyQt4.QtGui import QWidget, QHBoxLayout, QVBoxLayout, QTabWidget, QGroupBox, QLabel, QSlider, QToolButton, QSizePolicy
 from math import log10
 from ffado.config import *
 
