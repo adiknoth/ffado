@@ -135,7 +135,7 @@ class YamahaGo(QWidget):
             )
 
         # gain control
-        for ctl, params in self.VolumeControls.items():
+        for ctl, params in list(self.VolumeControls.items()):
             path = params[0]
             idx = params[1]
 
@@ -153,7 +153,7 @@ class YamahaGo(QWidget):
             QObject.connect(ctl, SIGNAL('valueChanged(int)'), self.updateVolume)
 
         # source selector for jack output
-        for ctl, param in self.JackSourceSelectors.items():
+        for ctl, param in list(self.JackSourceSelectors.items()):
             state = self.hw.getDiscrete(param)
             ctl.setCurrentIndex(state)
 
