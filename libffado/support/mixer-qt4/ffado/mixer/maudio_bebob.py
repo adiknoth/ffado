@@ -499,7 +499,7 @@ class MAudio_BeBoB(QWidget):
             self.Selectors[widget.cmb_src] = ("/Mixer/Selector_%d" % out_id, )
 
             for j in range(len(mixer_ids)):
-                if (i != j and j != len(mixer_ids) - 1):
+                if i != j and j != len(mixer_ids) - 1:
                     continue
                 widget.cmb_src.addItem("%s Out" % mixer_labels[j], mixer_ids[j])
 
@@ -595,7 +595,7 @@ class MAudio_BeBoB(QWidget):
             # see /libffado/src/bebob/bebob_mixer.cpp
             mux_id = self.getMultiplexedId(in_id, in_ch_l, out_ch_l)
             curr = self.hw.getContignuous(path, mux_id)
-            if (curr == 0):
+            if curr == 0:
                 state = True
             else:
                 state = False
