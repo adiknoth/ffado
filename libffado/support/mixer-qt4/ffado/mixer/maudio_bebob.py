@@ -1,5 +1,6 @@
 from PyQt4.QtCore import SIGNAL, QObject, Qt
-from PyQt4.QtGui import QWidget, QHBoxLayout, QVBoxLayout, QTabWidget, QGroupBox, QLabel, QSlider, QToolButton, QSizePolicy
+from PyQt4.QtGui import QSizePolicy, QHBoxLayout, QVBoxLayout, QGroupBox
+from PyQt4.QtGui import QWidget, QTabWidget, QLabel, QSlider, QToolButton
 from math import log10
 from ffado.config import *
 
@@ -464,7 +465,8 @@ class MAudio_BeBoB(QWidget):
             for i in range(len(out_ids)):
                 label = QLabel(tab_out)
                 layout.addWidget(label)
-                label.setText("%s Out is fixed to %s Out" % (mixer_labels[i], out_labels[i]))
+                label.setText("%s Out is fixed to %s Out" %
+                              (mixer_labels[i], out_labels[i]))
             return
 
         mixer_ids = self.jack_src[self.id][1]
@@ -538,9 +540,10 @@ class MAudio_BeBoB(QWidget):
                 widget.cmb_src.addItem("%s Out" % mixer_labels[i], mixer_ids[i])
 
             if self.id != 3:
-                self.Selectors[widget.cmb_src] = ("/Mixer/Selector_%d" % hp_id)
+                self.Selectors[widget.cmb_src] = ("/Mixer/Selector_%d" % hp_id, )
             else:
-                QObject.connect(widget.cmb_src, SIGNAL('activated(int)'), self.update410HP)
+                QObject.connect(widget.cmb_src, SIGNAL('activated(int)'),
+                                self.update410HP)
                 self.FW410HP = widget.cmb_src
 
         layout.addStretch()
@@ -561,7 +564,8 @@ class MAudio_BeBoB(QWidget):
             curr = self.hw.getContignuous(path, idx)
             state = -(curr / 0x7FFE) * 50 + 50
             ctl.setValue(state)
-            QObject.connect(ctl, SIGNAL('valueChanged(int)'), self.updatePanning)
+            QObject.connect(ctl, SIGNAL('valueChanged(int)'),
+                            self.updatePanning)
 
         for ctl, params in self.Volumes.items():
             path = params[0]
@@ -672,7 +676,8 @@ class MAudio_BeBoB(QWidget):
 
         mux_id = self.getMultiplexedId(in_id, in_ch_l, out_ch_l)
 
-        log.debug("set %s for 0x%04X(%d/%d/%d) to %d" % (path, mux_id, in_id, in_ch_l, out_ch_l, state))
+        log.debug("set %s for 0x%04X(%d/%d/%d) to %d" %
+                  (path, mux_id, in_id, in_ch_l, out_ch_l, state))
         self.hw.setContignuous(path, state, mux_id)
 
     def read410HP(self):
