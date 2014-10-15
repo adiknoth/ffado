@@ -549,7 +549,7 @@ class MAudio_BeBoB(QWidget):
         layout.addStretch()
 
     def initValues(self):
-        for ctl, params in self.Selectors.items():
+        for ctl, params in list(self.Selectors.items()):
             path = params[0]
             state = self.hw.getDiscrete(path)
             ctl.setCurrentIndex(state)
@@ -558,7 +558,7 @@ class MAudio_BeBoB(QWidget):
         #       Right - Center - Left
         # 0x8000 - 0x0000 - 0x0001 - 0x7FFE
         #        ..., -1, 0, +1, ...
-        for ctl, params in self.Pannings.items():
+        for ctl, params in list(self.Pannings.items()):
             path = params[0]
             idx = params[1]
             curr = self.hw.getContignuous(path, idx)
@@ -567,7 +567,7 @@ class MAudio_BeBoB(QWidget):
             QObject.connect(ctl, SIGNAL('valueChanged(int)'),
                             self.updatePanning)
 
-        for ctl, params in self.Volumes.items():
+        for ctl, params in list(self.Volumes.items()):
             path = params[0]
             idx = params[1]
             p_idx = params[3]
@@ -583,10 +583,10 @@ class MAudio_BeBoB(QWidget):
             if pair_db == db:
                 link.setChecked(True)
 
-        for ctl, params in self.Mutes.items():
+        for ctl, params in list(self.Mutes.items()):
             QObject.connect(ctl, SIGNAL('clicked(bool)'), self.updateMute)
 
-        for ctl, params in self.Mixers.items():
+        for ctl, params in list(self.Mixers.items()):
             path = params[0]
             in_id = params[1]
             mix_in_idx = params[2]
