@@ -256,9 +256,9 @@ class MAudio_BeBoB(QWidget):
         tab_input.setLayout(tab_input_layout)
 
         in_labels = self.labels[self.id]["inputs"]
-        in_ids    = self.inputs[self.id][0]
+        in_ids = self.inputs[self.id][0]
         in_ch_ids = self.inputs[self.id][1]
-        in_pan    = self.inputs[self.id][2]
+        in_pan = self.inputs[self.id][2]
 
         for i in range(len(in_ids)):
             l_idx = self.inputs[self.id][1][i][0]
@@ -304,11 +304,11 @@ class MAudio_BeBoB(QWidget):
         tab_layout = QHBoxLayout()
         tab_mix.setLayout(tab_layout)
 
-        in_labels  = self.labels[self.id]["inputs"]
-        in_idxs    = self.inputs[self.id][0]
+        in_labels = self.labels[self.id]["inputs"]
+        in_idxs = self.inputs[self.id][0]
 
-        mix_labels  = self.labels[self.id]["mixers"]
-        mix_idxs    = self.mixers[self.id][0]
+        mix_labels = self.labels[self.id]["mixers"]
+        mix_idxs = self.mixers[self.id][0]
 
         for i in range(len(mix_idxs)):
             if mix_labels[i] == 'Aux 1/2':
@@ -372,11 +372,11 @@ class MAudio_BeBoB(QWidget):
         aux_id = self.aux[self.id][0]
 
         aux_in_labels = self.labels[self.id]["inputs"]
-        aux_in_ids    = self.aux[self.id][1]
+        aux_in_ids = self.aux[self.id][1]
 
         for i in range(len(aux_in_ids)):
-            in_ch_l  = self.aux[self.id][2][i][0]
-            in_ch_r  = self.aux[self.id][2][i][1]
+            in_ch_l = self.aux[self.id][2][i][0]
+            in_ch_r = self.aux[self.id][2][i][1]
 
             grp = QGroupBox(tab_aux)
             grp_layout = QVBoxLayout()
@@ -458,7 +458,7 @@ class MAudio_BeBoB(QWidget):
         tab_out.setLayout(layout)
 
         out_labels = self.labels[self.id]["outputs"]
-        out_ids    = self.outputs[self.id]
+        out_ids = self.outputs[self.id]
 
         mixer_labels = self.labels[self.id]["mixers"]
 
@@ -477,7 +477,7 @@ class MAudio_BeBoB(QWidget):
             if out_label.find('Headphone') >= 0:
                 continue
 
-            out_id   = self.jack_src[self.id][0][i]
+            out_id = self.jack_src[self.id][0][i]
 
             widget = MAudio_BeBoB_Output_Widget(tab_out)
             layout.addWidget(widget)
@@ -559,18 +559,18 @@ class MAudio_BeBoB(QWidget):
         #        ..., -1, 0, +1, ...
         for ctl, params in self.Pannings.items():
             path = params[0]
-            idx  = params[1]
+            idx = params[1]
             curr = self.hw.getContignuous(path, idx)
             state = -(curr / 0x7FFE) * 50 + 50
             ctl.setValue(state)
             QObject.connect(ctl, SIGNAL('valueChanged(int)'), self.updatePanning)
 
         for ctl, params in self.Volumes.items():
-            path  = params[0]
-            idx   = params[1]
-            pair  = params[2]
+            path = params[0]
+            idx = params[1]
+            pair = params[2]
             p_idx = params[3]
-            link  = params[4]
+            link = params[4]
 
             db = self.hw.getContignuous(path, idx)
             vol = self.db2vol(db)
@@ -586,12 +586,12 @@ class MAudio_BeBoB(QWidget):
             QObject.connect(ctl, SIGNAL('clicked(bool)'), self.updateMute)
 
         for ctl, params in self.Mixers.items():
-            path        = params[0]
-            in_id       = params[1]
-            mix_in_idx  = params[2]
+            path = params[0]
+            in_id = params[1]
+            mix_in_idx = params[2]
             mix_out_idx = params[3]
-            in_ch_l     = self.mixers[self.id][3][mix_in_idx][0]
-            out_ch_l    = self.mixers[self.id][1][mix_out_idx][0]
+            in_ch_l = self.mixers[self.id][3][mix_in_idx][0]
+            out_ch_l = self.mixers[self.id][1][mix_out_idx][0]
             # see /libffado/src/bebob/bebob_mixer.cpp
             mux_id = self.getMultiplexedId(in_id, in_ch_l, out_ch_l)
             curr = self.hw.getContignuous(path, mux_id)
@@ -618,25 +618,25 @@ class MAudio_BeBoB(QWidget):
 
     def updateSelector(self, state):
         sender = self.sender()
-        path   = self.Selectors[sender][0]
+        path = self.Selectors[sender][0]
         log.debug("set %s to %d" % (path, state))
         self.hw.setDiscrete(path, state)
 
     def updatePanning(self, state):
         sender = self.sender()
-        path   = self.Pannings[sender][0]
-        idx    = self.Pannings[sender][1]
-        value  = (state - 50) * 0x7FFE / -50
+        path = self.Pannings[sender][0]
+        idx = self.Pannings[sender][1]
+        value = (state - 50) * 0x7FFE / -50
         log.debug("set %s for %d to %d(%d)" % (path, idx, value, state))
         self.hw.setContignuous(path, value, idx)
 
     def updateVolume(self, vol):
         sender = self.sender()
-        path   = self.Volumes[sender][0]
-        idx    = self.Volumes[sender][1]
-        pair   = self.Volumes[sender][2]
-        p_idx  = self.Volumes[sender][3]
-        link   = self.Volumes[sender][4]
+        path = self.Volumes[sender][0]
+        idx = self.Volumes[sender][1]
+        pair = self.Volumes[sender][2]
+        p_idx = self.Volumes[sender][3]
+        link = self.Volumes[sender][4]
 
         db = self.vol2db(vol)
         log.debug("set %s for %d to %d(%d)" % (path, idx, db, vol))
@@ -648,8 +648,8 @@ class MAudio_BeBoB(QWidget):
     # device remeber gain even if muted
     def updateMute(self, state):
         sender = self.sender()
-        l_sld  = self.Mutes[sender][0]
-        r_sld  = self.Mutes[sender][1]
+        l_sld = self.Mutes[sender][0]
+        r_sld = self.Mutes[sender][1]
 
         if state:
             db = 0x8000
@@ -666,13 +666,13 @@ class MAudio_BeBoB(QWidget):
         else:
             state = 0x8000
 
-        sender      = self.sender()
-        path        = self.Mixers[sender][0]
-        in_id       = self.Mixers[sender][1]
-        mix_in_idx  = self.Mixers[sender][2]
+        sender = self.sender()
+        path = self.Mixers[sender][0]
+        in_id = self.Mixers[sender][1]
+        mix_in_idx = self.Mixers[sender][2]
         mix_out_idx = self.Mixers[sender][3]
-        in_ch_l     = self.mixers[self.id][3][mix_in_idx][0]
-        out_ch_l    = self.mixers[self.id][1][mix_out_idx][0]
+        in_ch_l = self.mixers[self.id][3][mix_in_idx][0]
+        out_ch_l = self.mixers[self.id][1][mix_out_idx][0]
 
         mux_id = self.getMultiplexedId(in_id, in_ch_l, out_ch_l)
 
