@@ -57,16 +57,36 @@ class YamahaGo(QWidget):
 
         # common
         self.VolumeControls = {
-            self.sld_mixer_strm_in_1:    ('/Mixer/Feature_Volume_3', 1, self.sld_mixer_strm_in_2, 2, self.link_mixer_strm_in_12),
-            self.sld_mixer_strm_in_2:    ('/Mixer/Feature_Volume_3', 2, self.sld_mixer_strm_in_1, 1, self.link_mixer_strm_in_12),
-            self.sld_mixer_strm_in_3:    ('/Mixer/Feature_Volume_4', 1, self.sld_mixer_strm_in_4, 2, self.link_mixer_strm_in_34),
-            self.sld_mixer_strm_in_4:    ('/Mixer/Feature_Volume_4', 2, self.sld_mixer_strm_in_3, 1, self.link_mixer_strm_in_34),
-            self.sld_mixer_strm_in_5:    ('/Mixer/Feature_Volume_5', 1, self.sld_mixer_strm_in_6, 2, self.link_mixer_strm_in_56),
-            self.sld_mixer_strm_in_6:    ('/Mixer/Feature_Volume_5', 2, self.sld_mixer_strm_in_5, 1, self.link_mixer_strm_in_56),
-            self.sld_mixer_ana_in_1:    ('/Mixer/Feature_Volume_6', 1, self.sld_mixer_ana_in_2,  2, self.link_mixer_ana_in_12),
-            self.sld_mixer_ana_in_2:    ('/Mixer/Feature_Volume_6', 2, self.sld_mixer_ana_in_1,  1, self.link_mixer_ana_in_12),
-            self.sld_mixer_dig_in_1:    ('/Mixer/Feature_Volume_7', 1, self.sld_mixer_dig_in_2,  2, self.link_mixer_dig_in_12),
-            self.sld_mixer_dig_in_2:    ('/Mixer/Feature_Volume_7', 2, self.sld_mixer_dig_in_1,  1, self.link_mixer_dig_in_12)
+            self.sld_mixer_strm_in_1:
+                ('/Mixer/Feature_Volume_3', 1,
+                 self.sld_mixer_strm_in_2, 2, self.link_mixer_strm_in_12),
+            self.sld_mixer_strm_in_2:
+                ('/Mixer/Feature_Volume_3', 2,
+                 self.sld_mixer_strm_in_1, 1, self.link_mixer_strm_in_12),
+            self.sld_mixer_strm_in_3:
+                ('/Mixer/Feature_Volume_4', 1,
+                 self.sld_mixer_strm_in_4, 2, self.link_mixer_strm_in_34),
+            self.sld_mixer_strm_in_4:
+                ('/Mixer/Feature_Volume_4', 2,
+                 self.sld_mixer_strm_in_3, 1, self.link_mixer_strm_in_34),
+            self.sld_mixer_strm_in_5:
+                ('/Mixer/Feature_Volume_5', 1,
+                 self.sld_mixer_strm_in_6, 2, self.link_mixer_strm_in_56),
+            self.sld_mixer_strm_in_6:
+                ('/Mixer/Feature_Volume_5', 2,
+                 self.sld_mixer_strm_in_5, 1, self.link_mixer_strm_in_56),
+            self.sld_mixer_ana_in_1:
+                ('/Mixer/Feature_Volume_6', 1,
+                 self.sld_mixer_ana_in_2, 2, self.link_mixer_ana_in_12),
+            self.sld_mixer_ana_in_2:
+                ('/Mixer/Feature_Volume_6', 2,
+                 self.sld_mixer_ana_in_1, 1, self.link_mixer_ana_in_12),
+            self.sld_mixer_dig_in_1:
+                ('/Mixer/Feature_Volume_7', 1,
+                 self.sld_mixer_dig_in_2, 2, self.link_mixer_dig_in_12),
+            self.sld_mixer_dig_in_2:
+                ('/Mixer/Feature_Volume_7', 2,
+                 self.sld_mixer_dig_in_1, 1, self.link_mixer_dig_in_12)
         }
         self.JackSourceSelectors = {
             self.cmb_ana_out_12_route:    '/Mixer/Selector_1',
@@ -76,19 +96,43 @@ class YamahaGo(QWidget):
 
         if not self.is46:
             # volume for mixer output
-            self.VolumeControls[self.sld_mixer_out_1] = ('/Mixer/Feature_Volume_1', 1, self.sld_mixer_out_2, 2, self.link_mixer_out_12)
-            self.VolumeControls[self.sld_mixer_out_2] = ('/Mixer/Feature_Volume_1', 2, self.sld_mixer_out_1, 1, self.link_mixer_out_12)
+            self.VolumeControls[self.sld_mixer_out_1] = (
+                '/Mixer/Feature_Volume_1', 1,
+                self.sld_mixer_out_2, 2, self.link_mixer_out_12
+            )
+            self.VolumeControls[self.sld_mixer_out_2] = (
+                '/Mixer/Feature_Volume_1', 2,
+                self.sld_mixer_out_1, 1, self.link_mixer_out_12
+            )
             # analog out 3/4 is headphone out 1/2
             self.label_ana_out_34_route.setText("Headphone out 1/2")
         else:
             # volume for mixer output
-            self.VolumeControls[self.sld_mixer_out_1] = ('/Mixer/Feature_Volume_2', 1, self.sld_mixer_out_2, 2, self.link_mixer_out_12)
-            self.VolumeControls[self.sld_mixer_out_2] = ('/Mixer/Feature_Volume_2', 2, self.sld_mixer_out_1, 1, self.link_mixer_out_12)
+            self.VolumeControls[self.sld_mixer_out_1] = (
+                '/Mixer/Feature_Volume_2', 1,
+                self.sld_mixer_out_2, 2, self.link_mixer_out_12
+            )
+            self.VolumeControls[self.sld_mixer_out_2] = (
+                '/Mixer/Feature_Volume_2', 2,
+                self.sld_mixer_out_1, 1, self.link_mixer_out_12
+            )
             # volume for analog output
-            self.VolumeControls[self.sld_ana_out_1] = ('/Mixer/Feature_Volume_1', 1, self.sld_ana_out_2, 2, self.link_ana_out_12)
-            self.VolumeControls[self.sld_ana_out_2] = ('/Mixer/Feature_Volume_1', 2, self.sld_ana_out_1, 1, self.link_ana_out_12)
-            self.VolumeControls[self.sld_ana_out_3] = ('/Mixer/Feature_Volume_1', 3, self.sld_ana_out_4, 4, self.link_ana_out_34)
-            self.VolumeControls[self.sld_ana_out_4] = ('/Mixer/Feature_Volume_1', 4, self.sld_ana_out_3, 3, self.link_ana_out_34)
+            self.VolumeControls[self.sld_ana_out_1] = (
+                '/Mixer/Feature_Volume_1', 1,
+                self.sld_ana_out_2, 2, self.link_ana_out_12
+            )
+            self.VolumeControls[self.sld_ana_out_2] = (
+                '/Mixer/Feature_Volume_1', 2,
+                self.sld_ana_out_1, 1, self.link_ana_out_12
+            )
+            self.VolumeControls[self.sld_ana_out_3] = (
+                '/Mixer/Feature_Volume_1', 3,
+                self.sld_ana_out_4, 4, self.link_ana_out_34
+            )
+            self.VolumeControls[self.sld_ana_out_4] = (
+                '/Mixer/Feature_Volume_1', 4,
+                self.sld_ana_out_3, 3, self.link_ana_out_34
+            )
 
         # gain control
         for ctl, params in self.VolumeControls.items():
@@ -116,7 +160,8 @@ class YamahaGo(QWidget):
             QObject.connect(ctl, SIGNAL('activated(int)'), self.updateSelector)
 
         if not self.is46:
-            QObject.connect(self.cmb_ana_in_12_level, SIGNAL('activated(int)'), self.updateMicLevel)
+            QObject.connect(self.cmb_ana_in_12_level, SIGNAL('activated(int)'),
+                            self.updateMicLevel)
 
     # helper functions
     def vol2db(self, vol):
