@@ -30,7 +30,7 @@ import logging
 log = logging.getLogger('YamahaGo')
 
 class YamahaGo(QWidget):
-    def __init__(self, parent = None):
+    def __init__(self, parent=None):
         QWidget.__init__(self, parent)
 
     def getDisplayTitle(self):
