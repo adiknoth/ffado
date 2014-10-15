@@ -99,11 +99,8 @@ class YamahaGo(QWidget):
             vol = self.db2vol(db)
             ctl.setValue(vol)
 
-            pair = params[2]
-            pidx = params[3]
             link = params[4]
 
-            pdb = self.hw.getContignuous(path, pidx)
             pvol = self.db2vol(db)
 
             if pvol == vol:
@@ -141,7 +138,6 @@ class YamahaGo(QWidget):
         path = self.VolumeControls[sender][0]
         idx = self.VolumeControls[sender][1]
         pair = self.VolumeControls[sender][2]
-        p_idx = self.VolumeControls[sender][3]
         link = self.VolumeControls[sender][4]
 
         db = self.vol2db(vol)
