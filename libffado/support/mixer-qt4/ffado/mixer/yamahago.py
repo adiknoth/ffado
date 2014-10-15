@@ -42,7 +42,7 @@ class YamahaGo(QWidget):
     # startup
     def initValues(self):
         uicLoad("ffado/mixer/yamahago", self)
-        
+
         self.modelId = self.configrom.getModelId()
         # GO44
         if self.modelId == 0x0010000B:
@@ -94,30 +94,30 @@ class YamahaGo(QWidget):
         for ctl, params in self.VolumeControls.items():
             path = params[0]
             idx = params[1]
-            
+
             db = self.hw.getContignuous(path, idx)
             vol = self.db2vol(db)
             ctl.setValue(vol)
-            
+
             pair = params[2]
             pidx = params[3]
             link = params[4]
-            
+
             pdb = self.hw.getContignuous(path, pidx)
             pvol = self.db2vol(db)
-            
+
             if pvol == vol:
                 link.setChecked(True)
-            
+
             QObject.connect(ctl, SIGNAL('valueChanged(int)'), self.updateVolume)
 
         # source selector for jack output
         for ctl, param in self.JackSourceSelectors.items():
             state = self.hw.getDiscrete(param)
             ctl.setCurrentIndex(state)
-            
+
             QObject.connect(ctl, SIGNAL('activated(int)'), self.updateSelector)
-            
+
         if not self.is46:
             QObject.connect(self.cmb_ana_in_12_level, SIGNAL('activated(int)'), self.updateMicLevel)
 
@@ -126,7 +126,7 @@ class YamahaGo(QWidget):
         return (log10(vol + 1) - 2) * 16384
     def db2vol(self, db):
         return pow(10, db / 16384 + 2) - 1
-    
+
     def updateMicLevel(self, state):
         if state == 0:
             level = 0
@@ -146,7 +146,7 @@ class YamahaGo(QWidget):
 
         db = self.vol2db(vol)
         self.hw.setContignuous(path, db, idx)
-        
+
         if link.isChecked():
             pair.setValue(vol)
 
