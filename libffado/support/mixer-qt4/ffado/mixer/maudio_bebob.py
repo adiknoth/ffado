@@ -7,19 +7,19 @@ import logging
 log = logging.getLogger('MAudioBeBoB')
 
 class MAudio_BeBoB_Input_Widget(QWidget):
-    def __init__(self,parent = None):
-        QWidget.__init__(self,parent)
+    def __init__(self, parent = None):
+        QWidget.__init__(self, parent)
         uicLoad("ffado/mixer/maudio_bebob_input", self)
 
 class MAudio_BeBoB_Output_Widget(QWidget):
-    def __init__(self,parent = None):
-        QWidget.__init__(self,parent)
+    def __init__(self, parent = None):
+        QWidget.__init__(self, parent)
         uicLoad("ffado/mixer/maudio_bebob_output", self)
 
 
 class MAudio_BeBoB(QWidget):
-    def __init__(self,parent = None):
-        QWidget.__init__(self,parent)
+    def __init__(self, parent = None):
+        QWidget.__init__(self, parent)
 
     info = {
         0x0000000a: (0, "Ozonic"),
