@@ -345,8 +345,8 @@ class MAudio_BeBoB(QWidget):
     def addAuxTab(self, tabs):
         #local functions
         def addLinkButton(parent, layout):
-            button = QToolButton(grp)
-            grp_layout.addWidget(button)
+            button = QToolButton(parent)
+            layout.addWidget(button)
             button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
             button.setText('Link')
             button.setCheckable(True)
