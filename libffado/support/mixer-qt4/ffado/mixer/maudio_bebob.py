@@ -22,200 +22,200 @@ class MAudio_BeBoB(QWidget):
         QWidget.__init__(self,parent)
 
     info = {
-        0x0000000a: [0, "Ozonic"],
-        0x00010062: [1, "Firewire Solo"],
-        0x00010060: [2, "Firewire Audiophile"],
-        0x00010046: [3, "Firewire 410"],
-        0x00010071: [4, "Firewire 1814"],
-        0x00010091: [4, "ProjectMix I/O"],
+        0x0000000a: (0, "Ozonic"),
+        0x00010062: (1, "Firewire Solo"),
+        0x00010060: (2, "Firewire Audiophile"),
+        0x00010046: (3, "Firewire 410"),
+        0x00010071: (4, "Firewire 1814"),
+        0x00010091: (4, "ProjectMix I/O"),
     }
 
-    labels = [
+    labels = (
         {
-            "inputs":   ["Analog 1/2", "Analog 3/4",
-                         "Stream 1/2", "Stream 3/4"],
-            "mixers":   ["Mixer 1/2", "Mixer 3/4"],
-            "outputs":  ["Analog 1/2", "Analog 3/4"]
+            "inputs":   ("Analog 1/2", "Analog 3/4",
+                         "Stream 1/2", "Stream 3/4"),
+            "mixers":   ("Mixer 1/2", "Mixer 3/4"),
+            "outputs":  ("Analog 1/2", "Analog 3/4")
         },
         {
-            "inputs":   ["Analog 1/2", "Digital 1/2",
-                         "Stream 1/2", "Stream 3/4"],
-            "mixers":   ["Mixer 1/2", "Mixer 3/4"],
-            "outputs":  ["Analog 1/2", "Digital 1/2"]
+            "inputs":   ("Analog 1/2", "Digital 1/2",
+                         "Stream 1/2", "Stream 3/4"),
+            "mixers":   ("Mixer 1/2", "Mixer 3/4"),
+            "outputs":  ("Analog 1/2", "Digital 1/2")
         },
         {
-            "inputs":   ["Analog 1/2", "Digital 1/2",
-                         "Stream 1/2", "Stream 3/4", "Stream 5/6"],
-            "mixers":   ["Mixer 1/2", "Mixer 3/4", "Mixer 5/6", "Aux 1/2"],
-            "outputs":  ["Analog 1/2", "Analog 3/4", "Digital 1/2",
-                         "Headphone 1/2"]
+            "inputs":   ("Analog 1/2", "Digital 1/2",
+                         "Stream 1/2", "Stream 3/4", "Stream 5/6"),
+            "mixers":   ("Mixer 1/2", "Mixer 3/4", "Mixer 5/6", "Aux 1/2"),
+            "outputs":  ("Analog 1/2", "Analog 3/4", "Digital 1/2",
+                         "Headphone 1/2")
         },
         {
-            "inputs":   ["Analog 1/2", "Digital 1/2",
+            "inputs":   ("Analog 1/2", "Digital 1/2",
                          "Stream 1/2", "Stream 3/4", "Stream 5/6",
-                         "Stream 7/8", "Stream 9/10"],
-            "mixers":   ["Mixer 1/2", "Mixer 3/4", "Mixer 5/6", "Mixer 7/8",
-                         "Mixer 9/10", "Aux 1/2"],
-            "outputs":  ["Analog 1/2", "Analog 3/4", "Analog 5/6", "Analog 7/8",
-                         "Digital 1/2", "Headphone 1/2"]
+                         "Stream 7/8", "Stream 9/10"),
+            "mixers":   ("Mixer 1/2", "Mixer 3/4", "Mixer 5/6", "Mixer 7/8",
+                         "Mixer 9/10", "Aux 1/2"),
+            "outputs":  ("Analog 1/2", "Analog 3/4", "Analog 5/6", "Analog 7/8",
+                         "Digital 1/2", "Headphone 1/2")
         },
         {
-            "inputs":   ["Analog 1/2", "Analog 3/4", "Analog 5/6", "Analog 7/8",
+            "inputs":   ("Analog 1/2", "Analog 3/4", "Analog 5/6", "Analog 7/8",
                          "Stream 1/2", "Stream 3/4", "S/PDIF 1/2",
-                         "ADAT 1/2", "ADAT 3/4", "ADAT 5/6", "ADAT 7/8"],
-            "mixers":   ["Mixer 1/2", "Mixer 3/4", "Aux 1/2"],
-            "outputs":  ["Analog 1/2", "Analog 3/4",
-                         "Headphone 1/2", "Headphone 3/4"]
+                         "ADAT 1/2", "ADAT 3/4", "ADAT 5/6", "ADAT 7/8"),
+            "mixers":   ("Mixer 1/2", "Mixer 3/4", "Aux 1/2"),
+            "outputs":  ("Analog 1/2", "Analog 3/4",
+                         "Headphone 1/2", "Headphone 3/4")
         }
-    ]
+    )
 
     # hardware inputs and stream playbacks
     #  format: function_id/channel_idx/panning-able
     #  NOTE: function_id = channel_idx = panning-able =  labels["inputs"]
-    inputs = [
-        [
-            [0x03, 0x04, 0x01, 0x02],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02], [0x01, 0x02]],
-            [True, True, False, False]
-        ],
-        [
-            [0x01, 0x02, 0x04, 0x03],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02], [0x01, 0x02]],
-            [True, True, False, False]
-        ],
-        [
-            [0x04, 0x05, 0x01, 0x02, 0x03],
-            [[0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x01, 0x02], [0x01, 0x02]],
-            [True, True, False, False, False]
-        ],
-        [
-            [0x03, 0x04, 0x02, 0x01, 0x01, 0x01, 0x01],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x03, 0x04], [0x05, 0x06], [0x07, 0x08]],
-            [True, True, False, False, False, False, False]
-        ],
-        [
-            [0x01, 0x02, 0x03, 0x04, 0x0a, 0x0b, 0x05, 0x06, 0x07, 0x08, 0x09],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x01, 0x02], [0x01, 0x02], [0x01, 0x02]],
-            [True, True, True, True, False, False, True,
-             True, True, True, True]
-        ]
-    ]
+    inputs = (
+        (
+            (0x03, 0x04, 0x01, 0x02),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02), (0x01, 0x02)),
+            (True, True, False, False)
+        ),
+        (
+            (0x01, 0x02, 0x04, 0x03),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02), (0x01, 0x02)),
+            (True, True, False, False)
+        ),
+        (
+            (0x04, 0x05, 0x01, 0x02, 0x03),
+            ((0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x01, 0x02), (0x01, 0x02)),
+            (True, True, False, False, False)
+        ),
+        (
+            (0x03, 0x04, 0x02, 0x01, 0x01, 0x01, 0x01),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x03, 0x04), (0x05, 0x06), (0x07, 0x08)),
+            (True, True, False, False, False, False, False)
+        ),
+        (
+            (0x01, 0x02, 0x03, 0x04, 0x0a, 0x0b, 0x05, 0x06, 0x07, 0x08, 0x09),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x01, 0x02), (0x01, 0x02), (0x01, 0x02)),
+            (True, True, True, True, False, False, True,
+             True, True, True, True)
+        )
+    )
 
     # jack sources except for headphone
     #  format: function_id/source id
     #  NOTE: "function_id" = labels["output"] - "Headphone 1/2/3/4"
     #  NOTE: "source_id" = labels["mixer"]
-    jack_src = [
+    jack_src = (
         None,
         None,
-        [[0x01, 0x02, 0x03],
-         [0x00, 0x00, 0x00, 0x01]],
-        [[0x02, 0x03, 0x04, 0x05, 0x06],
-         [0x00, 0x00, 0x00, 0x00, 0x00, 0x01]],
-        [[0x03, 0x04],
-         [0x00, 0x01, 0x02]]
-    ]
+        ((0x01, 0x02, 0x03),
+         (0x00, 0x00, 0x00, 0x01)),
+        ((0x02, 0x03, 0x04, 0x05, 0x06),
+         (0x00, 0x00, 0x00, 0x00, 0x00, 0x01)),
+        ((0x03, 0x04),
+         (0x00, 0x01, 0x02))
+    )
 
     # headphone sources
     #  format: sink id/source id
     #  NOTE: "source_id" = labels["mixer"]
-    hp_src = [
+    hp_src = (
         None,
         None,
-        [[0x04],
-         [0x00, 0x01, 0x02, 0x03]],
-        [[0x07],
-         [0x02, 0x03, 0x04, 0x05, 0x06, 0x07]],
-        [[0x01, 0x02],
-         [0x01, 0x02, 0x04]]
-    ]
+        ((0x04,),
+         (0x00, 0x01, 0x02, 0x03)),
+        ((0x07,),
+         (0x02, 0x03, 0x04, 0x05, 0x06, 0x07)),
+        ((0x01, 0x02),
+         (0x01, 0x02, 0x04))
+    )
 
     # hardware outputs
     #  format: function id
     #  NOTE: "function_id" = labels["output"]
-    outputs = [
-        [0x05, 0x06],
-        [0x02, 0x03],
-        [0x0c, 0x0d, 0x0e, 0x0f],
-        [0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f],
-        [0x0c, 0x0d, 0x0f, 0x10]
-    ]
+    outputs = (
+        (0x05, 0x06),
+        (0x02, 0x03),
+        (0x0c, 0x0d, 0x0e, 0x0f),
+        (0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f),
+        (0x0c, 0x0d, 0x0f, 0x10)
+    )
 
     # Mixer inputs/outputs
     #  format: function_id/out_stereo_channel_id/in_id/in_stereo_channel_id
     #  NOTE: function_id = out_stereo_channel_id = labels["mixers"]
     #  NOTE: in_id = in_stereo_channel_id = labels["inputs"]
-    mixers = [
-        [
-            [0x01, 0x02],
-            [[0x01, 0x02], [0x01, 0x02]],
-             [0x02, 0x03, 0x00, 0x01],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02], [0x01, 0x02]]
-        ],
-        [
-            [0x01, 0x01],
-            [[0x01, 0x02], [0x03, 0x04]],
-            [0x00, 0x01, 0x03, 0x02],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02], [0x01, 0x02]]
-        ],
-        [
-            [0x01, 0x02, 0x03, 0x04],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02], [0x01, 0x02]],
-            [0x03, 0x04, 0x00, 0x01, 0x02],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x01, 0x02]]
-        ],
-        [
-            [0x01, 0x01, 0x01, 0x01, 0x01, 0x07],
-            [[0x01, 0x02], [0x03, 0x04],
-             [0x05, 0x06], [0x07, 0x08], [0x09, 0x0a], [0x01, 0x02]],
-            [0x02, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00],
-            [[0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x01, 0x02], [0x03, 0x04],
-             [0x05, 0x06], [0x07, 0x08]]
-        ],
-        [
-            [0x01, 0x02, 0x03],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02]],
-            [0x01, 0x01, 0x01, 0x01,
+    mixers = (
+        (
+            (0x01, 0x02),
+            ((0x01, 0x02), (0x01, 0x02)),
+             (0x02, 0x03, 0x00, 0x01),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02), (0x01, 0x02))
+        ),
+        (
+            (0x01, 0x01),
+            ((0x01, 0x02), (0x03, 0x04)),
+            (0x00, 0x01, 0x03, 0x02),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02), (0x01, 0x02))
+        ),
+        (
+            (0x01, 0x02, 0x03, 0x04),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02), (0x01, 0x02)),
+            (0x03, 0x04, 0x00, 0x01, 0x02),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x01, 0x02))
+        ),
+        (
+            (0x01, 0x01, 0x01, 0x01, 0x01, 0x07),
+            ((0x01, 0x02), (0x03, 0x04),
+             (0x05, 0x06), (0x07, 0x08), (0x09, 0x0a), (0x01, 0x02)),
+            (0x02, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00),
+            ((0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x01, 0x02), (0x03, 0x04),
+             (0x05, 0x06), (0x07, 0x08))
+        ),
+        (
+            (0x01, 0x02, 0x03),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02)),
+            (0x01, 0x01, 0x01, 0x01,
              0x02, 0x02, 0x03,
-             0x04, 0x04, 0x04, 0x04],
-            [[0x01, 0x02], [0x03, 0x04], [0x05, 0x06], [0x07, 0x08],
-             [0x01, 0x02], [0x03, 0x04], [0x01, 0x02],
-             [0x01, 0x02], [0x03, 0x04], [0x05, 0x06], [0x07, 0x08]]
-        ]
-    ]
+             0x04, 0x04, 0x04, 0x04),
+            ((0x01, 0x02), (0x03, 0x04), (0x05, 0x06), (0x07, 0x08),
+             (0x01, 0x02), (0x03, 0x04), (0x01, 0x02),
+             (0x01, 0x02), (0x03, 0x04), (0x05, 0x06), (0x07, 0x08))
+        )
+    )
 
     # Aux mixer inputs/outputs
     #  format: function_id/input_id/input_stereo_channel_id
     #  NOTE: input_id = labels["inputs"]
-    aux = [
+    aux = (
         None,
         None,
-        [
+        (
             0x0b,
-            [0x09, 0x0a, 0x06, 0x07, 0x08],
-            [[0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x01, 0x02], [0x01, 0x02]]
-        ],
-        [
+            (0x09, 0x0a, 0x06, 0x07, 0x08),
+            ((0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x01, 0x02), (0x01, 0x02))
+        ),
+        (
             0x09,
-            [0x07, 0x08, 0x06, 0x05, 0x05, 0x05, 0x05],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x03, 0x04], [0x05, 0x06], [0x07, 0x08]]
-        ],
-        [
+            (0x07, 0x08, 0x06, 0x05, 0x05, 0x05, 0x05),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x03, 0x04), (0x05, 0x06), (0x07, 0x08))
+        ),
+        (
             0x0e,
-            [0x13, 0x14, 0x15, 0x16, 0x11, 0x12, 0x17, 0x18, 0x19, 0x1a, 0x1b],
-            [[0x01, 0x02], [0x01, 0x02], [0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x01, 0x02], [0x01, 0x02],
-             [0x01, 0x02], [0x01, 0x02], [0x01, 0x02], [0x01, 0x02]]
-        ]
-    ]
+            (0x13, 0x14, 0x15, 0x16, 0x11, 0x12, 0x17, 0x18, 0x19, 0x1a, 0x1b),
+            ((0x01, 0x02), (0x01, 0x02), (0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x01, 0x02), (0x01, 0x02),
+             (0x01, 0x02), (0x01, 0x02), (0x01, 0x02), (0x01, 0x02))
+        )
+    )
 
     def getDisplayTitle(self):
         model = self.configrom.getModelId()
@@ -269,30 +269,30 @@ class MAudio_BeBoB(QWidget):
 
             widget.name.setText(in_labels[i])
 
-            self.Volumes[widget.l_sld] = [
+            self.Volumes[widget.l_sld] = (
                 "/Mixer/Feature_Volume_%d" % in_ids[i], l_idx,
                 widget.r_sld, r_idx,
                 widget.link
-            ]
-            self.Volumes[widget.r_sld] = [
+            )
+            self.Volumes[widget.r_sld] = (
                 "/Mixer/Feature_Volume_%d" % in_ids[i], r_idx,
                 widget.l_sld, l_idx,
                 widget.link
-            ]
-            self.Mutes[widget.mute] = [widget.l_sld, widget.r_sld]
+            )
+            self.Mutes[widget.mute] = (widget.l_sld, widget.r_sld)
 
             if not in_pan[i]:
                 widget.l_pan.setDisabled(True)
                 widget.r_pan.setDisabled(True)
             else:
-                self.Pannings[widget.l_pan] = [
+                self.Pannings[widget.l_pan] = (
                     "/Mixer/Feature_LRBalance_%d" % in_ids[i],
                     l_idx
-                ]
-                self.Pannings[widget.r_pan] = [
+                )
+                self.Pannings[widget.r_pan] = (
                     "/Mixer/Feature_LRBalance_%d" % in_ids[i],
                     r_idx
-                ]
+                )
 
         tab_input_layout.addStretch()
 
@@ -336,10 +336,10 @@ class MAudio_BeBoB(QWidget):
                 button.setText('%s In' % in_labels[j])
                 button.setCheckable(True)
 
-                self.Mixers[button] = [
+                self.Mixers[button] = (
                     "/Mixer/EnhancedMixer_%d" % mix_idxs[i],
                     mix_in_id, j, i
-                ]
+                )
 
             grp_layout.addStretch()
         tab_layout.addStretch()
@@ -399,19 +399,19 @@ class MAudio_BeBoB(QWidget):
             grp_sld_layout.addWidget(r_sld)
 
             button = addLinkButton(grp, grp_layout)
-            self.Volumes[l_sld] = [
+            self.Volumes[l_sld] = (
                 "/Mixer/Feature_Volume_%d" % aux_in_ids[i], in_ch_l,
                 r_sld, in_ch_r,
                 button
-            ]
-            self.Volumes[r_sld] = [
+            )
+            self.Volumes[r_sld] = (
                 "/Mixer/Feature_Volume_%d" % aux_in_ids[i], in_ch_r,
                 l_sld, in_ch_l,
                 button
-            ]
+            )
 
             button = addMuteButton(grp, grp_layout)
-            self.Mutes[button] = [l_sld, r_sld]
+            self.Mutes[button] = (l_sld, r_sld)
 
         grp = QGroupBox(tab_aux)
         grp_layout = QVBoxLayout()
@@ -434,19 +434,19 @@ class MAudio_BeBoB(QWidget):
         grp_sld_layout.addWidget(r_sld)
 
         button = addLinkButton(grp, grp_layout)
-        self.Volumes[l_sld] = [
+        self.Volumes[l_sld] = (
             "/Mixer/Feature_Volume_%d" % aux_id, 1,
             r_sld, 2,
             button
-        ]
-        self.Volumes[r_sld] = [
+        )
+        self.Volumes[r_sld] = (
             "/Mixer/Feature_Volume_%d" % aux_id, 2,
             l_sld, 1,
             button
-        ]
+        )
 
         button = addMuteButton(grp, grp_layout)
-        self.Mutes[button] = [l_sld, r_sld]
+        self.Mutes[button] = (l_sld, r_sld)
 
         layout.addStretch()
 
@@ -484,19 +484,19 @@ class MAudio_BeBoB(QWidget):
 
             widget.name.setText(out_label)
 
-            self.Volumes[widget.l_sld] = [
+            self.Volumes[widget.l_sld] = (
                 "/Mixer/Feature_Volume_%d" % out_ids[i], 1,
                 widget.r_sld, 2,
                 widget.link
-            ]
-            self.Volumes[widget.r_sld] = [
+            )
+            self.Volumes[widget.r_sld] = (
                 "/Mixer/Feature_Volume_%d" % out_ids[i], 2,
                 widget.l_sld, 1,
                 widget.link
-            ]
-            self.Mutes[widget.mute] = [widget.l_sld, widget.r_sld]
+            )
+            self.Mutes[widget.mute] = (widget.l_sld, widget.r_sld)
 
-            self.Selectors[widget.cmb_src] = ["/Mixer/Selector_%d" % out_id]
+            self.Selectors[widget.cmb_src] = ("/Mixer/Selector_%d" % out_id, )
 
             for j in range(len(mixer_ids)):
                 if (i != j and j != len(mixer_ids) - 1):
@@ -524,23 +524,23 @@ class MAudio_BeBoB(QWidget):
             mixer_labels = self.labels[self.id]["mixers"]
             mixer_ids = self.mixers[self.id][0]
 
-            self.Volumes[widget.l_sld] = [
+            self.Volumes[widget.l_sld] = (
                 "/Mixer/Feature_Volume_%d" % out_ids[i], 1,
                 widget.r_sld, 2,
                 widget.link
-            ]
-            self.Volumes[widget.r_sld] = [
+            )
+            self.Volumes[widget.r_sld] = (
                 "/Mixer/Feature_Volume_%d" % out_ids[i], 2,
                 widget.l_sld, 1,
                 widget.link
-            ]
-            self.Mutes[widget.mute] = [widget.l_sld, widget.r_sld]
+            )
+            self.Mutes[widget.mute] = (widget.l_sld, widget.r_sld)
 
             for i in range(len(mixer_ids)):
                 widget.cmb_src.addItem("%s Out" % mixer_labels[i], mixer_ids[i])
 
             if self.id != 3:
-                self.Selectors[widget.cmb_src] = ["/Mixer/Selector_%d" % hp_id]
+                self.Selectors[widget.cmb_src] = ("/Mixer/Selector_%d" % hp_id)
             else:
                 QObject.connect(widget.cmb_src, SIGNAL('activated(int)'), self.update410HP)
                 self.FW410HP = widget.cmb_src
