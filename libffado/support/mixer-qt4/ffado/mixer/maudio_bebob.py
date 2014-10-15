@@ -229,11 +229,11 @@ class MAudio_BeBoB(QWidget):
         self.Mixers = {}
         self.FW410HP = 0
 
-        model = self.configrom.getModelId() 
+        model = self.configrom.getModelId()
         if model not in self.info:
             return
 
-        self.id = self.info[model][0]    
+        self.id = self.info[model][0]
         name = self.info[model][1]
 
         tabs_layout = QHBoxLayout(self)
@@ -360,7 +360,7 @@ class MAudio_BeBoB(QWidget):
             button.setText('Mute')
             button.setCheckable(True)
             return button
-        
+
         # local processing
         tab_aux = QWidget(self)
         tabs.addTab(tab_aux, "Aux")
@@ -509,13 +509,13 @@ class MAudio_BeBoB(QWidget):
             out_label = out_labels[i]
             if out_label.find('Headphone') < 0:
                 continue
-        
+
             hp_label = self.labels[self.id]["outputs"][i]
             hp_id = self.hp_src[self.id][0][hp_idx]
             hp_idx += 1
 
             mixer_labels = self.labels[self.id]["mixers"]
-        
+
             widget = MAudio_BeBoB_Output_Widget(tab_out)
             layout.addWidget(widget)
 
@@ -644,7 +644,7 @@ class MAudio_BeBoB(QWidget):
 
         if link.isChecked():
             pair.setValue(vol)
-            
+
     # device remeber gain even if muted
     def updateMute(self, state):
         sender = self.sender()
@@ -675,7 +675,7 @@ class MAudio_BeBoB(QWidget):
         out_ch_l    = self.mixers[self.id][1][mix_out_idx][0]
 
         mux_id = self.getMultiplexedId(in_id, in_ch_l, out_ch_l)
-        
+
         log.debug("set %s for 0x%04X(%d/%d/%d) to %d" % (path, mux_id, in_id, in_ch_l, out_ch_l, state))
         self.hw.setContignuous(path, state, mux_id)
 
@@ -686,7 +686,7 @@ class MAudio_BeBoB(QWidget):
             enbl = 5
         else:
             enbl = -1
-            
+
         path = "/Mixer/EnhancedMixer_7"
         for i in range(5):
             in_id = 0
@@ -721,7 +721,7 @@ class MAudio_BeBoB(QWidget):
             else:
                 value = 0x8000
             self.hw.setContignuous(path, value, mux_id)
-    
+
         # Mixer/Aux is selectable exclusively
         path = "/Mixer/Selector_7"
         sel = (state == 5)
