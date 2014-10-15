@@ -234,7 +234,6 @@ class MAudio_BeBoB(QWidget):
             return
 
         self.id = self.info[model][0]
-        name = self.info[model][1]
 
         tabs_layout = QHBoxLayout(self)
         tabs = QTabWidget(self)
@@ -257,7 +256,6 @@ class MAudio_BeBoB(QWidget):
 
         in_labels = self.labels[self.id]["inputs"]
         in_ids = self.inputs[self.id][0]
-        in_ch_ids = self.inputs[self.id][1]
         in_pan = self.inputs[self.id][2]
 
         for i in range(len(in_ids)):
@@ -568,7 +566,6 @@ class MAudio_BeBoB(QWidget):
         for ctl, params in self.Volumes.items():
             path = params[0]
             idx = params[1]
-            pair = params[2]
             p_idx = params[3]
             link = params[4]
 
@@ -635,7 +632,6 @@ class MAudio_BeBoB(QWidget):
         path = self.Volumes[sender][0]
         idx = self.Volumes[sender][1]
         pair = self.Volumes[sender][2]
-        p_idx = self.Volumes[sender][3]
         link = self.Volumes[sender][4]
 
         db = self.vol2db(vol)
@@ -657,7 +653,7 @@ class MAudio_BeBoB(QWidget):
             db = 0x0000
         for w in [l_sld, r_sld]:
             path = self.Volumes[w][0]
-            self.hw.setContignuous(self.Volumes[w][0], db)
+            self.hw.setContignuous(path, db)
             w.setDisabled(state)
 
     def updateMixer(self, checked):
@@ -706,8 +702,6 @@ class MAudio_BeBoB(QWidget):
         self.FW410HP.setCurrentIndex(enbl)
 
     def update410HP(self, state):
-        hp_id = self.hp_src[self.id][0][0]
-
         # each output from mixer can be multiplexed in headphone
         # but here they are exclusive because of GUI simpleness, sigh...
         path = "/Mixer/EnhancedMixer_7"
