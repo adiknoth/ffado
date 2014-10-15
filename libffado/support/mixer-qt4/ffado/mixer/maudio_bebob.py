@@ -579,7 +579,7 @@ class MAudio_BeBoB(QWidget):
 
             # to activate link button, a pair is checked twice, sign...
             pair_db = self.hw.getContignuous(path, p_idx)
-            if pair_db== db:
+            if pair_db == db:
                 link.setChecked(True)
 
         for ctl, params in self.Mutes.items():
