@@ -30,8 +30,8 @@ import logging
 log = logging.getLogger('YamahaGo')
 
 class YamahaGo(QWidget):
-    def __init__(self,parent = None):
-        QWidget.__init__(self,parent)
+    def __init__(self, parent = None):
+        QWidget.__init__(self, parent)
 
     def getDisplayTitle(self):
         if self.configrom.getModelId() == 0x0010000B:
