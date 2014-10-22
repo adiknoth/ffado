@@ -716,6 +716,22 @@ device_definitions = (
     driver      = "DICE";
     mixer       = "Generic_Dice_EAP";
 },
+{ # Avid Mbox 2 Pro, information provided by Yves Grenier via the ffado-user 
+  # mailing list.
+  # Note: as of Oct 2014 FFADO requires that the device be initialised
+  # under another operating system so routing and clock settings are 
+  # correct.  When this is done and the device is transferred to Linux 
+  # without power cycling it, FFADO can stream audio to/from it.  The
+  # initialisation details need to be sorted before FFADO can claim to
+  # properly support this device.
+    vendorid    = 0x0000A07E;
+    modelid     = 0x000000A9;
+    vendorname  = "Digidesign";
+    modelname   = "Mbox 2 Pro";
+    driver      = "BEBOB";
+    # A device-specific mixer needs to be written, there being no generic
+    # bebob mixer modules.
+},
 { # Avid Mbox Pro, information provided by Niels Dettenbach.
   # Note: this entry is for future reference only.  FFADO does NOT have a
   # driver for this device: as of March 2013 no Avid/Digidesign interfaces
