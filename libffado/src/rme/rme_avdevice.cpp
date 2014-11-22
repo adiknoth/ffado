@@ -1125,7 +1125,7 @@ Device::readRegister(fb_nodeaddr_t reg) {
     
     quadlet = 0;
     if (get1394Service().read(0xffc0 | getNodeId(), reg, 1, &quadlet) <= 0) {
-        debugError("Error doing RME read from register 0x%06llx\n",reg);
+        debugError("Error doing RME read from register 0x%06"PRIx64"\n",reg);
     }
     return ByteSwapFromDevice32(quadlet);
 }
@@ -1136,7 +1136,7 @@ Device::readBlock(fb_nodeaddr_t reg, quadlet_t *buf, unsigned int n_quads) {
     unsigned int i;
 
     if (get1394Service().read(0xffc0 | getNodeId(), reg, n_quads, buf) <= 0) {
-        debugError("Error doing RME block read of %d quadlets from register 0x%06llx\n",
+        debugError("Error doing RME block read of %d quadlets from register 0x%06"PRIx64"\n",
             n_quads, reg);
         return -1;
     }
@@ -1154,7 +1154,7 @@ Device::writeRegister(fb_nodeaddr_t reg, quadlet_t data) {
     data = ByteSwapToDevice32(data);
     if (get1394Service().write(0xffc0 | getNodeId(), reg, 1, &data) <= 0) {
         err = 1;
-        debugError("Error doing RME write to register 0x%06llx\n",reg);
+        debugError("Error doing RME write to register 0x%06"PRIx64"\n",reg);
     }
 
     return (err==0)?0:-1;
@@ -1175,7 +1175,7 @@ Device::writeBlock(fb_nodeaddr_t reg, quadlet_t *data, unsigned int n_quads) {
     }
     if (get1394Service().write(0xffc0 | getNodeId(), reg, n_quads, data) <= 0) {
         err = 1;
-        debugError("Error doing RME block write of %d quadlets to register 0x%06llx\n",
+        debugError("Error doing RME block write of %d quadlets to register 0x%06"PRIx64"\n",
           n_quads, reg);
     }
 

@@ -580,15 +580,15 @@ Device::read_device_mixer_settings(FF_software_settings_t *dsettings)
         return -1;
 
     i = read_flash(addr, (quadlet_t *)(vbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr, i);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%"PRId64") returned %d\n", addr, i);
 
     addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
     i = read_flash(addr, (quadlet_t *)(pbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr, i);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%"PRId64") returned %d\n", addr, i);
 
     addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
     i = read_flash(addr, (quadlet_t *)obuf, RME_FF_FLASH_SECTOR_SIZE_QUADS);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%lld) returned %d\n", addr, i);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "read_flash(%"PRId64") returned %d\n", addr, i);
 
     for (out=0; out<nch/2; out++) {
         for (in=0; in<nch; in++) {
@@ -664,7 +664,7 @@ Device::write_device_mixer_settings(FF_software_settings_t *dsettings)
             shadow[0x1f80/4+out] = dsettings->output_faders[out];
         }
         i = write_flash(addr, shadow, RME_FF800_FLASH_MIXER_SHADOW_SIZE/4);
-        debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%lld) returned %d\n", addr, i);
+        debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%"PRId64") returned %d\n", addr, i);
         addr = RME_FF800_FLASH_MIXER_VOLUME_ADDR;
     }
 
@@ -693,15 +693,15 @@ Device::write_device_mixer_settings(FF_software_settings_t *dsettings)
     }
 
     i = write_flash(addr, (quadlet_t *)(vbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%lld) returned %d\n", addr, i);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%"PRId64") returned %d\n", addr, i);
 
     addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
     i = write_flash(addr, (quadlet_t *)(pbuf), RME_FF_FLASH_MIXER_ARRAY_SIZE/4);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%lld) returned %d\n", addr, i);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%"PRId64") returned %d\n", addr, i);
 
     addr += RME_FF_FLASH_MIXER_ARRAY_SIZE;
     i = write_flash(addr, (quadlet_t *)obuf, RME_FF_FLASH_SECTOR_SIZE_QUADS);
-    debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%lld) returned %d\n", addr, i);
+    debugOutput(DEBUG_LEVEL_VERBOSE, "write_flash(%"PRId64") returned %d\n", addr, i);
 
     return 0;
 }

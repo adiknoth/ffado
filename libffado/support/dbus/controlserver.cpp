@@ -625,7 +625,7 @@ uint64_t
 Register::getValue( const uint64_t& addr )
 {
     uint64_t val = m_Slave.getValue(addr);
-    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue(%lld) => %lld\n", addr, val );
+    debugOutput( DEBUG_LEVEL_VERBOSE, "getValue(%"PRId64") => %"PRId64"\n", addr, val );
     return val;
 }
 

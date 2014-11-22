@@ -35,7 +35,9 @@
 #ifdef __SSE2__
 //#if 0
 #include <emmintrin.h>
-#warning SSE2 build
+
+// There's no need to warn about this anymore - jwoithe.
+// #warning SSE2 build
 
 //static inline void
 void

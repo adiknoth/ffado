@@ -1986,7 +1986,7 @@ unsigned int MotuDevice::ReadRegister(fb_nodeaddr_t reg) {
 
     // Note: 1394Service::read() expects a physical ID, not the node id
     if (get1394Service().read(0xffc0 | getNodeId(), reg, 1, &quadlet) <= 0) {
-        debugError("Error doing motu read from register 0x%012llx\n",reg);
+        debugError("Error doing motu read from register 0x%012"PRId64"\n",reg);
     }
 
     return CondSwapFromBus32(quadlet);
@@ -2002,7 +2002,7 @@ MotuDevice::readBlock(fb_nodeaddr_t reg, quadlet_t *buf, signed int n_quads) {
     signed int i;
 
     if (get1394Service().read(0xffc0 | getNodeId(), reg, n_quads, buf) <= 0) {
-        debugError("Error doing motu block read of %d quadlets from register 0x%llx\n", n_quads, reg);
+        debugError("Error doing motu block read of %d quadlets from register 0x%"PRIx64"\n", n_quads, reg);
         return -1;
     }
     for (i=0; i<n_quads; i++) {
@@ -2028,7 +2028,7 @@ signed int MotuDevice::WriteRegister(fb_nodeaddr_t reg, quadlet_t data) {
     // Note: 1394Service::write() expects a physical ID, not the node id
     if (get1394Service().write(0xffc0 | getNodeId(), reg, 1, &data) <= 0) {
         err = 1;
-        debugError("Error doing motu write to register 0x%012llx\n",reg);
+        debugError("Error doing motu write to register 0x%012"PRIx64"\n",reg);
     }
 
     SleepRelativeUsec(100);
@@ -2049,7 +2049,7 @@ MotuDevice::writeBlock(fb_nodeaddr_t reg, quadlet_t *data, signed int n_quads) {
     }
     if (get1394Service().write(0xffc0 | getNodeId(), reg, n_quads, data) <= 0) {
         ret = -1;
-        debugError("Error doing motu block write of %d quadlets to register 0x%llx\n", n_quads, reg);
+        debugError("Error doing motu block write of %d quadlets to register 0x%"PRId64"\n", n_quads, reg);
     }
     return ret;
 }

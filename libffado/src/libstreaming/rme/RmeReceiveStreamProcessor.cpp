@@ -176,7 +176,7 @@ RmeReceiveStreamProcessor::processPacketHeader(unsigned char *data, unsigned int
         if (pkt_timestamp < 0)
           pkt_timestamp += 128LL*TICKS_PER_SECOND;
         else
-        if (pkt_timestamp >= 128LL*TICKS_PER_SECOND)
+        if (pkt_timestamp >= 128LL*(signed)TICKS_PER_SECOND)
           pkt_timestamp -= 128LL*TICKS_PER_SECOND;
 
         m_last_timestamp = pkt_timestamp;
@@ -231,7 +231,7 @@ RmeReceiveStreamProcessor::processPacketData(unsigned char *data, unsigned int l
     // later than expected (the real receive time)
     #ifdef DEBUG
     if(isRunning()) {
-        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %lluticks | tpf=%f\n",
+        debugOutput(DEBUG_LEVEL_VERY_VERBOSE,"STMP: %"PRIu64"ticks | tpf=%f\n",
             m_last_timestamp, getTicksPerFrame());
     }
     #endif

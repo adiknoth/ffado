@@ -857,7 +857,7 @@ debugOutput(DEBUG_LEVEL_VERBOSE,"*** starting: listen=%d, num_ch=%d\n", listen_c
             return -1;
         }
 
-debugOutput(DEBUG_LEVEL_VERBOSE, "start 0x%016llx data: %08x\n", addr, data);
+debugOutput(DEBUG_LEVEL_VERBOSE, "start 0x%016"PRIx64" data: %08x\n", addr, data);
         ret = writeRegister(addr, data);
 debugOutput(DEBUG_LEVEL_VERBOSE, "  ret=%d\n", ret);
         if (ret == 0) {

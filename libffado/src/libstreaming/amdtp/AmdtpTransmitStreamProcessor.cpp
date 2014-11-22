@@ -539,7 +539,9 @@ AmdtpTransmitStreamProcessor::encodeAudioPortsSilence(quadlet_t *data,
 
 #ifdef __SSE2__
 #include <emmintrin.h>
-#warning SSE2 build
+
+// There's no obvious reason to warn about this anymore - jwoithe.
+// #warning SSE2 build
 
 /**
  * @brief mux all audio ports to events
