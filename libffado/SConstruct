@@ -331,7 +331,7 @@ results above get rechecked.
         oldcf = env['CFLAGS']
     else:
         oldcf = ""
-    oldcf = env.Append(CFLAGS = '-std=c99')
+    env.Append(CFLAGS = '-std=c99')
     if conf.CheckLibWithHeader( "m", "math.h", "c", "lrint(3.2);" ):
         HAVE_LRINT = 1
     else:
