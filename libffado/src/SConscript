@@ -169,6 +169,7 @@ dice_source = env.Split( '\
 	dice/maudio/profire_2626.cpp \
 	dice/presonus/firestudio_tube.cpp \
 	dice/presonus/firestudio_project.cpp \
+	dice/presonus/firestudio_mobile.cpp \
 ' )
 
 bounce_source = env.Split( '\
