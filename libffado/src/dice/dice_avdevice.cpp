@@ -52,6 +52,7 @@
 #include "maudio/profire_2626.h"
 #include "presonus/firestudio_tube.h"
 #include "presonus/firestudio_project.h"
+#include "presonus/firestudio_mobile.h"
 
 using namespace std;
 
@@ -153,6 +154,8 @@ Device::createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
                     return new Presonus::FirestudioTube(d, configRom);
                 case 0x0000000b:
                     return new Presonus::FirestudioProject(d, configRom);
+                case 0x00000011:
+                    return new Presonus::FirestudioMobile(d, configRom);
                 default: // return a plain Dice device
                     return new Device(d, configRom);
             }

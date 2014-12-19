@@ -134,6 +134,7 @@ device_definitions = (
     modelid     = 0x00000011;
     vendorname  = "PreSonus";
     modelname   = "Firestudio Mobile";
+    mixer       = "Generic_Dice_EAP";
     driver      = "DICE";
 },
 { # Entry for StudioLive 2442, from Walt Baldwin
