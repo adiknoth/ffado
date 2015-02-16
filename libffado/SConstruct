@@ -659,6 +659,12 @@ def is_userspace_32bit(cpuinfo):
     # note that having a 64-bit CPU means nothing for these purposes. You could
     # run a completely 32-bit system on a 64-bit capable CPU.
     answer = None
+
+    # If setting DIST_TARGET to i686 on a 64-bit CPU to facilitate 
+    # compilation of a multilib environment, force 32-bit.
+    if env['DIST_TARGET'] == 'i686':
+        return True
+
     # Debian ppc64 returns machine 'ppc64', but userspace might be 32-bit
     # We'll make an educated guess by examining a known executable
     exe = '/bin/mount'
