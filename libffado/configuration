@@ -30,6 +30,16 @@ device_definitions = (
     modelname   = "Onyx 1640i";
     driver      = "DICE";
 },
+{ # IDs provided by Steven Tonge
+    vendorid    = 0x000ff2;
+    modelid     = 0x001640;
+    vendorname  = "Loud Technologies Inc.";
+    modelname   = "Onyx 1640i";
+    driver      = "OXFORD";
+    # This transfer delay was tested at 48 kHz, as per
+    # http://sourceforge.net/p/ffado/mailman/message/26964819/
+    xmit_transfer_delay = 12800;
+},
 { # entries provided by Holger Dehnhardt
     vendorid    = 0x000ff2;
     modelid     = 0x081216;
