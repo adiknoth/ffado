@@ -30,6 +30,13 @@ device_definitions = (
     modelname   = "Onyx 1640i (DICE)";
     driver      = "DICE";
 },
+{ # IDs provided by Melanie Bernkopf
+    vendorid    = 0x000ff2;
+    modelid     = 0x000007;
+    vendorname  = "Loud Technologies Inc.";
+    modelname   = "Onyx Blackbird";
+    driver      = "DICE";
+},
 { # IDs provided by Steven Tonge
     vendorid    = 0x000ff2;
     modelid     = 0x001640;
