@@ -24,6 +24,8 @@
  // FOR CACHE_VERSION
 
 #include "serialize.h"
+#include "version.h"
+#include <stdlib.h>
 
 using namespace std;
 
