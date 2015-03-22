@@ -21,6 +21,8 @@
  *
  */
 
+#include "config.h"
+
 #include "libavc/audiosubunit/avc_function_block.h"
 #include "libutil/serialize.h"
 #include "libutil/cmd_serialize.h"

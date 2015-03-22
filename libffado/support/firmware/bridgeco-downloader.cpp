@@ -21,6 +21,8 @@
  *
  */
 
+#include "config.h"
+
 #include "downloader.h"
 
 #include "src/bebob/bebob_dl_mgr.h"

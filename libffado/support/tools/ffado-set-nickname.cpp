@@ -23,6 +23,7 @@
  *
  */
 
+#include "config.h"
 #include "devicemanager.h"
 
 #include "dice/dice_avdevice.h"

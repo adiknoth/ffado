@@ -32,6 +32,7 @@
 
 #include "libieee1394/vendor_model_ids.h"
 
+#include <memory>
 #include <vector>
 #include <string>
 

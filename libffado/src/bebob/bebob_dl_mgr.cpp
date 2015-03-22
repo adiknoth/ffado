@@ -36,6 +36,7 @@
 #include <cstdio>
 #include <cstring>
 #include <unistd.h>
+#include <memory>
 
 namespace BeBoB {
     enum {

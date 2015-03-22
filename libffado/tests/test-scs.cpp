@@ -24,6 +24,8 @@
  *
  */
 
+#include "config.h"
+
 #include <libraw1394/raw1394.h>
 #include <libiec61883/iec61883.h>
 

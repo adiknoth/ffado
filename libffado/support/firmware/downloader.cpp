@@ -22,6 +22,8 @@
  *
  */
 
+#include "config.h"
+
 #include "downloader.h"
 
 #include "libieee1394/configrom.h"

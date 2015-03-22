@@ -23,6 +23,7 @@
  *
  */
 
+#include "config.h"
 #include <libraw1394/raw1394.h>
 #include "libutil/ByteSwap.h"
 
@@ -36,6 +37,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cstring>
+#include <memory>
 
 using namespace std;
 
