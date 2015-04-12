@@ -26,7 +26,7 @@ from string import Template
 
 Import( 'env' )
 
-if env.has_key('PYUIC4'):
+if env['BUILD_MIXER'] == 'true':
     e = env.Clone()
 
     def findfiles( arg, dirname, names ):
