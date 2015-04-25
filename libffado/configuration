@@ -168,6 +168,13 @@ device_definitions = (
     modelname   = "STUDIOLIVE_1602";
     driver      = "DICE";
 },
+{ # Entry for Studiolive 32.4.2, from Karl Swisher
+    vendorid    = 0x00000a92;
+    modelid     = 0x00000014;
+    vendorname  = "PreSonus";
+    modelname   = "STUDIOLIVE_3242_mk2";
+    driver      = "DICE";
+},
 {
     vendorid    = 0x000aac;
     modelid     = 0x00000003;
