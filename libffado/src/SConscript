@@ -164,6 +164,7 @@ dice_source = env.Split( '\
 	dice/dice_eap.cpp \
 	dice/focusrite/focusrite_eap.cpp \
 	dice/focusrite/saffire_pro40.cpp \
+	dice/focusrite/saffire_pro26.cpp \
 	dice/focusrite/saffire_pro24.cpp \
 	dice/focusrite/saffire_pro14.cpp \
 	dice/focusrite/saffire_56.cpp \

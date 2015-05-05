@@ -74,6 +74,8 @@ class Saffire_Dice(Generic_Dice_EAP):
             uicLoad("ffado/mixer/Saffire_Pro14_monitoring.ui", widget)
         elif ModelName == "SAFFIRE_PRO_24" or self.configrom.getModelName() == "SAFFIRE_PRO_24DSP":
             uicLoad("ffado/mixer/Saffire_Pro24_monitoring.ui", widget)
+        elif ModelName == "SAFFIRE_PRO26":
+            uicLoad("ffado/mixer/Saffire_Pro26_monitoring.ui", widget)
         elif ModelName == "SAFFIRE_PRO_40":
             uicLoad("ffado/mixer/Saffire_Pro40_monitoring.ui", widget)
 
@@ -102,12 +104,14 @@ class Saffire_Dice(Generic_Dice_EAP):
         LineInfo = namedtuple('LineInfo', ['widget','Interface'])
         self.nbLines = 4
 
-        # Mono/Stereo Switch
         self.LineMonos = []
-        p = LineInfo(widget.Mono_12, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line1Line2"))
-        self.LineMonos.append(p)
-        p = LineInfo(widget.Mono_34, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line3Line4"))
-        self.LineMonos.append(p)
+        if ModelName != "SAFFIRE_PRO26":
+            # TODO: is this redundant on any other interface?
+            # Mono/Stereo Switch
+            p = LineInfo(widget.Mono_12, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line1Line2"))
+            self.LineMonos.append(p)
+            p = LineInfo(widget.Mono_34, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line3Line4"))
+            self.LineMonos.append(p)
 
         # Volume Unactivating
         self.LineUnActivates = []
@@ -166,9 +170,10 @@ class Saffire_Dice(Generic_Dice_EAP):
   
         if ModelName != "SAFFIRE_PRO_14":
             self.nbLines = 6
-            # Mono/Stereo Switch
-            p = LineInfo(widget.Mono_56, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line5Line6"))
-            self.LineMonos.append(p)
+            if ModelName != "SAFFIRE_PRO26":
+                # Mono/Stereo Switch
+                p = LineInfo(widget.Mono_56, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/Mono/Line5Line6"))
+                self.LineMonos.append(p)
             # Volume Unactivating
             p = LineInfo(widget.LineUnActivate_5, BooleanControl(self.hw, self.hw.basepath+"/EAP/Monitoring/LineOut/UnActivate5"))
             self.LineUnActivates.append(p)
@@ -253,7 +258,7 @@ class Saffire_Dice(Generic_Dice_EAP):
             widget.AdatSpdif.setChecked(self.adatSpdifInterface.selected())
             self.connect(widget.AdatSpdif, QtCore.SIGNAL("toggled(bool)"), self.adatSpdifToggle)
 
-        else:
+        if ModelName in ("SAFFIRE_PRO_14", "SAFFIRE_PRO_24"):
             # Line/Inst and Hi/Lo switches for Pro14 and 24
             widget.LineInSwitches.setVisible(True)
             self.LineInSwitches = []
@@ -272,12 +277,12 @@ class Saffire_Dice(Generic_Dice_EAP):
             widget.LineInSwitchLine_2.setChecked(not self.LineInSwitches[1].Interface.selected())
             widget.LineInSwitchLo_3.setChecked(not self.LineInSwitches[2].Interface.selected())
             widget.LineInSwitchLo_4.setChecked(not self.LineInSwitches[3].Interface.selected())
-            
-        # Mono/Stereo Switch
-        for i in range(self.nbLines/2):
-            self.LineMonos[i].widget.setChecked(self.LineMonos[i].Interface.selected())
-            self.connect(self.LineMonos[i].widget, QtCore.SIGNAL("toggled(bool)"), self.LineMonos[i].Interface.select)
 
+        # Mono/Stereo Switch
+        if ModelName != "SAFFIRE_PRO26":
+            for i in range(self.nbLines/2):
+                self.LineMonos[i].widget.setChecked(self.LineMonos[i].Interface.selected())
+                self.connect(self.LineMonos[i].widget, QtCore.SIGNAL("toggled(bool)"), self.LineMonos[i].Interface.select)
 
 
         for i in range(self.nbLines):
@@ -319,8 +324,8 @@ class Saffire_Dice(Generic_Dice_EAP):
             self.LineGMutes[i].widget.setChecked(True)
             self.LineGDims[i].widget.setChecked(True)
             self.LineVolumes[i].widget.setValue(0)
-        for i in range(self.nbLines/2):
-            self.LineMonos[i].widget.setChecked(False)
+        for i in self.LineMonos:
+            i.widget.setChecked(False)
         self.LineOut.setEnabled(HW)
 
     def HWselected(self):
@@ -338,7 +343,7 @@ class Saffire_Dice(Generic_Dice_EAP):
         self.volumeInterface.setvalue(value)
 
     def getDisplayTitle(self):
-        return "Saffire PRO40/PRO24/PRO14 Mixer"
+        return "Saffire PRO40/26/24/14 Mixer"
 
 #
 # vim: et ts=4 sw=4

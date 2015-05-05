@@ -47,6 +47,7 @@
 #include "devicemanager.h"
 
 #include "focusrite/saffire_pro40.h"
+#include "focusrite/saffire_pro26.h"
 #include "focusrite/saffire_pro24.h"
 #include "focusrite/saffire_pro14.h"
 #include "maudio/profire_2626.h"
@@ -138,6 +139,8 @@ Device::createDevice( DeviceManager& d, std::auto_ptr<ConfigRom>( configRom ))
                     return new Focusrite::SaffirePro24(d, configRom);
                 case 0x00000009:
                     return new Focusrite::SaffirePro14(d, configRom);
+                case 0x00000012:
+                    return new Focusrite::SaffirePro26(d, configRom);
                 default: // return a plain Dice device
                     return new Device(d, configRom);
             }
@@ -1670,14 +1673,23 @@ Device::initIoFunctions() {
     }
     m_rx_size*=4;
 
-    // FIXME: verify this and clean it up.
+    // FIXME: verify this and clean it up. Maybe check the number of channels
+    // and ignore receivers with zero channels?
     /* special case for Alesis io14, which announces two receive transmitters,
-     * but only has one. Same is true for Alesis Multimix16.
+     * but only has one. Same is true for Alesis Multimix16 and Focusrite
+     * Saffire PRO 26.
      */
     if (FW_VENDORID_ALESIS == getConfigRom().getNodeVendorId()) {
         switch (getConfigRom().getModelId()) {
             case 0x00000001:
             case 0x00000000:
+                m_nb_rx = 1;
+                break;
+        }
+    }
+    if (FW_VENDORID_FOCUSRITE == getConfigRom().getNodeVendorId()) {
+        switch (getConfigRom().getModelId()) {
+            case 0x00000012:
                 m_nb_rx = 1;
                 break;
         }

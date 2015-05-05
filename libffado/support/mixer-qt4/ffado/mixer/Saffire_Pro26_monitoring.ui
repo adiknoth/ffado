@@ -1,0 +1,941 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SaffirePro26Monitoring</class>
+ <widget class="QWidget" name="SaffirePro26Monitoring">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>610</width>
+    <height>550</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Saffire Pro 26 Monitoring</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="locale">
+   <locale language="English" country="UnitedStates"/>
+  </property>
+  <widget class="QWidget" name="horizontalLayoutWidget_2">
+   <property name="geometry">
+    <rect>
+     <x>170</x>
+     <y>20</y>
+     <width>431</width>
+     <height>521</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="LineOutMain">
+    <item>
+     <widget class="QGroupBox" name="LineOut">
+      <property name="title">
+       <string>Line/Out Settings</string>
+      </property>
+      <widget class="QWidget" name="verticalLayoutWidget">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>20</y>
+         <width>51</width>
+         <height>491</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="LineOutMain_1">
+        <item>
+         <widget class="QGroupBox" name="LineOut_1">
+          <property name="title">
+           <string/>
+          </property>
+          <widget class="QSlider" name="LineVolume_1">
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>10</y>
+             <width>20</width>
+             <height>311</height>
+            </rect>
+           </property>
+           <property name="locale">
+            <locale language="French" country="France"/>
+           </property>
+           <property name="minimum">
+            <number>-40</number>
+           </property>
+           <property name="maximum">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="tickPosition">
+            <enum>QSlider::TicksBothSides</enum>
+           </property>
+           <property name="tickInterval">
+            <number>5</number>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineUnActivate_1">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>330</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>UA</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineMute_1">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>370</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Mu</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGMute_1">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>450</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GM</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_1">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>21</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>1</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGDim_1">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>410</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GD</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="verticalLayoutWidget_2">
+       <property name="geometry">
+        <rect>
+         <x>80</x>
+         <y>20</y>
+         <width>51</width>
+         <height>491</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="LineOutMain_2">
+        <item>
+         <widget class="QGroupBox" name="LineOut_2">
+          <property name="title">
+           <string/>
+          </property>
+          <widget class="QSlider" name="LineVolume_2">
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>10</y>
+             <width>20</width>
+             <height>311</height>
+            </rect>
+           </property>
+           <property name="minimum">
+            <number>-40</number>
+           </property>
+           <property name="maximum">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="tickPosition">
+            <enum>QSlider::TicksBothSides</enum>
+           </property>
+           <property name="tickInterval">
+            <number>5</number>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineUnActivate_2">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>330</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>UA</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineMute_2">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>370</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Mu</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGMute_2">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>450</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GM</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_2">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>21</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>2</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGDim_2">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>410</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GD</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <zorder>LineVolume_2</zorder>
+          <zorder>LineUnActivate_2</zorder>
+          <zorder>LineMute_2</zorder>
+          <zorder>LineGMute_2</zorder>
+          <zorder>label_2</zorder>
+          <zorder>LineGDim_2</zorder>
+          <zorder>LineOut_1</zorder>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="verticalLayoutWidget_3">
+       <property name="geometry">
+        <rect>
+         <x>150</x>
+         <y>20</y>
+         <width>51</width>
+         <height>491</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="LineOutMain_3">
+        <item>
+         <widget class="QGroupBox" name="LineOut_3">
+          <property name="title">
+           <string/>
+          </property>
+          <widget class="QSlider" name="LineVolume_3">
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>10</y>
+             <width>20</width>
+             <height>311</height>
+            </rect>
+           </property>
+           <property name="minimum">
+            <number>-40</number>
+           </property>
+           <property name="maximum">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="tickPosition">
+            <enum>QSlider::TicksBothSides</enum>
+           </property>
+           <property name="tickInterval">
+            <number>5</number>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineUnActivate_3">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>330</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>UA</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineMute_3">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>370</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Mu</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGMute_3">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>450</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GM</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_3">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>21</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>3</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGDim_3">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>410</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GD</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="verticalLayoutWidget_4">
+       <property name="geometry">
+        <rect>
+         <x>220</x>
+         <y>20</y>
+         <width>51</width>
+         <height>491</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="LineOutMain_4">
+        <item>
+         <widget class="QGroupBox" name="LineOut_4">
+          <property name="title">
+           <string/>
+          </property>
+          <widget class="QSlider" name="LineVolume_4">
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>10</y>
+             <width>20</width>
+             <height>311</height>
+            </rect>
+           </property>
+           <property name="minimum">
+            <number>-40</number>
+           </property>
+           <property name="maximum">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="tickPosition">
+            <enum>QSlider::TicksBothSides</enum>
+           </property>
+           <property name="tickInterval">
+            <number>5</number>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineUnActivate_4">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>330</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>UA</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineMute_4">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>370</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Mu</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGMute_4">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>450</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GM</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_4">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>21</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>4</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGDim_4">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>410</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GD</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="verticalLayoutWidget_5">
+       <property name="geometry">
+        <rect>
+         <x>290</x>
+         <y>20</y>
+         <width>51</width>
+         <height>491</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="LineOutMain_5">
+        <item>
+         <widget class="QGroupBox" name="LineOut_5">
+          <property name="title">
+           <string/>
+          </property>
+          <widget class="QSlider" name="LineVolume_5">
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>10</y>
+             <width>20</width>
+             <height>311</height>
+            </rect>
+           </property>
+           <property name="minimum">
+            <number>-40</number>
+           </property>
+           <property name="maximum">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="tickPosition">
+            <enum>QSlider::TicksBothSides</enum>
+           </property>
+           <property name="tickInterval">
+            <number>5</number>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineUnActivate_5">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>330</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>UA</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineMute_5">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>370</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Mu</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGMute_5">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>450</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GM</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_5">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>21</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>5</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGDim_5">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>410</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GD</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="verticalLayoutWidget_6">
+       <property name="geometry">
+        <rect>
+         <x>360</x>
+         <y>20</y>
+         <width>51</width>
+         <height>491</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="LineOutMain_6">
+        <item>
+         <widget class="QGroupBox" name="LineOut_6">
+          <property name="title">
+           <string/>
+          </property>
+          <widget class="QSlider" name="LineVolume_6">
+           <property name="geometry">
+            <rect>
+             <x>20</x>
+             <y>10</y>
+             <width>20</width>
+             <height>311</height>
+            </rect>
+           </property>
+           <property name="minimum">
+            <number>-40</number>
+           </property>
+           <property name="maximum">
+            <number>0</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="tickPosition">
+            <enum>QSlider::TicksBothSides</enum>
+           </property>
+           <property name="tickInterval">
+            <number>5</number>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineUnActivate_6">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>330</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>UA</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineMute_6">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>370</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>Mu</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGMute_6">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>450</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GM</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QLabel" name="label_6">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>21</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>6</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="LineGDim_6">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>410</y>
+             <width>41</width>
+             <height>35</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>GD</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <zorder>verticalLayoutWidget</zorder>
+      <zorder>verticalLayoutWidget_2</zorder>
+      <zorder>verticalLayoutWidget_3</zorder>
+      <zorder>verticalLayoutWidget_4</zorder>
+      <zorder>verticalLayoutWidget_5</zorder>
+      <zorder>verticalLayoutWidget_6</zorder>
+      <zorder>LineOut_2</zorder>
+      <zorder>LineOut_1</zorder>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="horizontalLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>20</y>
+     <width>163</width>
+     <height>521</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="GlobalSetMain">
+    <item>
+     <widget class="QGroupBox" name="GlobalSet">
+      <property name="whatsThis">
+       <string comment="Activate/Deactivate the global volume diminution" extracomment="Activate/Deactivate the global volume diminution"/>
+      </property>
+      <property name="title">
+       <string>Global Settings</string>
+      </property>
+      <widget class="QSlider" name="DimLevel">
+       <property name="geometry">
+        <rect>
+         <x>60</x>
+         <y>100</y>
+         <width>19</width>
+         <height>311</height>
+        </rect>
+       </property>
+       <property name="minimum">
+        <number>-87</number>
+       </property>
+       <property name="maximum">
+        <number>0</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="invertedAppearance">
+        <bool>false</bool>
+       </property>
+       <property name="tickPosition">
+        <enum>QSlider::TicksBothSides</enum>
+       </property>
+       <property name="tickInterval">
+        <number>10</number>
+       </property>
+      </widget>
+      <widget class="QLabel" name="GlobalSetLabel">
+       <property name="geometry">
+        <rect>
+         <x>40</x>
+         <y>60</y>
+         <width>77</width>
+         <height>25</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Dim level</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="GlobalDim">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>430</y>
+         <width>110</width>
+         <height>35</height>
+        </rect>
+       </property>
+       <property name="whatsThis">
+        <string/>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <property name="text">
+        <string>Activate Dim</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="GlobalMute">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>470</y>
+         <width>110</width>
+         <height>35</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Mute</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="HWSwitch">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>20</y>
+         <width>110</width>
+         <height>35</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>H/W</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
