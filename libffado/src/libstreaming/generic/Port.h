@@ -156,7 +156,6 @@ protected:
     enum EStates {
         E_Created,
         E_Initialized,
-        E_Prepared,
         E_Running,
         E_Error
     };
