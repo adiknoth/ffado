@@ -391,7 +391,6 @@ class IsoHandlerManager
     private:
         enum eHandlerStates {
             E_Created,
-            E_Prepared,
             E_Running,
             E_Error
         };

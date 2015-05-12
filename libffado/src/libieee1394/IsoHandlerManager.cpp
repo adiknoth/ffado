@@ -1145,9 +1145,7 @@ bool IsoHandlerManager::stopHandlers() {
         debugOutput(DEBUG_LEVEL_VERBOSE, " requested disable for handler %p\n", *it);
     }
 
-    if (retval) {
-        m_State=E_Prepared;
-    } else {
+    if (!retval) {
         m_State=E_Error;
     }
     return retval;
@@ -1202,7 +1200,6 @@ IsoHandlerManager::eHSToString(enum eHandlerStates s) {
     switch (s) {
         default: return "Invalid";
         case E_Created: return "Created";
-        case E_Prepared: return "Prepared";
         case E_Running: return "Running";
         case E_Error: return "Error";
     }
