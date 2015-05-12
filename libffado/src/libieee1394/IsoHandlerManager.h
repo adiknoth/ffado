@@ -218,7 +218,6 @@ class IsoHandlerManager
             enum EHandlerStates {
                 eHS_Stopped,
                 eHS_Running,
-                eHS_Error,
             };
             enum EHandlerStates m_State;
             enum EHandlerStates m_NextState;

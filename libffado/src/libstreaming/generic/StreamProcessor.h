@@ -174,6 +174,8 @@ public: // the public receive/transmit functions
     bool getFrames(unsigned int nbframes, int64_t ts); ///< transfer the buffer contents to the client
     bool putFrames(unsigned int nbframes, int64_t ts); ///< transfer the client contents to the buffer
 
+    void packetsStopped(); // Called once when the underlying stream has stopped, to update the state.
+
     bool canProducePacket();
     bool canProducePeriod();
     bool canProduce(unsigned int nframes);

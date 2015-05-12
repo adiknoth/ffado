@@ -323,6 +323,12 @@ IsoHandlerManager::IsoTask::Execute()
     for (i = 0; i < m_poll_nfds_shadow; i++) {
         // figure out if a handler has died
 
+        if (!m_IsoHandler_map_shadow[i]->isEnabled()) {
+            // This handler is already dead.
+            handler_died = true;
+            continue;
+        }
+
         // this is the time of the last packet we saw in the iterate() handler
         uint32_t last_packet_seen = m_IsoHandler_map_shadow[i]->getLastPacketTime();
         if (last_packet_seen == 0xFFFFFFFF) {
@@ -343,9 +349,9 @@ IsoHandlerManager::IsoTask::Execute()
                            this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"), 
                            i, measured_diff_ticks, max_diff_ticks, ctr_at_poll_return, last_packet_seen);
         if(measured_diff_ticks > max_diff_ticks) {
-            debugFatal("(%p, %s) Handler died: now: %08X, last: %08X, diff: %"PRId64" (max: %"PRId64")\n",
-                       this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"),
-                       ctr_at_poll_return, last_packet_seen, measured_diff_ticks, max_diff_ticks);
+            debugWarning("(%p, %s) Handler died: now: %08X, last: %08X, diff: %"PRId64" (max: %"PRId64")\n",
+                         this, (m_handlerType == IsoHandler::eHT_Transmit? "Transmit": "Receive"),
+                         ctr_at_poll_return, last_packet_seen, measured_diff_ticks, max_diff_ticks);
             m_IsoHandler_map_shadow[i]->notifyOfDeath();
             handler_died = true;
         }
@@ -353,7 +359,10 @@ IsoHandlerManager::IsoTask::Execute()
 
     if(handler_died) {
         m_running = false;
-        return false; // one or more handlers have died
+        // One or more handlers have died, however it can be restarted again,
+        // so keep looping. The xrun handling code will eventually time out if
+        // we are not able to recover.
+        return true;
     }
 
     // iterate the handlers
@@ -1348,6 +1357,10 @@ bool
 IsoHandlerManager::IsoHandler::canIterateClient()
 {
     debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "checking...\n");
+    if (!isEnabled()) {
+        debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, "not enabled...\n");
+        return false;
+    }
     if(m_Client) {
         bool result;
 
@@ -1357,7 +1370,7 @@ IsoHandlerManager::IsoHandler::canIterateClient()
             result = m_Client->canConsumePacket();
         }
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " returns %d\n", result);
-        return result && (m_State != eHS_Error);
+        return result;
     } else {
         debugOutputExtreme(DEBUG_LEVEL_VERY_VERBOSE, " no client\n");
     }
@@ -1432,8 +1445,13 @@ IsoHandlerManager::IsoHandler::handleBusReset()
 void
 IsoHandlerManager::IsoHandler::notifyOfDeath()
 {
-    m_State = eHS_Error;
-    m_NextState = eHS_Error;
+    if(m_handle) {
+        // Make sure the stream is fully disabled. Some controllers (Ricoh
+        // R5C832) will leave the stream in a limbo state after an unscheduled
+        // stop, making it impossible to restart the stream, so make sure all
+        // disabling steps are taken.
+        disable();
+    }
 
     // notify the client of the fact that we have died
     m_Client->handlerDied();
@@ -1892,12 +1910,6 @@ IsoHandlerManager::IsoHandler::disable()
     // wake up any waiting reads/polls
     raw1394_wake_up(m_handle);
 
-    // this is put here to try and avoid the
-    // Runaway context problem
-    // don't know if it will help though.
-/*    if(m_State != eHS_Error) { // if the handler is dead, this might block forever
-        raw1394_iso_xmit_sync(m_handle);
-    }*/
     debugOutput( DEBUG_LEVEL_VERBOSE, "(%p, %s) stop...\n", 
                  this, (m_type==eHT_Receive?"Receive":"Transmit"));
 
@@ -1919,6 +1931,8 @@ IsoHandlerManager::IsoHandler::disable()
 
     m_State = eHS_Stopped;
     m_NextState = eHS_Stopped;
+
+    m_Client->packetsStopped();
 
     if (have_lock)
         pthread_mutex_unlock(&m_disable_lock);

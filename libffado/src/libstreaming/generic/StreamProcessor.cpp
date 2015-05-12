@@ -887,6 +887,11 @@ send_empty_packet:
     return RAW1394_ISO_OK;
 }
 
+void StreamProcessor::packetsStopped() {
+    m_state = ePS_Stopped;
+    m_next_state = ePS_Stopped;
+}
+
 // Frame Transfer API
 /**
  * Transfer a block of frames from the event buffer to the port buffers
