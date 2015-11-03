@@ -653,6 +653,16 @@ device_definitions = (
     mixer       = "Saffire_Dice";
 },
 {
+    # A new version of the Pro 40 has been released, described in the
+    # ConfigROM as SAFFIRE_PRO_40_1.  Thanks to Mathieu Picot for the info.
+    vendorid    = 0x00130e;
+    modelid     = 0x000000DE;
+    vendorname  = "Focusrite";
+    modelname   = "Saffire PRO 40-1";
+    driver      = "DICE";
+    mixer       = "Saffire_Dice";
+},
+{
     vendorid    = 0x001C6A;
     modelid     = 0x00000001;
     vendorname  = "Weiss Engineering Ltd.";
