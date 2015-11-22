@@ -43,6 +43,7 @@
 
 #include <sstream>
 #include <unistd.h>
+#include <cstdio>
 using namespace std;
 
 // FireWorks is the platform used and developed by ECHO AUDIO
@@ -163,7 +164,7 @@ Device::discoverUsingEFC()
 
     // check the firmware version
     if (m_HwInfo.m_arm_version < FIREWORKS_MIN_FIRMWARE_VERSION) {
-        debugError("Firmware version %u.%u (rev %u) not recent enough. FFADO requires at least version %u.%u (rev %u).\n", 
+        fprintf(stderr, "Firmware version %u.%u (rev %u) not recent enough. FFADO requires at least version %u.%u (rev %u).\n", 
                     (m_HwInfo.m_arm_version >> 24) & 0xFF,
                     (m_HwInfo.m_arm_version >> 16) & 0xFF,
                     (m_HwInfo.m_arm_version >> 0) & 0xFFFF,
