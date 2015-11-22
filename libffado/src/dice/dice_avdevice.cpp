@@ -1191,7 +1191,11 @@ Device::lock() {
         }
     
         if (result != DICE_OWNER_NO_OWNER && result != swap_value) {
-            debugWarning("Could not register ourselves as device owner, unexpected register value: 0x%016"PRIX64"\n", result);
+            debugWarning("Unexpected GLOBAL_OWNER register value: 0x%016"PRIX64"\n", result);
+            fprintf(stderr, "Could not register ourselves as owner of %s.\n", getNickname().c_str());
+            fprintf(stderr, "If the snd-dice kernel driver is present, "
+                            "either use the device via ALSA instead of FFADO, "
+                            "or unload snd-dice before using FFADO.\n");
             return false;
         }
     
