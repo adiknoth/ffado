@@ -37,6 +37,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <sstream>
+#include <cstdio>
 
 #include <string>
 #include <cstring>
