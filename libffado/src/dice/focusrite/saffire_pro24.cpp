@@ -26,6 +26,7 @@
 #include "focusrite_eap.h"
 
 #include "libutil/ByteSwap.h"
+#include <cstdio>
 
 namespace Dice {
 namespace Focusrite {
@@ -433,8 +434,8 @@ bool SaffirePro24::discover() {
         // not for a device identity.  0x00010004 is a pro24, 0x00010008 
         // is the pro24dsp.
         if (version[0] != 0x00010004 && version[0] != 0x00010008 && version[0] != 0x00020000) {
-            debugError("This is a Focusrite Saffire Pro24 but not the right firmware. Better stop here before something goes wrong.\n");
-            debugError("This device has firmware 0x%x while we only know about versions 0x%x, 0x%x and 0x%x.\n", version[0], 0x10004, 0x10008, 0x00020000);
+            fprintf(stderr, "This is a Focusrite Saffire Pro24 but not the right firmware. Better stop here before something goes wrong.\n");
+            fprintf(stderr, "This device has firmware 0x%x while we only know about versions 0x%x, 0x%x and 0x%x.\n", version[0], 0x10004, 0x10008, 0x00020000);
             return false;
         }
 

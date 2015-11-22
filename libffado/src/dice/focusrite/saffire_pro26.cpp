@@ -27,6 +27,7 @@
 #include "focusrite_eap.h"
 
 #include "libutil/ByteSwap.h"
+#include <cstdio>
 
 namespace Dice {
 namespace Focusrite {
@@ -378,8 +379,8 @@ bool SaffirePro26::discover() {
         getEAP()->readRegBlock(Dice::EAP::eRT_Application, SAFFIRE_PRO26_REGISTER_APP_VERSION, version, 1*sizeof(fb_quadlet_t));
         // Only known firmware for Saffire Pro 26 devices so far is 0x10000.
         if (version[0] != 0x10000) {
-            debugError("This is a Focusrite Saffire Pro26 but not the right firmware. Better stop here before something goes wrong.\n");
-            debugError("This device has firmware 0x%x while we only know about version 0x%x.\n", version[0], 0x10000);
+            fprintf(stderr, "This is a Focusrite Saffire Pro26 but not the right firmware. Better stop here before something goes wrong.\n");
+            fprintf(stderr, "This device has firmware 0x%x while we only know about version 0x%x.\n", version[0], 0x10000);
             return false;
         }
 
