@@ -811,5 +811,13 @@ device_definitions = (
     modelname   = "Venice F32";
     driver      = "DICE";
     mixer       = "Generic_Dice_EAP";
+},
+{ # ICON FireXon.  Information from Philippe Ploquin.
+    vendorid    = 0x00001A9E;
+    modelid     = 0x00000001;
+    vendorname  = "ICON";
+    modelname   = "FireXon";
+    # Currently guess that this is a DICE device.  To be confirmed.
+    driver      = "DICE";
 }
 );
