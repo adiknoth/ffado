@@ -817,7 +817,8 @@ device_definitions = (
     modelid     = 0x00000001;
     vendorname  = "ICON";
     modelname   = "FireXon";
-    # Currently guess that this is a DICE device.  To be confirmed.
-    driver      = "DICE";
+    driver      = "BEBOB";
+    # A device-specific mixer needs to be written, there being no generic
+    # bebob mixer modules.
 }
 );
