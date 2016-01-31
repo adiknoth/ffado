@@ -190,7 +190,7 @@ Device::init_hardware(void)
 
     set_hardware_output_rec(0);
 
-    if (ret==0 && m_rme_model==RME_MODEL_FIREFACE400) {
+    if (ret==0 && m_rme_model==RME_MODEL_FIREFACE400 && provide_midi) {
         // Precisely mirror the method used under other operating systems
         // to set the high quadlet of the MIDI ARM address, even though it
         // is a little inflexible.  We can refine this later if need be.

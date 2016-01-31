@@ -87,6 +87,7 @@ Device::Device( DeviceManager& d,
     , num_channels( 0 )
     , frames_per_packet( 0 )
     , speed800( 0 )
+    , provide_midi( 0 )
     , iso_tx_channel( -1 )
     , iso_rx_channel( -1 )
     , m_receiveProcessor( NULL )

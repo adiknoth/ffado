@@ -165,6 +165,7 @@ protected:
     signed int num_channels;
     signed int frames_per_packet; // 1 frame includes 1 sample from each channel
     signed int speed800;
+    signed int provide_midi;      // 0=no, 1=yes
 
     signed int iso_tx_channel, iso_rx_channel;
 
