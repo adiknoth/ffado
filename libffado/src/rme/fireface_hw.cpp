@@ -191,10 +191,11 @@ Device::init_hardware(void)
     set_hardware_output_rec(0);
 
     if (ret==0 && m_rme_model==RME_MODEL_FIREFACE400) {
+        // Precisely mirror the method used under other operating systems
+        // to set the high quadlet of the MIDI ARM address, even though it
+        // is a little inflexible.  We can refine this later if need be.
         unsigned int node_id = getConfigRom().getNodeId();
         unsigned int midi_hi_addr;
-        // For now we'll fix this since that's what's done under other
-        // systems.
         midi_hi_addr = 0x01;
         if (writeRegister(RME_FF400_MIDI_HIGH_ADDR, (node_id<<16) | midi_hi_addr) != 0) {
             debugOutput(DEBUG_LEVEL_ERROR, "failed to write MIDI high address register\n");
