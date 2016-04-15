@@ -77,7 +77,7 @@ main(int argc, char **argv)
         exit(0);
     }
 
-    int errno = 0;
+    errno = 0;
     char* tail;
     int node_id = strtol( argv[1], &tail, 0 );
     int fb_id   = strtol( argv[2], &tail, 0 );
