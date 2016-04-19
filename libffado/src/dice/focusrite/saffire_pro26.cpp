@@ -34,7 +34,7 @@ namespace Focusrite {
 
 void SaffirePro26::SaffirePro26EAP::setupSources_low() {
     addSource("SPDIF/In",  4,  4, eRS_AES, 1);
-    addSource("ADAT/In",   0,  8, eRS_ADAT, 1);
+    addSource("ADAT/In",   8,  8, eRS_ADAT, 1);
     addSource("Anlg/In", 0,  6, eRS_InS0, 1);
     addSource("Mixer/Out",  0, 16, eRS_Mixer, 1);
     addSource("1394/In",   0,  8, eRS_ARX0, 1);
