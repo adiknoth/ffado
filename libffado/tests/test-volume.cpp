@@ -29,6 +29,8 @@
 
 #include "libieee1394/ieee1394service.h"
 
+#include <cerrno>
+
 const bool bVerbose = false;
 
 using namespace AVC;

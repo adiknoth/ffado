@@ -27,6 +27,7 @@
 #include "libieee1394/ieee1394service.h"
 #include <cstdlib>
 #include <cstring>
+#include <cerrno>
 
 using namespace AVC;
 
