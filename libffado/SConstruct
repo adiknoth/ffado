@@ -352,6 +352,13 @@ results above get rechecked.
 """
         Exit( 1 )
 
+    # libxml++-2.6 requires a c++11 compiler as of version 2.39.1.  The 
+    # gnu++11 standard seems to work both with these later libxml++ versions
+    # and ffado itself, although a significant number of warnings are
+    # produced.
+    if conf.CheckPKG('libxml++-2.6 >= 2.39.1'):
+        evn.Append(CFLAGS = '-std=gnu++11')
+
     # Check for C99 lrint() and lrintf() functions used to convert from
     # float to integer more efficiently via float_cast.h.  If not
     # present the standard slower methods will be used instead.  This
